@@ -24,6 +24,7 @@ class WalletUtils {
     private network: String;
     private port: String;
     private apiKey: String;
+    private nodeClient: boolean;
 
 
     public client
@@ -35,8 +36,11 @@ class WalletUtils {
         this.network = options.network || "mainnet";
         this.port = options.port || "port";
         this.apiKey = options.apiKey || "";
-        if (this.node == "bcoin") {
+        this.nodeClient = options.nodeClient || true;
+        if (this.node == "bcoin" && !this.nodeClient) {
             this.client = new bcoin.WalletClient(options);
+        } else if(this.node == "bcoin" && this.nodeClient) {
+            this.client = new bcoin.NodeClient(options);
         }
     }
 
