@@ -1,4 +1,4 @@
-import { PrevOut, Output, Transaction } from './interface/transaction'
+import { PrevOut, Output, Transaction } from '../interface/transaction'
 
 
 export const getAddressTx = async function (address: string, client) {
