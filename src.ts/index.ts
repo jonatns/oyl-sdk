@@ -6,7 +6,7 @@ import BIP32Factory from 'bip32';
 import * as ecc from 'tiny-secp256k1';
 import bip32utils from 'bip32-utils';
 import Chain from './wallet/chain'
-import { resolve } from 'path';
+
 
 
 
