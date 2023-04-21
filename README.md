@@ -9,8 +9,13 @@ To parse Inscriptions from an Address using  bcoin - Transactions (see https://b
 
  You need to consider, if the inscription has been sent after minting (reveal tx). In   
  - First, getunspentOutputs on the address
- - For each utxo, parse input & output scripts for inscription:
-     - For the case of inscription genesis transactions (revealtransaction), look in the inputs
+ - For each utxo, get parse input & output scripts for inscription ('getrawtransaction', 'decoderawtransaction'):
+     - For the case of inscription genesis transactions (revealtransaction), look for the first input's txwitness (decodedtx.vin[0].txinwitness)
+      - Create new bcoin.Script from hex
+      - Convert to array:  script.toArray()
+      - Inscription envelope type (ord) is on script.toArray()[4].data.toString()
+
+     - For the case of inscriptions received from someone else (transferred) 
     
 
 
