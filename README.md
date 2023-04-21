@@ -20,10 +20,18 @@ To parse Inscriptions from an Address using  bcoin - Transactions (see https://b
 
 TODO
 
-- Pack bcoin as a module that runs in browser
+- Pack bcoin Classes as a module that runs in browser
 
-- Identify utxo with inscription
+- Use bclient to make rpc requests
 
-- Create send inscription
+- Identify inscription from address (DONE)
 
-- Create send BTC
+- Identify inscription from address (DONE)
+
+- Write send inscription
+
+- Write send BTC
+
+- Write cli.ts so there is a command line client to test
+
+- Write tests
