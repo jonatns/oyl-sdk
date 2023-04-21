@@ -15,7 +15,6 @@ To parse Inscriptions from an Address using  bcoin - Transactions (see https://b
        - Convert to array:  script.toArray()
        - Inscription envelope type (ord) is on script.toArray()[4].data.toString()
 
-     - For the case of inscriptions received from someone else (transferred) 
     
 
 
