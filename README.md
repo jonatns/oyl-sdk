@@ -11,9 +11,9 @@ To parse Inscriptions from an Address using  bcoin - Transactions (see https://b
  - First, getunspentOutputs on the address
  - For each utxo, get parse input & output scripts for inscription ('getrawtransaction', 'decoderawtransaction'):
      - For the case of inscription genesis transactions (revealtransaction), look for the first input's txwitness (decodedtx.vin[0].txinwitness)
-      - Create new bcoin.Script from hex
-      - Convert to array:  script.toArray()
-      - Inscription envelope type (ord) is on script.toArray()[4].data.toString()
+       - Create new bcoin.Script from hex
+       - Convert to array:  script.toArray()
+       - Inscription envelope type (ord) is on script.toArray()[4].data.toString()
 
      - For the case of inscriptions received from someone else (transferred) 
     
