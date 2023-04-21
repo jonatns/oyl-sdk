@@ -65,7 +65,8 @@ class WalletUtils {
         //xpub - extended public key (see wallet.deriveXpubFromSeed())
         const childKeyB58 = bip32.fromBase58(xpub);
         
-        //should manage addresses based on xpub 
+        //should manage addresses based on xpub
+        //should get change Addresses as well to identify inscriptions
         let chain = new bip32utils.Chain(childKeyB58);
         bip32utils.discovery(chain, gapLimit, async (addresses, callback) => {
             const res =  await this.getAddressSummary(addresses)
@@ -132,12 +133,6 @@ class WalletUtils {
     }
 }
 
-
-
-    
-
-
-
-
+ 
 
 }
