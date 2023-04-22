@@ -1,14 +1,11 @@
 
 import requireGlobal from '../scripts'
 const bcoin = requireGlobal("bcoin");
-import { getAddressTx, getUnspentOutputs, calculateBalance } from './transactions';
+import  { transactions } from './transactions';
 import BIP32Factory from 'bip32';
 import * as ecc from 'tiny-secp256k1';
 import bip32utils from 'bip32-utils';
-import Chain from './wallet/chain'
-
-
-
+import { Chain } from './wallet'
 
 
 const bip32 = BIP32Factory(ecc);
@@ -51,10 +48,10 @@ class WalletUtils {
         const addressesUtxo = [];
         for (let i = 0; i < address.length; i++) {
             addressesUtxo.push(address[i])
-            let txs = await getAddressTx(address[i], this.client);
-            let utxos = await getUnspentOutputs(txs);
+            let txs = await transactions.getAddressTx(address[i], this.client);
+            let utxos = await transactions.getUnspentOutputs(txs);
             addressesUtxo[i]["utxo"] = utxos;
-            addressesUtxo[i]["balance"] = calculateBalance(utxos);
+            addressesUtxo[i]["balance"] = transactions.calculateBalance(utxos);
         }
         return addressesUtxo;
 
