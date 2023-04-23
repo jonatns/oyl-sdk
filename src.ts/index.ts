@@ -1,6 +1,5 @@
 
-import requireGlobal from '../scripts'
-const bcoin = requireGlobal("bcoin");
+import { NodeClient } from "./rpclient";
 import  { transactions } from './transactions';
 import BIP32Factory from 'bip32';
 import * as ecc from 'tiny-secp256k1';
@@ -18,11 +17,12 @@ const RequiredPath = [
     "m/86'/0'/0'/0", // P2TR (Taproot) 
 ]
 
-class WalletUtils {
+export class WalletUtils {
     private node: String;
     private network: String;
-    private port: String;
+    private port: Number;
     private apiKey: String;
+    private host: String;
     private nodeClient: boolean;
 
 
@@ -30,16 +30,24 @@ class WalletUtils {
     public derivPath: String;
 
 
-    constructor(options) {
-        this.node = options.node || "bcoin";
-        this.network = options.network || "mainnet";
-        this.port = options.port || "port";
-        this.apiKey = options.apiKey || "";
-        this.nodeClient = options.nodeClient || true;
+    constructor(options?) {
+        this.node = options?.node || "bcoin";
+        this.network = options?.network || "main";
+        this.port = options?.port || 8332;
+        this.host = options?.host || "198.199.72.193"
+        this.apiKey = options?.apiKey || "bikeshed";
+        this.nodeClient = options?.nodeClient || true;
         if (this.node == "bcoin" && !this.nodeClient) {
-            this.client = new bcoin.WalletClient(options);
+            //TODO Implement WalletClient in rpclient 
+            console.log("WalletClient inactive")
         } else if(this.node == "bcoin" && this.nodeClient) {
-            this.client = new bcoin.NodeClient(options);
+            const clientOptions = {
+                network: this.network,
+                port: this.port,
+                host: this.host,
+                apiKey: this.apiKey
+            }
+            this.client = new NodeClient(clientOptions);
         }
     }
 
@@ -50,6 +58,7 @@ class WalletUtils {
             addressesUtxo.push(address[i])
             let txs = await transactions.getAddressTx(address[i], this.client);
             let utxos = await transactions.getUnspentOutputs(txs);
+            addressesUtxo[i] = {};
             addressesUtxo[i]["utxo"] = utxos;
             addressesUtxo[i]["balance"] = transactions.calculateBalance(utxos);
         }
