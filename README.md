@@ -20,14 +20,17 @@ To parse Inscriptions from an Address using  bcoin - Transactions (see https://b
 
   Clone from repository
 
-  Run yarn.
+  Run ```yarn```.
 
   Note: Most packages in npm are outdated/unsupported. For stable releases, install dependencies from git repo:
+
+```
 
   yarn add https://github.com/bcoin-org/bcurl
 
   npm install https://github.com/bcoin-org/bcurl
 
+```
   Currently working towards making every dependency local from github releases
 
 
