@@ -1,1 +1,3 @@
-export * as bclient from "./client"
+import  NodeClient from "./client" 
+
+export {NodeClient}
