@@ -68,7 +68,7 @@ To parse Inscriptions from an Address using  bcoin - Transactions (see https://b
   wallet load --port 8334
   ```
 
- To call methods on the object, pass in the method name in ```snake-case`` :
+ To call methods on the object, pass in the method name in ```snake-case``` :
 
  ```
  wallet get-address-summary bc1p527kv6mrq2sn5l7ukapq4q4a4puqfd9jsm7fv6r06c5726kyk57qnfvs4e --host 198.199.72.193 --port 8334 --node-client false 
