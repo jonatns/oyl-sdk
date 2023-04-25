@@ -1,5 +1,5 @@
 import fetch from "node-fetch"
-import { InscriptionResponse } from '../interface/ordinals';
+
 
 
 export const getInscriptionByHash = async (txhash) => {
@@ -14,7 +14,7 @@ export const getInscriptionByHash = async (txhash) => {
             throw new Error(`Failed to fetch inscriptions for address ${txhash}`);
         }
 
-        const jsonResponse = await response.json() as InscriptionResponse;
+        const jsonResponse = await response.json();
 
         //TO-DO: Fix type
         const inscriptionsArr: any = []
@@ -47,15 +47,15 @@ export const getInscriptionsByAddr = async (address) => {
         }
 
         //TO-DO fix types
-        const inscriptionsJson = await response.json() as any;
+        const inscriptionsJson = await response.json();
         const inscriptions: any = [];
         for (const inscriptionJson of inscriptionsJson) {
             if (inscriptionJson.hasOwnProperty('genesis_transaction')) {
-                const inscription = (
-                    inscriptionJson.id,
-                    inscriptionJson.output_value,
-                    inscriptionJson.address
-                );
+                const inscription = {
+                    inscriptionid: inscriptionJson.id,
+                    value: inscriptionJson.output_value,
+                    address: address
+                };
                 inscriptions.push(inscription);
             }
         }

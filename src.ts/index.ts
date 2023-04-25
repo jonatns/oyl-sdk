@@ -55,12 +55,10 @@ export class WalletUtils {
     async getAddressSummary(address: any[]) {
         const addressesUtxo = [];
         for (let i = 0; i < address.length; i++) {
-            addressesUtxo.push(address[i])
-            let txs = await transactions.getAddressTx(address[i], this.client);
-            let utxos = await transactions.getUnspentOutputs(txs);
+            let utxos = await transactions.getUnspentOutputs(address[i]);
             addressesUtxo[i] = {};
-            addressesUtxo[i]["utxo"] = utxos;
-            addressesUtxo[i]["balance"] = transactions.calculateBalance(utxos);
+            addressesUtxo[i]["utxo"] = utxos.unspent_outputs;
+            addressesUtxo[i]["balance"] = transactions.calculateBalance(utxos.unspent_outputs);
         }
         return addressesUtxo;
 
