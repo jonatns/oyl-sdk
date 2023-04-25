@@ -1,3 +1,3 @@
-import  NodeClient from "./client" 
+import NodeClient from "./client";
 
-export {NodeClient}
+export { NodeClient };

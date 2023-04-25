@@ -1,6 +1,5 @@
-import { PrevOut, Output, Transaction } from '../interface/transaction'
-import fetch from "node-fetch"
-
+import { PrevOut, Output, Transaction } from "../interface/transaction";
+import fetch from "node-fetch";
 
 /**
  * 
@@ -16,32 +15,32 @@ import fetch from "node-fetch"
  */
 
 export const getUnspentOutputs = async (address) => {
-    try {
-        const response = await fetch(`https://blockchain.info/unspent?active=${address}`, {
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
+  try {
+    const response = await fetch(
+      `https://blockchain.info/unspent?active=${address}`,
+      {
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
 
-        if (!response.ok) {
-            throw new Error(`Failed to fetch inscriptions for address ${address}`);
-        }
-
-        const jsonResponse = await response.json()
-
-        return jsonResponse;
-
-
-
-    } catch(error){
-        console.log(Error);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch inscriptions for address ${address}`);
     }
-}
 
-export const  calculateBalance =  function (utxos): number  {
-    let balance = 0;
-    for (let utxo = 0; utxo < utxos.length; utxo++) {
-        balance += utxos[utxo].value;
-    }
-    return balance / 1e8; // Convert from satoshis to BTC
-}
+    const jsonResponse = await response.json();
+
+    return jsonResponse;
+  } catch (error) {
+    console.log(Error);
+  }
+};
+
+export const calculateBalance = function (utxos): number {
+  let balance = 0;
+  for (let utxo = 0; utxo < utxos.length; utxo++) {
+    balance += utxos[utxo].value;
+  }
+  return balance / 1e8; // Convert from satoshis to BTC
+};

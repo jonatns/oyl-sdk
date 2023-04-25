@@ -5,7 +5,8 @@
   "main": "lib/index.js",
   "repository": "https://github.com/oyl-wallet/",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "prettier": "prettier --write ./src.ts/**/*.ts"
   },
   "bin": {
     "wallet": "./bin/cli.js"
@@ -26,6 +27,7 @@
     "change-case": "^4.1.2",
     "fs-extra": "^11.1.1",
     "node-fetch": "2.6.1",
+    "prettier": "^2.8.8",
     "tiny-secp256k1": "^2.2.1",
     "yargs": "^17.6.0"
   }
