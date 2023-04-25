@@ -28,6 +28,10 @@ To parse Inscriptions from an Address using  bcoin - Transactions (see https://b
 
   yarn add https://github.com/bcoin-org/bcurl
 
+```
+
+```
+
   npm install https://github.com/bcoin-org/bcurl
 
 ```
@@ -38,32 +42,45 @@ To parse Inscriptions from an Address using  bcoin - Transactions (see https://b
 
   To run oylib on the command line, you can install the package globally. Just run:
 
+  ```
    npm i -g 
 
+  ```
    
    The client is simply a layer over the oylib instance. The ```load``` commands defined is defined in cli.ts.
    
    It returns the ```clientOptions``` for your current session
 
 
-   ```wallet load```
+   ```
+   wallet load
+   
+   ```
 
    returns
 
-  ```{
+  ```
+  
+  {
     network: 'main',
     port: 8332,
     host: '198.199.72.193',
     apiKey: 'bikeshed'
-  }```
+  }
+  
+  ```
 
   It also accepts custom parameters:
 
-  ```wallet load --port 8334```
+  ```
+  wallet load --port 8334
+  ```
 
  To call methods on the object, pass in the method name in ```snake-case`` :
 
- ```wallet get-address-summary bc1p527kv6mrq2sn5l7ukapq4q4a4puqfd9jsm7fv6r06c5726kyk57qnfvs4e --host 198.199.72.193 --port 8334 --node-client false ```
+ ```
+ wallet get-address-summary bc1p527kv6mrq2sn5l7ukapq4q4a4puqfd9jsm7fv6r06c5726kyk57qnfvs4e --host 198.199.72.193 --port 8334 --node-client false 
+ ```
 
  returns
 
