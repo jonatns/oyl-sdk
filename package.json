@@ -1,5 +1,5 @@
 {
-  "name": "wallet-lib",
+  "name": "oylib",
   "version": "1.0.0",
   "description": "Utilities for bitcoin wallet",
   "main": "lib/index.js",
@@ -23,6 +23,8 @@
     "bip32-utils": "github:bitcoinjs/bip32-utils",
     "bip39": "^3.1.0",
     "bitcoinjs-lib": "^6.1.0",
+    "change-case": "^4.1.2",
+    "fs-extra": "^11.1.1",
     "node-fetch": "2.6.1",
     "tiny-secp256k1": "^2.2.1",
     "yargs": "^17.6.0"

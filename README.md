@@ -36,6 +36,28 @@ To parse Inscriptions from an Address using  bcoin - Transactions (see https://b
 
   To build typescript files to js  , just run ```yarn build``` or ```tsc```. They do pretty much the same thing rn
 
+  To run oylib on the command line, you can install the package globally. Just run:
+
+   npm i -g 
+
+   
+   The client is simply a layer over the oylib instance. The ```load``` commands defined is defined in cli.ts.
+   
+   It returns the ```clientOptions``` for your current session
+
+
+   ```wallet load```
+
+   returns
+
+  ```{
+    network: 'main',
+    port: 8332,
+    host: '198.199.72.193',
+    apiKey: 'bikeshed'
+  }```
+
+
 
   Contributions, issues, PRs are all welcome  
 

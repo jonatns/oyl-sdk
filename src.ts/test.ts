@@ -1,6 +1,6 @@
 import { bord } from "./wallet";
 import { NodeClient } from "./rpclient";
-import { WalletUtils } from ".";
+import { WalletUtils } from "./oylib";
 
 // //node-port: 8333
 // //wallet-port: 8334
