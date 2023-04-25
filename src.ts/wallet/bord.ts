@@ -1,6 +1,16 @@
 import fetch from "node-fetch"
 
-
+/*
+*
+*
+Need to figure out how to get inscriptions locally. At the moment, 
+it uses a public api, Getting inscriptions directly on the client 
+with a normal rpc server (without indexing) is tricky. It involves two considerations
+The first one was explained in the README, still working on the 
+second one. There is just a pattern/route we need to look for.
+*
+*
+*/
 
 export const getInscriptionByHash = async (txhash) => {
     try {

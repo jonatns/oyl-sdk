@@ -1,3 +1,12 @@
+
+/*
+*
+*
+The  parent key should be able to be derived sequentially. The UI can select/change
+the path parameters (e.g "44"/"49"/"86")  
+*/
+
+
 // export async function deriveXpubFromSeed(menmonic, network, coinType?,){
  
 //   const mnemonic = bcoin.Mnemonic.fromPhrase(menmonic);
