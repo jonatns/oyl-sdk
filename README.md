@@ -57,29 +57,46 @@ To parse Inscriptions from an Address using  bcoin - Transactions (see https://b
     apiKey: 'bikeshed'
   }```
 
+  It also accepts custom parameters:
+
+  ```wallet load --port 8334```
+
+ To call methods on the object, pass in the method name in ```snake-case`` :
+
+ ```wallet get-address-summary bc1p527kv6mrq2sn5l7ukapq4q4a4puqfd9jsm7fv6r06c5726kyk57qnfvs4e --host 198.199.72.193 --port 8334 --node-client false ```
+
+ returns
+
+```
+{
+  network: 'main',
+  port: 8334,
+  host: '198.199.72.193',
+  apiKey: 'bikeshed'
+}
+
+getAddressSummary(bc1p527kv6mrq2sn5l7ukapq4q4a4puqfd9jsm7fv6r06c5726kyk57qnfvs4e)
+
+[
+  {
+    "utxo": [
+      {
+        "tx_hash_big_endian": "96ea0ce6c073ff27d7c598c2b4929712e5ff6f68fdf7c1520253f8921d04a083",
+        "tx_hash": "83a0041d92f8530252c1f7fd686fffe5129792b4c298c5d727ff73c0e60cea96",
+        "tx_output_n": 0,
+        "script": "5120a2bd666b6302a13a7fdcb7420a82bda87804b4b286fc96686fd629e56ac4b53c",
+        "value": 10000,
+        "value_hex": "2710",
+        "confirmations": 10988,
+        "tx_index": 4631145185697546
+      }
+    ],
+    "balance": 0.0001
+  }
+]
+```
 
 
   Contributions, issues, PRs are all welcome  
 
     
-
-
-TODO
-
-- Pack bcoin Classes as a module that runs in browser (DONE)
-
-- Use bclient to make rpc requests (DONE)
-
-- Identify inscription from address (DONE)
-
-- Identify inscription from address (DONE)
-
-- Write send inscription
-
-- Enforce types and document the code
-
-- Write send BTC
-
-- Write cli.ts so there is a command line client to test
-
-- Write tests

@@ -2,8 +2,6 @@ import yargs from "yargs";
 import { camelCase } from "change-case";
 import { WalletUtils } from "./oylib";
 
-
-
 export async function loadRpc(options) {
     const rpcOptions = {}
     rpcOptions["host"] = options.host;
@@ -20,7 +18,7 @@ export async function loadRpc(options) {
 export async function callAPI(command, data, options = {}) {
     const rpc = await loadRpc(options);
     const camelCommand = camelCase(command);
-    console.log(`rpc.${camelCommand}(${data})`);
+    console.log(`${camelCommand}(${data})`);
     if (!rpc[camelCommand]) throw Error("command not foud: " + command);
     const result = await rpc[camelCommand](data);
     console.log(JSON.stringify(result, null, 2));
