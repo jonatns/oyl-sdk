@@ -25,15 +25,11 @@ To parse Inscriptions from an Address using  bcoin - Transactions (see https://b
   Note: Most packages in npm are outdated/unsupported. For stable releases, install dependencies from git repo:
 
 ```
-
   yarn add https://github.com/bcoin-org/bcurl
-
 ```
 
 ```
-
   npm install https://github.com/bcoin-org/bcurl
-
 ```
   Currently working towards making every dependency local from github releases
 
@@ -44,7 +40,6 @@ To parse Inscriptions from an Address using  bcoin - Transactions (see https://b
 
   ```
    npm i -g 
-
   ```
    
    The client is simply a layer over the oylib instance. The ```load``` commands defined is defined in cli.ts.
@@ -54,20 +49,17 @@ To parse Inscriptions from an Address using  bcoin - Transactions (see https://b
 
    ```
    wallet load
-   
    ```
 
    returns
 
   ```
-  
   {
     network: 'main',
     port: 8332,
     host: '198.199.72.193',
     apiKey: 'bikeshed'
   }
-  
   ```
 
   It also accepts custom parameters:
