@@ -56,18 +56,8 @@ export const getInscriptionsByAddr = async (address) => {
 
     //TO-DO fix types
     const inscriptionsJson = await response.json();
-    const inscriptions: any = [];
-    for (const inscriptionJson of inscriptionsJson) {
-      if (inscriptionJson.hasOwnProperty("genesis_transaction")) {
-        const inscription = {
-          inscriptionid: inscriptionJson.id,
-          value: inscriptionJson.output_value,
-          address: address,
-        };
-        inscriptions.push(inscription);
-      }
-    }
-    return inscriptions;
+    
+    return inscriptionsJson;
   } catch (error) {
     console.error(error);
   }

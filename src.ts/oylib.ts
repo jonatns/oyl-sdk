@@ -4,7 +4,7 @@ import  { transactions } from './transactions';
 import BIP32Factory from 'bip32';
 import ecc from '@bitcoinerlab/secp256k1';
 import bip32utils from 'bip32-utils';
-import { Chain } from './wallet'
+import { Chain, bord } from './wallet'
 
 
 const bip32 = BIP32Factory(ecc);
@@ -78,6 +78,7 @@ export class WalletUtils {
         const addressesUtxo = [];
         for (let i = 0; i < address.length; i++) {
             let utxos = await transactions.getUnspentOutputs(address[i]);
+            console.log(utxos)
             addressesUtxo[i] = {};
             addressesUtxo[i]["utxo"] = utxos.unspent_outputs;
             addressesUtxo[i]["balance"] = transactions.calculateBalance(utxos.unspent_outputs);
@@ -117,6 +118,71 @@ export class WalletUtils {
     }
 
 
+    async getMetaBalance (address){
+        const addressSummary = await this.getAddressSummary(address);
+        const confirmAmount = addressSummary.reduce((total, addr) => {
+            const confirmedUtxos = addr.utxo.filter(utxo => utxo.confirmations > 0);
+            return total + confirmedUtxos.reduce((sum, utxo) => sum + (utxo.value / 1e8), 0);
+        }, 0);
+    
+        const pendingAmount = addressSummary.reduce((total, addr) => {
+            const unconfirmedUtxos = addr.utxo.filter(utxo => utxo.confirmations === 0);
+            return total + unconfirmedUtxos.reduce((sum, utxo) => sum + (utxo.value / 1e8), 0);
+        }, 0);
+    
+        const amount = confirmAmount + pendingAmount;
+    
+        const usdValue = await transactions.convertUsdValue(amount);
+        console.log(usdValue)
+    
+        const response = {
+            confirm_amount: confirmAmount.toFixed(8),
+            pending_amount: pendingAmount.toFixed(8),
+            amount: amount.toFixed(8),
+            usd_value: usdValue
+          };
+        
+        return response;
+    
+    }
+
+    async getTxHistory(address) {
+        const history = await this.client.getTxByAddress(address);
+        const processedTransactions = history.map(tx => {
+          const {
+            hash,
+            mtime,
+            outputs,
+            inputs
+          } = tx;
+      
+          // Find the output associated with the given address
+          const output = outputs.find(output => output.address === address);
+          if (!output) {
+            return null; // Skip this transaction if the address is not found in outputs
+          }
+      
+          const amount = output.value / 1e8; // Assuming BTC amount is in satoshis
+          const symbol = 'BTC';
+      
+          // Convert Unix timestamp to date string
+          const date = new Date(mtime * 1000).toDateString();
+      
+          return {
+            txid: hash,
+            mtime,
+            date,
+            amount,
+            symbol,
+            address
+          };
+        }).filter(transaction => transaction !== null); // Filter out null transactions
+      
+        return processedTransactions;
+      }
+      
+
+
     async getActiveAddresses(xpub, lookAhead = 10) {
         const childKeyB58 = bip32.fromBase58(xpub);
         const chain = new Chain(childKeyB58);
@@ -139,6 +205,8 @@ export class WalletUtils {
     }
 
 
+   
+
     async getTotalBalance(batch){
         const res = await this.getAddressSummary(batch)
         let total = 0;
@@ -149,6 +217,54 @@ export class WalletUtils {
         return total;
     }
 
+
+    async getInscriptions (address){
+        const artifacts = await bord.getInscriptionsByAddr(address);
+            return artifacts.map(item => {
+              const {
+                id,
+                inscription_number: num,
+                inscription_number: number,
+                content_length,
+                content_type,
+                timestamp,
+                genesis_transaction,
+                location,
+                output,
+                output_value,
+              } = item;
+          
+              const detail = {
+                id,
+                address: item.address,
+                output_value: parseInt(output_value),
+                preview: `https://ordinals.com/preview/${id}`,
+                content: `https://ordinals.com/content/${id}`,
+                content_length: parseInt(content_length),
+                content_type,
+                timestamp,
+                genesis_transaction,
+                location,
+                output,
+                offset: parseInt(item.offset),
+                content_body: ""
+              };
+          
+              return {
+                id,
+                num,
+                number,
+                detail
+              };
+            });
+        }
+          
+    async getUtxosArtifacts (address) {
+        const utxos = await transactions.getUnspentOutputs(address);
+        const inscriptions = await this.getInscriptions(address);
+        const utxoArtifacts = await transactions.getMetaUtxos(utxos.unspent_outputs, inscriptions);
+        return utxoArtifacts;
+    }
 
     async importWatchOnlyAddress (addresses: []){
         for (let i = 0; i < addresses.length; i++){

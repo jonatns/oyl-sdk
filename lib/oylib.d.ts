@@ -17,7 +17,16 @@ export declare class WalletUtils {
     };
     getAddressSummary(address: any): Promise<any[]>;
     discoverBalance(xpub: any, gapLimit: any, enableImport?: boolean): Promise<void>;
+    getMetaBalance(address: any): Promise<{
+        confirm_amount: any;
+        pending_amount: any;
+        amount: any;
+        usd_value: string;
+    }>;
+    getTxHistory(address: any): Promise<any>;
     getActiveAddresses(xpub: any, lookAhead?: number): Promise<any[]>;
     getTotalBalance(batch: any): Promise<number>;
+    getInscriptions(address: any): Promise<any>;
+    getUtxosArtifacts(address: any): Promise<any[]>;
     importWatchOnlyAddress(addresses: []): Promise<void>;
 }

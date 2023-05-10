@@ -48,12 +48,12 @@ class NodeClient extends Client {
     return this.get(`/coin/${hash}/${index}`);
   }
 
-  getTXByAddress(address: string): Promise<any> {
+  getTxByAddress(address: string): Promise<any> {
     assert(typeof address === "string");
     return this.get(`/tx/address/${address}`);
   }
 
-  getTXByAddresses(addresses: string[]): Promise<any> {
+  getTxByAddresses(addresses: string[]): Promise<any> {
     assert(Array.isArray(addresses));
     return this.post("/tx/address", { addresses });
   }

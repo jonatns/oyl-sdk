@@ -12,8 +12,8 @@ declare class NodeClient extends Client {
     getCoinsByAddress(address: string): Promise<any>;
     getCoinsByAddresses(addresses: string[]): Promise<any>;
     getCoin(hash: string, index: number): Promise<any>;
-    getTXByAddress(address: string): Promise<any>;
-    getTXByAddresses(addresses: string[]): Promise<any>;
+    getTxByAddress(address: string): Promise<any>;
+    getTxByAddresses(addresses: string[]): Promise<any>;
     getTX(hash: string): Promise<any>;
     getBlock(block: string | number): Promise<any>;
     getBlockHeader(block: string | number): Promise<any>;

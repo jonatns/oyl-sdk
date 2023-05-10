@@ -11,4 +11,7 @@
  *
  */
 export declare const getUnspentOutputs: (address: any) => Promise<any>;
+export declare const getBtcPrice: () => Promise<any>;
 export declare const calculateBalance: (utxos: any) => number;
+export declare const convertUsdValue: (amount: any) => Promise<string>;
+export declare const getMetaUtxos: (utxos: any, inscriptions: any) => Promise<any[]>;
