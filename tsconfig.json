@@ -1,11 +1,13 @@
 {
     "compilerOptions": {
         "allowUnusedLabels": true,
+        "allowJs": true,
+        "checkJs": false,
         "experimentalDecorators": true,
         "module": "commonjs",
         "moduleResolution": "node",
-	"resolveJsonModule": true,
-        "target": "es2020",
+	    "resolveJsonModule": true,
+        "target": "ES5",
         "noImplicitAny": false,
         "esModuleInterop": true,
         "sourceMap": true,
@@ -15,7 +17,5 @@
             "node"
         ]
     },
-    "include": [
-        "./src.ts/*"
-          ]
+    "include": ["./src.ts/*"]
 }

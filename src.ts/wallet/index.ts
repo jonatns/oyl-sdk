@@ -1,5 +1,6 @@
 import Chain from "./chain";
+const Mnemonic = require("./mnemonic")
 
 export * as bord from "./bord";
-export { Chain };
-//export * as Accounts from "./accounts";
+export { Chain, Mnemonic };
+export * as accounts from "./accounts";

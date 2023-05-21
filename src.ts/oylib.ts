@@ -4,7 +4,7 @@ import  { transactions } from './transactions';
 import BIP32Factory from 'bip32';
 import ecc from '@bitcoinerlab/secp256k1';
 import bip32utils from 'bip32-utils';
-import { Chain, bord } from './wallet'
+import { Chain, bord, Mnemonic, accounts } from './wallet'
 
 
 const bip32 = BIP32Factory(ecc);
@@ -115,6 +115,12 @@ export class WalletUtils {
             // remember used !== total, chain may have started at a k-index > 0
             console.log('Total number of addresses (after prune): ', chain.addresses.length)
         })
+    }
+
+    async createWallet (network) {
+      const mnemonics = new Mnemonic({bits: 256});
+      const xpub = accounts.deriveXpubFromSeed(mnemonics, network)
+      return xpub;
     }
 
 
