@@ -42,7 +42,7 @@ To parse Inscriptions from an Address using  bcoin - Transactions (see https://b
    npm i -g 
   ```
    
-   The client is simply a layer over the oylib instance. The ```load``` commands defined is defined in cli.ts.
+   The cli client is simply a layer over the oylib instance. The ```load``` commands defined is defined in cli.ts.
    
    It returns the ```clientOptions``` for your current session
 
