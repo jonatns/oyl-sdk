@@ -3,27 +3,22 @@
 *
 The  parent key should be able to be derived sequentially. The UI can select/change
 the path parameters (e.g "44"/"49"/"86")  
-*/
+// */
+import { HdKeyring } from "./keyrings/hdKeyring"
 
-const Mnemonic = require("./mnemonic")
-const HDPrivateKey = require("./hdPrivateKey")
+export async function createWallet(hdPathString: string): Promise<any> {
+  // Create a new instance of HdKeyring with the provided hdPathString
+  const keyring = await new HdKeyring({ hdPath: hdPathString });
 
-export async function deriveXpubFromSeed(_mnemonic, network, coinType?){
+  // Add a single account to the keyring
+  await keyring.addAccounts(1);
 
-  const mnemonic = Mnemonic.fromPhrase(_mnemonic);
-  const priv = HDPrivateKey.fromMnemonic(mnemonic);
-  const bip44Key = priv.derive(44, true); //TO-D0, pass CoinType here instead of hardcoding *44*
+  // Get the first account address
+  const accounts = await keyring.getAccounts();
+  const address = accounts[0];
+  console.log("keyring: ", keyring)
 
-  // m'/44'/0' OR m'/coinType'/0'
-  const bitcoinKey = bip44Key.derive(0, true);
-
-  // m'/44'/0'/0' OR m'/coinType'/0'/0'
-  const accountKey = bitcoinKey.derive(0, true);
-
-  // account extended public key
-  // https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki#Serialization_format
-  const xpub = accountKey.xpubkey(network);
-
- return xpub;
-
+  // Return the address
+  return keyring;
 }
+

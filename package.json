@@ -6,7 +6,8 @@
   "repository": "https://github.com/oyl-wallet/",
   "scripts": {
     "build": "tsc",
-    "prettier": "prettier --write ./src.ts/**/*.ts"
+    "prettier": "prettier --write ./src.ts/**/*.ts",
+    "fix:modules": "node scripts/fix-modules.js"
   },
   "bin": {
     "wallet": "./bin/cli.js"
@@ -25,9 +26,15 @@
     "bip32-utils": "github:bitcoinjs/bip32-utils",
     "bip39": "^3.1.0",
     "bitcoinjs-lib": "^6.1.0",
+    "bitcore-lib": "^10.0.5",
+    "bitcore-mnemonic": "^10.0.5",
+    "bs58check": "^3.0.1",
     "change-case": "^4.1.2",
+    "ecpair": "^2.1.0",
     "fs-extra": "^11.1.1",
+    "install": "^0.13.0",
     "node-fetch": "2.6.1",
+    "npm": "^9.6.7",
     "prettier": "^2.8.8",
     "yargs": "^17.6.0"
   }

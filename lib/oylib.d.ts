@@ -17,7 +17,7 @@ export declare class WalletUtils {
     };
     getAddressSummary(address: any): Promise<any[]>;
     discoverBalance(xpub: any, gapLimit: any, enableImport?: boolean): Promise<void>;
-    createWallet(network: any): Promise<any>;
+    createWallet(hdPath?: string): Promise<any>;
     getMetaBalance(address: any): Promise<{
         confirm_amount: any;
         pending_amount: any;

@@ -1,13 +1,9 @@
 {
     "compilerOptions": {
-        "allowUnusedLabels": true,
-        "allowJs": true,
-        "checkJs": false,
-        "experimentalDecorators": true,
         "module": "commonjs",
         "moduleResolution": "node",
 	    "resolveJsonModule": true,
-        "target": "ES5",
+        "target": "es2015",
         "noImplicitAny": false,
         "esModuleInterop": true,
         "sourceMap": true,
