@@ -7,7 +7,7 @@ import Mnemonic from "bitcore-mnemonic";
 bitcoin.initEccLib(ecc);
 const ECPair = ECPairFactory(ecc);
 
-const hdPathString = "m/44'/0'/0'/0";
+const hdPathString = "m/86'/0'/0'/0";
 const type = "HD Key Tree";
 
 interface DeserializeOption {
@@ -91,6 +91,7 @@ export class HdKeyring extends SimpleKeyring {
         this.network == bitcoin.networks.bitcoin ? "livenet" : "testnet"
       )
       .deriveChild(this.hdPath);
+      //console.log("root", this.root)
   }
 
   changeHdPath(hdPath: string) {
@@ -234,6 +235,8 @@ export class HdKeyring extends SimpleKeyring {
       const child = this.root!.deriveChild(i);
       const ecpair = ECPair.fromPrivateKey(child.privateKey.toBuffer());
       const address = ecpair.publicKey.toString("hex");
+      console.log("ecpair in _addressFromIndex", ecpair);
+      console.log("Address in _addressFromIndex", address);
       this._index2wallet[i] = [address, ecpair];
     }
 

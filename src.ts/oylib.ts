@@ -10,7 +10,6 @@ import { Chain, bord, accounts } from './wallet'
 
 const bip32 = BIP32Factory(ecc);
 
-
 const RequiredPath = [
     "m/44'/1'/0'/1", // P2PKH (Legacy)
     "m/49'/1'/0'/0", // P2SH-P2WPKH (Nested SegWit)
