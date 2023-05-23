@@ -56,7 +56,7 @@ export const getInscriptionsByAddr = async (address) => {
 
     //TO-DO fix types
     const inscriptionsJson = await response.json();
-    
+
     return inscriptionsJson;
   } catch (error) {
     console.error(error);

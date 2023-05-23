@@ -4,6 +4,7 @@ import  { transactions } from './transactions';
 import BIP32Factory from 'bip32';
 import ecc from '@bitcoinerlab/secp256k1';
 import bip32utils from 'bip32-utils';
+import { publicKeyToAddress } from './wallet/accounts';
 
 import { Chain, bord, accounts } from './wallet'
 // import { Chain, bord } from './wallet'
@@ -117,9 +118,40 @@ export class WalletUtils {
         })
     }
 
-    async createWallet (hdPath = "m/44'/0'/0'") {
-      
-      const wallet = await accounts.createWallet(hdPath)
+    async getTaprootAddress(publicKey: string){
+      const address = publicKeyToAddress(publicKey, "P2TR");
+      return address
+    }
+
+    async getSegwitAddress(publicKey: string){
+      const address = publicKeyToAddress(publicKey, "P2WPKH");
+      return address
+    }
+
+    async createWallet (type) {
+      let hdPathBip;
+      let addrType;
+
+      switch(type){
+        case "taproot":
+          addrType = "P2TR";
+          hdPathBip = "86";
+          console.log("taproot");
+          break;
+        case "segwit":
+          addrType = "P2WPKH";
+          hdPathBip = "49";
+          console.log("segwit")
+          break;
+        default:
+          addrType = "P2TR";
+          hdPathBip = "86";
+          console.log("defaulted")
+          break;
+      }
+
+      const hdPath =  `m/${hdPathBip}'/0'/0'`
+      const wallet = await accounts.createWallet(hdPath, addrType)
       return wallet;
     }
 

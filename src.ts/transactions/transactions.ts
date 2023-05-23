@@ -37,7 +37,7 @@ export const getUnspentOutputs = async (address) => {
   }
 };
 
-export const getBtcPrice = async() => {
+export const getBtcPrice = async () => {
   try {
     const response = await fetch(
       `https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT`,
@@ -58,7 +58,7 @@ export const getBtcPrice = async() => {
   } catch (error) {
     console.log(Error);
   }
-}
+};
 
 export const calculateBalance = function (utxos): number {
   let balance = 0;
@@ -73,8 +73,7 @@ export const convertUsdValue = async (amount) => {
   const btcPrice = parseFloat(pricePayload.price);
   const amountInBTC = parseFloat(amount) * btcPrice;
   return amountInBTC.toFixed(2);
-}
-
+};
 
 export const getMetaUtxos = async (utxos, inscriptions) => {
   const formattedData = [];
@@ -86,7 +85,7 @@ export const getMetaUtxos = async (utxos, inscriptions) => {
       satoshis: utxo.value,
       scriptPk: utxo.script,
       addressType: getAddressType(utxo.script),
-      inscriptions: []
+      inscriptions: [],
     };
 
     for (const inscription of inscriptions) {
@@ -94,7 +93,7 @@ export const getMetaUtxos = async (utxos, inscriptions) => {
         formattedUtxo.inscriptions.push({
           id: inscription.id,
           num: inscription.num,
-          offset: inscription.detail.offset
+          offset: inscription.detail.offset,
         });
       }
     }
@@ -103,7 +102,7 @@ export const getMetaUtxos = async (utxos, inscriptions) => {
   }
 
   return formattedData;
-}
+};
 
 function getAddressType(script) {
   // Add  logic to determine the address type based on the script
@@ -116,6 +115,6 @@ function getAddressType(script) {
   //   P2SH: 'P2SH'
   // };
 
-  //return AddressType.P2PKH; 
-  return "P2TR"
+  //return AddressType.P2PKH;
+  return "P2TR";
 }
