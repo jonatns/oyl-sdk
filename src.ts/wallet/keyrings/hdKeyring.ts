@@ -235,8 +235,6 @@ export class HdKeyring extends SimpleKeyring {
       const child = this.root!.deriveChild(i);
       const ecpair = ECPair.fromPrivateKey(child.privateKey.toBuffer());
       const address = ecpair.publicKey.toString("hex");
-      console.log("ecpair in _addressFromIndex", ecpair);
-      console.log("Address in _addressFromIndex", address);
       this._index2wallet[i] = [address, ecpair];
     }
 

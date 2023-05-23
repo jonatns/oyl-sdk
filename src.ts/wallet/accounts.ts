@@ -11,20 +11,16 @@ import { bech32, bech32m } from "bech32";
 export async function createWallet(hdPathString: string): Promise<any> {
   // Create a new instance of HdKeyring with the provided hdPathString
   const keyring = await new HdKeyring({ hdPath: hdPathString });
-
-  //console.log(keyring)
-
   // Add a single account to the keyring
   await keyring.addAccounts(1);
-
-  // Get the first account address
+  // Get the first account public key
   const accounts = await keyring.getAccounts();
   const pubkey = accounts[0];
   const address = publicKeyToAddress(pubkey, "P2TR" )
-  console.log("address: ", address)
-  console.log("isValidAddress: ", isValidAddress(address))
-  // Return the address
-  //return keyring;
+  const fullPayload = {};
+  fullPayload["keyring"] = keyring;
+  fullPayload["address"] = address;
+  return fullPayload;
 }
 
 
