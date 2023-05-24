@@ -68,6 +68,7 @@ To parse Inscriptions from an Address using  bcoin - Transactions (see https://b
   wallet load --port 8334
   ```
 
+
  To call methods on the object, pass in the method name in ```snake-case``` :
 
  ```
@@ -104,6 +105,26 @@ getAddressSummary(bc1p527kv6mrq2sn5l7ukapq4q4a4puqfd9jsm7fv6r06c5726kyk57qnfvs4e
   }
 ]
 ```
+
+# Create Wallet
+  ```
+  wallet create-wallet 
+  ```
+  This will create a taproot wallet, you can optionally pass the type of wallet for example to create a **Segwit** wallet:
+
+  ```
+  wallet create-wallet segwit
+  ```
+
+# Get Address from Public key
+  You can get the taproot or segwit address using only the public key for example
+  ```
+  wallet get-taproot-address [public_key_hex]
+  ```
+
+  ```
+  wallet get-segwit-address [public_key_hex]
+  ```
 
 
   Contributions, issues, PRs are all welcome  
