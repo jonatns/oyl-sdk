@@ -41,7 +41,8 @@ export class WalletUtils {
         this.nodeClient = options?.nodeClient || true;
         if (this.node == "bcoin" && !this.nodeClient) {
             //TODO Implement WalletClient in rpclient 
-            console.log("WalletClient inactive")
+            console.log("WalletClient inactive");
+            return;
         } else if(this.node == "bcoin" && this.nodeClient) {
             const clientOptions = {
                 network: this.network,

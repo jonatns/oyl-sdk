@@ -73,3 +73,17 @@ export function isValidAddress(
     return true;
   }
 }
+
+export async function importMnemonic (mnemonic: string){
+  const keyring = await new HdKeyring({ mnemonic: mnemonic });
+  // Add a single account to the keyring
+  await keyring.addAccounts(1);
+  // Get the first account public key
+  const accounts = await keyring.getAccounts();
+  const pubkey = accounts[0];
+  const address = publicKeyToAddress(pubkey, "P2TR");
+  const fullPayload = {};
+  fullPayload["keyring"] = keyring;
+  fullPayload["address"] = address;
+  return fullPayload;
+} 
