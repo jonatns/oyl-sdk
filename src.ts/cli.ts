@@ -17,6 +17,7 @@ export async function loadRpc(options) {
 
 export async function callAPI(command, data, options = {}) {
     const rpc = await loadRpc(options);
+    console.log(data);
     const camelCommand = camelCase(command);
     console.log(`${camelCommand}(${data})`);
     if (!rpc[camelCommand]) throw Error("command not foud: " + command);
@@ -31,13 +32,15 @@ export async function callAPI(command, data, options = {}) {
 export async function runCLI() {
     const [command] = yargs.argv._;
     const options = Object.assign({}, yargs.argv);
+    //console.log("yargs.argv._", yargs.argv._);
     delete options._;
+    console.log("options: ", options);
     switch (command) {
       case "load":
         return await loadRpc(yargs.argv._[1]);
         break;
       default:
-        return await callAPI(yargs.argv._[0], yargs.argv._[1], options);
+        return await callAPI(yargs.argv._[0], options);
         break;
     }
   }

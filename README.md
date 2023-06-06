@@ -69,10 +69,10 @@ To parse Inscriptions from an Address using  bcoin - Transactions (see https://b
   ```
 
 
- To call methods on the object, pass in the method name in ```snake-case``` :
+ To call methods on the object, pass in the method name in ```snake-case``` and add the parameter as a flag option also in ```snake-case``` :
 
  ```
- wallet get-address-summary bc1p527kv6mrq2sn5l7ukapq4q4a4puqfd9jsm7fv6r06c5726kyk57qnfvs4e --host 198.199.72.193 --port 8334 --node-client false 
+ wallet get-address-summary --address bc1p527kv6mrq2sn5l7ukapq4q4a4puqfd9jsm7fv6r06c5726kyk57qnfvs4e --host 198.199.72.193 --port 8334 --node-client false 
  ```
 
  returns
@@ -113,17 +113,44 @@ getAddressSummary(bc1p527kv6mrq2sn5l7ukapq4q4a4puqfd9jsm7fv6r06c5726kyk57qnfvs4e
   This will create a taproot wallet, you can optionally pass the type of wallet for example to create a **Segwit** wallet:
 
   ```
-  wallet create-wallet segwit
+  wallet create-wallet --type segwit
   ```
 
 # Get Address from Public key
   You can get the taproot or segwit address using only the public key for example
   ```
-  wallet get-taproot-address [public_key_hex]
+  wallet get-taproot-address --public-key [public_key_hex]
   ```
 
   ```
-  wallet get-segwit-address [public_key_hex]
+  wallet get-segwit-address --public-key [public_key_hex]
+  ```
+
+# Import Wallet from Mnemonic 
+  You can import a wallet from a mnemonic phrase for example
+  ```
+  wallet import-wallet --mnemonic "mesh delay aim town envelope grass sick dutch bind convince fade pulp"
+
+  ```
+  When importing a wallet with funds on it, it is important to note the hdPath & type of address
+  holding the funds for instance.
+
+  This lib expects that the hdPath and type of address to match, e.g a segwit address' hdPath must have the 49 type ("m/49'/0'......).
+  
+  Typically since the lib supports just taproot and segwit addresses, you'd expect the hdPath options to be binary. However, when considering
+  that different wallet applications have different default hd paths (and some with option for custom paths). It is essential to allow the path
+  spelt out to match the dynamic cases.
+
+  For the type of address, you can simply pass "segwit" or "taproot" as parameters (just like in Create Wallet);
+
+  The default hdPath parameter is "`m/86'/0'/0'/0`" and the default type is "taproot". It is important to keep note of this in case
+  the hdPath is passed without a type. Remember (as stated above) This lib expects that the hdPath and type of address to match
+
+
+  For instance, say a taproot wallet created on **Sparrow** with path "m/86'/0'/0'/1" is to be imported into, run:
+
+  ```
+   wallet import-wallet --mnemonic "mesh delay aim town envelope grass sick dutch bind convince fade pulp" --path "m/86'/0'/0'/1" --type taproot
   ```
 
 

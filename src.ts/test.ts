@@ -23,8 +23,8 @@ const nodeClient = new NodeClient(clientOptions);
 
 (async ()=>{
 const walletUtil = new WalletUtils();
-console.log(`Getting Address summary of ${addressWithBal}`, await walletUtil.getAddressSummary([addressWithBal]))
-console.log(`Getting txbyaddress of  ${address}`, await nodeClient.getTXByAddress(address))
+console.log(`Getting Address summary of ${addressWithBal}`, await walletUtil.getAddressSummary({address: [addressWithBal]}))
+console.log(`Getting txbyaddress of  ${address}`, await nodeClient.getTxByAddress(address))
 console.log(`Getting Inscription by tx hash: ${hashWithInscription}`, await bord.getInscriptionByHash(hashWithInscription));
 console.log(`Getting Inscription by address of ${addressWithBal}`, await bord.getInscriptionsByAddr(addressWithBal));
 })();

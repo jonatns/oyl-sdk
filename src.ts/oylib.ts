@@ -73,7 +73,7 @@ export class WalletUtils {
       }
 
 
-    async getAddressSummary(address) {
+    async getAddressSummary({address}) {
         if (typeof(address) === "string"){
             address = [address];
         }
@@ -90,7 +90,7 @@ export class WalletUtils {
     }
 
 
-    async discoverBalance(xpub, gapLimit, enableImport = false) {
+    async discoverBalance({xpub, gapLimit, enableImport = false}) {
         //xpub - extended public key (see wallet.deriveXpubFromSeed())
         const childKeyB58 = bip32.fromBase58(xpub);
         
@@ -119,26 +119,40 @@ export class WalletUtils {
         })
     }
 
-    async getTaprootAddress(publicKey: string){
+    async getTaprootAddress({publicKey}){
       const address = publicKeyToAddress(publicKey, "P2TR");
       return address
     }
 
-    async importWallet (mnemonic: string, hdPath: string = `m/86'/0'/0'/0`, type: string = "P2TR"){
+    async importWallet ({mnemonic, hdPath = `m/86'/0'/0'/0`, type = "taproot"}){
       try{
-      const wallet = await accounts.importMnemonic(mnemonic, hdPath, type);
+        let addrType;
+  
+        switch(type){
+          case "taproot":
+            addrType = "P2TR";
+            break;
+          case "segwit":
+            addrType = "P2WPKH";
+            break;
+          default:
+            addrType = "P2TR";
+            break;
+        }
+      
+      const wallet = await accounts.importMnemonic(mnemonic, hdPath, addrType);
       return wallet;
       } catch (err){
         return err;
       }
     }
 
-    async getSegwitAddress(publicKey: string){
+    async getSegwitAddress({publicKey}){
       const address = publicKeyToAddress(publicKey, "P2WPKH");
       return address
     }
 
-    async createWallet (type?) {
+    async createWallet ({type}) {
       let hdPathBip;
       let addrType;
 
@@ -166,8 +180,8 @@ export class WalletUtils {
     }
 
 
-    async getMetaBalance (address){
-        const addressSummary = await this.getAddressSummary(address);
+    async getMetaBalance ({address}){
+        const addressSummary = await this.getAddressSummary({address});
         const confirmAmount = addressSummary.reduce((total, addr) => {
             const confirmedUtxos = addr.utxo.filter(utxo => utxo.confirmations > 0);
             return total + confirmedUtxos.reduce((sum, utxo) => sum + (utxo.value / 1e8), 0);
@@ -194,7 +208,7 @@ export class WalletUtils {
     
     }
 
-    async getTxHistory(address) {
+    async getTxHistory({address}) {
         const history = await this.client.getTxByAddress(address);
         const processedTransactions = history.map(tx => {
           const {
@@ -231,7 +245,7 @@ export class WalletUtils {
       
 
 
-    async getActiveAddresses(xpub, lookAhead = 10) {
+    async getActiveAddresses({xpub, lookAhead = 10}) {
         const childKeyB58 = bip32.fromBase58(xpub);
         const chain = new Chain(childKeyB58);
         const batch = [chain.get()] //get first at index 0
@@ -241,7 +255,7 @@ export class WalletUtils {
         while (batch.length < lookAhead && seenUnused === false) {
             chain.next()
             batch.push(chain.get());
-            const res = await this.getAddressSummary(batch)
+            const res = await this.getAddressSummary({address: batch})
             res.map(function(res) {
                 if (res.balance > 0) {
                     seenUnused = true
@@ -255,8 +269,8 @@ export class WalletUtils {
 
    
 
-    async getTotalBalance(batch){
-        const res = await this.getAddressSummary(batch)
+    async getTotalBalance({batch}){
+        const res = await this.getAddressSummary({address: batch})
         let total = 0;
         res.forEach(element => {
            total += element.balance
@@ -266,7 +280,7 @@ export class WalletUtils {
     }
 
 
-    async getInscriptions (address){
+    async getInscriptions ({address}){
         const artifacts = await bord.getInscriptionsByAddr(address);
             return artifacts.map(item => {
               const {
@@ -307,14 +321,14 @@ export class WalletUtils {
             });
         }
           
-    async getUtxosArtifacts (address) {
+    async getUtxosArtifacts ({address}) {
         const utxos = await transactions.getUnspentOutputs(address);
-        const inscriptions = await this.getInscriptions(address);
+        const inscriptions = await this.getInscriptions({address});
         const utxoArtifacts = await transactions.getMetaUtxos(utxos.unspent_outputs, inscriptions);
         return utxoArtifacts;
     }
 
-    async importWatchOnlyAddress (addresses: []){
+    async importWatchOnlyAddress ({addresses = []}){
         for (let i = 0; i < addresses.length; i++){
             (async () => {
                await new Promise((resolve) => setTimeout(resolve, 10000));

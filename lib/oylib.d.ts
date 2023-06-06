@@ -15,22 +15,53 @@ export declare class WalletUtils {
         host: String;
         apiKey: String;
     };
-    getAddressSummary(address: any): Promise<any[]>;
-    discoverBalance(xpub: any, gapLimit: any, enableImport?: boolean): Promise<void>;
-    getTaprootAddress(publicKey: string): Promise<string>;
-    importWallet(mnemonic: string, hdPath?: string, type?: string): Promise<any>;
-    getSegwitAddress(publicKey: string): Promise<string>;
-    createWallet(type?: any): Promise<any>;
-    getMetaBalance(address: any): Promise<{
+    getAddressSummary({ address }: {
+        address: any;
+    }): Promise<any[]>;
+    discoverBalance({ xpub, gapLimit, enableImport }: {
+        xpub: any;
+        gapLimit: any;
+        enableImport?: boolean;
+    }): Promise<void>;
+    getTaprootAddress({ publicKey }: {
+        publicKey: any;
+    }): Promise<string>;
+    importWallet({ mnemonic, hdPath, type }: {
+        mnemonic: any;
+        hdPath?: string;
+        type?: string;
+    }): Promise<any>;
+    getSegwitAddress({ publicKey }: {
+        publicKey: any;
+    }): Promise<string>;
+    createWallet({ type }: {
+        type: any;
+    }): Promise<any>;
+    getMetaBalance({ address }: {
+        address: any;
+    }): Promise<{
         confirm_amount: any;
         pending_amount: any;
         amount: any;
         usd_value: string;
     }>;
-    getTxHistory(address: any): Promise<any>;
-    getActiveAddresses(xpub: any, lookAhead?: number): Promise<any[]>;
-    getTotalBalance(batch: any): Promise<number>;
-    getInscriptions(address: any): Promise<any>;
-    getUtxosArtifacts(address: any): Promise<any[]>;
-    importWatchOnlyAddress(addresses: []): Promise<void>;
+    getTxHistory({ address }: {
+        address: any;
+    }): Promise<any>;
+    getActiveAddresses({ xpub, lookAhead }: {
+        xpub: any;
+        lookAhead?: number;
+    }): Promise<any[]>;
+    getTotalBalance({ batch }: {
+        batch: any;
+    }): Promise<number>;
+    getInscriptions({ address }: {
+        address: any;
+    }): Promise<any>;
+    getUtxosArtifacts({ address }: {
+        address: any;
+    }): Promise<any[]>;
+    importWatchOnlyAddress({ addresses }: {
+        addresses?: any[];
+    }): Promise<void>;
 }
