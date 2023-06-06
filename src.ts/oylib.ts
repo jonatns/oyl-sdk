@@ -124,9 +124,13 @@ export class WalletUtils {
       return address
     }
 
-    async importWallet (mnemonic: string){
-      const wallet = await accounts.importMnemonic(mnemonic);
+    async importWallet (mnemonic: string, hdPath: string = `m/86'/0'/0'/0`, type: string = "P2TR"){
+      try{
+      const wallet = await accounts.importMnemonic(mnemonic, hdPath, type);
       return wallet;
+      } catch (err){
+        return err;
+      }
     }
 
     async getSegwitAddress(publicKey: string){
@@ -134,7 +138,7 @@ export class WalletUtils {
       return address
     }
 
-    async createWallet (type) {
+    async createWallet (type?) {
       let hdPathBip;
       let addrType;
 
