@@ -124,6 +124,11 @@ export class WalletUtils {
       return address
     }
 
+    async importWallet (mnemonic: string){
+      const wallet = await accounts.importMnemonic(mnemonic);
+      return wallet;
+    }
+
     async getSegwitAddress(publicKey: string){
       const address = publicKeyToAddress(publicKey, "P2WPKH");
       return address
