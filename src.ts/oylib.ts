@@ -141,9 +141,43 @@ export class WalletUtils {
         }
       
       const wallet = await accounts.importMnemonic(mnemonic, hdPath, addrType);
-      return wallet;
+      const meta = await this.getUtxosArtifacts({address: wallet["address"]})
+      const data = {
+        keyring: wallet,
+        assets: meta
+      }
+      return data;
       } catch (err){
         return err;
+      }
+    }
+
+    async importMeta ({mnemonic}) {
+      try {
+        const unisat = {
+          hdPath: "m/86'/0'/0'/0",
+          type: "taproot"
+        }
+        const oylLib = {
+          hdPath: "m/49'/0'/0'",
+          type: "segwit"
+        }
+        
+        const payloadA = await this.importWallet({mnemonic: mnemonic, hdPath: unisat.hdPath, type: unisat.type})
+        const payloadB = await this.importWallet({mnemonic: mnemonic, hdPath: oylLib.hdPath, type: oylLib.type})
+
+        const data = {
+          unisatAddress: payloadA["keyring"]["address"],
+          unisatAssets: payloadA["assets"],
+          oylLibAddress: payloadB["keyring"]["address"],
+          oylLibAssets: payloadB["assets"]
+        }
+
+        console.log(data)
+        return ""
+
+      } catch (e) {
+        return e;
       }
     }
 

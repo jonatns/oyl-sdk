@@ -31,6 +31,9 @@ export declare class WalletUtils {
         hdPath?: string;
         type?: string;
     }): Promise<any>;
+    importMeta({ mnemonic }: {
+        mnemonic: any;
+    }): Promise<any>;
     getSegwitAddress({ publicKey }: {
         publicKey: any;
     }): Promise<string>;
