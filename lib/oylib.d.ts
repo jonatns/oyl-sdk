@@ -51,6 +51,7 @@ export declare class WalletUtils {
     getTxHistory({ address }: {
         address: any;
     }): Promise<any>;
+    getFees(): Promise<void>;
     getActiveAddresses({ xpub, lookAhead }: {
         xpub: any;
         lookAhead?: number;
@@ -67,4 +68,7 @@ export declare class WalletUtils {
     importWatchOnlyAddress({ addresses }: {
         addresses?: any[];
     }): Promise<void>;
+    sendBtc({ mnemonic }: {
+        mnemonic: any;
+    }): Promise<string>;
 }

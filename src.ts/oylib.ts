@@ -1,4 +1,7 @@
 import Mnemonic from 'bitcore-mnemonic';
+import { OrdTransaction, UnspentOutput } from "./txbuilder/OrdTransaction";
+import {UTXO_DUST } from "./txbuilder/OrdUnspendOutput";
+import { satoshisToAmount } from "./txbuilder/utils";
 import { NodeClient } from "./rpclient";
 import  { transactions } from './transactions';
 import BIP32Factory from 'bip32';
@@ -80,7 +83,7 @@ export class WalletUtils {
         const addressesUtxo = [];
         for (let i = 0; i < address.length; i++) {
             let utxos = await transactions.getUnspentOutputs(address[i]);
-            console.log(utxos)
+            //console.log(utxos)
             addressesUtxo[i] = {};
             addressesUtxo[i]["utxo"] = utxos.unspent_outputs;
             addressesUtxo[i]["balance"] = transactions.calculateBalance(utxos.unspent_outputs);
@@ -173,7 +176,7 @@ export class WalletUtils {
           oylLibAssets: payloadB["assets"]
         }
 
-        console.log(data)
+        //console.log(data)
         return ""
 
       } catch (e) {
@@ -229,7 +232,7 @@ export class WalletUtils {
         const amount = confirmAmount + pendingAmount;
     
         const usdValue = await transactions.convertUsdValue(amount);
-        console.log(usdValue)
+        //console.log(usdValue)
     
         const response = {
             confirm_amount: confirmAmount.toFixed(8),
@@ -277,7 +280,11 @@ export class WalletUtils {
         return processedTransactions;
       }
       
-
+    async getFees(){
+      //console.log("running")
+     // console.log(await this.client.getMempoolInfo())
+      //return await this.client.getMempool();
+    }
 
     async getActiveAddresses({xpub, lookAhead = 10}) {
         const childKeyB58 = bip32.fromBase58(xpub);
@@ -370,6 +377,87 @@ export class WalletUtils {
         })();
     }
 }
+
+   async sendBtc ({mnemonic}) {
+      const walletData = await this.importWallet({mnemonic: mnemonic, hdPath: "m/49'/0'/0'", type: "segwit"});
+      const keyring = walletData.keyring;
+      const utxos = walletData.assets;    
+      const tx = new OrdTransaction(keyring, "network", "03e20df4d8f9f0eeb3980e4a4a096bcdcbac6dba767fee5b70095cc3d6b6a8fc27", "P2WPKH");
+      tx.addOutput("bc1p2hq8sx32n8993teqgcgrndw4qege6shjkcewgwpudqkqelgmw4ksmv4hud", 5000);
+      tx.setChangeAddress("bc1q3mzwe3thhtjrz7ng7d5jr7ef22safuxyh7nysj")
+      const outputAmount = tx.getTotalOutput();
+     
+      const nonOrdUtxos = [];
+      const ordUtxos = [];
+      utxos.forEach((v) => {
+        if (v.inscriptions.length > 0) {
+          ordUtxos.push(v);
+        } else {
+          nonOrdUtxos.push(v);
+        }
+      });
+
+      let tmpSum = tx.getTotalInput();
+      for (let i = 0; i < nonOrdUtxos.length; i++) {
+        const nonOrdUtxo = nonOrdUtxos[i];
+        if (tmpSum < outputAmount) {
+          tx.addInput(nonOrdUtxo);
+          tmpSum += nonOrdUtxo.satoshis;
+          continue;
+        }
+    
+        const fee = await tx.calNetworkFee();
+        //console.log(fee)
+        if (tmpSum < outputAmount + fee) {
+          tx.addInput(nonOrdUtxo);
+          
+          tmpSum += nonOrdUtxo.satoshis;
+        } else {
+          break;
+        }
+      }
+
+      if (nonOrdUtxos.length === 0) {
+        throw new Error("Balance not enough");
+      }
+
+      const unspent = tx.getUnspent();
+    if (unspent === 0) {
+      throw new Error("Balance not enough to pay network fee.");
+    }
+
+    // add dummy output
+    tx.addChangeOutput(1);
+
+    const networkFee = await tx.calNetworkFee();
+    if (unspent < networkFee) {
+      throw new Error(
+        `Balance not enough. Need ${satoshisToAmount(
+          networkFee
+        )} BTC as network fee, but only ${satoshisToAmount(unspent)} BTC.`
+      );
+    }
+
+    const leftAmount = unspent - networkFee;
+    if (leftAmount >= UTXO_DUST) {
+      // change dummy output to true output
+      tx.getChangeOutput().value = leftAmount;
+    } else {
+      // remove dummy output
+      tx.removeChangeOutput();
+    }
+
+    //console.log(tx)
+
+    const psbt = await tx.createSignedPsbt();
+    tx.dumpTx(psbt);
+    
+    //@ts-ignore
+    psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false;
+
+    return psbt.toHex();
+    
+   }
 
  
 

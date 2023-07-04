@@ -85,6 +85,7 @@ export const getMetaUtxos = async (utxos, inscriptions) => {
       satoshis: utxo.value,
       scriptPk: utxo.script,
       addressType: getAddressType(utxo.script),
+      address: "bc1q3mzwe3thhtjrz7ng7d5jr7ef22safuxyh7nysj",
       inscriptions: [],
     };
 
@@ -115,6 +116,14 @@ function getAddressType(script) {
   //   P2SH: 'P2SH'
   // };
 
-  //return AddressType.P2PKH;
-  return "P2TR";
+  enum AddressType {
+    P2PKH,
+    P2WPKH,
+    P2TR,
+    P2SH_P2WPKH,
+    M44_P2WPKH,
+    M44_P2TR,
+  }
+
+  return AddressType.P2WPKH;
 }

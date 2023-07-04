@@ -66,10 +66,10 @@ export class SimpleKeyring extends EventEmitter {
       if (key.length === 64) {
         // privateKey
         buf = Buffer.from(key, "hex");
-        console.log("key in deserialize if statement", key)
+       
       } else {
         // base58
-        console.log("key in deserialize", key)
+        
         //@ts-ignore
         buf = decode(key).slice(1, 33);
       }

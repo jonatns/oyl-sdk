@@ -80,6 +80,7 @@ export async function importMnemonic (mnemonic: string, path, type){
   await keyring.addAccounts(1);
   // Get the first account public key
   const accounts = await keyring.getAccounts();
+  //console.log(accounts);
   const pubkey = accounts[0];
   const address = publicKeyToAddress(pubkey, type);
   const fullPayload = {};

@@ -6,7 +6,7 @@ export async function createSendBTC({
   utxos,
   toAddress,
   toAmount,
-  wallet,
+  keyring,
   network,
   changeAddress,
   receiverToPayFee,
@@ -18,7 +18,7 @@ export async function createSendBTC({
   utxos: UnspentOutput[];
   toAddress: string;
   toAmount: number;
-  wallet: any;
+  keyring: any;
   network: any;
   changeAddress: string;
   receiverToPayFee?: boolean;
@@ -27,7 +27,7 @@ export async function createSendBTC({
   dump?: boolean; 
   enableRBF?: boolean;
 }) {
-  const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
+  const tx = new OrdTransaction(keyring, network, pubkey, "P2TR", feeRate);
   tx.setEnableRBF(enableRBF);
   tx.setChangeAddress(changeAddress);
 
@@ -146,7 +146,7 @@ export async function createSendOrd({
   dump?: boolean;
   enableRBF?: boolean;
 }) {
-  const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
+  const tx = new OrdTransaction(wallet, network, pubkey, "P2TR", feeRate);
   tx.setEnableRBF(enableRBF);
   tx.setChangeAddress(changeAddress);
 
@@ -260,7 +260,7 @@ export async function createSendMultiOrds({
   dump?: boolean;
   enableRBF?: boolean;
 }) {
-  const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
+  const tx = new OrdTransaction(wallet, network, pubkey, "P2TR", feeRate);
   tx.setEnableRBF(enableRBF);
   tx.setChangeAddress(changeAddress);
 
@@ -376,7 +376,7 @@ export async function createSendMultiBTC({
   dump?: boolean;
   enableRBF?: boolean;
 }) {
-  const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
+  const tx = new OrdTransaction(wallet, network, pubkey, "P2TR", feeRate);
   tx.setEnableRBF(enableRBF);
   tx.setChangeAddress(changeAddress);
 

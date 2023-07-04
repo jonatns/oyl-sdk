@@ -1,9 +1,13 @@
 import { OrdUnspendOutput, UTXO_DUST } from "./OrdUnspendOutput";
 import * as bitcoin from "bitcoinjs-lib";
 import ECPairFactory from "ecpair";
-import * as ecc from "tiny-secp256k1";
+import ecc from '@bitcoinerlab/secp256k1';
+import { address as PsbtAddress } from 'bitcoinjs-lib';  
+
 bitcoin.initEccLib(ecc);
 const ECPair = ECPairFactory(ecc);
+
+
 interface TxInput {
   data: {
     hash: string;
@@ -17,6 +21,12 @@ interface TxInput {
 interface TxOutput {
   address: string;
   value: number;
+}
+
+interface ToSignInput {
+  index: number;
+  publicKey: string;
+  sighashTypes?: number[];
 }
 
 export const validator = (
@@ -130,16 +140,20 @@ export class OrdTransaction {
   private inputs: TxInput[] = [];
   public outputs: TxOutput[] = [];
   private changeOutputIndex = -1;
-  private wallet: any;
+  private keyring: any;
+  private address: string;
   public changedAddress: string;
   private network: bitcoin.Network = bitcoin.networks.bitcoin;
   private feeRate: number;
   private pubkey: string;
+  private addressType: string
   private enableRBF = true;
-  constructor(wallet: any, network: any, pubkey: string, feeRate?: number) {
-    this.wallet = wallet;
-    this.network = network;
+  constructor(keyring: any, network: any, pubkey: string, addressType: string, feeRate?: number) {
+    this.keyring = keyring.keyring;
+    this.address = keyring.address;
+    this.network = bitcoin.networks.bitcoin;
     this.pubkey = pubkey;
+    this.addressType = addressType;
     this.feeRate = feeRate || 5;
   }
 
@@ -230,6 +244,7 @@ export class OrdTransaction {
 
   async createSignedPsbt() {
     const psbt = new bitcoin.Psbt({ network: this.network });
+    
     this.inputs.forEach((v, index) => {
       if (v.utxo.addressType === AddressType.P2PKH) {
         //@ts-ignore
@@ -244,11 +259,52 @@ export class OrdTransaction {
     this.outputs.forEach((v) => {
       psbt.addOutput(v);
     });
-
-    await this.wallet.signPsbt(psbt);
+    
+    await this.signPsbt(psbt);
 
     return psbt;
   }
+
+  async signPsbt (psbt: bitcoin.Psbt, options?: any) {
+    const psbtNetwork = bitcoin.networks.bitcoin;
+
+    const toSignInputs: ToSignInput[] = [];
+    psbt.data.inputs.forEach((v, index) => {
+      let script: any = null;
+      let value = 0;
+      if (v.witnessUtxo) {
+        script = v.witnessUtxo.script;
+        value = v.witnessUtxo.value;
+      } else if (v.nonWitnessUtxo) {
+        const tx = bitcoin.Transaction.fromBuffer(v.nonWitnessUtxo);
+        const output = tx.outs[psbt.txInputs[index].index];
+        script = output.script;
+        value = output.value;
+      }
+      const isSigned = v.finalScriptSig || v.finalScriptWitness;
+      if (script && !isSigned) {
+        const address = PsbtAddress.fromOutputScript(script, psbtNetwork);
+        if (this.address === address) {
+          toSignInputs.push({
+            index,
+            publicKey: this.pubkey,
+            sighashTypes: v.sighashType ? [v.sighashType] : undefined
+          });
+          if (this.addressType === "P2TR" && !v.tapInternalKey) {
+            v.tapInternalKey = toXOnly(Buffer.from(this.pubkey, 'hex'));
+          }
+        }
+      }
+    });
+
+    psbt = await this.keyring.signTransaction(psbt, toSignInputs);
+      toSignInputs.forEach((v) => {
+        // psbt.validateSignaturesOfInput(v.index, validator);
+        psbt.finalizeInput(v.index);
+      });
+
+    return psbt;
+  };
 
   async generate(autoAdjust: boolean) {
     // Try to estimate fee
