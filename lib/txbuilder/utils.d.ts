@@ -1,2 +1,2 @@
 export declare function satoshisToAmount(val: number): string;
-export declare function amountToSaothis(val: any): number;
+export declare function amountToSatoshis(val: any): number;
