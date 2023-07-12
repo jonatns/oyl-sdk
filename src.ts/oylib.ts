@@ -267,28 +267,30 @@ export class WalletUtils {
     const history = await this.client.getTxByAddress(address)
     const processedTransactions = history
       .map((tx) => {
-        const { hash, mtime, outputs, inputs } = tx
-
-        // Find the output associated with the given address
+        const { hash, mtime, outputs, inputs, confirmations } = tx
+       
         const output = outputs.find((output) => output.address === address)
-        if (!output) {
-          return null // Skip this transaction if the address is not found in outputs
+        const input = inputs.find((input) => input.coin.address === address)
+        const txDetails = {};
+        txDetails["hash"] = hash;
+        txDetails["confirmations"] = confirmations;
+        if (input) {    
+          txDetails["type"] = "sent";
+          txDetails["to"] = outputs.find((output) => output.address != address).address
+          if (output){
+            txDetails["amount"] = (input.coin.value / 1e8) - (output.value / 1e8)         
+           } else {
+             txDetails["amount"] = input.coin.value / 1e8
+           }
+        } else {
+          if (output) {
+            txDetails["type"] = "received";
+            txDetails["amount"] = output.value / 1e8
+            txDetails["from"] = inputs.find((input) => input.coin.address != address).coin.address
+          }
         }
-
-        const amount = output.value / 1e8 // Assuming BTC amount is in satoshis
-        const symbol = 'BTC'
-
-        // Convert Unix timestamp to date string
-        const date = new Date(mtime * 1000).toDateString()
-
-        return {
-          txid: hash,
-          mtime,
-          date,
-          amount,
-          symbol,
-          address,
-        }
+        txDetails["symbol"] = 'BTC'
+        return txDetails;
       })
       .filter((transaction) => transaction !== null) // Filter out null transactions
 
