@@ -6,6 +6,7 @@ import { NodeClient } from "./rpclient";
 import  { transactions } from './transactions';
 import BIP32Factory from 'bip32';
 import ecc from '@bitcoinerlab/secp256k1';
+
 import bip32utils from 'bip32-utils';
 import { publicKeyToAddress } from './wallet/accounts';
 
@@ -128,6 +129,10 @@ export class WalletUtils {
     }
 
     async importWallet ({mnemonic, hdPath = `m/86'/0'/0'/0`, type = "taproot"}){
+      const isValid = Mnemonic.isValid(mnemonic);
+      if(!isValid){
+        return "Invalid Mnemonic";
+      }
       try{
         let addrType;
   
@@ -137,6 +142,9 @@ export class WalletUtils {
             break;
           case "segwit":
             addrType = "P2WPKH";
+            break;
+          case "legacy":
+            addrType = "P2PKH";
             break;
           default:
             addrType = "P2TR";
