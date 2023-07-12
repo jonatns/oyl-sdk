@@ -1,5 +1,4 @@
-import Mnemonic from 'bitcore-mnemonic'
-import { OrdTransaction, UnspentOutput } from './txbuilder/OrdTransaction'
+import { OrdTransaction } from './txbuilder/OrdTransaction'
 import { UTXO_DUST } from './txbuilder/OrdUnspendOutput'
 import { amountToSatoshis, satoshisToAmount } from './txbuilder/utils'
 import { NodeClient } from './rpclient'
@@ -10,7 +9,7 @@ import bip32utils from 'bip32-utils'
 import { publicKeyToAddress } from './wallet/accounts'
 
 import { Chain, bord, accounts } from './wallet'
-import { Psbt } from 'bitcoinjs-lib'
+import * as bitcoin from 'bitcoinjs-lib'
 // import { Chain, bord } from './wallet'
 
 const bip32 = BIP32Factory(ecc)
@@ -411,7 +410,7 @@ export class WalletUtils {
     }
   }
 
-  async createBtcTx({ network, mnemonic, to, amount }) {
+  async sendBtc({ mnemonic, to, amount, fee }) {
     const walletData = await this.importWallet({
       mnemonic: mnemonic.trim(),
       hdPath: "m/49'/0'/0'",
@@ -420,11 +419,15 @@ export class WalletUtils {
     const keyring = walletData.keyring
     const pubKey = keyring.keyring.wallets[0].publicKey.toString('hex')
     const utxos = walletData.assets
+    const feeRate = fee / 100
 
-    const fees = await this.getFees()
-    const feeRate = fees.medium / 100
-
-    const tx = new OrdTransaction(keyring, network, pubKey, 'P2WPKH', feeRate)
+    const tx = new OrdTransaction(
+      keyring,
+      this.network,
+      pubKey,
+      'P2WPKH',
+      feeRate
+    )
 
     tx.addOutput(to, amountToSatoshis(amount))
     tx.setChangeAddress(keyring.address)
@@ -498,12 +501,21 @@ export class WalletUtils {
     //@ts-ignore
     psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
 
-    return psbt.toHex()
+    const rawtx = psbt.extractTransaction().toHex()
+    const result = await this.client.pushTX(rawtx)
+
+    return {
+      txId: psbt.extractTransaction().getId(),
+      ...result,
+    }
   }
 
-  async pushBtcTx({ psbtHex }): Promise<{ success: boolean } | null> {
-    const psbt = Psbt.fromHex(psbtHex)
-    const rawtx = psbt.extractTransaction().toHex()
-    return await this.client.pushTX(rawtx)
+  async getSegwitAddressInfo({ address }) {
+    const isValid = transactions.validateBtcAddress({ address, type: 'segwit' })
+    if (!isValid) {
+      return { isValid, summary: null }
+    }
+    const summary = await this.getAddressSummary({ address })
+    return { isValid, summary }
   }
 }

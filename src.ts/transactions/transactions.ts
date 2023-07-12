@@ -1,5 +1,5 @@
-import { PrevOut, Output, Transaction } from "../interface/transaction";
-import fetch from "node-fetch";
+import fetch from 'node-fetch'
+import * as bitcoin from 'bitcoinjs-lib'
 
 /**
  * 
@@ -20,63 +20,60 @@ export const getUnspentOutputs = async (address) => {
       `https://blockchain.info/unspent?active=${address}`,
       {
         headers: {
-          Accept: "application/json",
+          Accept: 'application/json',
         },
       }
-    );
+    )
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch unspent output for address ${address}`);
+      throw new Error(`Failed to fetch unspent output for address ${address}`)
     }
 
-    const jsonResponse = await response.json();
+    const jsonResponse = await response.json()
 
-    return jsonResponse;
+    return jsonResponse
   } catch (error) {
-    console.log(Error);
+    console.log(Error)
   }
-};
+}
 
 export const getBtcPrice = async () => {
   try {
-    const response = await fetch(
-      `https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT`,
-      {
-        headers: {
-          Accept: "application/json",
-        },
-      }
-    );
+    const response = await fetch(`https://blockchain.info/ticker`, {
+      headers: {
+        Accept: 'application/json',
+      },
+    })
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch btc price from binance`);
+      throw new Error(`Failed to fetch btc price from binance`)
     }
 
-    const jsonResponse = await response.json();
+    const jsonResponse = await response.json()
 
-    return jsonResponse;
+    return jsonResponse
   } catch (error) {
-    console.log(Error);
+    console.log(Error)
   }
-};
+}
 
 export const calculateBalance = function (utxos): number {
-  let balance = 0;
+  let balance = 0
   for (let utxo = 0; utxo < utxos.length; utxo++) {
-    balance += utxos[utxo].value;
+    balance += utxos[utxo].value
   }
-  return balance / 1e8; // Convert from satoshis to BTC
-};
+  return balance / 1e8 // Convert from satoshis to BTC
+}
 
 export const convertUsdValue = async (amount) => {
-  const pricePayload = await getBtcPrice();
-  const btcPrice = parseFloat(pricePayload.price);
-  const amountInBTC = parseFloat(amount) * btcPrice;
-  return amountInBTC.toFixed(2);
-};
+  const pricePayload = await getBtcPrice()
+  const btcPrice = parseFloat(pricePayload.price)
+  const amountInBTC = parseFloat(amount) * btcPrice
+  return amountInBTC.toFixed(2)
+}
 
 export const getMetaUtxos = async (utxos, inscriptions) => {
-  const formattedData = [];
+  const formattedData = []
 
   for (const utxo of utxos) {
     const formattedUtxo = {
@@ -85,9 +82,9 @@ export const getMetaUtxos = async (utxos, inscriptions) => {
       satoshis: utxo.value,
       scriptPk: utxo.script,
       addressType: getAddressType(utxo.script),
-      address: "bc1q3mzwe3thhtjrz7ng7d5jr7ef22safuxyh7nysj",
+      address: 'bc1q3mzwe3thhtjrz7ng7d5jr7ef22safuxyh7nysj',
       inscriptions: [],
-    };
+    }
 
     for (const inscription of inscriptions) {
       if (inscription.id.includes(utxo.tx_hash_big_endian)) {
@@ -95,15 +92,15 @@ export const getMetaUtxos = async (utxos, inscriptions) => {
           id: inscription.id,
           num: inscription.num,
           offset: inscription.detail.offset,
-        });
+        })
       }
     }
 
-    formattedData.push(formattedUtxo);
+    formattedData.push(formattedUtxo)
   }
 
-  return formattedData;
-};
+  return formattedData
+}
 
 function getAddressType(script) {
   // Add  logic to determine the address type based on the script
@@ -125,5 +122,24 @@ function getAddressType(script) {
     M44_P2TR,
   }
 
-  return AddressType.P2WPKH;
+  return AddressType.P2WPKH
+}
+
+export const validateBtcAddress = ({ address, type }) => {
+  try {
+    const decodedBech32 = bitcoin.address.fromBech32(address)
+
+    if (decodedBech32.version === 0) {
+      return type === 'segwit'
+    } else if (
+      decodedBech32.version === 1 &&
+      decodedBech32.data.length === 32
+    ) {
+      return type === 'taproot'
+    }
+  } catch (error) {
+    // Address is not in Bech32 format
+  }
+
+  return false
 }
