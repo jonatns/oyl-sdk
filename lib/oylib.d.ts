@@ -74,15 +74,19 @@ export declare class WalletUtils {
     importWatchOnlyAddress({ addresses }: {
         addresses?: any[];
     }): Promise<void>;
-    createBtcTx({ network, mnemonic, to, amount }: {
-        network: any;
+    sendBtc({ mnemonic, to, amount, fee }: {
         mnemonic: any;
         to: any;
         amount: any;
-    }): Promise<string>;
-    pushBtcTx({ psbtHex }: {
-        psbtHex: any;
+        fee: any;
+    }): Promise<any>;
+    getSegwitAddressInfo({ address }: {
+        address: any;
     }): Promise<{
-        success: boolean;
-    } | null>;
+        isValid: boolean;
+        summary: any;
+    } | {
+        isValid: true;
+        summary: any[];
+    }>;
 }
