@@ -6,7 +6,7 @@ declare class NodeClient extends Client {
     password: string;
     constructor(options: NodeClientOptions);
     auth(): Promise<void>;
-    execute(name: string, params: any): Promise<any>;
+    execute(name: string, params?: any): Promise<any>;
     getMempool(): Promise<any>;
     getInfo(): Promise<any>;
     getCoinsByAddress(address: string): Promise<any>;
@@ -15,6 +15,7 @@ declare class NodeClient extends Client {
     getTxByAddress(address: string): Promise<any>;
     getTxByAddresses(addresses: string[]): Promise<any>;
     getTX(hash: string): Promise<any>;
+    pushTX(hash: string): Promise<any>;
     getBlock(block: string | number): Promise<any>;
     getBlockHeader(block: string | number): Promise<any>;
     getFilter(filter: string | number): Promise<any>;

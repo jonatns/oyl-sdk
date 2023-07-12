@@ -1,3 +1,4 @@
+import { NodeClient } from './rpclient';
 export declare class WalletUtils {
     private node;
     private network;
@@ -5,7 +6,7 @@ export declare class WalletUtils {
     private apiKey;
     private host;
     private nodeClient;
-    client: any;
+    client: NodeClient;
     derivPath: String;
     constructor(options?: any);
     static fromObject(data: any): WalletUtils;
@@ -51,7 +52,12 @@ export declare class WalletUtils {
     getTxHistory({ address }: {
         address: any;
     }): Promise<any>;
-    getFees(): Promise<void>;
+    private calculateHighPriorityFee;
+    getFees(): Promise<{
+        high: number;
+        medium: number;
+        low: number;
+    }>;
     getActiveAddresses({ xpub, lookAhead }: {
         xpub: any;
         lookAhead?: number;
@@ -68,7 +74,15 @@ export declare class WalletUtils {
     importWatchOnlyAddress({ addresses }: {
         addresses?: any[];
     }): Promise<void>;
-    sendBtc({ mnemonic }: {
+    createBtcTx({ network, mnemonic, to, amount }: {
+        network: any;
         mnemonic: any;
+        to: any;
+        amount: any;
     }): Promise<string>;
+    pushBtcTx({ psbtHex }: {
+        psbtHex: any;
+    }): Promise<{
+        success: boolean;
+    } | null>;
 }
