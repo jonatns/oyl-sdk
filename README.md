@@ -156,4 +156,30 @@ For instance, say a taproot wallet created on **Sparrow** with path "m/86'/0'/0'
  wallet import-wallet --mnemonic "mesh delay aim town envelope grass sick dutch bind convince fade pulp" --path "m/86'/0'/0'/1" --type taproot
 ```
 
+To send a BTC transaction
+
+```
+const client = new WalletUtils()
+const mnemonic = "random mnemonic phrases"
+
+const payload = await client.importWallet({
+  mnemonic: mnemonic.trim(),
+  hdPath: "m/49'/0'/0'",
+  type: 'segwit',
+})
+
+const keyring = payload.keyring.keyring;
+const pubKey = keyring.wallets[0].publicKey.toString('hex');
+const signer = keyring.signTransaction.bind(keyring);
+const from = payload.keyring.address;
+const to = "bc1q**recipient btc address***";
+const changeAddress = from;
+const amount = 0.00001;
+const fee = await client.getFees();
+const network = "main";
+
+return await client.sendBtc({publicKey: pubKey, from: from, to: to, changeAddress: changeAddress, amount: amount, fee: fee.medium, network: network, signer: signer })
+  
+```
+
 Contributions, issues, PRs are all welcome

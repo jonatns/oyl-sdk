@@ -43,7 +43,7 @@ export declare class OrdTransaction {
     private inputs;
     outputs: TxOutput[];
     private changeOutputIndex;
-    private keyring;
+    private signer;
     private address;
     changedAddress: string;
     private network;
@@ -51,7 +51,7 @@ export declare class OrdTransaction {
     private pubkey;
     private addressType;
     private enableRBF;
-    constructor(keyring: any, network: any, pubkey: string, addressType: string, feeRate?: number);
+    constructor(signer: any, network: any, address: any, pubkey: string, addressType: string, feeRate?: number);
     setEnableRBF(enable: boolean): void;
     setChangeAddress(address: string): void;
     addInput(utxo: UnspentOutput): void;

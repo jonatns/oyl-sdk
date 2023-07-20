@@ -80,6 +80,16 @@ export declare class WalletUtils {
         amount: any;
         fee: any;
     }): Promise<any>;
+    createPsbtTx({ publicKey, from, to, changeAddress, amount, fee, network, signer }: {
+        publicKey: any;
+        from: any;
+        to: any;
+        changeAddress: any;
+        amount: any;
+        fee: any;
+        network: any;
+        signer: any;
+    }): Promise<any>;
     getSegwitAddressInfo({ address }: {
         address: any;
     }): Promise<{

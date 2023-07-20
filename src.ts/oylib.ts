@@ -189,8 +189,8 @@ export class WalletUtils {
         oylLibAssets: payloadB['assets'],
       }
 
-      //console.log(data)
-      return ''
+      
+      return data
     } catch (e) {
       return e
     }
@@ -403,7 +403,7 @@ export class WalletUtils {
 
   async importWatchOnlyAddress({ addresses = [] }) {
     for (let i = 0; i < addresses.length; i++) {
-      ;(async () => {
+      (async () => {
         await new Promise((resolve) => setTimeout(resolve, 10000))
         await this.client.execute('importaddress', [addresses[i], '', true])
       })()
@@ -411,103 +411,109 @@ export class WalletUtils {
   }
 
   async sendBtc({ mnemonic, to, amount, fee }) {
-    const walletData = await this.importWallet({
+
+    const payload = await this.importWallet({
       mnemonic: mnemonic.trim(),
       hdPath: "m/49'/0'/0'",
       type: 'segwit',
     })
-    const keyring = walletData.keyring
-    const pubKey = keyring.keyring.wallets[0].publicKey.toString('hex')
-    const utxos = walletData.assets
-    const feeRate = fee / 100
+    const keyring = payload.keyring.keyring;
+    const pubKey = keyring.wallets[0].publicKey.toString('hex');
+    const signer = keyring.signTransaction.bind(keyring);
+    const from = payload.keyring.address;
+    const changeAddress = from;
+    const network = "main";
+    
+    return await this.createPsbtTx({publicKey: pubKey, from: from, to: to, changeAddress: changeAddress, amount: amount, fee: fee, network: network, signer: signer })
+    }
+      
 
+  async createPsbtTx({ publicKey, from, to, changeAddress, amount, fee, network, signer }) {
+    const utxos = await this.getUtxosArtifacts({ address: from });
+    const feeRate = fee / 100;
+  
     const tx = new OrdTransaction(
-      keyring,
-      this.network,
-      pubKey,
+      signer,
+      network,
+      from,
+      publicKey,
       'P2WPKH',
       feeRate
-    )
-
-    tx.addOutput(to, amountToSatoshis(amount))
-    tx.setChangeAddress(keyring.address)
-    const outputAmount = tx.getTotalOutput()
-
-    const nonOrdUtxos = []
-    const ordUtxos = []
+    );
+  
+    tx.addOutput(to, amountToSatoshis(amount));
+    tx.setChangeAddress(changeAddress);
+    const outputAmount = tx.getTotalOutput();
+  
+    const nonOrdUtxos = [];
+    const ordUtxos = [];
     utxos.forEach((v) => {
       if (v.inscriptions.length > 0) {
-        ordUtxos.push(v)
+        ordUtxos.push(v);
       } else {
-        nonOrdUtxos.push(v)
+        nonOrdUtxos.push(v);
       }
-    })
-
-    let tmpSum = tx.getTotalInput()
+    });
+  
+    let tmpSum = tx.getTotalInput();
     for (let i = 0; i < nonOrdUtxos.length; i++) {
-      const nonOrdUtxo = nonOrdUtxos[i]
+      const nonOrdUtxo = nonOrdUtxos[i];
       if (tmpSum < outputAmount) {
-        tx.addInput(nonOrdUtxo)
-        tmpSum += nonOrdUtxo.satoshis
-        continue
+        tx.addInput(nonOrdUtxo);
+        tmpSum += nonOrdUtxo.satoshis;
+        continue;
       }
-
-      const fee = await tx.calNetworkFee()
-      //console.log(fee)
+  
+      const fee = await tx.calNetworkFee();
       if (tmpSum < outputAmount + fee) {
-        tx.addInput(nonOrdUtxo)
-
-        tmpSum += nonOrdUtxo.satoshis
+        tx.addInput(nonOrdUtxo);
+        tmpSum += nonOrdUtxo.satoshis;
       } else {
-        break
+        break;
       }
     }
-
+  
     if (nonOrdUtxos.length === 0) {
-      throw new Error('Balance not enough')
+      throw new Error('Balance not enough');
     }
-
-    const unspent = tx.getUnspent()
+  
+    const unspent = tx.getUnspent();
     if (unspent === 0) {
-      throw new Error('Balance not enough to pay network fee.')
+      throw new Error('Balance not enough to pay network fee.');
     }
-
+  
     // add dummy output
-    tx.addChangeOutput(1)
-
-    const networkFee = await tx.calNetworkFee()
+    tx.addChangeOutput(1);
+  
+    const networkFee = await tx.calNetworkFee();
     if (unspent < networkFee) {
       throw new Error(
-        `Balance not enough. Need ${satoshisToAmount(
-          networkFee
-        )} BTC as network fee, but only ${satoshisToAmount(unspent)} BTC.`
-      )
+        `Balance not enough. Need ${satoshisToAmount(networkFee)} BTC as network fee, but only ${satoshisToAmount(unspent)} BTC.`
+      );
     }
-
-    const leftAmount = unspent - networkFee
+  
+    const leftAmount = unspent - networkFee;
     if (leftAmount >= UTXO_DUST) {
       // change dummy output to true output
-      tx.getChangeOutput().value = leftAmount
+      tx.getChangeOutput().value = leftAmount;
     } else {
       // remove dummy output
-      tx.removeChangeOutput()
+      tx.removeChangeOutput();
     }
-
-    //console.log(tx)
-
-    const psbt = await tx.createSignedPsbt()
-    tx.dumpTx(psbt)
-
+  
+    const psbt = await tx.createSignedPsbt();
+    tx.dumpTx(psbt);
+  
     //@ts-ignore
-    psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
-
-    const rawtx = psbt.extractTransaction().toHex()
-    const result = await this.client.pushTX(rawtx)
-
+    psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false;
+  
+    const rawtx = psbt.extractTransaction().toHex();
+    const result = await this.client.pushTX(rawtx);
+  
     return {
       txId: psbt.extractTransaction().getId(),
       ...result,
-    }
+    };
   }
 
   async getSegwitAddressInfo({ address }) {

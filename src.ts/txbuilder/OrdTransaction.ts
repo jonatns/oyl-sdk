@@ -140,7 +140,7 @@ export class OrdTransaction {
   private inputs: TxInput[] = [];
   public outputs: TxOutput[] = [];
   private changeOutputIndex = -1;
-  private keyring: any;
+  private signer: any;
   private address: string;
   public changedAddress: string;
   private network: bitcoin.Network = bitcoin.networks.bitcoin;
@@ -148,9 +148,9 @@ export class OrdTransaction {
   private pubkey: string;
   private addressType: string
   private enableRBF = true;
-  constructor(keyring: any, network: any, pubkey: string, addressType: string, feeRate?: number) {
-    this.keyring = keyring.keyring;
-    this.address = keyring.address;
+  constructor(signer: any, network: any, address, pubkey: string, addressType: string, feeRate?: number) {
+    this.signer = signer;
+    this.address = address;
     this.network = bitcoin.networks.bitcoin;
     this.pubkey = pubkey;
     this.addressType = addressType;
@@ -297,7 +297,7 @@ export class OrdTransaction {
       }
     });
 
-    psbt = await this.keyring.signTransaction(psbt, toSignInputs);
+    psbt = await this.signer(psbt, toSignInputs);
       toSignInputs.forEach((v) => {
         // psbt.validateSignaturesOfInput(v.index, validator);
         psbt.finalizeInput(v.index);
