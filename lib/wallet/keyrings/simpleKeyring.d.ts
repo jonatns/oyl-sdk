@@ -5,8 +5,6 @@ import { EventEmitter } from "events";
 import { ECPairInterface } from "ecpair";
 export declare const toXOnly: (pubKey: Buffer) => Buffer;
 export declare class SimpleKeyring extends EventEmitter {
-    static type: string;
-    type: string;
     network: bitcoin.Network;
     wallets: ECPairInterface[];
     constructor(opts?: any);

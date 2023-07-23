@@ -1,5 +1,6 @@
 /// <reference types="node" />
 import * as bitcoin from "bitcoinjs-lib";
+import { AddressType } from '../interface';
 interface TxInput {
     data: {
         hash: string;
@@ -29,14 +30,6 @@ export interface UnspentOutput {
         offset: number;
     }[];
 }
-export declare enum AddressType {
-    P2PKH = 0,
-    P2WPKH = 1,
-    P2TR = 2,
-    P2SH_P2WPKH = 3,
-    M44_P2WPKH = 4,
-    M44_P2TR = 5
-}
 export declare const toXOnly: (pubKey: Buffer) => Buffer;
 export declare function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput;
 export declare class OrdTransaction {
@@ -51,7 +44,7 @@ export declare class OrdTransaction {
     private pubkey;
     private addressType;
     private enableRBF;
-    constructor(signer: any, network: any, address: any, pubkey: string, addressType: string, feeRate?: number);
+    constructor(signer: any, address: any, pubkey: string, addressType: AddressType, feeRate?: number);
     setEnableRBF(enable: boolean): void;
     setChangeAddress(address: string): void;
     addInput(utxo: UnspentOutput): void;

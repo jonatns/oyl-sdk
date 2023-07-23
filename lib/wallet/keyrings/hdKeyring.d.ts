@@ -10,8 +10,6 @@ interface DeserializeOption {
     passphrase?: string;
 }
 export declare class HdKeyring extends SimpleKeyring {
-    static type: string;
-    type: string;
     mnemonic: any;
     passphrase: string;
     network: bitcoin.Network;

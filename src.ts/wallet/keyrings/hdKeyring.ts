@@ -8,7 +8,6 @@ bitcoin.initEccLib(ecc);
 const ECPair = ECPairFactory(ecc);
 
 const hdPathString = "m/86'/0'/0'/0";
-const type = "HD Key Tree";
 
 interface DeserializeOption {
   hdPath?: string;
@@ -18,14 +17,10 @@ interface DeserializeOption {
 }
 
 export class HdKeyring extends SimpleKeyring {
-  static type = type;
-
-  type = type;
   mnemonic: any = null;
   passphrase: string;
   network: bitcoin.Network = bitcoin.networks.bitcoin;
-
-  hdPath = hdPathString;
+  hdPath: string;
   root: bitcore.HDPrivateKey = null;
   hdWallet?: Mnemonic;
   wallets: ECPairInterface[] = [];

@@ -6,7 +6,8 @@ Uses bcoin Node, possibly extensible by passing in host param
 
 To parse Inscriptions from an Address using bcoin - Transactions (see https://bcoin.io/api-docs/index.html?shell--cli#get-tx-by-address):
 
-You need to consider, if the inscription has been spent after minting (reveal tx).
+You need to consider, if the inscription has been spent or not after minting (reveal tx).
+If it has not been spent:
 
 - First, getunspentOutputs on the address
 - For each utxo, get parse input & output scripts for inscription ('getrawtransaction', 'decoderawtransaction'):

@@ -7,7 +7,8 @@ import ecc from '@bitcoinerlab/secp256k1';
 bitcoin.initEccLib(ecc);
 const ECPair = ECPairFactory(ecc);
 import { decode } from "bs58check";
-const type = "Simple Key Pair";
+
+
 export const toXOnly = (pubKey: Buffer) =>
   pubKey.length === 32 ? pubKey : pubKey.slice(1, 33);
 
@@ -43,8 +44,6 @@ function tweakSigner(signer: bitcoin.Signer, opts: any = {}): bitcoin.Signer {
 }
 
 export class SimpleKeyring extends EventEmitter {
-  static type = type;
-  type = type;
   network: bitcoin.Network = bitcoin.networks.bitcoin;
   wallets: ECPairInterface[] = [];
   constructor(opts?: any) {

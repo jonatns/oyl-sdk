@@ -1,5 +1,6 @@
 import { OrdUnspendOutput, UTXO_DUST } from "./OrdUnspendOutput";
 import * as bitcoin from "bitcoinjs-lib";
+import { AddressType } from '../interface';
 import ECPairFactory from "ecpair";
 import ecc from '@bitcoinerlab/secp256k1';
 import { address as PsbtAddress } from 'bitcoinjs-lib';  
@@ -47,22 +48,14 @@ export interface UnspentOutput {
     offset: number;
   }[];
 }
-export enum AddressType {
-  P2PKH,
-  P2WPKH,
-  P2TR,
-  P2SH_P2WPKH,
-  M44_P2WPKH,
-  M44_P2TR,
-}
+
 
 export const toXOnly = (pubKey: Buffer) =>
   pubKey.length === 32 ? pubKey : pubKey.slice(1, 33);
 
 export function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput {
   if (
-    utxo.addressType === AddressType.P2TR ||
-    utxo.addressType === AddressType.M44_P2TR
+    utxo.addressType === AddressType.P2TR
   ) {
     const data = {
       hash: utxo.txId,
@@ -78,8 +71,7 @@ export function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput {
       utxo,
     };
   } else if (
-    utxo.addressType === AddressType.P2WPKH ||
-    utxo.addressType === AddressType.M44_P2WPKH
+    utxo.addressType === AddressType.P2WPKH
   ) {
     const data = {
       hash: utxo.txId,
@@ -146,12 +138,11 @@ export class OrdTransaction {
   private network: bitcoin.Network = bitcoin.networks.bitcoin;
   private feeRate: number;
   private pubkey: string;
-  private addressType: string
+  private addressType: AddressType
   private enableRBF = true;
-  constructor(signer: any, network: any, address, pubkey: string, addressType: string, feeRate?: number) {
+  constructor(signer: any, address, pubkey: string, addressType: AddressType, feeRate?: number) {
     this.signer = signer;
     this.address = address;
-    this.network = bitcoin.networks.bitcoin;
     this.pubkey = pubkey;
     this.addressType = addressType;
     this.feeRate = feeRate || 5;
@@ -290,7 +281,7 @@ export class OrdTransaction {
             publicKey: this.pubkey,
             sighashTypes: v.sighashType ? [v.sighashType] : undefined
           });
-          if (this.addressType === "P2TR" && !v.tapInternalKey) {
+          if (this.addressType === AddressType.P2TR && !v.tapInternalKey) {
             v.tapInternalKey = toXOnly(Buffer.from(this.pubkey, 'hex'));
           }
         }

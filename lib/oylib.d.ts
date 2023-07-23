@@ -1,4 +1,4 @@
-import { NodeClient } from './rpclient';
+import NodeClient from './rpclient';
 export declare class WalletUtils {
     private node;
     private network;
@@ -19,11 +19,6 @@ export declare class WalletUtils {
     getAddressSummary({ address }: {
         address: any;
     }): Promise<any[]>;
-    discoverBalance({ xpub, gapLimit, enableImport }: {
-        xpub: any;
-        gapLimit: any;
-        enableImport?: boolean;
-    }): Promise<void>;
     getTaprootAddress({ publicKey }: {
         publicKey: any;
     }): Promise<string>;
@@ -58,10 +53,6 @@ export declare class WalletUtils {
         medium: number;
         low: number;
     }>;
-    getActiveAddresses({ xpub, lookAhead }: {
-        xpub: any;
-        lookAhead?: number;
-    }): Promise<any[]>;
     getTotalBalance({ batch }: {
         batch: any;
     }): Promise<number>;
@@ -80,14 +71,13 @@ export declare class WalletUtils {
         amount: any;
         fee: any;
     }): Promise<any>;
-    createPsbtTx({ publicKey, from, to, changeAddress, amount, fee, network, signer }: {
+    createPsbtTx({ publicKey, from, to, changeAddress, amount, fee, signer }: {
         publicKey: any;
         from: any;
         to: any;
         changeAddress: any;
         amount: any;
         fee: any;
-        network: any;
         signer: any;
     }): Promise<any>;
     getSegwitAddressInfo({ address }: {
