@@ -37,6 +37,7 @@
     "node-fetch": "2.6.1",
     "npm": "^9.6.7",
     "prettier": "^2.8.8",
+    "unisat": "https://github.com/Oyl-Wallet/unisat",
     "yargs": "^17.6.0"
   }
 }

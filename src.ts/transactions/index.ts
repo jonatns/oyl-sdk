@@ -1,5 +1,6 @@
 import fetch from 'node-fetch'
 import * as bitcoin from 'bitcoinjs-lib'
+import { AddressType } from '../interface'
 
 /**
  * 
@@ -102,7 +103,7 @@ export const getMetaUtxos = async (address, utxos, inscriptions) => {
   return formattedData
 }
 
-export function getAddressType(address: string) {
+export function getAddressType(address: string): AddressType | null {
   if (address.startsWith('1')) {
     return 0;
   } else if (address.startsWith('bc1p')) {

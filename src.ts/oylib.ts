@@ -3,14 +3,12 @@ import { UTXO_DUST } from './txbuilder/OrdUnspendOutput'
 import { amountToSatoshis, satoshisToAmount } from './txbuilder/utils'
 import NodeClient from './rpclient';
 import  *  as transactions from './transactions';
-import BIP32Factory from 'bip32'
-import ecc from '@bitcoinerlab/secp256k1'
 import { publicKeyToAddress } from './wallet/accounts'
 import { bord, accounts } from './wallet'
 
 
 
-const bip32 = BIP32Factory(ecc)
+
 
 const RequiredPath = [
   "m/44'/0'/0'/0", // P2PKH (Legacy)
@@ -75,7 +73,7 @@ export class WalletUtils {
     if (typeof address === 'string') {
       address = [address]
     }
-    const addressesUtxo = []
+    const addressesUtxo = [];
     for (let i = 0; i < address.length; i++) {
       let utxos = await transactions.getUnspentOutputs(address[i])
       //console.log(utxos)
@@ -253,7 +251,16 @@ export class WalletUtils {
 
     const usdValue = await transactions.convertUsdValue(amount)
     //console.log(usdValue)
-
+  //   {
+  //     "message": "OK",
+  //     "result": {
+  //         "total_amount": "0.00234464",
+  //         "btc_amount": "0.00233918",
+  //         "inscription_amount": "0.00000546",
+  //         "btc_usd_value": "0"
+  //     },
+  //     "status": "1"
+  // }
     const response = {
       confirm_amount: confirmAmount.toFixed(8),
       pending_amount: pendingAmount.toFixed(8),
@@ -435,6 +442,8 @@ export class WalletUtils {
     const utxos = await this.getUtxosArtifacts({ address: from });
     const feeRate = fee / 100;
     const addressType = transactions.getAddressType(from)
+
+    if ( addressType != null ){
   
     const tx = new OrdTransaction(
       signer,
@@ -517,6 +526,7 @@ export class WalletUtils {
       txId: psbt.extractTransaction().getId(),
       ...result,
     };
+  }
   }
 
   async getSegwitAddressInfo({ address }) {
