@@ -2,6 +2,8 @@ import yargs from 'yargs'
 import { camelCase } from 'change-case'
 import { WalletUtils } from './oylib'
 import { Unisat } from 'unisat'
+const bcoin = require('bcoin');
+import { getInscriptionsByAddr } from './wallet/bord'
 
 export async function loadRpc(options) {
   const rpcOptions = {}
@@ -26,9 +28,10 @@ export async function callAPI(command, data, options = {}) {
 }
 
 export async function getAllTokens() {
-  const address = "bc1q3mzwe3thhtjrz7ng7d5jr7ef22safuxyh7nysj";
+  const address = "";
   const api = new Unisat ({address: address});
   const brcs = await api.addressBrcToken({address});
+  console.log(brcs)
   const tickerList = brcs["list"];
   let tokens = ["BTC"];
   for (let i = 0; i < tickerList.length; i++){
@@ -36,6 +39,35 @@ export async function getAllTokens() {
   }
   console.log(tokens);
   return tokens
+}
+
+
+export async function getOrdInscription() {
+   const address = "";
+   const inscriptions = await getInscriptionsByAddr(address);
+   let ordInscriptions = [];
+   for (let i = 0; i < inscriptions.length; i++) {
+    const genesisTransaction = inscriptions[i].genesis_transaction;
+    const txhash = genesisTransaction.substring(genesisTransaction.lastIndexOf("/") + 1);
+
+    if (await checkProtocol(txhash)) {
+      ordInscriptions.push(inscriptions[i]);
+    }
+  }
+  console.log(ordInscriptions.length)
+  return ordInscriptions;
+}
+
+async function checkProtocol (txhash) {
+  const rpc = await loadRpc({})
+  const rawtx = await rpc.client.execute('getrawtransaction', [ txhash, 0 ]);
+  const decodedTx = await rpc.client.execute('decoderawtransaction', [ rawtx ])
+  const script = bcoin.Script.fromRaw(decodedTx.vin[0].txinwitness[1], "hex")
+  const arr = script.toArray();
+  if (arr[4]?.data?.toString() == "ord"){
+    return true;
+  }
+  return false;
 }
 
 export async function runCLI() {
@@ -49,7 +81,7 @@ export async function runCLI() {
       return await loadRpc(yargs.argv._[1])
       break
     case 'get':
-      return await getAllTokens()
+      return await getOrdInscription()
     default:
       return await callAPI(yargs.argv._[0], options)
       break
