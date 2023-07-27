@@ -68,7 +68,7 @@ export const calculateBalance = function (utxos): number {
 
 export const convertUsdValue = async (amount) => {
   const pricePayload = await getBtcPrice()
-  const btcPrice = parseFloat(pricePayload.price)
+  const btcPrice = parseFloat(pricePayload.USD.last)
   const amountInBTC = parseFloat(amount) * btcPrice
   return amountInBTC.toFixed(2)
 }
@@ -105,15 +105,15 @@ export const getMetaUtxos = async (address, utxos, inscriptions) => {
 
 export function getAddressType(address: string): AddressType | null {
   if (address.startsWith('1')) {
-    return 0;
+    return 0
   } else if (address.startsWith('bc1p')) {
-    return 1;
+    return 1
   } else if (address.startsWith('3')) {
-    return 2;
+    return 2
   } else if (address.startsWith('bc1q')) {
-    return 3;
+    return 3
   } else {
-    return null; // If the address doesn't match any known type
+    return null // If the address doesn't match any known type
   }
 }
 
