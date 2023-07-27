@@ -284,7 +284,7 @@ export class WalletUtils {
         txDetails["confirmations"] = confirmations;
         if (input) {    
           txDetails["type"] = "sent";
-          txDetails["to"] = outputs.find((output) => output.address != address).address
+          txDetails["to"] = outputs.find((output) => output.address != address)?.address
           if (output){
             txDetails["amount"] = (input.coin.value / 1e8) - (output.value / 1e8)         
            } else {
