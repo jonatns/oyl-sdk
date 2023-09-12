@@ -1,6 +1,6 @@
 import fetch from 'node-fetch'
 import * as bitcoin from 'bitcoinjs-lib'
-import { AddressType } from '../interface'
+import { AddressType } from '../shared/interface'
 
 /**
  * 

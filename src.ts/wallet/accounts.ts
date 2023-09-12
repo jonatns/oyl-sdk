@@ -5,7 +5,7 @@ The  parent key should be able to be derived sequentially. The UI can select/cha
 the path parameters (e.g "44"/"49"/"86")  
 // */
 import * as bitcoin from "bitcoinjs-lib";
-import { HdKeyring } from "./keyrings/hdKeyring";
+import { HdKeyring } from "./hdKeyring";
 import { bech32, bech32m } from "bech32";
 
 export async function createWallet(

@@ -1,2 +1,2 @@
 export * from './oylib';
-export * from './txbuilder/utils';
+export * from './shared/utils';
