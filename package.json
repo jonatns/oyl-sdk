@@ -21,7 +21,6 @@
   },
   "dependencies": {
     "@bitcoinerlab/secp256k1": "^1.0.2",
-    "bcoin": "git+https://github.com/bcoin-org/bcoin.git#semver:~2.2.0",
     "bcurl": "https://github.com/bcoin-org/bcurl.git#semver:^0.2.0",
     "bignumber.js": "^9.1.1",
     "bitcoinjs-lib": "^6.1.0",

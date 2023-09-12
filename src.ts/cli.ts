@@ -1,8 +1,6 @@
 import yargs from 'yargs'
 import { camelCase } from 'change-case'
 import { WalletUtils } from './oylib'
-
-const bcoin = require('bcoin');
 import { getInscriptionsByAddr } from './wallet/bord'
 
 export async function loadRpc(options) {
@@ -29,33 +27,33 @@ export async function callAPI(command, data, options = {}) {
 
 
 
-export async function getOrdInscription() {
-   const address = "";
-   const inscriptions = await getInscriptionsByAddr(address);
-   let ordInscriptions = [];
-   for (let i = 0; i < inscriptions.length; i++) {
-    const genesisTransaction = inscriptions[i].genesis_transaction;
-    const txhash = genesisTransaction.substring(genesisTransaction.lastIndexOf("/") + 1);
+// export async function getOrdInscription() {
+//    const address = "";
+//    const inscriptions = await getInscriptionsByAddr(address);
+//    let ordInscriptions = [];
+//    for (let i = 0; i < inscriptions.length; i++) {
+//     const genesisTransaction = inscriptions[i].genesis_transaction;
+//     const txhash = genesisTransaction.substring(genesisTransaction.lastIndexOf("/") + 1);
 
-    if (await checkProtocol(txhash)) {
-      ordInscriptions.push(inscriptions[i]);
-    }
-  }
-  console.log(ordInscriptions.length)
-  return ordInscriptions;
-}
+//     if (await checkProtocol(txhash)) {
+//       ordInscriptions.push(inscriptions[i]);
+//     }
+//   }
+//   console.log(ordInscriptions.length)
+//   return ordInscriptions;
+// }
 
-async function checkProtocol (txhash) {
-  const rpc = await loadRpc({})
-  const rawtx = await rpc.client.execute('getrawtransaction', [ txhash, 0 ]);
-  const decodedTx = await rpc.client.execute('decoderawtransaction', [ rawtx ])
-  const script = bcoin.Script.fromRaw(decodedTx.vin[0].txinwitness[1], "hex")
-  const arr = script.toArray();
-  if (arr[4]?.data?.toString() == "ord"){
-    return true;
-  }
-  return false;
-}
+// async function checkProtocol (txhash) {
+//   const rpc = await loadRpc({})
+//   const rawtx = await rpc.client.execute('getrawtransaction', [ txhash, 0 ]);
+//   const decodedTx = await rpc.client.execute('decoderawtransaction', [ rawtx ])
+//   const script = bcoin.Script.fromRaw(decodedTx.vin[0].txinwitness[1], "hex")
+//   const arr = script.toArray();
+//   if (arr[4]?.data?.toString() == "ord"){
+//     return true;
+//   }
+//   return false;
+// }
 
 export async function runCLI() {
   const [command] = yargs.argv._
