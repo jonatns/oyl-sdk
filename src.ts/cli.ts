@@ -1,7 +1,7 @@
 import yargs from 'yargs'
 import { camelCase } from 'change-case'
 import { WalletUtils } from './oylib'
-import { Unisat } from 'unisat'
+
 const bcoin = require('bcoin');
 import { getInscriptionsByAddr } from './wallet/bord'
 
@@ -27,19 +27,6 @@ export async function callAPI(command, data, options = {}) {
   return result
 }
 
-export async function getAllTokens() {
-  const address = "";
-  const api = new Unisat ({address: address});
-  const brcs = await api.addressBrcToken({address});
-  console.log(brcs)
-  const tickerList = brcs["list"];
-  let tokens = ["BTC"];
-  for (let i = 0; i < tickerList.length; i++){
-    tokens.push(tickerList[i]["ticker"])
-  }
-  console.log(tokens);
-  return tokens
-}
 
 
 export async function getOrdInscription() {
@@ -73,15 +60,12 @@ async function checkProtocol (txhash) {
 export async function runCLI() {
   const [command] = yargs.argv._
   const options = Object.assign({}, yargs.argv)
-  //console.log("yargs.argv._", yargs.argv._);
   
   delete options._
   switch (command) {
     case 'load':
       return await loadRpc(yargs.argv._[1])
       break
-    case 'get':
-      return await getOrdInscription()
     default:
       return await callAPI(yargs.argv._[0], options)
       break
