@@ -22,24 +22,16 @@
   "dependencies": {
     "@bitcoinerlab/secp256k1": "^1.0.2",
     "bcurl": "https://github.com/bcoin-org/bcurl.git#semver:^0.2.0",
-    "bcoin": "git+https://github.com/bcoin-org/bcoin.git#semver:~2.2.0",
     "bignumber.js": "^9.1.1",
-    "bcrypto": "git+https://github.com/bcoin-org/bcrypto.git#semver:~5.5.0",
-    "bip32": "^4.0.0",
-    "bip32-utils": "github:bitcoinjs/bip32-utils",
-    "bip39": "^3.1.0",
     "bitcoinjs-lib": "^6.1.0",
     "bitcore-lib": "^10.0.5",
     "bitcore-mnemonic": "^10.0.5",
-    "bs58check": "^3.0.1",
     "change-case": "^4.1.2",
     "ecpair": "^2.1.0",
     "fs-extra": "^11.1.1",
-    "install": "^0.13.0",
-    "node-fetch": "2.6.1",
+    "node-fetch": "^2.7.0",
     "npm": "^9.6.7",
     "prettier": "^2.8.8",
-    "unisat": "https://github.com/Oyl-Wallet/unisat",
     "yargs": "^17.6.0"
   }
 }

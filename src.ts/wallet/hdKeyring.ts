@@ -1,22 +1,23 @@
-import { SimpleKeyring } from "./simpleKeyring";
 import * as bitcoin from "bitcoinjs-lib";
-import ECPairFactory, { ECPairInterface } from "ecpair";
-import ecc from '@bitcoinerlab/secp256k1';
+import { ECPairInterface } from "ecpair";
 import bitcore from "bitcore-lib";
+import { isTaprootInput } from "bitcoinjs-lib/src/psbt/bip371";
+import { EventEmitter } from "events";
+import { tweakSigner, ECPair } from "../shared/utils"
 import Mnemonic from "bitcore-mnemonic";
-bitcoin.initEccLib(ecc);
-const ECPair = ECPairFactory(ecc);
+
 
 const hdPathString = "m/86'/0'/0'/0";
 
-interface DeserializeOption {
+interface HDKeyringOption {
   hdPath?: string;
   mnemonic?: any;
   activeIndexes?: number[];
   passphrase?: string;
 }
 
-export class HdKeyring extends SimpleKeyring {
+
+export class HdKeyring extends EventEmitter {
   mnemonic: any = null;
   passphrase: string;
   network: bitcoin.Network = bitcoin.networks.bitcoin;
@@ -26,16 +27,13 @@ export class HdKeyring extends SimpleKeyring {
   wallets: ECPairInterface[] = [];
   private _index2wallet: Record<number, [string, ECPairInterface]> = {};
   activeIndexes: number[] = [];
-  page = 0;
-  perPage = 5;
 
-  /* PUBLIC METHODS */
-  constructor(opts?: DeserializeOption) {
+  constructor(opts?: HDKeyringOption) {
     super(null);
-    this.deserialize(opts);
+    this.resolve(opts);
   }
 
-  async serialize(): Promise<DeserializeOption> {
+  async serialize(): Promise<HDKeyringOption> {
     return {
       mnemonic: this.mnemonic,
       activeIndexes: this.activeIndexes,
@@ -44,13 +42,13 @@ export class HdKeyring extends SimpleKeyring {
     };
   }
 
-  async deserialize(_opts: DeserializeOption = {}) {
+  async resolve(_opts: HDKeyringOption = {}) {
     if (this.root) {
       throw new Error(
         "Btc-Hd-Keyring: Secret recovery phrase already provided"
       );
     }
-    let opts = _opts as DeserializeOption;
+    let opts = _opts as HDKeyringOption;
     this.wallets = [];
     this.mnemonic = null;
     this.root = null;
@@ -86,7 +84,7 @@ export class HdKeyring extends SimpleKeyring {
         this.network == bitcoin.networks.bitcoin ? "livenet" : "testnet"
       )
       .deriveChild(this.hdPath);
-      //console.log("root", this.root)
+    //console.log("root", this.root)
   }
 
   changeHdPath(hdPath: string) {
@@ -160,19 +158,6 @@ export class HdKeyring extends SimpleKeyring {
     return accounts;
   }
 
-  getFirstPage() {
-    this.page = 0;
-    return this.__getPage(1);
-  }
-
-  getNextPage() {
-    return this.__getPage(1);
-  }
-
-  getPreviousPage() {
-    return this.__getPage(-1);
-  }
-
   getAddresses(start: number, end: number) {
     const from = start;
     const to = end;
@@ -187,42 +172,42 @@ export class HdKeyring extends SimpleKeyring {
     return accounts;
   }
 
-  async __getPage(increment: number) {
-    this.page += increment;
-
-    if (!this.page || this.page <= 0) {
-      this.page = 1;
-    }
-
-    const from = (this.page - 1) * this.perPage;
-    const to = from + this.perPage;
-
-    const accounts: { address: string; index: number }[] = [];
-
-    for (let i = from; i < to; i++) {
-      const [address] = this._addressFromIndex(i);
-      accounts.push({
-        address,
-        index: i + 1,
-      });
-    }
-
-    return accounts;
-  }
-
   async getAccounts() {
     return this.wallets.map((w) => {
       return w.publicKey.toString("hex");
     });
   }
 
-  getIndexByAddress(address: string) {
-    for (const key in this._index2wallet) {
-      if (this._index2wallet[key][0] === address) {
-        return Number(key);
-      }
+  private _getPrivateKeyFor(publicKey: string) {
+    if (!publicKey) {
+      throw new Error("Must specify publicKey.");
     }
-    return null;
+    const wallet = this._getWalletForAccount(publicKey);
+    return wallet;
+  }
+
+
+  private _getWalletForAccount(publicKey: string) {
+    let wallet = this.wallets.find(
+      (wallet) => wallet.publicKey.toString("hex") == publicKey
+    );
+    if (!wallet) {
+      throw new Error("Simple Keyring - Unable to find matching publicKey.");
+    }
+    return wallet;
+  }
+
+  async signTransaction(
+    psbt: bitcoin.Psbt,
+    inputs: { index: number; publicKey: string; sighashTypes?: number[] }[],
+    opts?: any
+  ) {
+    inputs.forEach(({ index, publicKey, sighashTypes }) => {
+      const keyPair = this._getPrivateKeyFor(publicKey);
+      const signer = isTaprootInput(psbt.data.inputs[index]) ? tweakSigner(keyPair, opts) : keyPair;
+      psbt.signInput(index, signer, sighashTypes);
+    });
+    return psbt;
   }
 
   private _addressFromIndex(i: number): [string, ECPairInterface] {

@@ -1,6 +1,6 @@
-import { OrdTransaction } from './txbuilder/OrdTransaction'
-import { UTXO_DUST } from './txbuilder/OrdUnspendOutput'
-import { amountToSatoshis, satoshisToAmount } from './txbuilder/utils'
+import { PSBTTransaction } from './txbuilder/PSBTTransaction'
+import { UTXO_DUST } from "./shared/constants"
+import { amountToSatoshis, satoshisToAmount } from './shared/utils'
 import NodeClient from './rpclient';
 import  *  as transactions from './transactions';
 import { publicKeyToAddress } from './wallet/accounts'
@@ -250,17 +250,7 @@ export class WalletUtils {
     const amount = confirmAmount + pendingAmount
 
     const usdValue = await transactions.convertUsdValue(amount)
-    //console.log(usdValue)
-  //   {
-  //     "message": "OK",
-  //     "result": {
-  //         "total_amount": "0.00234464",
-  //         "btc_amount": "0.00233918",
-  //         "inscription_amount": "0.00000546",
-  //         "btc_usd_value": "0"
-  //     },
-  //     "status": "1"
-  // }
+ 
     const response = {
       confirm_amount: confirmAmount.toFixed(8),
       pending_amount: pendingAmount.toFixed(8),
@@ -445,7 +435,7 @@ export class WalletUtils {
 
     if ( addressType != null ){
   
-    const tx = new OrdTransaction(
+    const tx = new PSBTTransaction(
       signer,
       from,
       publicKey,

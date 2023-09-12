@@ -1,6 +1,7 @@
-import { OrdUnspendOutput, UTXO_DUST } from "./OrdUnspendOutput";
+import { UTXO_DUST } from "../shared/constants"
 import * as bitcoin from "bitcoinjs-lib";
-import { AddressType } from '../interface';
+import { toXOnly, validator } from "../shared/utils";
+import { AddressType, UnspentOutput, TxInput, TxOutput, ToSignInput } from '../shared/interface';
 import ECPairFactory from "ecpair";
 import ecc from '@bitcoinerlab/secp256k1';
 import { address as PsbtAddress } from 'bitcoinjs-lib';  
@@ -8,50 +9,6 @@ import { address as PsbtAddress } from 'bitcoinjs-lib';
 bitcoin.initEccLib(ecc);
 const ECPair = ECPairFactory(ecc);
 
-
-interface TxInput {
-  data: {
-    hash: string;
-    index: number;
-    witnessUtxo: { value: number; script: Buffer };
-    tapInternalKey?: Buffer;
-  };
-  utxo: UnspentOutput;
-}
-
-interface TxOutput {
-  address: string;
-  value: number;
-}
-
-interface ToSignInput {
-  index: number;
-  publicKey: string;
-  sighashTypes?: number[];
-}
-
-export const validator = (
-  pubkey: Buffer,
-  msghash: Buffer,
-  signature: Buffer
-): boolean => ECPair.fromPublicKey(pubkey).verify(msghash, signature);
-
-export interface UnspentOutput {
-  txId: string;
-  outputIndex: number;
-  satoshis: number;
-  scriptPk: string;
-  addressType: AddressType;
-  address: string;
-  ords: {
-    id: string;
-    offset: number;
-  }[];
-}
-
-
-export const toXOnly = (pubKey: Buffer) =>
-  pubKey.length === 32 ? pubKey : pubKey.slice(1, 33);
 
 export function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput {
   if (
@@ -128,7 +85,7 @@ export function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput {
   }
 }
 
-export class OrdTransaction {
+export class PSBTTransaction {
   private inputs: TxInput[] = [];
   public outputs: TxOutput[] = [];
   private changeOutputIndex = -1;

@@ -1,4 +1,4 @@
-import { AddressType } from '../interface';
+import { AddressType } from '../shared/interface';
 /**
  *
  Returns from https://www.blockchain.com/explorer/api/blockchain_api.

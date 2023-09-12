@@ -1,38 +1,8 @@
 /// <reference types="node" />
 import * as bitcoin from "bitcoinjs-lib";
-import { AddressType } from '../interface';
-interface TxInput {
-    data: {
-        hash: string;
-        index: number;
-        witnessUtxo: {
-            value: number;
-            script: Buffer;
-        };
-        tapInternalKey?: Buffer;
-    };
-    utxo: UnspentOutput;
-}
-interface TxOutput {
-    address: string;
-    value: number;
-}
-export declare const validator: (pubkey: Buffer, msghash: Buffer, signature: Buffer) => boolean;
-export interface UnspentOutput {
-    txId: string;
-    outputIndex: number;
-    satoshis: number;
-    scriptPk: string;
-    addressType: AddressType;
-    address: string;
-    ords: {
-        id: string;
-        offset: number;
-    }[];
-}
-export declare const toXOnly: (pubKey: Buffer) => Buffer;
+import { AddressType, UnspentOutput, TxInput, TxOutput } from '../shared/interface';
 export declare function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput;
-export declare class OrdTransaction {
+export declare class PSBTTransaction {
     private inputs;
     outputs: TxOutput[];
     private changeOutputIndex;
@@ -70,4 +40,3 @@ export declare class OrdTransaction {
     }>;
     dumpTx(psbt: any): Promise<void>;
 }
-export {};
