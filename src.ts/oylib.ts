@@ -2,13 +2,10 @@ import { PSBTTransaction } from './txbuilder/PSBTTransaction'
 import { UTXO_DUST } from "./shared/constants"
 import { amountToSatoshis, satoshisToAmount } from './shared/utils'
 import NodeClient from './rpclient';
-import  *  as transactions from './transactions';
+import *  as transactions from './transactions';
 import { publicKeyToAddress } from './wallet/accounts'
 import { bord, accounts } from './wallet'
-
-
-
-
+import { AddressType } from './shared/interface';
 
 const RequiredPath = [
   "m/44'/0'/0'/0", // P2PKH (Legacy)
@@ -124,8 +121,12 @@ export class WalletUtils {
   // }
 
   async getTaprootAddress({ publicKey }) {
-    const address = publicKeyToAddress(publicKey, 'P2TR')
-    return address
+    try {
+      const address = publicKeyToAddress(publicKey, AddressType.P2TR)
+      return address;
+    } catch (err) {
+      return err;
+    }
   }
 
   async importWallet({ mnemonic, hdPath = RequiredPath[3], type = 'taproot' }) {
@@ -134,16 +135,16 @@ export class WalletUtils {
 
       switch (type) {
         case 'taproot':
-          addrType = 'P2TR'
+          addrType = AddressType.P2TR
           break
         case 'segwit':
-          addrType = 'P2WPKH'
+          addrType = AddressType.P2WPKH
           break
         case 'legacy':
-          addrType = 'P2PKH'
+          addrType = AddressType.P2PKH
           break
         default:
-          addrType = 'P2TR'
+          addrType = AddressType.P2TR
           break
       }
 
@@ -159,73 +160,79 @@ export class WalletUtils {
     }
   }
 
-  async importMeta({ mnemonic }) {
-    try {
-      const unisat = {
-        hdPath: "m/86'/0'/0'/0",
-        type: 'taproot',
-      }
-      const oylLib = {
-        hdPath: "m/49'/0'/0'",
-        type: 'segwit',
-      }
+  // async importMeta({ mnemonic }) {
+  //   try {
+  //     const unisat = {
+  //       hdPath: "m/86'/0'/0'/0",
+  //       type: 'taproot',
+  //     }
+  //     const oylLib = {
+  //       hdPath: "m/49'/0'/0'",
+  //       type: 'segwit',
+  //     }
 
-      const payloadA = await this.importWallet({
-        mnemonic: mnemonic,
-        hdPath: unisat.hdPath,
-        type: unisat.type,
-      })
-      const payloadB = await this.importWallet({
-        mnemonic: mnemonic,
-        hdPath: oylLib.hdPath,
-        type: oylLib.type,
-      })
+  //     const payloadA = await this.importWallet({
+  //       mnemonic: mnemonic,
+  //       hdPath: unisat.hdPath,
+  //       type: unisat.type,
+  //     })
+  //     const payloadB = await this.importWallet({
+  //       mnemonic: mnemonic,
+  //       hdPath: oylLib.hdPath,
+  //       type: oylLib.type,
+  //     })
 
-      const data = {
-        unisatAddress: payloadA['keyring']['address'],
-        unisatAssets: payloadA['assets'],
-        oylLibAddress: payloadB['keyring']['address'],
-        oylLibAssets: payloadB['assets'],
-      }
+  //     const data = {
+  //       unisatAddress: payloadA['keyring']['address'],
+  //       unisatAssets: payloadA['assets'],
+  //       oylLibAddress: payloadB['keyring']['address'],
+  //       oylLibAssets: payloadB['assets'],
+  //     }
 
-      
-      return data
-    } catch (e) {
-      return e
-    }
-  }
+
+  //     return data
+  //   } catch (e) {
+  //     return e
+  //   }
+  // }
 
   async getSegwitAddress({ publicKey }) {
-    const address = publicKeyToAddress(publicKey, 'P2WPKH')
-    return address
+    const address = publicKeyToAddress(publicKey, AddressType.P2WPKH);
+    return address;
   }
 
   async createWallet({ type }) {
-    let hdPath
-    let addrType
+    try {
+      let hdPath
+      let addrType
 
-    switch (type) {
-      case 'taproot':
-        addrType = 'P2TR'
-        hdPath = RequiredPath[3]   
-        break
-      case 'segwit':
-        addrType = 'P2WPKH'
-        hdPath = RequiredPath[2]
-        break
-      case 'legacy':
-        addrType = 'P2PKH'
-        hdPath = RequiredPath[0]
-        break
-      default:
-        addrType = 'P2TR'
-        hdPath = RequiredPath[3]
-        break
+      switch (type) {
+        case 'taproot':
+          addrType = AddressType.P2TR
+          hdPath = RequiredPath[3]
+          break
+        case 'segwit':
+          addrType = AddressType.P2WPKH
+          hdPath = RequiredPath[2]
+          break
+        case 'nested-segwit':
+          addrType = AddressType.P2SH_P2WPKH
+          hdPath = RequiredPath[1]
+        case 'legacy':
+          addrType = AddressType.P2PKH
+          hdPath = RequiredPath[0]
+          break
+        default:
+          addrType = AddressType.P2TR
+          hdPath = RequiredPath[3]
+          break
+      }
+
+      const wallet = await accounts.createWallet(hdPath, addrType)
+      return wallet
+    } catch (err) {
+      return err;
     }
-
- 
-    const wallet = await accounts.createWallet(hdPath, addrType)
-    return wallet
   }
 
   async getMetaBalance({ address }) {
@@ -250,7 +257,7 @@ export class WalletUtils {
     const amount = confirmAmount + pendingAmount
 
     const usdValue = await transactions.convertUsdValue(amount)
- 
+
     const response = {
       confirm_amount: confirmAmount.toFixed(8),
       pending_amount: pendingAmount.toFixed(8),
@@ -266,20 +273,20 @@ export class WalletUtils {
     const processedTransactions = history
       .map((tx) => {
         const { hash, mtime, outputs, inputs, confirmations } = tx
-       
+
         const output = outputs.find((output) => output.address === address)
         const input = inputs.find((input) => input.coin.address === address)
         const txDetails = {};
         txDetails["hash"] = hash;
         txDetails["confirmations"] = confirmations;
-        if (input) {    
+        if (input) {
           txDetails["type"] = "sent";
           txDetails["to"] = outputs.find((output) => output.address != address)?.address
-          if (output){
-            txDetails["amount"] = (input.coin.value / 1e8) - (output.value / 1e8)         
-           } else {
-             txDetails["amount"] = input.coin.value / 1e8
-           }
+          if (output) {
+            txDetails["amount"] = (input.coin.value / 1e8) - (output.value / 1e8)
+          } else {
+            txDetails["amount"] = input.coin.value / 1e8
+          }
         } else {
           if (output) {
             txDetails["type"] = "received";
@@ -410,31 +417,30 @@ export class WalletUtils {
     }
   }
 
-  async sendBtc({ mnemonic, to, amount, fee }) {
+  // async sendBtc({ mnemonic, to, amount, fee }) {
 
-    const payload = await this.importWallet({
-      mnemonic: mnemonic.trim(),
-      hdPath: "m/49'/0'/0'",
-      type: 'segwit',
-    })
-    const keyring = payload.keyring.keyring;
-    const pubKey = keyring.wallets[0].publicKey.toString('hex');
-    const signer = keyring.signTransaction.bind(keyring);
-    const from = payload.keyring.address;
-    const changeAddress = from;
+  //   const payload = await this.importWallet({
+  //     mnemonic: mnemonic.trim(),
+  //     hdPath: "m/49'/0'/0'",
+  //     type: 'segwit',
+  //   })
+  //   const keyring = payload.keyring.keyring;
+  //   const pubKey = keyring.wallets[0].publicKey.toString('hex');
+  //   const signer = keyring.signTransaction.bind(keyring);
+  //   const from = payload.keyring.address;
+  //   const changeAddress = from;
 
-    
-    return await this.createPsbtTx({publicKey: pubKey, from: from, to: to, changeAddress: changeAddress, amount: amount, fee: fee,  signer: signer })
-    }
-      
+
+  //   return await this.createPsbtTx({publicKey: pubKey, from: from, to: to, changeAddress: changeAddress, amount: amount, fee: fee,  signer: signer })
+  //   }
+
 
   async createPsbtTx({ publicKey, from, to, changeAddress, amount, fee, signer }) {
     const utxos = await this.getUtxosArtifacts({ address: from });
     const feeRate = fee / 100;
     const addressType = transactions.getAddressType(from)
+    if (addressType != null) throw Error("Invalid Address Type");
 
-    if ( addressType != null ){
-  
     const tx = new PSBTTransaction(
       signer,
       from,
@@ -442,11 +448,11 @@ export class WalletUtils {
       addressType,
       feeRate
     );
-  
+
     tx.addOutput(to, amountToSatoshis(amount));
     tx.setChangeAddress(changeAddress);
     const outputAmount = tx.getTotalOutput();
-  
+
     const nonOrdUtxos = [];
     const ordUtxos = [];
     utxos.forEach((v) => {
@@ -456,7 +462,7 @@ export class WalletUtils {
         nonOrdUtxos.push(v);
       }
     });
-  
+
     let tmpSum = tx.getTotalInput();
     for (let i = 0; i < nonOrdUtxos.length; i++) {
       const nonOrdUtxo = nonOrdUtxos[i];
@@ -465,7 +471,7 @@ export class WalletUtils {
         tmpSum += nonOrdUtxo.satoshis;
         continue;
       }
-  
+
       const fee = await tx.calNetworkFee();
       if (tmpSum < outputAmount + fee) {
         tx.addInput(nonOrdUtxo);
@@ -474,26 +480,26 @@ export class WalletUtils {
         break;
       }
     }
-  
+
     if (nonOrdUtxos.length === 0) {
       throw new Error('Balance not enough');
     }
-  
+
     const unspent = tx.getUnspent();
     if (unspent === 0) {
       throw new Error('Balance not enough to pay network fee.');
     }
-  
+
     // add dummy output
     tx.addChangeOutput(1);
-  
+
     const networkFee = await tx.calNetworkFee();
     if (unspent < networkFee) {
       throw new Error(
         `Balance not enough. Need ${satoshisToAmount(networkFee)} BTC as network fee, but only ${satoshisToAmount(unspent)} BTC.`
       );
     }
-  
+
     const leftAmount = unspent - networkFee;
     if (leftAmount >= UTXO_DUST) {
       // change dummy output to true output
@@ -502,25 +508,34 @@ export class WalletUtils {
       // remove dummy output
       tx.removeChangeOutput();
     }
-  
+
     const psbt = await tx.createSignedPsbt();
     tx.dumpTx(psbt);
-  
+
     //@ts-ignore
     psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false;
-  
+
     const rawtx = psbt.extractTransaction().toHex();
     const result = await this.client.pushTX(rawtx);
-  
+
     return {
       txId: psbt.extractTransaction().getId(),
       ...result,
     };
-  }
+
   }
 
   async getSegwitAddressInfo({ address }) {
-    const isValid = transactions.validateBtcAddress({ address, type: 'segwit' })
+    const isValid = transactions.validateSegwitAddress({ address, type: 'segwit' })
+    if (!isValid) {
+      return { isValid, summary: null }
+    }
+    const summary = await this.getAddressSummary({ address })
+    return { isValid, summary }
+  }
+
+  async getTaprootAddressInfo({ address }) {
+    const isValid = transactions.validateTaprootAddress({ address, type: 'segwit' })
     if (!isValid) {
       return { isValid, summary: null }
     }

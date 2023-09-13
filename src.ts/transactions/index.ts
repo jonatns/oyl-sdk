@@ -110,27 +110,36 @@ export function getAddressType(address: string): AddressType | null {
     return 1
   } else if (address.startsWith('3')) {
     return 2
-  } else if (address.startsWith('bc1q')) {
+  } else if (address.startsWith('bc1q') && address.length == 42) {
     return 3
   } else {
     return null // If the address doesn't match any known type
   }
 }
 
-export const validateBtcAddress = ({ address, type }) => {
+export const validateTaprootAddress = ({ address, type }) => {
   try {
     const decodedBech32 = bitcoin.address.fromBech32(address)
-
-    if (decodedBech32.version === 0) {
-      return type === 'segwit'
-    } else if (
-      decodedBech32.version === 1 &&
-      decodedBech32.data.length === 32
-    ) {
+    if (decodedBech32.version === 1 && decodedBech32.data.length === 32) {
       return type === 'taproot'
     }
   } catch (error) {
     // Address is not in Bech32 format
+    return false
+  }
+
+  return false
+}
+
+export const validateSegwitAddress = ({ address, type }) => {
+  try {
+    const decodedBech32 = bitcoin.address.fromBech32(address)
+    if (decodedBech32.version === 0) {
+      return type === 'segwit'
+    }
+  } catch (error) {
+    // Address is not in Bech32 format
+    return false
   }
 
   return false

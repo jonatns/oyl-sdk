@@ -1,5 +1,6 @@
-import * as bitcoin from "bitcoinjs-lib";
-export declare function createWallet(hdPathString: string, type: string): Promise<any>;
-export declare function publicKeyToAddress(publicKey: string, type: string, networkType?: string): string;
-export declare function isValidAddress(address: any, network?: bitcoin.Network): boolean;
-export declare function importMnemonic(mnemonic: string, path: any, type: any): Promise<{}>;
+import * as bitcoin from 'bitcoinjs-lib';
+import { AddressType } from '../shared/interface';
+export declare function createWallet(hdPathString: string, type: AddressType): Promise<{}>;
+export declare function publicKeyToAddress(publicKey: string, type: AddressType): string;
+export declare function isValidAddress(address: string, network?: bitcoin.Network): boolean;
+export declare function importMnemonic(mnemonic: string, path: string, type: AddressType): Promise<{}>;

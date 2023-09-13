@@ -1,9 +1,9 @@
 /// <reference types="node" />
-import * as bitcoin from "bitcoinjs-lib";
-import { ECPairInterface } from "ecpair";
-import bitcore from "bitcore-lib";
-import { EventEmitter } from "events";
-import Mnemonic from "bitcore-mnemonic";
+import * as bitcoin from 'bitcoinjs-lib';
+import { ECPairInterface } from 'ecpair';
+import bitcore from 'bitcore-lib';
+import { EventEmitter } from 'events';
+import Mnemonic from 'bitcore-mnemonic';
 interface HDKeyringOption {
     hdPath?: string;
     mnemonic?: any;
