@@ -21,14 +21,11 @@ export declare class WalletUtils {
     }): Promise<any[]>;
     getTaprootAddress({ publicKey }: {
         publicKey: any;
-    }): Promise<string>;
+    }): Promise<any>;
     importWallet({ mnemonic, hdPath, type }: {
         mnemonic: any;
         hdPath?: string;
         type?: string;
-    }): Promise<any>;
-    importMeta({ mnemonic }: {
-        mnemonic: any;
     }): Promise<any>;
     getSegwitAddress({ publicKey }: {
         publicKey: any;
@@ -65,12 +62,6 @@ export declare class WalletUtils {
     importWatchOnlyAddress({ addresses }: {
         addresses?: any[];
     }): Promise<void>;
-    sendBtc({ mnemonic, to, amount, fee }: {
-        mnemonic: any;
-        to: any;
-        amount: any;
-        fee: any;
-    }): Promise<any>;
     createPsbtTx({ publicKey, from, to, changeAddress, amount, fee, signer }: {
         publicKey: any;
         from: any;
@@ -81,6 +72,15 @@ export declare class WalletUtils {
         signer: any;
     }): Promise<any>;
     getSegwitAddressInfo({ address }: {
+        address: any;
+    }): Promise<{
+        isValid: boolean;
+        summary: any;
+    } | {
+        isValid: true;
+        summary: any[];
+    }>;
+    getTaprootAddressInfo({ address }: {
         address: any;
     }): Promise<{
         isValid: boolean;

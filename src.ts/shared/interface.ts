@@ -1,72 +1,71 @@
 export interface InscriptionResponse {
-    address: string;
-    inscriptions?: string;
-    scriptPubkey: string;
-    transaction: string;
-    value: string;
+  address: string
+  inscriptions?: string
+  scriptPubkey: string
+  transaction: string
+  value: string
 }
 
 export interface UnspentOutput {
-  txId: string;
-  outputIndex: number;
-  satoshis: number;
-  scriptPk: string;
-  addressType: AddressType;
-  address: string;
+  txId: string
+  outputIndex: number
+  satoshis: number
+  scriptPk: string
+  addressType: AddressType
+  address: string
   ords: {
-    id: string;
-    offset: number;
-  }[];
+    id: string
+    offset: number
+  }[]
 }
 
 export interface TxInput {
   data: {
-    hash: string;
-    index: number;
-    witnessUtxo: { value: number; script: Buffer };
-    tapInternalKey?: Buffer;
-  };
-  utxo: UnspentOutput;
+    hash: string
+    index: number
+    witnessUtxo: { value: number; script: Buffer }
+    tapInternalKey?: Buffer
+  }
+  utxo: UnspentOutput
 }
 
 export interface TxOutput {
-  address: string;
-  value: number;
+  address: string
+  value: number
 }
 
 export interface ToSignInput {
-  index: number;
-  publicKey: string;
-  sighashTypes?: number[];
+  index: number
+  publicKey: string
+  sighashTypes?: number[]
 }
-  
+
 export interface PrevOut {
-  hash: string;
-  index: number;
+  hash: string
+  index: number
 }
 
 export interface Input {
-  prevout: PrevOut;
+  prevout: PrevOut
   coin: {
-    value: number;
-  };
+    value: number
+  }
 }
 
 export interface Output {
-  value: number;
-  script: string;
-  address: string;
+  value: number
+  script: string
+  address: string
 }
 
 export interface Transaction {
-  inputs: Input[];
-  outputs: Output[];
+  inputs: Input[]
+  outputs: Output[]
 }
 
 export enum AddressType {
-    P2PKH,
-    P2TR,
-    P2SH_P2WPKH,
-    P2WPKH
+  P2PKH,
+  P2TR,
+  P2SH_P2WPKH,
+  P2WPKH,
 }
-  

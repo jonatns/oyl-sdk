@@ -1,7 +1,5 @@
-/// <reference types="node" />
-import * as bitcoin from "bitcoinjs-lib";
-import { AddressType, UnspentOutput, TxInput, TxOutput } from '../shared/interface';
-export declare function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput;
+import * as bitcoin from 'bitcoinjs-lib';
+import { AddressType, UnspentOutput, TxOutput } from '../shared/interface';
 export declare class PSBTTransaction {
     private inputs;
     outputs: TxOutput[];
@@ -14,7 +12,7 @@ export declare class PSBTTransaction {
     private pubkey;
     private addressType;
     private enableRBF;
-    constructor(signer: any, address: any, pubkey: string, addressType: AddressType, feeRate?: number);
+    constructor(signer: any, address: string, pubkey: string, addressType: AddressType, feeRate?: number);
     setEnableRBF(enable: boolean): void;
     setChangeAddress(address: string): void;
     addInput(utxo: UnspentOutput): void;
