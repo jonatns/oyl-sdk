@@ -110,7 +110,7 @@ export function getAddressType(address: string): AddressType | null {
     return 1
   } else if (address.startsWith('3')) {
     return 2
-  } else if (address.startsWith('bc1q') && address.length == 42) {
+  } else if (address.startsWith('bc1q')) {
     return 3
   } else {
     return null // If the address doesn't match any known type

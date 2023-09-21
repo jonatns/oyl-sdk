@@ -1,7 +1,9 @@
 import yargs from 'yargs'
 import { camelCase } from 'change-case'
-import { WalletUtils } from './oylib'
-import { getInscriptionsByAddr } from './wallet/bord'
+import { Wallet } from './oylib'
+import { PSBTTransaction } from './txbuilder/PSBTTransaction'
+import *  as transactions from './transactions';
+import * as bitcoin from 'bitcoinjs-lib'
 
 export async function loadRpc(options) {
   const rpcOptions = {}
@@ -11,21 +13,51 @@ export async function loadRpc(options) {
   rpcOptions['apiKey'] = options.apiKey
   rpcOptions['nodeClient'] = options.nodeClient
   rpcOptions['node'] = options.node
-  const rpc = WalletUtils.fromObject(rpcOptions)
-  return rpc
+  const rpc = Wallet.fromObject(rpcOptions)
+  return rpc;
 }
 
 export async function callAPI(command, data, options = {}) {
   const rpc = await loadRpc(options)
   const camelCommand = camelCase(command)
-  //console.log(`${camelCommand}(${data})`);
   if (!rpc[camelCommand]) throw Error('command not foud: ' + command)
   const result = await rpc[camelCommand](data)
   console.log(JSON.stringify(result, null, 2))
   return result
 }
 
+export async function swapFlow (options){
+  const address =  options.address;
+  const feeRate =  options.feeRate;
+  const mnemonic = options.mnemonic;
+  const pubKey =   options.pubKey;
 
+  const psbt = bitcoin.Psbt.fromHex(options.psbt, {network: bitcoin.networks.bitcoin});
+  const wallet = new Wallet();
+  const payload = await wallet.importWallet({
+        mnemonic: mnemonic.trim(),
+        hdPath: options.hdPath,
+        type: options.type
+    })
+
+  const keyring = payload.keyring.keyring;
+  const signer = keyring.signTransaction.bind(keyring);
+  const from = address; 
+  const addressType = transactions.getAddressType(from)
+  if (addressType == null) throw Error("Invalid Address Type");
+
+    const tx = new PSBTTransaction(
+      signer,
+      from,
+      pubKey,
+      addressType,
+      feeRate
+    );
+
+   const psbt_ = await tx.signPsbt(psbt)
+   
+   return psbt_.toHex();
+}
 
 // export async function getOrdInscription() {
 //    const address = "";
@@ -62,7 +94,7 @@ export async function runCLI() {
   delete options._
   switch (command) {
     case 'load':
-      return await loadRpc(yargs.argv._[1])
+      return await loadRpc(options)
       break
     default:
       return await callAPI(yargs.argv._[0], options)

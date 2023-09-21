@@ -1,5 +1,5 @@
 import * as bitcoin from 'bitcoinjs-lib';
-import { AddressType, UnspentOutput, TxOutput } from '../shared/interface';
+import { AddressType, UnspentOutput, TxOutput, ToSignInput } from '../shared/interface';
 export declare class PSBTTransaction {
     private inputs;
     outputs: TxOutput[];
@@ -28,8 +28,9 @@ export declare class PSBTTransaction {
     getChangeAmount(): number;
     removeChangeOutput(): void;
     removeRecentOutputs(count: number): void;
+    formatOptionsToSignInputs: (_psbt: string | bitcoin.Psbt) => Promise<ToSignInput[]>;
     createSignedPsbt(): Promise<bitcoin.Psbt>;
-    signPsbt(psbt: bitcoin.Psbt, options?: any): Promise<bitcoin.Psbt>;
+    signPsbt(psbt: bitcoin.Psbt, autoFinalized?: boolean): Promise<bitcoin.Psbt>;
     generate(autoAdjust: boolean): Promise<{
         fee: number;
         rawtx: string;
