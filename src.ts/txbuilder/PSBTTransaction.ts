@@ -1,6 +1,6 @@
 import { UTXO_DUST } from '../shared/constants'
 import * as bitcoin from 'bitcoinjs-lib'
-import { assertHex, utxoToInput } from '../shared/utils'
+import { assertHex, utxoToInput, validator } from '../shared/utils'
 import {
   AddressType,
   UnspentOutput,
@@ -118,6 +118,41 @@ export class PSBTTransaction {
     this.outputs.splice(-count)
   }
 
+  formatOptionsToSignInputs = async (_psbt: string | bitcoin.Psbt) => {
+    let toSignInputs: ToSignInput[] = []
+    const psbtNetwork = bitcoin.networks.bitcoin
+
+    const psbt =
+      typeof _psbt === 'string'
+        ? bitcoin.Psbt.fromHex(_psbt as string, { network: psbtNetwork })
+        : (_psbt as bitcoin.Psbt)
+    psbt.data.inputs.forEach((v, index) => {
+      let script: any = null
+      let value = 0
+      if (v.witnessUtxo) {
+        script = v.witnessUtxo.script
+        value = v.witnessUtxo.value
+      } else if (v.nonWitnessUtxo) {
+        const tx = bitcoin.Transaction.fromBuffer(v.nonWitnessUtxo)
+        const output = tx.outs[psbt.txInputs[index].index]
+        script = output.script
+        value = output.value
+      }
+      const isSigned = v.finalScriptSig || v.finalScriptWitness
+      if (script && !isSigned) {
+        const address = PsbtAddress.fromOutputScript(script, psbtNetwork)
+        if (this.address === address) {
+          toSignInputs.push({
+            index,
+            publicKey: this.pubkey,
+            sighashTypes: v.sighashType ? [v.sighashType] : undefined,
+          })
+        }
+      }
+    })
+    return toSignInputs
+  }
+
   async createSignedPsbt() {
     const psbt = new bitcoin.Psbt({ network: this.network })
 
@@ -141,43 +176,34 @@ export class PSBTTransaction {
     return psbt
   }
 
-  async signPsbt(psbt: bitcoin.Psbt, options?: any) {
+  async signPsbt(psbt: bitcoin.Psbt, autoFinalized = false) {
     const psbtNetwork = bitcoin.networks.bitcoin
 
-    const toSignInputs: ToSignInput[] = []
+    const toSignInputs: ToSignInput[] = await this.formatOptionsToSignInputs(
+      psbt
+    )
     psbt.data.inputs.forEach((v, index) => {
-      let script: any = null
-      let value = 0
-      if (v.witnessUtxo) {
-        script = v.witnessUtxo.script
-        value = v.witnessUtxo.value
-      } else if (v.nonWitnessUtxo) {
-        const tx = bitcoin.Transaction.fromBuffer(v.nonWitnessUtxo)
-        const output = tx.outs[psbt.txInputs[index].index]
-        script = output.script
-        value = output.value
-      }
-      const isSigned = v.finalScriptSig || v.finalScriptWitness
-      if (script && !isSigned) {
-        const address = PsbtAddress.fromOutputScript(script, psbtNetwork)
-        if (this.address === address) {
-          toSignInputs.push({
-            index,
-            publicKey: this.pubkey,
-            sighashTypes: v.sighashType ? [v.sighashType] : undefined,
-          })
-          if (this.addressType === AddressType.P2TR && !v.tapInternalKey) {
-            v.tapInternalKey = assertHex(Buffer.from(this.pubkey, 'hex'))
-          }
+      const isNotSigned = !(v.finalScriptSig || v.finalScriptWitness)
+      const isP2TR = this.addressType === AddressType.P2TR
+      const lostInternalPubkey = !v.tapInternalKey
+      if (isNotSigned && isP2TR && lostInternalPubkey) {
+        const tapInternalKey = assertHex(Buffer.from(this.pubkey, 'hex'))
+        const { output } = bitcoin.payments.p2tr({
+          internalPubkey: tapInternalKey,
+          network: psbtNetwork,
+        })
+        if (v.witnessUtxo?.script.toString('hex') == output?.toString('hex')) {
+          v.tapInternalKey = tapInternalKey
         }
       }
     })
 
     psbt = await this.signer(psbt, toSignInputs)
-    toSignInputs.forEach((v) => {
-      // psbt.validateSignaturesOfInput(v.index, validator);
-      psbt.finalizeInput(v.index)
-    })
+    if (autoFinalized) {
+      toSignInputs.forEach((v) => {
+        psbt.finalizeInput(v.index)
+      })
+    }
 
     return psbt
   }

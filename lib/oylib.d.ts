@@ -1,5 +1,6 @@
 import NodeClient from './rpclient';
-export declare class WalletUtils {
+import { OylApiClient } from "./apiclient";
+export declare class Wallet {
     private node;
     private network;
     private port;
@@ -7,9 +8,15 @@ export declare class WalletUtils {
     private host;
     private nodeClient;
     client: NodeClient;
+    oylApiClient: OylApiClient;
     derivPath: String;
+    /***
+     * TO-DO
+     * Replace NodeCLient with ApiClient so all requests to the node gets routed
+     * through Oyl's api server
+     */
     constructor(options?: any);
-    static fromObject(data: any): WalletUtils;
+    static fromObject(data: any): Wallet;
     toObject(): {
         network: String;
         port: Number;

@@ -6,6 +6,7 @@ import *  as transactions from './transactions';
 import { publicKeyToAddress } from './wallet/accounts'
 import { bord, accounts } from './wallet'
 import { AddressType } from './shared/interface';
+import { OylApiClient } from "./apiclient"
 
 const RequiredPath = [
   "m/44'/0'/0'/0", // P2PKH (Legacy)
@@ -14,7 +15,7 @@ const RequiredPath = [
   "m/86'/0'/0'/0", // P2TR (Taproot)
 ]
 
-export class WalletUtils {
+export class Wallet {
   private node: String
   private network: String
   private port: Number
@@ -23,8 +24,14 @@ export class WalletUtils {
   private nodeClient: boolean
 
   public client: NodeClient
+  public oylApiClient: OylApiClient
   public derivPath: String
 
+  /***
+   * TO-DO
+   * Replace NodeCLient with ApiClient so all requests to the node gets routed
+   * through Oyl's api server
+   */
   constructor(options?) {
     try {
       this.node = options?.node || 'bcoin'
@@ -433,6 +440,10 @@ export class WalletUtils {
 
   //   return await this.createPsbtTx({publicKey: pubKey, from: from, to: to, changeAddress: changeAddress, amount: amount, fee: fee,  signer: signer })
   //   }
+
+
+  
+  
 
 
   async createPsbtTx({ publicKey, from, to, changeAddress, amount, fee, signer }) {
