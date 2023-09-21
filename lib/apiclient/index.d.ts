@@ -1,3 +1,4 @@
+import { SwapBrcBid, SignedBid } from '../shared/interface';
 export declare class OylApiClient {
     private host;
     constructor(options?: any);
@@ -17,23 +18,14 @@ export declare class OylApiClient {
     getTickerOffers({ _ticker }: {
         _ticker: String;
     }): Promise<any>;
-    initSwapBid({ address, auctionId, bidPrice, pubKey }: {
-        address: String;
-        auctionId: String;
-        bidPrice: Number;
-        pubKey: String;
-    }): Promise<any>;
-    submitBid({ psbtBid, auctionId, bidId }: {
-        psbtBid: String;
-        auctionId: String;
-        bidId: String;
-    }): Promise<any>;
+    initSwapBid({ address, auctionId, bidPrice, pubKey, }: SwapBrcBid): Promise<any>;
+    submitSignedBid({ psbtBid, auctionId, bidId, }: SignedBid): Promise<any>;
     getFees(): Promise<any>;
-    subscribe({ webhookUrl, rbf }: {
+    subscribe({ webhookUrl, rbf, }: {
         webhookUrl: String;
         rbf?: Boolean;
     }): Promise<any>;
-    importSubscribe({ address, webhookUrl, rbf }: {
+    importSubscribe({ address, webhookUrl, rbf, }: {
         address: String;
         webhookUrl: String;
         rbf?: Boolean;

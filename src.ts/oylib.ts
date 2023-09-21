@@ -5,8 +5,11 @@ import NodeClient from './rpclient';
 import *  as transactions from './transactions';
 import { publicKeyToAddress } from './wallet/accounts'
 import { bord, accounts } from './wallet'
-import { AddressType } from './shared/interface';
+import { AddressType, SwapBrc, SignedBid } from './shared/interface';
 import { OylApiClient } from "./apiclient"
+import * as bitcoin from 'bitcoinjs-lib'
+import { swapFlow } from './cli';
+
 
 const RequiredPath = [
   "m/44'/0'/0'/0", // P2PKH (Legacy)
@@ -23,8 +26,8 @@ export class Wallet {
   private host: String
   private nodeClient: boolean
 
-  public client: NodeClient
-  public oylApiClient: OylApiClient
+  public rpcClient: NodeClient
+  public apiClient: OylApiClient
   public derivPath: String
 
   /***
@@ -42,7 +45,7 @@ export class Wallet {
       this.nodeClient = options?.nodeClient || true
       if (this.node == 'bcoin' && !this.nodeClient) {
         //TODO Implement WalletClient in rpclient
-        console.log('WalletClient inactive')
+        console.log('rpc client inactive')
         return
       } else if (this.node == 'bcoin' && this.nodeClient) {
         const clientOptions = {
@@ -51,9 +54,9 @@ export class Wallet {
           host: this.host,
           apiKey: this.apiKey,
         }
-        console.log(clientOptions)
-        this.client = new NodeClient(clientOptions)
+        this.rpcClient = new NodeClient(clientOptions)
       }
+      this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg'});
     } catch (e) {
       console.log('An error occured: ', e)
     }
@@ -276,7 +279,7 @@ export class Wallet {
   }
 
   async getTxHistory({ address }) {
-    const history = await this.client.getTxByAddress(address)
+    const history = await this.rpcClient.getTxByAddress(address)
     const processedTransactions = history
       .map((tx) => {
         const { hash, mtime, outputs, inputs, confirmations } = tx
@@ -317,11 +320,11 @@ export class Wallet {
   }
 
   async getFees() {
-    const rawMempool = await this.client.execute(
+    const rawMempool = await this.rpcClient.execute(
       'getrawmempool',
       [true] /* verbose */
     )
-    const mempoolInfo = await this.client.execute('getmempoolinfo')
+    const mempoolInfo = await this.rpcClient.execute('getmempoolinfo')
     const high = (await this.calculateHighPriorityFee(rawMempool)) * 100000000 // 10 mins
     const low = mempoolInfo.mempoolminfee * 2 * 100000000
     const medium = (high + low) / 2
@@ -419,7 +422,7 @@ export class Wallet {
     for (let i = 0; i < addresses.length; i++) {
       (async () => {
         await new Promise((resolve) => setTimeout(resolve, 10000))
-        await this.client.execute('importaddress', [addresses[i], '', true])
+        await this.rpcClient.execute('importaddress', [addresses[i], '', true])
       })()
     }
   }
@@ -527,7 +530,7 @@ export class Wallet {
     psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false;
 
     const rawtx = psbt.extractTransaction().toHex();
-    const result = await this.client.pushTX(rawtx);
+    const result = await this.rpcClient.pushTX(rawtx);
 
     return {
       txId: psbt.extractTransaction().getId(),
@@ -552,5 +555,70 @@ export class Wallet {
     }
     const summary = await this.getAddressSummary({ address })
     return { isValid, summary }
+  }
+
+  async getBrcOffers ({ticker}) {
+    const offers = await this.apiClient.getTickerOffers({_ticker: ticker});
+    return offers;
+  }
+
+  async swapBrc (bid: SwapBrc ) {
+    const psbt = await this.apiClient.initSwapBid({
+      address: bid.address,
+      auctionId: bid.auctionId,
+      bidPrice: bid.bidPrice,
+      pubKey: bid.pubKey
+    })
+    if (psbt.error) return psbt;
+    const unsignedPsbt = psbt.psbtBid;
+    const feeRate = psbt.feeRate;
+
+    const swapOptions = bid;
+    swapOptions["psbt"] = unsignedPsbt;
+    swapOptions["feeRate"] = feeRate;
+
+    const signedPsbt = await swapFlow(swapOptions);
+
+    const txId = await this.apiClient.submitSignedBid({
+      psbtBid: signedPsbt,
+      auctionId: bid.auctionId,
+      bidId: psbt.bidId
+    });
+
+    return txId;
+
+  }
+
+  async swapFlow (options){
+    const address =  options.address;
+    const feeRate =  options.feeRate;
+    const mnemonic = options.mnemonic;
+    const pubKey =   options.pubKey;
+  
+    const psbt = bitcoin.Psbt.fromHex(options.psbt, {network: bitcoin.networks.bitcoin});
+    const wallet = new Wallet();
+    const payload = await wallet.importWallet({
+          mnemonic: mnemonic.trim(),
+          hdPath: options.hdPath,
+          type: options.type
+      })
+  
+    const keyring = payload.keyring.keyring;
+    const signer = keyring.signTransaction.bind(keyring);
+    const from = address; 
+    const addressType = transactions.getAddressType(from)
+    if (addressType == null) throw Error("Invalid Address Type");
+  
+      const tx = new PSBTTransaction(
+        signer,
+        from,
+        pubKey,
+        addressType,
+        feeRate
+      );
+  
+     const psbt_ = await tx.signPsbt(psbt)
+     
+     return psbt_.toHex();
   }
 }

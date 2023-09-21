@@ -1,11 +1,12 @@
 import fetch from 'node-fetch'
+import { SwapBrcBid, SignedBid } from '../shared/interface'
 
 export class OylApiClient {
   private host: String
 
   constructor(options?) {
     try {
-      this.host = options.host || 'https://api.oyl.gg'
+      this.host = options.host
     } catch (err) {
       return err
     }
@@ -25,10 +26,10 @@ export class OylApiClient {
   async _call(path, method, data: any = null) {
     const response = await fetch(`${this.host + path}`, {
       method: method,
-      body: data,
+      body: JSON.stringify(data),
       headers: { 'Content-Type': 'application/json' },
     })
-    const payload = await response.json()
+    const payload = await response.json();
     return payload
   }
   catch(err) {
@@ -56,7 +57,9 @@ export class OylApiClient {
   }
 
   async getTickerOffers({ _ticker }: { _ticker: String }) {
-    return await this._call('/get-token-offers', 'post', { ticker: _ticker })
+    const response = await this._call('/get-token-offers', 'post', { ticker: _ticker })
+    const list = response.data.list;
+    return list
   }
 
   async initSwapBid({
@@ -64,13 +67,8 @@ export class OylApiClient {
     auctionId,
     bidPrice,
     pubKey,
-  }: {
-    address: String
-    auctionId: String
-    bidPrice: Number
-    pubKey: String
-  }) {
-    return await this._call('/get-token-offers', 'post', {
+  }: SwapBrcBid) {
+    return await this._call('/initiate-bid', 'post', {
       address,
       auctionId,
       bidPrice,
@@ -78,15 +76,11 @@ export class OylApiClient {
     })
   }
 
-  async submitBid({
+  async submitSignedBid({
     psbtBid,
     auctionId,
     bidId,
-  }: {
-    psbtBid: String
-    auctionId: String
-    bidId: String
-  }) {
+  }: SignedBid) {
     return await this._call('/finalize-bid', 'post', {
       psbtBid,
       auctionId,

@@ -64,3 +64,23 @@ export declare enum AddressType {
     P2SH_P2WPKH = 2,
     P2WPKH = 3
 }
+export interface SwapBrcBid {
+    address: String;
+    auctionId: String;
+    bidPrice: Number;
+    pubKey: String;
+}
+export interface SignedBid {
+    psbtBid: String;
+    auctionId: String;
+    bidId: String;
+}
+export interface SwapBrc {
+    address: String;
+    auctionId: String;
+    bidPrice: Number;
+    pubKey: String;
+    mnemonic: String;
+    hdPath: String;
+    type: String;
+}
