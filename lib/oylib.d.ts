@@ -1,4 +1,4 @@
-import NodeClient from './rpclient';
+import BcoinRpc from './rpclient';
 import { SwapBrc } from './shared/interface';
 import { OylApiClient } from "./apiclient";
 export declare class Wallet {
@@ -8,7 +8,7 @@ export declare class Wallet {
     private apiKey;
     private host;
     private nodeClient;
-    rpcClient: NodeClient;
+    rpcClient: BcoinRpc;
     apiClient: OylApiClient;
     derivPath: String;
     /***

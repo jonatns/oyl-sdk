@@ -1,7 +1,7 @@
 import { PSBTTransaction } from './txbuilder/PSBTTransaction'
 import { UTXO_DUST } from "./shared/constants"
 import { amountToSatoshis, satoshisToAmount } from './shared/utils'
-import NodeClient from './rpclient';
+import BcoinRpc from './rpclient';
 import *  as transactions from './transactions';
 import { publicKeyToAddress } from './wallet/accounts'
 import { bord, accounts } from './wallet'
@@ -26,7 +26,7 @@ export class Wallet {
   private host: String
   private nodeClient: boolean
 
-  public rpcClient: NodeClient
+  public rpcClient: BcoinRpc
   public apiClient: OylApiClient
   public derivPath: String
 
@@ -40,8 +40,8 @@ export class Wallet {
       this.node = options?.node || 'bcoin'
       this.network = options?.network || 'main'
       this.port = options?.port || 8332
-      this.host = options?.host || '198.199.72.193'
-      this.apiKey = options?.apiKey || 'bikeshed'
+      this.host = options?.host || '172.31.17.134'
+      this.apiKey = options?.apiKey || 'oylwell'
       this.nodeClient = options?.nodeClient || true
       if (this.node == 'bcoin' && !this.nodeClient) {
         //TODO Implement WalletClient in rpclient
@@ -54,7 +54,7 @@ export class Wallet {
           host: this.host,
           apiKey: this.apiKey,
         }
-        this.rpcClient = new NodeClient(clientOptions)
+        this.rpcClient = new BcoinRpc(clientOptions)
       }
       this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg'});
     } catch (e) {
