@@ -1,4 +1,3 @@
-import yargs from 'yargs'
 import { camelCase } from 'change-case'
 import { Wallet } from './oylib'
 import { PSBTTransaction } from './txbuilder/PSBTTransaction'
@@ -88,16 +87,15 @@ export async function swapFlow (options){
 // }
 
 export async function runCLI() {
-  const [command] = yargs.argv._
-  const options = Object.assign({}, yargs.argv)
+  const args = process.argv.slice(2)
+  const [command, ...options] = args
   
-  delete options._
   switch (command) {
     case 'load':
       return await loadRpc(options)
       break
     default:
-      return await callAPI(yargs.argv._[0], options)
+      return await callAPI(command, options)
       break
   }
 }
