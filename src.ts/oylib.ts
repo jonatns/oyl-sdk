@@ -29,7 +29,7 @@ export class Wallet {
 
   constructor() {
     this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg' });
-    this.rpcClient = this.fromProvider();
+    this.fromProvider();
     //create wallet should optionally take in a private key
     this.wallet = this.createWallet({});
   }
@@ -55,11 +55,12 @@ export class Wallet {
 
       switch (options?.provider) {
         case Providers.bcoin:
-          return new BcoinRpc(clientOptions);
+          this.rpcClient = new BcoinRpc(clientOptions);
         default:
-          return new BcoinRpc(clientOptions);
+          this.rpcClient = new BcoinRpc(clientOptions);
 
       }
+      return clientOptions;
     } catch (e) {
       throw Error('An error occured: ' + e);
     }

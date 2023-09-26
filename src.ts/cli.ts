@@ -6,14 +6,14 @@ import *  as transactions from './transactions';
 import * as bitcoin from 'bitcoinjs-lib'
 
 export async function loadRpc(options) {
-  const rpcOptions = {}
-  rpcOptions['host'] = options.host
-  rpcOptions['port'] = options.port
-  rpcOptions['network'] = options.network
-  rpcOptions['apiKey'] = options.apiKey
-  rpcOptions['nodeClient'] = options.nodeClient
-  rpcOptions['node'] = options.node
-  const rpc = Wallet.fromObject(rpcOptions)
+  const rpcOptions = {
+    host: options.host,
+    port: options.port,
+    network: options.network,
+    auth: options.apiKey
+  }
+  const wallet = new Wallet();
+  const rpc = wallet.fromProvider(rpcOptions);
   return rpc;
 }
 
@@ -34,7 +34,7 @@ export async function swapFlow (options){
 
   const psbt = bitcoin.Psbt.fromHex(options.psbt, {network: bitcoin.networks.bitcoin});
   const wallet = new Wallet();
-  const payload = await wallet.importWallet({
+  const payload = await wallet.fromPhrase({
         mnemonic: mnemonic.trim(),
         hdPath: options.hdPath,
         type: options.type

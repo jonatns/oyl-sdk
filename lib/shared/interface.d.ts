@@ -64,6 +64,18 @@ export declare enum AddressType {
     P2SH_P2WPKH = 2,
     P2WPKH = 3
 }
+export interface ProviderOptions {
+    network: String;
+    host: String;
+    port: Number;
+    provider?: Providers;
+    auth?: String;
+}
+export declare enum Providers {
+    bcoin = 0,
+    oyl = 1,
+    electrum = 2
+}
 export interface SwapBrcBid {
     address: String;
     auctionId: String;

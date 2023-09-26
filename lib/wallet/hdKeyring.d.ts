@@ -32,7 +32,7 @@ export declare class HdKeyring extends EventEmitter {
         address: string;
         index: number;
     }[];
-    getAccounts(): Promise<string[]>;
+    getAccounts(): string[];
     private _getPrivateKeyFor;
     private _getWalletForAccount;
     signTransaction(psbt: bitcoin.Psbt, inputs: {

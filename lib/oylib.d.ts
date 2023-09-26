@@ -1,46 +1,33 @@
 import BcoinRpc from './rpclient';
-import { SwapBrc } from './shared/interface';
+import { SwapBrc, ProviderOptions, Providers } from './shared/interface';
 import { OylApiClient } from "./apiclient";
 export declare class Wallet {
-    private node;
-    private network;
-    private port;
-    private apiKey;
-    private host;
-    private nodeClient;
+    private mnemonic;
+    private wallet;
+    provider: Providers;
     rpcClient: BcoinRpc;
     apiClient: OylApiClient;
     derivPath: String;
-    /***
-     * TO-DO
-     * Replace NodeCLient with ApiClient so all requests to the node gets routed
-     * through Oyl's api server
-     */
-    constructor(options?: any);
-    static fromObject(data: any): Wallet;
-    toObject(): {
-        network: String;
-        port: Number;
-        host: String;
-        apiKey: String;
-    };
+    constructor();
+    static connect(provider: BcoinRpc): Wallet;
+    fromProvider(options?: ProviderOptions): {};
     getAddressSummary({ address }: {
         address: any;
     }): Promise<any[]>;
     getTaprootAddress({ publicKey }: {
         publicKey: any;
     }): Promise<any>;
-    importWallet({ mnemonic, hdPath, type }: {
+    fromPhrase({ mnemonic, type, hdPath }: {
         mnemonic: any;
-        hdPath?: string;
         type?: string;
+        hdPath?: string;
     }): Promise<any>;
     getSegwitAddress({ publicKey }: {
         publicKey: any;
     }): Promise<string>;
     createWallet({ type }: {
-        type: any;
-    }): Promise<any>;
+        type?: String;
+    }): any;
     getMetaBalance({ address }: {
         address: any;
     }): Promise<{

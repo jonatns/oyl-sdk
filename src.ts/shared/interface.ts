@@ -74,7 +74,7 @@ export interface ProviderOptions {
   network: String
   host: String
   port: Number
-  provider: Providers
+  provider?: Providers
   auth?: String
 }
 
