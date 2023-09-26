@@ -17,6 +17,7 @@
   "private": false,
   "devDependencies": {
     "@types/node": "^18.11.0",
+    "@types/yargs": "^17.0.25",
     "typescript": "^4.8.4"
   },
   "dependencies": {
@@ -32,6 +33,6 @@
     "node-fetch": "^2.7.0",
     "npm": "^9.6.7",
     "prettier": "^2.8.8",
-    "yargs": "^17.6.0"
+    "yargs": "^17.7.2"
   }
 }
