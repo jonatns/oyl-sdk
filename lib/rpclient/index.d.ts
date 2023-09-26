@@ -1,10 +1,10 @@
 declare const Client: any;
-interface NodeClientOptions {
+interface BcoinRpcOptions {
     [key: string]: any;
 }
-declare class NodeClient extends Client {
+declare class BcoinRpc extends Client {
     password: string;
-    constructor(options: NodeClientOptions);
+    constructor(options: BcoinRpcOptions);
     auth(): Promise<void>;
     execute(name: string, params?: any): Promise<any>;
     getMempool(): Promise<any>;
@@ -26,4 +26,4 @@ declare class NodeClient extends Client {
     getTip(): Promise<any>;
     getEntry(block: string): Promise<any>;
 }
-export default NodeClient;
+export default BcoinRpc;

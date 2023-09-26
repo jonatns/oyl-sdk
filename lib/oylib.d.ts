@@ -1,4 +1,5 @@
-import NodeClient from './rpclient';
+import BcoinRpc from './rpclient';
+import { SwapBrc } from './shared/interface';
 import { OylApiClient } from "./apiclient";
 export declare class Wallet {
     private node;
@@ -7,8 +8,8 @@ export declare class Wallet {
     private apiKey;
     private host;
     private nodeClient;
-    client: NodeClient;
-    oylApiClient: OylApiClient;
+    rpcClient: BcoinRpc;
+    apiClient: OylApiClient;
     derivPath: String;
     /***
      * TO-DO
@@ -96,4 +97,9 @@ export declare class Wallet {
         isValid: true;
         summary: any[];
     }>;
+    getBrcOffers({ ticker }: {
+        ticker: any;
+    }): Promise<any>;
+    swapBrc(bid: SwapBrc): Promise<any>;
+    swapFlow(options: any): Promise<string>;
 }

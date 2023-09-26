@@ -2,14 +2,14 @@ import assert from 'assert'
 const bcurl = require('bcurl')
 const { Client } = bcurl
 
-interface NodeClientOptions {
+interface BcoinRpcOptions {
   [key: string]: any
 }
 
-class NodeClient extends Client {
+class BcoinRpc extends Client {
   password: string
 
-  constructor(options: NodeClientOptions) {
+  constructor(options: BcoinRpcOptions) {
     super(options)
     this.password = options.password
   }
@@ -109,4 +109,4 @@ class NodeClient extends Client {
   }
 }
 
-export default NodeClient
+export default BcoinRpc

@@ -8,13 +8,13 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { HdKeyring } from './hdKeyring'
 import { AddressType } from '../shared/interface'
 
-export async function createWallet(hdPathString: string, type: AddressType) {
+export function createWallet(hdPathString: string, type: AddressType) {
   // Create a new instance of HdKeyring with the provided hdPathString
-  const keyring = await new HdKeyring({ hdPath: hdPathString })
+  const keyring = new HdKeyring({ hdPath: hdPathString })
   // Add a single account to the keyring
-  await keyring.addAccounts(1)
+  keyring.addAccounts(1)
   // Get the first account public key
-  const accounts = await keyring.getAccounts()
+  const accounts = keyring.getAccounts()
   const pubkey = accounts[0]
   const address = publicKeyToAddress(pubkey, type)
   if (address == null) throw Error('Invalid publickey or address type')

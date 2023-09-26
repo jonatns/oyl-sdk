@@ -69,3 +69,41 @@ export enum AddressType {
   P2SH_P2WPKH,
   P2WPKH,
 }
+
+export interface ProviderOptions {
+  network: String
+  host: String
+  port: Number
+  provider: Providers
+  auth?: String
+}
+
+export enum Providers {
+  bcoin,
+  oyl,
+  electrum
+
+}
+
+export interface SwapBrcBid {
+  address: String
+  auctionId: String
+  bidPrice: Number
+  pubKey: String
+}
+
+export interface SignedBid {
+    psbtBid: String
+    auctionId: String
+    bidId: String
+}
+
+export interface SwapBrc {
+  address: String
+  auctionId: String
+  bidPrice: Number
+  pubKey: String
+  mnemonic: String
+  hdPath: String
+  type: String
+}
