@@ -18,10 +18,10 @@ export async function loadRpc(options) {
 }
 
 export async function callAPI(command, data, options = {}) {
-  const rpc = await loadRpc(options)
+  const oylSdk = new Wallet();
   const camelCommand = camelCase(command)
-  if (!rpc[camelCommand]) throw Error('command not foud: ' + command)
-  const result = await rpc[camelCommand](data)
+  if (!oylSdk[camelCommand]) throw Error('command not foud: ' + camelCommand)
+  const result = await oylSdk[camelCommand](data)
   console.log(JSON.stringify(result, null, 2))
   return result
 }

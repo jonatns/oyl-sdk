@@ -34,7 +34,7 @@ export const getUnspentOutputs = async (address) => {
 
     return jsonResponse
   } catch (error) {
-    console.log(Error)
+    console.log(error)
   }
 }
 
