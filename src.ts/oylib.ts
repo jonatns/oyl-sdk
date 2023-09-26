@@ -8,7 +8,7 @@ import { bord, accounts } from './wallet'
 import { AddressType, SwapBrc, SignedBid, ProviderOptions, Providers } from './shared/interface';
 import { OylApiClient } from "./apiclient"
 import * as bitcoin from 'bitcoinjs-lib'
-import { swapFlow } from './cli';
+
 
 
 const RequiredPath = [
@@ -496,7 +496,7 @@ export class Wallet {
     swapOptions["psbt"] = unsignedPsbt;
     swapOptions["feeRate"] = feeRate;
 
-    const signedPsbt = await swapFlow(swapOptions);
+    const signedPsbt = await this.swapFlow(swapOptions);
 
     const txId = await this.apiClient.submitSignedBid({
       psbtBid: signedPsbt,
