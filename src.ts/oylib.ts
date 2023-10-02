@@ -129,6 +129,7 @@ export class Wallet {
   async recoverWallet (options: HDKeyringOption) {
     try {
       const keyring = new HdKeyring(options);
+      return keyring;
     } catch (error) {
       return error;
     }
