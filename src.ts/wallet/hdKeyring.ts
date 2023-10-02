@@ -8,7 +8,7 @@ import Mnemonic from 'bitcore-mnemonic'
 
 const hdPathString = "m/86'/0'/0'/0"
 
-interface HDKeyringOption {
+export interface HDKeyringOption {
   hdPath?: string
   mnemonic?: any
   activeIndexes?: number[]
@@ -28,7 +28,7 @@ export class HdKeyring extends EventEmitter {
 
   constructor(opts?: HDKeyringOption) {
     super(null)
-    this.resolve(opts)
+    this.deserialize(opts)
   }
 
   async serialize(): Promise<HDKeyringOption> {
@@ -40,7 +40,7 @@ export class HdKeyring extends EventEmitter {
     }
   }
 
-  async resolve(_opts: HDKeyringOption = {}) {
+  deserialize(_opts: HDKeyringOption = {}) {
     if (this.root) {
       throw new Error('Btc-Hd-Keyring: Secret recovery phrase already provided')
     }
@@ -61,6 +61,8 @@ export class HdKeyring extends EventEmitter {
     if (opts.activeIndexes) {
       this.activeAccounts(opts.activeIndexes)
     }
+
+    return this
   }
 
   initFromMnemonic(mnemonic: string) {

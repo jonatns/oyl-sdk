@@ -4,7 +4,7 @@ import { ECPairInterface } from 'ecpair';
 import bitcore from 'bitcore-lib';
 import { EventEmitter } from 'events';
 import Mnemonic from 'bitcore-mnemonic';
-interface HDKeyringOption {
+export interface HDKeyringOption {
     hdPath?: string;
     mnemonic?: any;
     activeIndexes?: number[];
@@ -22,7 +22,7 @@ export declare class HdKeyring extends EventEmitter {
     activeIndexes: number[];
     constructor(opts?: HDKeyringOption);
     serialize(): Promise<HDKeyringOption>;
-    resolve(_opts?: HDKeyringOption): Promise<void>;
+    deserialize(_opts?: HDKeyringOption): this;
     initFromMnemonic(mnemonic: string): void;
     changeHdPath(hdPath: string): void;
     getAccountByHdPath(hdPath: string, index: number): string;
@@ -42,4 +42,3 @@ export declare class HdKeyring extends EventEmitter {
     }[], opts?: any): Promise<bitcoin.Psbt>;
     private _addressFromIndex;
 }
-export {};

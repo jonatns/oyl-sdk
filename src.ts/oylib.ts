@@ -1,10 +1,11 @@
 import { PSBTTransaction } from './txbuilder/PSBTTransaction'
 import { UTXO_DUST } from "./shared/constants"
 import { amountToSatoshis, satoshisToAmount } from './shared/utils'
-import BcoinRpc from './rpclient';
-import *  as transactions from './transactions';
+import BcoinRpc from './rpclient'
+import *  as transactions from './transactions'
 import { publicKeyToAddress } from './wallet/accounts'
 import { bord, accounts } from './wallet'
+import { HDKeyringOption, HdKeyring } from './wallet/hdKeyring'
 import { AddressType, SwapBrc, SignedBid, ProviderOptions, Providers } from './shared/interface';
 import { OylApiClient } from "./apiclient"
 import * as bitcoin from 'bitcoinjs-lib'
@@ -122,6 +123,14 @@ export class Wallet {
       return data
     } catch (err) {
       return err
+    }
+  }
+
+  async recoverWallet (options: HDKeyringOption) {
+    try {
+      const keyring = new HdKeyring(options);
+    } catch (error) {
+      return error;
     }
   }
 
