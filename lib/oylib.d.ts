@@ -1,7 +1,7 @@
 import BcoinRpc from './rpclient';
 import { HDKeyringOption } from './wallet/hdKeyring';
 import { SwapBrc, ProviderOptions, Providers } from './shared/interface';
-import { OylApiClient } from "./apiclient";
+import { OylApiClient } from './apiclient';
 export declare class Wallet {
     private mnemonic;
     private wallet;
@@ -41,11 +41,10 @@ export declare class Wallet {
     getTxHistory({ address }: {
         address: any;
     }): Promise<any>;
-    private calculateHighPriorityFee;
     getFees(): Promise<{
-        high: number;
-        medium: number;
-        low: number;
+        High: number;
+        Medium: number;
+        Low: number;
     }>;
     getTotalBalance({ batch }: {
         batch: any;
@@ -59,7 +58,7 @@ export declare class Wallet {
     importWatchOnlyAddress({ addresses }: {
         addresses?: any[];
     }): Promise<void>;
-    createPsbtTx({ publicKey, from, to, changeAddress, amount, fee, signer }: {
+    createPsbtTx({ publicKey, from, to, changeAddress, amount, fee, signer, }: {
         publicKey: any;
         from: any;
         to: any;

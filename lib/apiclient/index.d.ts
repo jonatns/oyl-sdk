@@ -6,7 +6,7 @@ export declare class OylApiClient {
     toObject(): {
         host: String;
     };
-    _call(path: any, method: any, data?: any): Promise<any>;
+    _call(path: string, method: string, data?: any): Promise<any>;
     catch(err: any): any;
     importAddress({ address }: {
         address: String;
@@ -18,8 +18,8 @@ export declare class OylApiClient {
     getTickerOffers({ _ticker }: {
         _ticker: String;
     }): Promise<any>;
-    initSwapBid({ address, auctionId, bidPrice, pubKey, }: SwapBrcBid): Promise<any>;
-    submitSignedBid({ psbtBid, auctionId, bidId, }: SignedBid): Promise<any>;
+    initSwapBid({ address, auctionId, bidPrice, pubKey }: SwapBrcBid): Promise<any>;
+    submitSignedBid({ psbtBid, auctionId, bidId }: SignedBid): Promise<any>;
     getFees(): Promise<any>;
     subscribe({ webhookUrl, rbf, }: {
         webhookUrl: String;
