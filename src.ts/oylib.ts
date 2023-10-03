@@ -336,10 +336,8 @@ export class Wallet {
 
   async importWatchOnlyAddress({ addresses = [] }) {
     for (let i = 0; i < addresses.length; i++) {
-      ;(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10000))
-        await this.rpcClient.execute('importaddress', [addresses[i], '', true])
-      })()
+      await new Promise((resolve) => setTimeout(resolve, 10000))
+      await this.rpcClient.execute('importaddress', [addresses[i], '', true])
     }
   }
 
