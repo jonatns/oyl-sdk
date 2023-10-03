@@ -1,16 +1,19 @@
 import { PSBTTransaction } from './txbuilder/PSBTTransaction'
-import { UTXO_DUST } from "./shared/constants"
+import { UTXO_DUST } from './shared/constants'
 import { amountToSatoshis, satoshisToAmount } from './shared/utils'
 import BcoinRpc from './rpclient'
-import *  as transactions from './transactions'
+import * as transactions from './transactions'
 import { publicKeyToAddress } from './wallet/accounts'
 import { bord, accounts } from './wallet'
 import { HDKeyringOption, HdKeyring } from './wallet/hdKeyring'
-import { AddressType, SwapBrc, SignedBid, ProviderOptions, Providers } from './shared/interface';
-import { OylApiClient } from "./apiclient"
+import {
+  AddressType,
+  SwapBrc,
+  ProviderOptions,
+  Providers,
+} from './shared/interface'
+import { OylApiClient } from './apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
-
-
 
 const RequiredPath = [
   "m/44'/0'/0'/0", // P2PKH (Legacy)
@@ -21,7 +24,7 @@ const RequiredPath = [
 
 export class Wallet {
   private mnemonic: String
-  private wallet;
+  private wallet
 
   public provider: Providers
   public rpcClient: BcoinRpc
@@ -29,41 +32,39 @@ export class Wallet {
   public derivPath: String
 
   constructor() {
-    this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg' });
-    this.fromProvider();
+    this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg' })
+    this.fromProvider()
     //create wallet should optionally take in a private key
-    this.wallet = this.createWallet({});
+    this.wallet = this.createWallet({})
   }
 
   static connect(provider: BcoinRpc) {
     try {
-      const wallet = new this();
-      wallet.rpcClient = provider;
-      return wallet;
+      const wallet = new this()
+      wallet.rpcClient = provider
+      return wallet
     } catch (e) {
-      throw Error('An error occured: ' + e);
+      throw Error('An error occured: ' + e)
     }
   }
-
 
   fromProvider(options?: ProviderOptions) {
     try {
       const clientOptions = {}
-      clientOptions["network"] = options?.network || 'main';
-      clientOptions["port"]  = options?.port || 8332;
-      clientOptions["host"] = options?.host || '172.31.17.134';
-      clientOptions["apiKey"] = options?.auth || 'oylwell';
+      clientOptions['network'] = options?.network || 'main'
+      clientOptions['port'] = options?.port || 8332
+      clientOptions['host'] = options?.host || '172.31.17.134'
+      clientOptions['apiKey'] = options?.auth || 'oylwell'
 
       switch (options?.provider) {
         case Providers.bcoin:
-          this.rpcClient = new BcoinRpc(clientOptions);
+          this.rpcClient = new BcoinRpc(clientOptions)
         default:
-          this.rpcClient = new BcoinRpc(clientOptions);
-
+          this.rpcClient = new BcoinRpc(clientOptions)
       }
-      return clientOptions;
+      return clientOptions
     } catch (e) {
-      throw Error('An error occured: ' + e);
+      throw Error('An error occured: ' + e)
     }
   }
 
@@ -71,7 +72,7 @@ export class Wallet {
     if (typeof address === 'string') {
       address = [address]
     }
-    const addressesUtxo = [];
+    const addressesUtxo = []
     for (let i = 0; i < address.length; i++) {
       let utxos = await transactions.getUnspentOutputs(address[i])
       //console.log(utxos)
@@ -87,13 +88,13 @@ export class Wallet {
   async getTaprootAddress({ publicKey }) {
     try {
       const address = publicKeyToAddress(publicKey, AddressType.P2TR)
-      return address;
+      return address
     } catch (err) {
-      return err;
+      return err
     }
   }
 
-  async fromPhrase({ mnemonic,  type = 'taproot', hdPath = RequiredPath[3] }) {
+  async fromPhrase({ mnemonic, type = 'taproot', hdPath = RequiredPath[3] }) {
     try {
       let addrType
 
@@ -113,7 +114,7 @@ export class Wallet {
       }
 
       const wallet = await accounts.importMnemonic(mnemonic, hdPath, addrType)
-      this.wallet = wallet;
+      this.wallet = wallet
       const meta = await this.getUtxosArtifacts({ address: wallet['address'] })
       const data = {
         keyring: wallet,
@@ -126,23 +127,22 @@ export class Wallet {
     }
   }
 
-  async recoverWallet (options: HDKeyringOption) {
+  async recoverWallet(options: HDKeyringOption) {
     try {
-      const keyring = new HdKeyring(options);
+      const keyring = new HdKeyring(options)
       //keyring.addAccounts(2)
-      return keyring;
+      return keyring
     } catch (error) {
-      return error;
+      return error
     }
   }
 
-
   async getSegwitAddress({ publicKey }) {
-    const address = publicKeyToAddress(publicKey, AddressType.P2WPKH);
-    return address;
+    const address = publicKeyToAddress(publicKey, AddressType.P2WPKH)
+    return address
   }
 
-   createWallet({ type } : {type?: String}) {
+  createWallet({ type }: { type?: String }) {
     try {
       let hdPath
       let addrType
@@ -172,7 +172,7 @@ export class Wallet {
       const wallet = accounts.createWallet(hdPath, addrType)
       return wallet
     } catch (err) {
-      return err;
+      return err
     }
   }
 
@@ -217,53 +217,38 @@ export class Wallet {
 
         const output = outputs.find((output) => output.address === address)
         const input = inputs.find((input) => input.coin.address === address)
-        const txDetails = {};
-        txDetails["hash"] = hash;
-        txDetails["confirmations"] = confirmations;
+        const txDetails = {}
+        txDetails['hash'] = hash
+        txDetails['confirmations'] = confirmations
         if (input) {
-          txDetails["type"] = "sent";
-          txDetails["to"] = outputs.find((output) => output.address != address)?.address
+          txDetails['type'] = 'sent'
+          txDetails['to'] = outputs.find(
+            (output) => output.address != address
+          )?.address
           if (output) {
-            txDetails["amount"] = (input.coin.value / 1e8) - (output.value / 1e8)
+            txDetails['amount'] = input.coin.value / 1e8 - output.value / 1e8
           } else {
-            txDetails["amount"] = input.coin.value / 1e8
+            txDetails['amount'] = input.coin.value / 1e8
           }
         } else {
           if (output) {
-            txDetails["type"] = "received";
-            txDetails["amount"] = output.value / 1e8
-            txDetails["from"] = inputs.find((input) => input.coin.address != address).coin.address
+            txDetails['type'] = 'received'
+            txDetails['amount'] = output.value / 1e8
+            txDetails['from'] = inputs.find(
+              (input) => input.coin.address != address
+            ).coin.address
           }
         }
-        txDetails["symbol"] = 'BTC'
-        return txDetails;
+        txDetails['symbol'] = 'BTC'
+        return txDetails
       })
       .filter((transaction) => transaction !== null) // Filter out null transactions
 
     return processedTransactions
   }
 
-  private async calculateHighPriorityFee(payload: { [key: string]: object }) {
-    const fees = Object.values(payload).map((transaction) => transaction['fee'])
-    fees.sort((a, b) => a - b)
-    const medianFee = fees[Math.floor(fees.length / 2)]
-    return medianFee * 2
-  }
-
-  async getFees() {
-    const rawMempool = await this.rpcClient.execute(
-      'getrawmempool',
-      [true] /* verbose */
-    )
-    const mempoolInfo = await this.rpcClient.execute('getmempoolinfo')
-    const high = (await this.calculateHighPriorityFee(rawMempool)) * 100000000 // 10 mins
-    const low = mempoolInfo.mempoolminfee * 2 * 100000000
-    const medium = (high + low) / 2
-    return {
-      high,
-      medium,
-      low,
-    }
+  async getFees(): Promise<{ High: number; Medium: number; Low: number }> {
+    return await this.apiClient.getFees()
   }
 
   // async getActiveAddresses({ xpub, lookAhead = 10 }) {
@@ -351,7 +336,7 @@ export class Wallet {
 
   async importWatchOnlyAddress({ addresses = [] }) {
     for (let i = 0; i < addresses.length; i++) {
-      (async () => {
+      ;(async () => {
         await new Promise((resolve) => setTimeout(resolve, 10000))
         await this.rpcClient.execute('importaddress', [addresses[i], '', true])
       })()
@@ -371,20 +356,22 @@ export class Wallet {
   //   const from = payload.keyring.address;
   //   const changeAddress = from;
 
-
   //   return await this.createPsbtTx({publicKey: pubKey, from: from, to: to, changeAddress: changeAddress, amount: amount, fee: fee,  signer: signer })
   //   }
 
-
-
-
-
-
-  async createPsbtTx({ publicKey, from, to, changeAddress, amount, fee, signer }) {
-    const utxos = await this.getUtxosArtifacts({ address: from });
-    const feeRate = fee / 100;
+  async createPsbtTx({
+    publicKey,
+    from,
+    to,
+    changeAddress,
+    amount,
+    fee,
+    signer,
+  }) {
+    const utxos = await this.getUtxosArtifacts({ address: from })
+    const feeRate = fee / 100
     const addressType = transactions.getAddressType(from)
-    if (addressType == null) throw Error("Invalid Address Type");
+    if (addressType == null) throw Error('Invalid Address Type')
 
     const tx = new PSBTTransaction(
       signer,
@@ -392,86 +379,90 @@ export class Wallet {
       publicKey,
       addressType,
       feeRate
-    );
+    )
 
-    tx.addOutput(to, amountToSatoshis(amount));
-    tx.setChangeAddress(changeAddress);
-    const outputAmount = tx.getTotalOutput();
+    tx.addOutput(to, amountToSatoshis(amount))
+    tx.setChangeAddress(changeAddress)
+    const outputAmount = tx.getTotalOutput()
 
-    const nonOrdUtxos = [];
-    const ordUtxos = [];
+    const nonOrdUtxos = []
+    const ordUtxos = []
     utxos.forEach((v) => {
       if (v.inscriptions.length > 0) {
-        ordUtxos.push(v);
+        ordUtxos.push(v)
       } else {
-        nonOrdUtxos.push(v);
+        nonOrdUtxos.push(v)
       }
-    });
+    })
 
-    let tmpSum = tx.getTotalInput();
+    let tmpSum = tx.getTotalInput()
     for (let i = 0; i < nonOrdUtxos.length; i++) {
-      const nonOrdUtxo = nonOrdUtxos[i];
+      const nonOrdUtxo = nonOrdUtxos[i]
       if (tmpSum < outputAmount) {
-        tx.addInput(nonOrdUtxo);
-        tmpSum += nonOrdUtxo.satoshis;
-        continue;
+        tx.addInput(nonOrdUtxo)
+        tmpSum += nonOrdUtxo.satoshis
+        continue
       }
 
-      const fee = await tx.calNetworkFee();
+      const fee = await tx.calNetworkFee()
       if (tmpSum < outputAmount + fee) {
-        tx.addInput(nonOrdUtxo);
-        tmpSum += nonOrdUtxo.satoshis;
+        tx.addInput(nonOrdUtxo)
+        tmpSum += nonOrdUtxo.satoshis
       } else {
-        break;
+        break
       }
     }
 
     if (nonOrdUtxos.length === 0) {
-      throw new Error('Balance not enough');
+      throw new Error('Balance not enough')
     }
 
-    const unspent = tx.getUnspent();
+    const unspent = tx.getUnspent()
     if (unspent === 0) {
-      throw new Error('Balance not enough to pay network fee.');
+      throw new Error('Balance not enough to pay network fee.')
     }
 
     // add dummy output
-    tx.addChangeOutput(1);
+    tx.addChangeOutput(1)
 
-    const networkFee = await tx.calNetworkFee();
+    const networkFee = await tx.calNetworkFee()
     if (unspent < networkFee) {
       throw new Error(
-        `Balance not enough. Need ${satoshisToAmount(networkFee)} BTC as network fee, but only ${satoshisToAmount(unspent)} BTC.`
-      );
+        `Balance not enough. Need ${satoshisToAmount(
+          networkFee
+        )} BTC as network fee, but only ${satoshisToAmount(unspent)} BTC.`
+      )
     }
 
-    const leftAmount = unspent - networkFee;
+    const leftAmount = unspent - networkFee
     if (leftAmount >= UTXO_DUST) {
       // change dummy output to true output
-      tx.getChangeOutput().value = leftAmount;
+      tx.getChangeOutput().value = leftAmount
     } else {
       // remove dummy output
-      tx.removeChangeOutput();
+      tx.removeChangeOutput()
     }
 
-    const psbt = await tx.createSignedPsbt();
-    tx.dumpTx(psbt);
+    const psbt = await tx.createSignedPsbt()
+    tx.dumpTx(psbt)
 
     //@ts-ignore
-    psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false;
+    psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
 
-    const rawtx = psbt.extractTransaction().toHex();
-    const result = await this.rpcClient.pushTX(rawtx);
+    const rawtx = psbt.extractTransaction().toHex()
+    const result = await this.rpcClient.pushTX(rawtx)
 
     return {
       txId: psbt.extractTransaction().getId(),
       ...result,
-    };
-
+    }
   }
 
   async getSegwitAddressInfo({ address }) {
-    const isValid = transactions.validateSegwitAddress({ address, type: 'segwit' })
+    const isValid = transactions.validateSegwitAddress({
+      address,
+      type: 'segwit',
+    })
     if (!isValid) {
       return { isValid, summary: null }
     }
@@ -480,7 +471,10 @@ export class Wallet {
   }
 
   async getTaprootAddressInfo({ address }) {
-    const isValid = transactions.validateTaprootAddress({ address, type: 'segwit' })
+    const isValid = transactions.validateTaprootAddress({
+      address,
+      type: 'segwit',
+    })
     if (!isValid) {
       return { isValid, summary: null }
     }
@@ -489,8 +483,8 @@ export class Wallet {
   }
 
   async getBrcOffers({ ticker }) {
-    const offers = await this.apiClient.getTickerOffers({ _ticker: ticker });
-    return offers;
+    const offers = await this.apiClient.getTickerOffers({ _ticker: ticker })
+    return offers
   }
 
   async swapBrc(bid: SwapBrc) {
@@ -498,58 +492,53 @@ export class Wallet {
       address: bid.address,
       auctionId: bid.auctionId,
       bidPrice: bid.bidPrice,
-      pubKey: bid.pubKey
+      pubKey: bid.pubKey,
     })
-    if (psbt.error) return psbt;
-    const unsignedPsbt = psbt.psbtBid;
-    const feeRate = psbt.feeRate;
+    if (psbt.error) return psbt
+    const unsignedPsbt = psbt.psbtBid
+    const feeRate = psbt.feeRate
 
-    const swapOptions = bid;
-    swapOptions["psbt"] = unsignedPsbt;
-    swapOptions["feeRate"] = feeRate;
+    const swapOptions = bid
+    swapOptions['psbt'] = unsignedPsbt
+    swapOptions['feeRate'] = feeRate
 
-    const signedPsbt = await this.swapFlow(swapOptions);
+    const signedPsbt = await this.swapFlow(swapOptions)
 
     const txId = await this.apiClient.submitSignedBid({
       psbtBid: signedPsbt,
       auctionId: bid.auctionId,
-      bidId: psbt.bidId
-    });
+      bidId: psbt.bidId,
+    })
 
-    return txId;
-
+    return txId
   }
 
   async swapFlow(options) {
-    const address = options.address;
-    const feeRate = options.feeRate;
-    const mnemonic = options.mnemonic;
-    const pubKey = options.pubKey;
+    const address = options.address
+    const feeRate = options.feeRate
+    const mnemonic = options.mnemonic
+    const pubKey = options.pubKey
 
-    const psbt = bitcoin.Psbt.fromHex(options.psbt, { network: bitcoin.networks.bitcoin });
-    const wallet = new Wallet();
+    const psbt = bitcoin.Psbt.fromHex(options.psbt, {
+      network: bitcoin.networks.bitcoin,
+    })
+    const wallet = new Wallet()
     const payload = await wallet.fromPhrase({
       mnemonic: mnemonic.trim(),
       hdPath: options.hdPath,
-      type: options.type
+      type: options.type,
     })
 
-    const keyring = payload.keyring.keyring;
-    const signer = keyring.signTransaction.bind(keyring);
-    const from = address;
+    const keyring = payload.keyring.keyring
+    const signer = keyring.signTransaction.bind(keyring)
+    const from = address
     const addressType = transactions.getAddressType(from)
-    if (addressType == null) throw Error("Invalid Address Type");
+    if (addressType == null) throw Error('Invalid Address Type')
 
-    const tx = new PSBTTransaction(
-      signer,
-      from,
-      pubKey,
-      addressType,
-      feeRate
-    );
+    const tx = new PSBTTransaction(signer, from, pubKey, addressType, feeRate)
 
     const psbt_ = await tx.signPsbt(psbt)
 
-    return psbt_.toHex();
+    return psbt_.toHex()
   }
 }
