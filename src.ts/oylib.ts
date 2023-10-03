@@ -129,11 +129,13 @@ export class Wallet {
   async recoverWallet (options: HDKeyringOption) {
     try {
       const keyring = new HdKeyring(options);
+      //keyring.addAccounts(2)
       return keyring;
     } catch (error) {
       return error;
     }
   }
+
 
   async getSegwitAddress({ publicKey }) {
     const address = publicKeyToAddress(publicKey, AddressType.P2WPKH);
@@ -382,7 +384,7 @@ export class Wallet {
     const utxos = await this.getUtxosArtifacts({ address: from });
     const feeRate = fee / 100;
     const addressType = transactions.getAddressType(from)
-    if (addressType != null) throw Error("Invalid Address Type");
+    if (addressType == null) throw Error("Invalid Address Type");
 
     const tx = new PSBTTransaction(
       signer,
