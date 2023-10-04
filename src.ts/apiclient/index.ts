@@ -23,13 +23,18 @@ export class OylApiClient {
     }
   }
 
-  async _call(path, method, data: any = null) {
-    const response = await fetch(`${this.host + path}`, {
+  async _call(path: string, method: string, data?: any) {
+    const options: RequestInit = {
       method: method,
-      body: JSON.stringify(data),
       headers: { 'Content-Type': 'application/json' },
-    })
-    const payload = await response.json();
+    }
+
+    if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+      options.body = JSON.stringify(data)
+    }
+
+    const response = await fetch(`${this.host + path}`, options)
+    const payload = await response.json()
     return payload
   }
   catch(err) {
@@ -61,17 +66,14 @@ export class OylApiClient {
   }
 
   async getTickerOffers({ _ticker }: { _ticker: String }) {
-    const response = await this._call('/get-token-offers', 'post', { ticker: _ticker })
-    const list = response.data.list;
+    const response = await this._call('/get-token-offers', 'post', {
+      ticker: _ticker,
+    })
+    const list = response.data.list
     return list
   }
 
-  async initSwapBid({
-    address,
-    auctionId,
-    bidPrice,
-    pubKey,
-  }: SwapBrcBid) {
+  async initSwapBid({ address, auctionId, bidPrice, pubKey }: SwapBrcBid) {
     return await this._call('/initiate-bid', 'post', {
       address,
       auctionId,
@@ -80,11 +82,7 @@ export class OylApiClient {
     })
   }
 
-  async submitSignedBid({
-    psbtBid,
-    auctionId,
-    bidId,
-  }: SignedBid) {
+  async submitSignedBid({ psbtBid, auctionId, bidId }: SignedBid) {
     return await this._call('/finalize-bid', 'post', {
       psbtBid,
       auctionId,
