@@ -449,7 +449,6 @@ export class Wallet {
     psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
 
     const rawtx = psbt.extractTransaction().toHex();
-    console.log(rawtx)
     const result = await this.apiClient.pushTx({tx: rawtx});
 
     console.log(result)

@@ -64,7 +64,7 @@ export declare class Wallet {
         amount: any;
         fee: any;
     }): Promise<any>;
-    createPsbtTx({ publicKey, from, to, changeAddress, amount, fee, signer }: {
+    createPsbtTx({ publicKey, from, to, changeAddress, amount, fee, signer, }: {
         publicKey: any;
         from: any;
         to: any;

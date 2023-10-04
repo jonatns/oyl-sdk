@@ -95,18 +95,20 @@ async function sendTest (){
 }
 
 export async function runCLI() {
-  const args = await yargs.argv
-  const [command] = args._
+  const [command] = yargs.argv._
+  const options = Object.assign({}, yargs.argv)
 
+  delete options._
   switch (command) {
     case 'load':
-      return await loadRpc({ ...args })
+      return await loadRpc(options)
       break
     case 'send':
       return await sendTest()
       break
     default:
-      return await callAPI(command, { ...args })
+      return await callAPI(yargs.argv._[0], options)
       break
   }
 }
+
