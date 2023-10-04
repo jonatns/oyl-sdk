@@ -358,22 +358,22 @@ export class Wallet {
     }
   }
 
-  // async sendBtc({ mnemonic, to, amount, fee }) {
+  async sendBtc({ mnemonic, to, amount, fee }) {
 
-  //   const payload = await this.importWallet({
-  //     mnemonic: mnemonic.trim(),
-  //     hdPath: "m/49'/0'/0'",
-  //     type: 'segwit',
-  //   })
-  //   const keyring = payload.keyring.keyring;
-  //   const pubKey = keyring.wallets[0].publicKey.toString('hex');
-  //   const signer = keyring.signTransaction.bind(keyring);
-  //   const from = payload.keyring.address;
-  //   const changeAddress = from;
+    const payload = await this.fromPhrase({
+      mnemonic: mnemonic.trim(),
+      hdPath: "m/49'/0'/0'",
+      type: 'segwit',
+    })
+    const keyring = payload.keyring.keyring;
+    const pubKey = keyring.wallets[0].publicKey.toString('hex');
+    const signer = keyring.signTransaction.bind(keyring);
+    const from = payload.keyring.address;
+    const changeAddress = from;
 
 
-  //   return await this.createPsbtTx({publicKey: pubKey, from: from, to: to, changeAddress: changeAddress, amount: amount, fee: fee,  signer: signer })
-  //   }
+    return await this.createPsbtTx({publicKey: pubKey, from: from, to: to, changeAddress: changeAddress, amount: amount, fee: fee,  signer: signer })
+    }
 
 
 
@@ -461,7 +461,10 @@ export class Wallet {
     psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false;
 
     const rawtx = psbt.extractTransaction().toHex();
-    const result = await this.rpcClient.pushTX(rawtx);
+    console.log(rawtx)
+    const result = await this.apiClient.pushTx({tx: rawtx});
+
+    console.log(result)
 
     return {
       txId: psbt.extractTransaction().getId(),
@@ -548,7 +551,7 @@ export class Wallet {
       feeRate
     );
 
-    const psbt_ = await tx.signPsbt(psbt)
+    const psbt_ = await tx.signPsbt(psbt, false)
 
     return psbt_.toHex();
   }

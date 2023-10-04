@@ -11,6 +11,9 @@ export declare class OylApiClient {
     importAddress({ address }: {
         address: String;
     }): Promise<any>;
+    pushTx({ tx }: {
+        tx: String;
+    }): Promise<any>;
     listWallet(): Promise<any>;
     listTx(): Promise<any>;
     getRawMempool(): Promise<any>;

@@ -59,6 +59,12 @@ export declare class Wallet {
     importWatchOnlyAddress({ addresses }: {
         addresses?: any[];
     }): Promise<void>;
+    sendBtc({ mnemonic, to, amount, fee }: {
+        mnemonic: any;
+        to: any;
+        amount: any;
+        fee: any;
+    }): Promise<any>;
     createPsbtTx({ publicKey, from, to, changeAddress, amount, fee, signer }: {
         publicKey: any;
         from: any;

@@ -176,7 +176,7 @@ export class PSBTTransaction {
     return psbt
   }
 
-  async signPsbt(psbt: bitcoin.Psbt, autoFinalized = false) {
+  async signPsbt(psbt: bitcoin.Psbt, autoFinalized = true) {
     const psbtNetwork = bitcoin.networks.bitcoin
 
     const toSignInputs: ToSignInput[] = await this.formatOptionsToSignInputs(
