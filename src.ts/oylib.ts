@@ -451,8 +451,6 @@ export class Wallet {
     const rawtx = psbt.extractTransaction().toHex();
     const result = await this.apiClient.pushTx({tx: rawtx});
 
-    console.log(result)
-
     return {
       txId: psbt.extractTransaction().getId(),
       ...result,
