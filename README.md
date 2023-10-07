@@ -180,7 +180,7 @@ const fee = await client.getFees();
 const network = "main";
 
 return await client.sendBtc({publicKey: pubKey, from: from, to: to, changeAddress: changeAddress, amount: amount, fee: fee.medium, network: network, signer: signer })
-  
+
 ```
 
-Contributions, issues, PRs are all welcome
+Contributions, issues, PRs are all welcome.
