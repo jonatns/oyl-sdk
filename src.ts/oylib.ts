@@ -368,7 +368,7 @@ export class Wallet {
     signer,
   }) {
     const utxos = await this.getUtxosArtifacts({ address: from })
-    const feeRate = fee / 100
+    const feeRate = fee
     const addressType = transactions.getAddressType(from)
     if (addressType == null) throw Error('Invalid Address Type')
 
@@ -381,6 +381,8 @@ export class Wallet {
     )
 
     tx.addOutput(to, amountToSatoshis(amount))
+    // tx.addOutput(to, amountToSatoshis(amount))
+    // tx.addOutput(to, amountToSatoshis(amount))
     tx.setChangeAddress(changeAddress)
     const outputAmount = tx.getTotalOutput()
 
@@ -449,7 +451,9 @@ export class Wallet {
     psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
 
     const rawtx = psbt.extractTransaction().toHex();
-    const result = await this.apiClient.pushTx({tx: rawtx});
+    // console.log("rawtx", rawtx)
+    const result = await this.apiClient.pushTx({transactionHex: rawtx});
+    // console.log(result)
 
     return {
       txId: psbt.extractTransaction().getId(),

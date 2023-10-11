@@ -29,7 +29,7 @@ export class OylApiClient {
       headers: { 'Content-Type': 'application/json' },
     }
 
-    if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+    if (method === 'post' || method === 'put' || method === 'patch') {
       options.body = JSON.stringify(data)
     }
 
@@ -45,8 +45,8 @@ export class OylApiClient {
     return await this._call('/import-address', 'post', { address: address })
   }
 
-  async pushTx({tx}: {tx: String}){
-    return await this._call('/broadcast-transaction', 'post', { transactionHex: tx })
+  async pushTx({transactionHex}: {transactionHex: String}){
+    return await this._call('/broadcast-transaction', 'post', { transactionHex: transactionHex })
   }
 
   async listWallet() {

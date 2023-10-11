@@ -11,8 +11,8 @@ export declare class OylApiClient {
     importAddress({ address }: {
         address: String;
     }): Promise<any>;
-    pushTx({ tx }: {
-        tx: String;
+    pushTx({ transactionHex }: {
+        transactionHex: String;
     }): Promise<any>;
     listWallet(): Promise<any>;
     listTx(): Promise<any>;
