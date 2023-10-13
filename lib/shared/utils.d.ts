@@ -8,3 +8,4 @@ export declare function satoshisToAmount(val: number): string;
 export declare function amountToSatoshis(val: any): number;
 export declare const validator: (pubkey: Buffer, msghash: Buffer, signature: Buffer) => boolean;
 export declare function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput;
+export declare const getWitnessDataChunk: (content: string, encodeType?: BufferEncoding) => Buffer[];

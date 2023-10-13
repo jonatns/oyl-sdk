@@ -4,6 +4,7 @@ import ecc from '@bitcoinerlab/secp256k1'
 bitcoin.initEccLib(ecc)
 import { AddressType, UnspentOutput, TxInput } from '../shared/interface'
 import BigNumber from 'bignumber.js'
+import { maximumScriptBytes } from './constants'
 
 export const ECPair = ECPairFactory(ecc)
 
@@ -136,4 +137,20 @@ export function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput {
         utxo,
       }
   }
+}
+
+
+
+export const getWitnessDataChunk = function (content: string, encodeType: BufferEncoding = "utf8") {
+   const buffered = Buffer.from(content, encodeType)
+   const contentChunks: Buffer[] = []
+   let chunks = 0
+
+   while (chunks < buffered.byteLength){
+    const split = buffered.subarray(chunks, chunks + maximumScriptBytes)
+    chunks += split.byteLength
+    contentChunks.push(split)
+   }
+
+   return contentChunks
 }
