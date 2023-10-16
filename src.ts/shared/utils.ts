@@ -139,18 +139,19 @@ export function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput {
   }
 }
 
+export const getWitnessDataChunk = function (
+  content: string,
+  encodeType: BufferEncoding = 'utf8'
+) {
+  const buffered = Buffer.from(content, encodeType)
+  const contentChunks: Buffer[] = []
+  let chunks = 0
 
-
-export const getWitnessDataChunk = function (content: string, encodeType: BufferEncoding = "utf8") {
-   const buffered = Buffer.from(content, encodeType)
-   const contentChunks: Buffer[] = []
-   let chunks = 0
-
-   while (chunks < buffered.byteLength){
+  while (chunks < buffered.byteLength) {
     const split = buffered.subarray(chunks, chunks + maximumScriptBytes)
     chunks += split.byteLength
     contentChunks.push(split)
-   }
+  }
 
-   return contentChunks
+  return contentChunks
 }

@@ -45,8 +45,10 @@ export class OylApiClient {
     return await this._call('/import-address', 'post', { address: address })
   }
 
-  async pushTx({transactionHex}: {transactionHex: String}){
-    return await this._call('/broadcast-transaction', 'post', { transactionHex: transactionHex })
+  async pushTx({ transactionHex }: { transactionHex: String }) {
+    return await this._call('/broadcast-transaction', 'post', {
+      transactionHex: transactionHex,
+    })
   }
 
   async listWallet() {

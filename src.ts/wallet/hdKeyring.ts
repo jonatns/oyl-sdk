@@ -168,7 +168,7 @@ export class HdKeyring extends EventEmitter {
     return accounts
   }
 
-   getAccounts() {
+  getAccounts() {
     return this.wallets.map((w) => {
       return w.publicKey.toString('hex')
     })

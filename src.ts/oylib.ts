@@ -1,4 +1,4 @@
-import { PSBTTransaction } from './txbuilder/PSBTTransaction'
+import { PSBTTransaction, buildOrdTx } from './txbuilder'
 import { UTXO_DUST } from './shared/constants'
 import { amountToSatoshis, satoshisToAmount } from './shared/utils'
 import BcoinRpc from './rpclient'
@@ -341,22 +341,112 @@ export class Wallet {
     }
   }
 
+/**
+  * 
+  * Example implementation to send BTC DO NOT USE!!!
+
   async sendBtc({ mnemonic, to, amount, fee }) {
 
-    const payload = await this.fromPhrase({
-      mnemonic: mnemonic.trim(),
-      hdPath: "m/49'/0'/0'",
-      type: 'segwit',
-    })
-    const keyring = payload.keyring.keyring;
-    const pubKey = keyring.wallets[0].publicKey.toString('hex');
-    const signer = keyring.signTransaction.bind(keyring);
-    const from = payload.keyring.address;
-    const changeAddress = from;
+  const payload = await this.fromPhrase({
+    mnemonic: mnemonic.trim(),
+    hdPath: "m/49'/0'/0'",
+    type: 'segwit',
+  })
+
+  const keyring = payload.keyring.keyring;
+  const pubKey = keyring.wallets[0].publicKey.toString('hex');
+  const signer = keyring.signTransaction.bind(keyring);
+  const from = payload.keyring.address;
+  const changeAddress = from;
 
 
-    return await this.createPsbtTx({publicKey: pubKey, from: from, to: to, changeAddress: changeAddress, amount: amount, fee: fee,  signer: signer })
+  return await this.createPsbtTx({publicKey: pubKey, from: from, to: to, changeAddress: changeAddress, amount: amount, fee: fee,  signer: signer })
+  }
+*/
+
+
+
+/**
+  * 
+  * Example implementation to send Ordinal DO NOT USE!!!
+
+async sendOrd({ mnemonic, to,  inscriptionId, inscriptionOffset, inscriptionOutputValue, fee }) {
+  const payload = await this.fromPhrase({
+    mnemonic: mnemonic.trim(),
+    hdPath: "m/49'/0'/0'",
+    type: 'segwit',
+  })
+  const keyring = payload.keyring.keyring;
+  const pubKey = keyring.wallets[0].publicKey.toString('hex');
+  const signer = keyring.signTransaction.bind(keyring);
+  const from = payload.keyring.address;
+  const changeAddress = from; 
+  return await this.createOrdPsbtTx({ 
+    publicKey: pubKey, 
+    fromAddress: from, 
+    toAddress: to, 
+    changeAddress: changeAddress, 
+    txFee: fee, 
+    signer: signer, 
+    inscriptionId, 
+    metaOffset: inscriptionOffset, 
+    metaOutputValue: inscriptionOutputValue 
+  })
+}
+*/
+
+  async createOrdPsbtTx({
+    publicKey,
+    fromAddress,
+    toAddress,
+    changeAddress,
+    txFee,
+    signer,
+    inscriptionId,
+    metaOffset,
+    metaOutputValue = 10000
+  }: {
+    publicKey: string;
+    fromAddress: string;
+    toAddress: string;
+    changeAddress: string;
+    txFee: number;
+    signer: any;
+    inscriptionId: string;
+    metaOffset: number;
+    metaOutputValue: number;
+  }) {
+    const minOrdOutputValue = Math.max(metaOffset, UTXO_DUST)
+    if (metaOutputValue < minOrdOutputValue) {
+      throw Error(`OutputValue must be at least ${minOrdOutputValue}`);
     }
+
+    const allUtxos = await this.getUtxosArtifacts({ address: fromAddress })
+    const feeRate = txFee
+    const addressType = transactions.getAddressType(fromAddress)
+    if (addressType == null) throw Error('Unrecognized Address Type')
+
+    const psbtTx = new PSBTTransaction(
+      signer,
+      fromAddress,
+      publicKey,
+      addressType,
+      feeRate
+    )
+    psbtTx.setChangeAddress(changeAddress);
+    const finalizedPsbt = await buildOrdTx(psbtTx, allUtxos, toAddress, metaOutputValue, inscriptionId);
+
+    //@ts-ignore
+    finalizedPsbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
+
+    const rawtx = finalizedPsbt.extractTransaction().toHex();
+    const result = await this.apiClient.pushTx({ transactionHex: rawtx });
+
+    return {
+      txId: finalizedPsbt.extractTransaction().getId(),
+      ...result,
+    }
+  }
 
   async createPsbtTx({
     publicKey,
@@ -366,6 +456,14 @@ export class Wallet {
     amount,
     fee,
     signer,
+  }: {
+    publicKey: string;
+    from: string;
+    to: string;
+    changeAddress: string;
+    amount: string;
+    fee: number;
+    signer: any;
   }) {
     const utxos = await this.getUtxosArtifacts({ address: from })
     const feeRate = fee
@@ -381,8 +479,6 @@ export class Wallet {
     )
 
     tx.addOutput(to, amountToSatoshis(amount))
-    // tx.addOutput(to, amountToSatoshis(amount))
-    // tx.addOutput(to, amountToSatoshis(amount))
     tx.setChangeAddress(changeAddress)
     const outputAmount = tx.getTotalOutput()
 
@@ -418,27 +514,27 @@ export class Wallet {
       throw new Error('Balance not enough')
     }
 
-    const unspent = tx.getUnspent()
-    if (unspent === 0) {
+    const totalUnspentAmount = tx.getUnspent()
+    if (totalUnspentAmount === 0) {
       throw new Error('Balance not enough to pay network fee.')
     }
 
     // add dummy output
     tx.addChangeOutput(1)
 
-    const networkFee = await tx.calNetworkFee()
-    if (unspent < networkFee) {
+    const estimatedNetworkFee = await tx.calNetworkFee()
+    if (totalUnspentAmount < estimatedNetworkFee) {
       throw new Error(
-        `Balance not enough. Need ${satoshisToAmount(
-          networkFee
-        )} BTC as network fee, but only ${satoshisToAmount(unspent)} BTC.`
+        `Not enough balance. Need ${satoshisToAmount(
+          estimatedNetworkFee
+        )} BTC as network fee, but only ${satoshisToAmount(totalUnspentAmount)} BTC is available.`
       )
     }
 
-    const leftAmount = unspent - networkFee
-    if (leftAmount >= UTXO_DUST) {
+    const remainingBalance = totalUnspentAmount - estimatedNetworkFee
+    if (remainingBalance >= UTXO_DUST) {
       // change dummy output to true output
-      tx.getChangeOutput().value = leftAmount
+      tx.getChangeOutput().value = remainingBalance
     } else {
       // remove dummy output
       tx.removeChangeOutput()
@@ -452,7 +548,7 @@ export class Wallet {
 
     const rawtx = psbt.extractTransaction().toHex();
     // console.log("rawtx", rawtx)
-    const result = await this.apiClient.pushTx({transactionHex: rawtx});
+    const result = await this.apiClient.pushTx({ transactionHex: rawtx });
     // console.log(result)
 
     return {

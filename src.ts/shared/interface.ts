@@ -15,12 +15,12 @@ export type WitnessScriptOptions = {
 }
 
 export enum RarityEnum {
-  COMMON = "common",
-  UNCOMMON = "uncommon",
-  RARE = "rare",
-  EPIC = "epic",
-  LEGENDARY = "legendary",
-  MYTHIC = "mythic"
+  COMMON = 'common',
+  UNCOMMON = 'uncommon',
+  RARE = 'rare',
+  EPIC = 'epic',
+  LEGENDARY = 'legendary',
+  MYTHIC = 'mythic',
 }
 
 export type Rarity = `${RarityEnum}`
@@ -132,8 +132,7 @@ export interface ProviderOptions {
 export enum Providers {
   bcoin,
   oyl,
-  electrum
-
+  electrum,
 }
 
 export interface SwapBrcBid {
@@ -144,9 +143,9 @@ export interface SwapBrcBid {
 }
 
 export interface SignedBid {
-    psbtBid: String
-    auctionId: String
-    bidId: String
+  psbtBid: String
+  auctionId: String
+  bidId: String
 }
 
 export interface SwapBrc {

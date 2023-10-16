@@ -83,16 +83,18 @@ export async function swapFlow(options) {
 //   return false;
 // }
 
-async function sendTest (){
-  const wallet = new Wallet();
-  const tx = await wallet.sendBtc({
-    mnemonic:  "bitter solar miracle club fuel abuse era mule genuine gift egg usual",
-    to: "bc1q2kfec2vy4lxgtnmyf772yksu7lqxlshypmjc6g",
-    amount: 0.0001,
-    fee: 5
-  })
-  return tx;
-}
+// async function sendTest (){
+//   const wallet = new Wallet();
+//   const tx = await wallet.sendOrd({
+//     mnemonic:  "",
+//     to: "",
+//     inscriptionId: "",
+//     inscriptionOffset: 0,
+//     inscriptionOutputValue: 546,
+//     fee: 5
+//   })
+//   return tx;
+// }
 
 export async function runCLI() {
   const [command] = yargs.argv._
@@ -103,9 +105,9 @@ export async function runCLI() {
     case 'load':
       return await loadRpc(options)
       break
-    case 'send':
-      return await sendTest()
-      break
+    // case 'send':
+    //   return await sendTest()
+    //   break
     default:
       return await callAPI(yargs.argv._[0], options)
       break

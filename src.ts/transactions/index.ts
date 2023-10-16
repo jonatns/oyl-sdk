@@ -89,11 +89,7 @@ export const getMetaUtxos = async (address, utxos, inscriptions) => {
 
     for (const inscription of inscriptions) {
       if (inscription.id.includes(utxo.tx_hash_big_endian)) {
-        formattedUtxo.inscriptions.push({
-          id: inscription.id,
-          num: inscription.num,
-          offset: inscription.detail.offset,
-        })
+        formattedUtxo.inscriptions.push(inscription.detail)
       }
     }
 
