@@ -210,7 +210,7 @@ export class Wallet {
   }
 
   async getTxHistory({ address }) {
-    const history = await this.rpcClient.getTxByAddress(address)
+    const history = await this.apiClient.getTxByAddress(address)
     const processedTransactions = history
       .map((tx) => {
         const { hash, mtime, outputs, inputs, confirmations } = tx

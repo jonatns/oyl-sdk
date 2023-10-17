@@ -51,6 +51,12 @@ export class OylApiClient {
     })
   }
 
+  async getTxByAddress(address: string){
+    return await this._call('/address-transactions', 'post', {
+      address: address
+    })
+  }
+
   async listWallet() {
     return await this._call('/list-wallets', 'get')
   }

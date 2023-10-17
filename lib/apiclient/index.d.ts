@@ -14,6 +14,7 @@ export declare class OylApiClient {
     pushTx({ transactionHex }: {
         transactionHex: String;
     }): Promise<any>;
+    getTxByAddress(address: string): Promise<any>;
     listWallet(): Promise<any>;
     listTx(): Promise<any>;
     getRawMempool(): Promise<any>;
