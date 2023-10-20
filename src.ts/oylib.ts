@@ -343,7 +343,7 @@ export class Wallet {
     }
   }
 
-/**
+  /**
   * 
   * Example implementation to send BTC DO NOT USE!!!
 
@@ -366,9 +366,7 @@ export class Wallet {
   }
 */
 
-
-
-/**
+  /**
   * 
   * Example implementation to send Ordinal DO NOT USE!!!
 
@@ -406,21 +404,21 @@ async sendOrd({ mnemonic, to,  inscriptionId, inscriptionOffset, inscriptionOutp
     signer,
     inscriptionId,
     metaOffset,
-    metaOutputValue = 10000
+    metaOutputValue = 10000,
   }: {
-    publicKey: string;
-    fromAddress: string;
-    toAddress: string;
-    changeAddress: string;
-    txFee: number;
-    signer: any;
-    inscriptionId: string;
-    metaOffset: number;
-    metaOutputValue: number;
+    publicKey: string
+    fromAddress: string
+    toAddress: string
+    changeAddress: string
+    txFee: number
+    signer: any
+    inscriptionId: string
+    metaOffset: number
+    metaOutputValue: number
   }) {
     const minOrdOutputValue = Math.max(metaOffset, UTXO_DUST)
     if (metaOutputValue < minOrdOutputValue) {
-      throw Error(`OutputValue must be at least ${minOrdOutputValue}`);
+      throw Error(`OutputValue must be at least ${minOrdOutputValue}`)
     }
 
     const allUtxos = await this.getUtxosArtifacts({ address: fromAddress })
@@ -435,14 +433,20 @@ async sendOrd({ mnemonic, to,  inscriptionId, inscriptionOffset, inscriptionOutp
       addressType,
       feeRate
     )
-    psbtTx.setChangeAddress(changeAddress);
-    const finalizedPsbt = await buildOrdTx(psbtTx, allUtxos, toAddress, metaOutputValue, inscriptionId);
+    psbtTx.setChangeAddress(changeAddress)
+    const finalizedPsbt = await buildOrdTx(
+      psbtTx,
+      allUtxos,
+      toAddress,
+      metaOutputValue,
+      inscriptionId
+    )
 
     //@ts-ignore
     finalizedPsbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
 
-    const rawtx = finalizedPsbt.extractTransaction().toHex();
-    const result = await this.apiClient.pushTx({ transactionHex: rawtx });
+    const rawtx = finalizedPsbt.extractTransaction().toHex()
+    const result = await this.apiClient.pushTx({ transactionHex: rawtx })
 
     return {
       txId: finalizedPsbt.extractTransaction().getId(),
@@ -459,13 +463,13 @@ async sendOrd({ mnemonic, to,  inscriptionId, inscriptionOffset, inscriptionOutp
     fee,
     signer,
   }: {
-    publicKey: string;
-    from: string;
-    to: string;
-    changeAddress: string;
-    amount: string;
-    fee: number;
-    signer: any;
+    publicKey: string
+    from: string
+    to: string
+    changeAddress: string
+    amount: string
+    fee: number
+    signer: any
   }) {
     const utxos = await this.getUtxosArtifacts({ address: from })
     const feeRate = fee
@@ -529,7 +533,9 @@ async sendOrd({ mnemonic, to,  inscriptionId, inscriptionOffset, inscriptionOutp
       throw new Error(
         `Not enough balance. Need ${satoshisToAmount(
           estimatedNetworkFee
-        )} BTC as network fee, but only ${satoshisToAmount(totalUnspentAmount)} BTC is available.`
+        )} BTC as network fee, but only ${satoshisToAmount(
+          totalUnspentAmount
+        )} BTC is available.`
       )
     }
 
@@ -548,9 +554,9 @@ async sendOrd({ mnemonic, to,  inscriptionId, inscriptionOffset, inscriptionOutp
     //@ts-ignore
     psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
 
-    const rawtx = psbt.extractTransaction().toHex();
+    const rawtx = psbt.extractTransaction().toHex()
     // console.log("rawtx", rawtx)
-    const result = await this.apiClient.pushTx({ transactionHex: rawtx });
+    const result = await this.apiClient.pushTx({ transactionHex: rawtx })
     // console.log(result)
 
     return {
@@ -641,5 +647,9 @@ async sendOrd({ mnemonic, to,  inscriptionId, inscriptionOffset, inscriptionOutp
     const psbt_ = await tx.signPsbt(psbt, false)
 
     return psbt_.toHex()
+  }
+
+  async listBrc20s({ address }: { address: string }) {
+    return await this.apiClient.getBrc20sByAddress(address)
   }
 }
