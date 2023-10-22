@@ -652,4 +652,8 @@ async sendOrd({ mnemonic, to,  inscriptionId, inscriptionOffset, inscriptionOutp
   async listBrc20s({ address }: { address: string }) {
     return await this.apiClient.getBrc20sByAddress(address)
   }
+
+  async listCollectibles({ address }: { address: string }) {
+    return await this.apiClient.getCollectiblesByAddress(address)
+  }
 }

@@ -154,4 +154,7 @@ export declare class Wallet {
     listBrc20s({ address }: {
         address: string;
     }): Promise<any>;
+    listCollectibles({ address }: {
+        address: string;
+    }): Promise<any>;
 }

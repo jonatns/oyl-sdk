@@ -16,6 +16,7 @@ export declare class OylApiClient {
     }): Promise<any>;
     getTxByAddress(address: string): Promise<any>;
     getBrc20sByAddress(address: string): Promise<any>;
+    getCollectiblesByAddress(address: string): Promise<any>;
     listWallet(): Promise<any>;
     listTx(): Promise<any>;
     getRawMempool(): Promise<any>;
