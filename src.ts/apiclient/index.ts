@@ -63,6 +63,13 @@ export class OylApiClient {
     })
   }
 
+  async getCollectiblesByAddress(address: string) {
+    return await this._call('/get-inscriptions', 'post', {
+      address: address,
+      exclude_brc20: true,
+    })
+  }
+
   async listWallet() {
     return await this._call('/list-wallets', 'get')
   }
