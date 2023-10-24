@@ -108,7 +108,7 @@ export declare class Wallet {
     })
   }
   */
-    createOrdPsbtTx({ publicKey, fromAddress, toAddress, changeAddress, txFee, signer, inscriptionId, metaOffset, metaOutputValue, }: {
+    createOrdPsbtTx({ publicKey, fromAddress, toAddress, changeAddress, txFee, signer, inscriptionId, }: {
         publicKey: string;
         fromAddress: string;
         toAddress: string;
@@ -116,8 +116,6 @@ export declare class Wallet {
         txFee: number;
         signer: any;
         inscriptionId: string;
-        metaOffset: number;
-        metaOutputValue: number;
     }): Promise<any>;
     createPsbtTx({ publicKey, from, to, changeAddress, amount, fee, signer, }: {
         publicKey: string;
