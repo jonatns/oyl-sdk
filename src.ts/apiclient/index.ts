@@ -63,6 +63,12 @@ export class OylApiClient {
     })
   }
 
+  async getCollectiblesById(id: string) {
+    return await this._call('/get-inscription-info', 'post', {
+      inscription_id: id,
+    })
+  }
+
   async getCollectiblesByAddress(address: string) {
     return await this._call('/get-inscriptions', 'post', {
       address: address,
