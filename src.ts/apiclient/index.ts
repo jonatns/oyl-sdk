@@ -51,6 +51,25 @@ export class OylApiClient {
     })
   }
 
+  async getTxByAddress(address: string) {
+    return await this._call('/address-transactions', 'post', {
+      address: address,
+    })
+  }
+
+  async getBrc20sByAddress(address: string) {
+    return await this._call('/get-address-brc20-balance', 'post', {
+      address: address,
+    })
+  }
+
+  async getCollectiblesByAddress(address: string) {
+    return await this._call('/get-inscriptions', 'post', {
+      address: address,
+      exclude_brc20: true,
+    })
+  }
+
   async listWallet() {
     return await this._call('/list-wallets', 'get')
   }
