@@ -310,18 +310,14 @@ export class Wallet {
   async getInscriptions({ address }) {
     const artifacts = await this.apiClient.getCollectiblesByAddress(address)
     return artifacts.data.map((item) => {
-      const {
-        inscription_id,
-        inscription_number,
-        satpoint,
-      } = item
+      const { inscription_id, inscription_number, satpoint } = item
 
       const detail = {
         id: inscription_id,
         address: item.owner_wallet_addr,
         preview: `https://ordinals.com/preview/${inscription_id}`,
         content: `https://ordinals.com/content/${inscription_id}`,
-        location: satpoint
+        location: satpoint,
       }
 
       return {
@@ -410,8 +406,6 @@ async sendOrd({ mnemonic, to,  inscriptionId, inscriptionOffset, inscriptionOutp
     txFee,
     signer,
     inscriptionId,
-    metaOffset,
-    metaOutputValue = 10000,
   }: {
     publicKey: string
     fromAddress: string
@@ -420,9 +414,17 @@ async sendOrd({ mnemonic, to,  inscriptionId, inscriptionOffset, inscriptionOutp
     txFee: number
     signer: any
     inscriptionId: string
-    metaOffset: number
-    metaOutputValue: number
   }) {
+    const { data: collectibleData } = await this.apiClient.getCollectiblesById(
+      inscriptionId
+    )
+
+    const metaOffset = collectibleData.satpoint.charAt(
+      collectibleData.satpoint.length - 1
+    )
+
+    const metaOutputValue = collectibleData.output_value || 10000
+
     const minOrdOutputValue = Math.max(metaOffset, UTXO_DUST)
     if (metaOutputValue < minOrdOutputValue) {
       throw Error(`OutputValue must be at least ${minOrdOutputValue}`)
