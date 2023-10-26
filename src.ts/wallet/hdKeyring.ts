@@ -120,6 +120,9 @@ export class HdKeyring extends EventEmitter {
 
     let count = numberOfAccounts
     let currentIdx = 0
+    if (this.activeIndexes.length > 1) {
+      currentIdx = this.activeIndexes[this.activeIndexes.length - 1]
+    }
     const newWallets: ECPairInterface[] = []
 
     while (count) {

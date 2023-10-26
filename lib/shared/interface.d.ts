@@ -117,10 +117,25 @@ export interface ProviderOptions {
     provider?: Providers;
     auth?: String;
 }
+export interface RecoverAccountOptions {
+    mnemonic: string;
+    activeIndexes: number[];
+}
 export declare enum Providers {
     bcoin = 0,
     oyl = 1,
     electrum = 2
+}
+export interface oylAccounts {
+    taproot: {
+        taprootKeyring: any;
+        taprootAddresses: string[];
+    };
+    segwit: {
+        segwitKeyring: any;
+        segwitAddresses: string[];
+    };
+    mnemonic: string;
 }
 export interface SwapBrcBid {
     address: String;

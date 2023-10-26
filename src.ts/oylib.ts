@@ -5,12 +5,14 @@ import BcoinRpc from './rpclient'
 import * as transactions from './transactions'
 import { publicKeyToAddress } from './wallet/accounts'
 import { bord, accounts } from './wallet'
+import { AccountManager } from './wallet/accountsManager'
 import { HDKeyringOption, HdKeyring } from './wallet/hdKeyring'
 import {
   AddressType,
   SwapBrc,
   ProviderOptions,
   Providers,
+  RecoverAccountOptions
 } from './shared/interface'
 import { OylApiClient } from './apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
@@ -127,15 +129,36 @@ export class Wallet {
     }
   }
 
-  async recoverWallet(options: HDKeyringOption) {
+  async recoverWallet(options: RecoverAccountOptions) {
     try {
-      const keyring = new HdKeyring(options)
-      //keyring.addAccounts(2)
-      return keyring
+      const wallet = new AccountManager(options)
+      const walletPayload = await wallet.recoverAccounts()
+      return walletPayload
     } catch (error) {
       return error
     }
   }
+
+  async addAccountToWallet(options: RecoverAccountOptions) {
+    try {
+      const wallet = new AccountManager(options)
+      const walletPayload = await wallet.addAccount()
+      return walletPayload
+    } catch (error) {
+      return error
+    }
+  }
+
+  async initializeWallet(mnemonic: string) {
+    try {
+      const wallet = new AccountManager(mnemonic)
+      const walletPayload = await wallet.initializeAccounts()
+      return walletPayload
+    } catch (error) {
+      return error
+    }
+  }
+
 
   async getSegwitAddress({ publicKey }) {
     const address = publicKeyToAddress(publicKey, AddressType.P2WPKH)

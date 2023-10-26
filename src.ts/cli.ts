@@ -83,17 +83,13 @@ export async function swapFlow(options) {
 //   return false;
 // }
 
-// async function sendTest (){
+// async function recoverTest (){
 //   const wallet = new Wallet();
-//   const tx = await wallet.sendOrd({
+//   const tx = await wallet.addAccountToWallet({
 //     mnemonic:  "",
-//     to: "",
-//     inscriptionId: "",
-//     inscriptionOffset: 0,
-//     inscriptionOutputValue: 546,
-//     fee: 5
+//     activeIndexes: [1, 2, 3]
 //   })
-//   return tx;
+//   console.log(tx);
 // }
 
 export async function runCLI() {
@@ -105,8 +101,8 @@ export async function runCLI() {
     case 'load':
       return await loadRpc(options)
       break
-    // case 'send':
-    //   return await sendTest()
+    // case 'recover':
+    //   return await recoverTest()
     //   break
     default:
       return await callAPI(yargs.argv._[0], options)

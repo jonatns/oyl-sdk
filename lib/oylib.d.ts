@@ -1,6 +1,5 @@
 import BcoinRpc from './rpclient';
-import { HDKeyringOption } from './wallet/hdKeyring';
-import { SwapBrc, ProviderOptions, Providers } from './shared/interface';
+import { SwapBrc, ProviderOptions, Providers, RecoverAccountOptions } from './shared/interface';
 import { OylApiClient } from './apiclient';
 export declare class Wallet {
     private mnemonic;
@@ -23,7 +22,9 @@ export declare class Wallet {
         type?: string;
         hdPath?: string;
     }): Promise<any>;
-    recoverWallet(options: HDKeyringOption): Promise<any>;
+    recoverWallet(options: RecoverAccountOptions): Promise<any>;
+    addAccountToWallet(options: RecoverAccountOptions): Promise<any>;
+    initializeWallet(mnemonic: string): Promise<any>;
     getSegwitAddress({ publicKey }: {
         publicKey: any;
     }): Promise<string>;
