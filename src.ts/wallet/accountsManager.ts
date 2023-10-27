@@ -7,8 +7,8 @@ export class AccountManager {
   private taprootKeyring: any
   private segwitKeyring: any
   public activeIndexes: number[]
-  public taprootPath: string = "m/49'/0'/0'/0"
-  public segwitPath: string = "m/49'/0'/0'/0"
+  public taprootPath: string = "m/49'/0'/0'"
+  public segwitPath: string = "m/49'/0'/0'"
 
   constructor(options) {
     this.mnemonic = options?.mnemonic
