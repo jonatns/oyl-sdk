@@ -1,4 +1,4 @@
-import { oylAccounts } from "../shared/interface";
+import { oylAccounts } from '../shared/interface';
 export declare class AccountManager {
     private mnemonic;
     private taprootKeyring;
