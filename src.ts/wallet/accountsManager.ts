@@ -25,6 +25,8 @@ export class AccountManager {
     })
   }
 
+  //
+
   async initializeAccounts(): Promise<oylAccounts> {
     await this.taprootKeyring.addAccounts(1)
     await this.segwitKeyring.addAccounts(1)
