@@ -1,17 +1,19 @@
 import { HdKeyring } from './hdKeyring'
 import { publicKeyToAddress } from './accounts'
 import { AddressType, oylAccounts } from '../shared/interface'
+import Mnemonic from 'bitcore-mnemonic'
 
 export class AccountManager {
   private mnemonic: string
   private taprootKeyring: any
   private segwitKeyring: any
   public activeIndexes: number[]
-  public taprootPath: string = "m/49'/0'/0'"
-  public segwitPath: string = "m/49'/0'/0'"
+  public taprootPath: string = "m/86'/0'/0'/0'"
+  public segwitPath: string = "m/84'/0'/0'/0'"
 
-  constructor(options) {
-    this.mnemonic = options?.mnemonic
+  constructor(options?) {
+    this.mnemonic =
+      options?.mnemonic || new Mnemonic(Mnemonic.Words.ENGLISH).toString()
     this.activeIndexes = options?.activeIndexes
     this.taprootKeyring = new HdKeyring({
       mnemonic: this.mnemonic,

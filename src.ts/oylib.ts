@@ -12,7 +12,7 @@ import {
   SwapBrc,
   ProviderOptions,
   Providers,
-  RecoverAccountOptions
+  RecoverAccountOptions,
 } from './shared/interface'
 import { OylApiClient } from './apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
@@ -149,16 +149,15 @@ export class Wallet {
     }
   }
 
-  async initializeWallet(mnemonic: string) {
+  async initializeWallet() {
     try {
-      const wallet = new AccountManager(mnemonic)
+      const wallet = new AccountManager()
       const walletPayload = await wallet.initializeAccounts()
       return walletPayload
     } catch (error) {
       return error
     }
   }
-
 
   async getSegwitAddress({ publicKey }) {
     const address = publicKeyToAddress(publicKey, AddressType.P2WPKH)
