@@ -12,8 +12,7 @@ export class AccountManager {
   public segwitPath: string = "m/84'/0'/0'/0'"
 
   constructor(options?) {
-    this.mnemonic =
-      options?.mnemonic || new Mnemonic(Mnemonic.Words.ENGLISH).toString()
+    this.mnemonic = options?.mnemonic
     this.activeIndexes = options?.activeIndexes
     this.taprootKeyring = new HdKeyring({
       mnemonic: this.mnemonic,
@@ -30,6 +29,7 @@ export class AccountManager {
   //
 
   async initializeAccounts(): Promise<oylAccounts> {
+    this.mnemonic = await new Mnemonic(Mnemonic.Words.ENGLISH).toString()
     await this.taprootKeyring.addAccounts(1)
     await this.segwitKeyring.addAccounts(1)
     const taprootAcccounts = await this.taprootKeyring.getAccounts()
