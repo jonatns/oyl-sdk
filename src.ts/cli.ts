@@ -83,13 +83,9 @@ export async function swapFlow(options) {
 //   return false;
 // }
 
-async function recoverTest() {
+async function createTest() {
   const wallet = new Wallet()
-  const tx = await wallet.recoverWallet({
-    mnemonic:
-      'alley situate lock addict giggle pool saddle dwarf insect struggle coil champion',
-    activeIndexes: [0],
-  })
+  const tx = await wallet.initializeWallet()
   console.log(tx)
 }
 
@@ -102,8 +98,8 @@ export async function runCLI() {
     case 'load':
       return await loadRpc(options)
       break
-    case 'recover':
-      return await recoverTest()
+    case 'create':
+      return await createTest()
       break
     default:
       return await callAPI(yargs.argv._[0], options)

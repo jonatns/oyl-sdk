@@ -6,7 +6,7 @@ export declare class AccountManager {
     activeIndexes: number[];
     taprootPath: string;
     segwitPath: string;
-    constructor(options: any);
+    constructor(options?: any);
     initializeAccounts(): Promise<oylAccounts>;
     recoverAccounts(): Promise<oylAccounts>;
     addAccount(): Promise<oylAccounts>;

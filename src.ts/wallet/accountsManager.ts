@@ -3,25 +3,26 @@ import { publicKeyToAddress } from './accounts'
 import { AddressType, oylAccounts } from '../shared/interface'
 import Mnemonic from 'bitcore-mnemonic'
 
+const genMnemonic = new Mnemonic(Mnemonic.Words.ENGLISH).toString()
+
 export class AccountManager {
-  private mnemonic: string
+  private mnemonic: string = genMnemonic
   private taprootKeyring: any
   private segwitKeyring: any
   public activeIndexes: number[]
   public taprootPath: string = "m/86'/0'/0'/0'"
   public segwitPath: string = "m/84'/0'/0'/0'"
-  private genMnemonic: string = new Mnemonic(Mnemonic.Words.ENGLISH).toString()
 
   constructor(options?) {
-    this.mnemonic = options?.mnemonic || this.genMnemonic
+    this.mnemonic = options?.mnemonic
     this.activeIndexes = options?.activeIndexes
     this.taprootKeyring = new HdKeyring({
-      mnemonic: this.mnemonic || this.genMnemonic,
+      mnemonic: this.mnemonic || genMnemonic,
       hdPath: this.taprootPath,
       activeIndexes: this.activeIndexes,
     })
     this.segwitKeyring = new HdKeyring({
-      mnemonic: this.mnemonic || this.genMnemonic,
+      mnemonic: this.mnemonic || genMnemonic,
       hdPath: this.segwitPath,
       activeIndexes: this.activeIndexes,
     })
@@ -49,7 +50,7 @@ export class AccountManager {
         segwitKeyring: this.segwitKeyring,
         segwitAddresses,
       },
-      mnemonic: this.mnemonic,
+      mnemonic: genMnemonic,
     }
     return ret
   }

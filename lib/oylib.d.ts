@@ -24,7 +24,7 @@ export declare class Wallet {
     }): Promise<any>;
     recoverWallet(options: RecoverAccountOptions): Promise<any>;
     addAccountToWallet(options: RecoverAccountOptions): Promise<any>;
-    initializeWallet(mnemonic: string): Promise<any>;
+    initializeWallet(): Promise<any>;
     getSegwitAddress({ publicKey }: {
         publicKey: any;
     }): Promise<string>;
