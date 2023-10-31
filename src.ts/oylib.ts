@@ -5,12 +5,14 @@ import BcoinRpc from './rpclient'
 import * as transactions from './transactions'
 import { publicKeyToAddress } from './wallet/accounts'
 import { bord, accounts } from './wallet'
+import { AccountManager } from './wallet/accountsManager'
 import { HDKeyringOption, HdKeyring } from './wallet/hdKeyring'
 import {
   AddressType,
   SwapBrc,
   ProviderOptions,
   Providers,
+  RecoverAccountOptions,
 } from './shared/interface'
 import { OylApiClient } from './apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
@@ -127,11 +129,31 @@ export class Wallet {
     }
   }
 
-  async recoverWallet(options: HDKeyringOption) {
+  async recoverWallet(options: RecoverAccountOptions) {
     try {
-      const keyring = new HdKeyring(options)
-      //keyring.addAccounts(2)
-      return keyring
+      const wallet = new AccountManager(options)
+      const walletPayload = await wallet.recoverAccounts()
+      return walletPayload
+    } catch (error) {
+      return error
+    }
+  }
+
+  async addAccountToWallet(options: RecoverAccountOptions) {
+    try {
+      const wallet = new AccountManager(options)
+      const walletPayload = await wallet.addAccount()
+      return walletPayload
+    } catch (error) {
+      return error
+    }
+  }
+
+  async initializeWallet() {
+    try {
+      const wallet = new AccountManager()
+      const walletPayload = await wallet.initializeAccounts()
+      return walletPayload
     } catch (error) {
       return error
     }
@@ -285,41 +307,21 @@ export class Wallet {
   }
 
   async getInscriptions({ address }) {
-    const artifacts = await bord.getInscriptionsByAddr(address)
-    return artifacts.map((item) => {
-      const {
-        id,
-        inscription_number: num,
-        inscription_number: number,
-        content_length,
-        content_type,
-        timestamp,
-        genesis_transaction,
-        location,
-        output,
-        output_value,
-      } = item
+    const artifacts = await this.apiClient.getCollectiblesByAddress(address)
+    return artifacts.data.map((item) => {
+      const { inscription_id, inscription_number, satpoint } = item
 
       const detail = {
-        id,
-        address: item.address,
-        output_value: parseInt(output_value),
-        preview: `https://ordinals.com/preview/${id}`,
-        content: `https://ordinals.com/content/${id}`,
-        content_length: parseInt(content_length),
-        content_type,
-        timestamp,
-        genesis_transaction,
-        location,
-        output,
-        offset: parseInt(item.offset),
-        content_body: '',
+        id: inscription_id,
+        address: item.owner_wallet_addr,
+        preview: `https://ordinals.com/preview/${inscription_id}`,
+        content: `https://ordinals.com/content/${inscription_id}`,
+        location: satpoint,
       }
 
       return {
-        id,
-        num,
-        number,
+        id: inscription_id,
+        inscription_number,
         detail,
       }
     })
@@ -403,8 +405,6 @@ async sendOrd({ mnemonic, to,  inscriptionId, inscriptionOffset, inscriptionOutp
     txFee,
     signer,
     inscriptionId,
-    metaOffset,
-    metaOutputValue = 10000,
   }: {
     publicKey: string
     fromAddress: string
@@ -413,9 +413,17 @@ async sendOrd({ mnemonic, to,  inscriptionId, inscriptionOffset, inscriptionOutp
     txFee: number
     signer: any
     inscriptionId: string
-    metaOffset: number
-    metaOutputValue: number
   }) {
+    const { data: collectibleData } = await this.apiClient.getCollectiblesById(
+      inscriptionId
+    )
+
+    const metaOffset = collectibleData.satpoint.charAt(
+      collectibleData.satpoint.length - 1
+    )
+
+    const metaOutputValue = collectibleData.output_value || 10000
+
     const minOrdOutputValue = Math.max(metaOffset, UTXO_DUST)
     if (metaOutputValue < minOrdOutputValue) {
       throw Error(`OutputValue must be at least ${minOrdOutputValue}`)
