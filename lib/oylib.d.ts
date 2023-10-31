@@ -156,4 +156,5 @@ export declare class Wallet {
     listCollectibles({ address }: {
         address: string;
     }): Promise<any>;
+    getCollectibleById(inscriptionId: string): Promise<any>;
 }

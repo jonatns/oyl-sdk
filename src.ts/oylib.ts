@@ -4,9 +4,8 @@ import { amountToSatoshis, satoshisToAmount } from './shared/utils'
 import BcoinRpc from './rpclient'
 import * as transactions from './transactions'
 import { publicKeyToAddress } from './wallet/accounts'
-import { bord, accounts } from './wallet'
+import { accounts } from './wallet'
 import { AccountManager } from './wallet/accountsManager'
-import { HDKeyringOption, HdKeyring } from './wallet/hdKeyring'
 import {
   AddressType,
   SwapBrc,
@@ -235,7 +234,16 @@ export class Wallet {
     const history = await this.apiClient.getTxByAddress(address)
     const processedTransactions = history
       .map((tx) => {
-        const { hash, height, time, outputs, inputs, confirmations, fee, rate } = tx
+        const {
+          hash,
+          height,
+          time,
+          outputs,
+          inputs,
+          confirmations,
+          fee,
+          rate,
+        } = tx
 
         const output = outputs.find((output) => output.address === address)
         const input = inputs.find((input) => input.coin.address === address)
@@ -665,5 +673,10 @@ async sendOrd({ mnemonic, to,  inscriptionId, inscriptionOffset, inscriptionOutp
 
   async listCollectibles({ address }: { address: string }) {
     return await this.apiClient.getCollectiblesByAddress(address)
+  }
+
+  async getCollectibleById(inscriptionId: string) {
+    const { data } = await this.apiClient.getCollectiblesById(inscriptionId)
+    return data
   }
 }
