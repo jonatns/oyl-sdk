@@ -7,7 +7,6 @@ export declare class OylApiClient {
         host: String;
     };
     _call(path: string, method: string, data?: any): Promise<any>;
-    catch(err: any): any;
     importAddress({ address }: {
         address: String;
     }): Promise<any>;
