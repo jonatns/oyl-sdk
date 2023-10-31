@@ -7,11 +7,14 @@ import { UnspentOutput } from '../shared/interface'
 
 bitcoin.initEccLib(ecc)
 
+/**
+ * Represents a util to inscribe ordinals.
+ */
 export class Inscriber {
   private mediaType: string
   private mediaContent: string
   private pubKey: string
-  private meta: any
+  private meta: Record<string, any> | null
   private postage: number
   private address: string
   private destinationAddress: string
@@ -25,19 +28,30 @@ export class Inscriber {
   public inputs: any[]
   public outputs: any[]
 
+  /**
+   * Initializes a new instance of the Inscriber.
+   * @param options - Initialization options for the inscriber.
+   */
   constructor({
     address,
-    changeAddress,
     destinationAddress,
     pubKey,
-    feeRate,
     postage,
     mediaContent,
     mediaType,
     outputs = [],
-    meta,
+    meta = {},
+  }: {
+    address: string,
+    destinationAddress: string,
+    pubKey: string,
+    postage: number,
+    mediaContent: string,
+    mediaType: string,
+    outputs?: any[],
+    meta?: Record<string, any>
   }) {
-    if (!pubKey || !changeAddress || !mediaContent) {
+    if (!pubKey || !mediaContent) {
       throw new Error('Invalid options provided')
     }
     this.pubKey = pubKey
@@ -47,13 +61,21 @@ export class Inscriber {
     this.meta = meta
     this.postage = postage
     this.address = address
+    this.outputs = outputs
   }
 
-  private getMetadata() {
-    return this.meta //&& this.encodeMetadata ? encodeObject(this.meta) : this.meta
+  /**
+   * Retrieves the metadata of the inscription.
+   * @returns The metadata of the inscription.
+   */
+  private getMetadata(): Record<string, any> | null {
+    return this.meta
   }
 
-  buildWitness() {
+  /**
+   * Constructs the witness scripts for the inscription.
+   */
+  buildWitness(): void {
     this.witnessScripts = {
       inscription: witnessScriptBuilder({
         mediaContent: this.mediaContent,
@@ -71,6 +93,10 @@ export class Inscriber {
     }
   }
 
+  /**
+   * Retrieves the redeem script for the inscription.
+   * @returns The redeem script.
+   */
   getInscriptionRedeemScript(): bitcoin.payments.Payment['redeem'] {
     return {
       output: this.witnessScripts.inscription!,
@@ -78,7 +104,10 @@ export class Inscriber {
     }
   }
 
-  buildTaprootTree() {
+  /**
+   * Constructs the taproot tree for the transaction.
+   */
+  buildTaprootTree(): void {
     this.buildWitness()
     this.taprootTree = [
       { output: this.witnessScripts.inscription! },
@@ -86,7 +115,11 @@ export class Inscriber {
     ]
   }
 
-  async generateCommit() {
+  /**
+   * Generates the commitment for the inscription.
+   * @returns The generated commitment.
+   */
+  async generateCommit(): Promise<{ address: string, revealFee: null }> {
     this.buildTaprootTree()
     this.payment = bitcoin.payments.p2tr({
       internalPubkey: Buffer.from(this.pubKey, 'hex'),
@@ -95,15 +128,18 @@ export class Inscriber {
       redeem: this.getInscriptionRedeemScript(),
     })
 
-    //estimate fees
-
     return {
       address: this.payment.address!,
-      revealFee: null, //this.fee + this.outputAmount (price of fees )
+      revealFee: null,
     }
   }
 
-  async build(utxo: UnspentOutput) {
+  /**
+   * Builds the PSBT for the inscription.
+   * @param utxo - The unspent transaction output to use.
+   * @returns The generated PSBT inputs and outputs.
+   */
+  async build(utxo: UnspentOutput): Promise<{ inputs: any[], outputs: any[] }> {
     if (!this.payment) {
       throw new Error('Failed to build PSBT. Transaction not ready')
     }
@@ -122,8 +158,7 @@ export class Inscriber {
           {
             leafVersion: this.payment.redeemVersion!,
             script: this.payment.redeem!.output!,
-            controlBlock:
-              this.payment.witness![this.payment.witness!.length - 1],
+            controlBlock: this.payment.witness![this.payment.witness!.length - 1],
           },
         ],
       },
@@ -134,7 +169,8 @@ export class Inscriber {
         address: this.destinationAddress || this.address,
         value: this.postage,
       },
-    ].concat(this.outputs)
+      ...this.outputs
+    ]
 
     return { inputs: this.inputs, outputs: this.outputs }
   }
