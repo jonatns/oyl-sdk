@@ -24,21 +24,22 @@ export class OylApiClient {
   }
 
   async _call(path: string, method: string, data?: any) {
-    const options: RequestInit = {
-      method: method,
-      headers: { 'Content-Type': 'application/json' },
-    }
+    try {
+      const options: RequestInit = {
+        method: method,
+        headers: { 'Content-Type': 'application/json' }
+      }
 
-    if (method === 'post' || method === 'put' || method === 'patch') {
-      options.body = JSON.stringify(data)
-    }
+      if (method === 'post' || method === 'put' || method === 'patch') {
+        options.body = JSON.stringify(data)
+      }
 
-    const response = await fetch(`${this.host + path}`, options)
-    const payload = await response.json()
-    return payload
-  }
-  catch(err) {
-    return err
+      const response = await fetch(`${this.host + path}`, options)
+      const payload = await response.json()
+      return payload
+    } catch (err) {
+      return err
+    }
   }
 
   async importAddress({ address }: { address: String }) {
