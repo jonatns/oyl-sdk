@@ -7,7 +7,7 @@ const { Client } = bcurl
  * Interface for Bcoin RPC client options.
  */
 interface BcoinRpcOptions {
-  password: string;
+  password?: string;
   [key: string]: any;
 }
 
@@ -113,52 +113,104 @@ class BcoinRpc extends Client {
     return this.post('/tx/address', { addresses })
   }
 
+   /**
+   * Fetches a transaction based on its hash.
+   * @param hash - The transaction hash to query.
+   * @returns A promise resolving with the transaction data.
+   */
   getTX(hash: string): Promise<any> {
     assert(typeof hash === 'string')
     return this.get(`/tx/${hash}`)
   }
 
+  /**
+   * Broadcasts a transaction based on its hash.
+   * @param hash - The transaction hash to broadcast.
+   * @returns A promise resolving with the broadcast result.
+   */
   pushTX(hash: string): Promise<any> {
     assert(typeof hash === 'string')
     return this.post(`/broadcast`, { tx: hash })
   }
 
+  /**
+   * Retrieves block data based on its identifier.
+   * @param block - The block hash or block height to query.
+   * @returns A promise resolving with the block data.
+   */
   getBlock(block: string | number): Promise<any> {
     assert(typeof block === 'string' || typeof block === 'number')
     return this.get(`/block/${block}`)
   }
 
+  /**
+   * Retrieves block header data based on its identifier.
+   * @param block - The block hash or block height to query.
+   * @returns A promise resolving with the block header data.
+   */
   getBlockHeader(block: string | number): Promise<any> {
     assert(typeof block === 'string' || typeof block === 'number')
     return this.get(`/header/${block}`)
   }
 
+  /**
+   * Fetches filter data based on its identifier.
+   * @param filter - The filter hash or filter height to query.
+   * @returns A promise resolving with the filter data.
+   */
   getFilter(filter: string | number): Promise<any> {
     assert(typeof filter === 'string' || typeof filter === 'number')
     return this.get(`/filter/${filter}`)
   }
 
+  /**
+   * Broadcasts a given transaction.
+   * @param tx - The transaction string to broadcast.
+   * @returns A promise resolving with the broadcast result.
+   */
   broadcast(tx: string): Promise<any> {
     assert(typeof tx === 'string')
     return this.post('/broadcast', { tx })
   }
 
+  /**
+   * Resets the blockchain to a specific height.
+   * @param height - The block height to reset to.
+   * @returns A promise resolving with the reset result.
+   */
   reset(height: number): Promise<any> {
     return this.post('/reset', { height })
   }
 
+  /**
+   * Subscribes to watch changes on the blockchain.
+   * @returns A promise resolving with the subscription result.
+   */
   private watchChain(): Promise<any> {
     return this.call('watch chain')
   }
 
+   /**
+   * Subscribes to watch changes in the mempool.
+   * @returns A promise resolving with the subscription result.
+   */
   private watchMempool(): Promise<any> {
     return this.call('watch mempool')
   }
 
+  /**
+   * Retrieves the current tip of the blockchain.
+   * @returns A promise resolving with the tip data.
+   */
   getTip(): Promise<any> {
     return this.call('get tip')
   }
 
+  /**
+   * Fetches block entry data based on its identifier.
+   * @param block - The block hash to query.
+   * @returns A promise resolving with the block entry data.
+   */
   getEntry(block: string): Promise<any> {
     return this.call('get entry', block)
   }
