@@ -246,7 +246,7 @@ export class Wallet {
         } = tx
 
         const output = outputs.find((output) => output.address === address)
-        const input = inputs.find((input) => (input.coin.address ? input.coin.address: input.address) === address)
+        const input = inputs.find((input) => (input.coin ? input.coin.address: input.address) === address)
         const txDetails = {}
         txDetails['hash'] = hash
         txDetails['confirmations'] = confirmations
