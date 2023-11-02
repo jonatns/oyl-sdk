@@ -86,8 +86,7 @@ export async function swapFlow(options) {
 async function recoverTest() {
   const wallet = new Wallet()
   const tx = await wallet.recoverWallet({
-    mnemonic:
-      'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
+    mnemonic: '',
     activeIndexes: [0],
     customPath: 'xverse',
   })
