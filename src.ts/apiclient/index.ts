@@ -58,6 +58,13 @@ export class OylApiClient {
     })
   }
 
+  async getTxByHash(hash: string) {
+    return await this._call('/hash-transactions', 'post', {
+      hash: hash,
+    })
+  }
+
+
   async getBrc20sByAddress(address: string) {
     return await this._call('/get-address-brc20-balance', 'post', {
       address: address,
