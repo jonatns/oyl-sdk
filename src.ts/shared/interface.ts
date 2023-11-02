@@ -132,8 +132,7 @@ export interface ProviderOptions {
 export interface RecoverAccountOptions {
   mnemonic: string
   activeIndexes: number[]
-  taprootPath: string
-  segwitPath: string
+  customPath?: 'xverse' | 'leather' | 'unisat'
 }
 
 export enum Providers {
@@ -144,12 +143,12 @@ export enum Providers {
 
 export interface oylAccounts {
   taproot: {
-      taprootKeyring: any,
-      taprootAddresses: string[]
-  },
+    taprootKeyring: any
+    taprootAddresses: string[]
+  }
   segwit: {
-      segwitKeyring: any,
-      segwitAddresses: string[]
+    segwitKeyring: any
+    segwitAddresses: string[]
   }
   mnemonic: string
 }
