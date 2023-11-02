@@ -39,6 +39,7 @@ export declare class Wallet {
         amount: any;
         usd_value: string;
     }>;
+    getTxValueFromPrevOut(inputs: any[], address: string): Promise<number>;
     getTxHistory({ address }: {
         address: any;
     }): Promise<any>;

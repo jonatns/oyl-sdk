@@ -230,10 +230,29 @@ export class Wallet {
     return response
   }
 
+  async getTxValueFromPrevOut(inputs: any[], address: string): Promise<number> {
+      let totalMissingValue = 0;
+      for (const input of inputs) {
+        if (!input.coin && input.address === address) {
+          try {
+            const prevTx = await this.apiClient.getTxByHash(input.prevout.hash);
+            const output = prevTx.outputs[input.prevout.index];
+            if (output && output.value) {
+              totalMissingValue += output.value;
+            }
+          } catch (error) {
+            throw Error (`Error retrieving transaction`);
+          }
+        }
+      }
+      return totalMissingValue;
+  }
+  
+
   async getTxHistory({ address }) {
     const history = await this.apiClient.getTxByAddress(address)
-    const processedTransactions = history
-      .map((tx) => {
+    const processedTransactions = await history
+      .map(async (tx) => {
         const {
           hash,
           height,
@@ -260,17 +279,18 @@ export class Wallet {
             (output) => output.address != address
           )?.address
           if (output) {
-            txDetails['amount'] = input.coin.value / 1e8 - output.value / 1e8
+            txDetails['amount'] = input.coin ? input.coin.value / 1e8 - output.value / 1e8 : (await this.getTxValueFromPrevOut(inputs, address)) / 1e8 - output.value / 1e8
           } else {
-            txDetails['amount'] = input.coin.value / 1e8
+            txDetails['amount'] = input.coin ? input.coin.value / 1e8 : (await this.getTxValueFromPrevOut(inputs, address)) / 1e8
           }
         } else {
           if (output) {
             txDetails['type'] = 'received'
             txDetails['amount'] = output.value / 1e8
-            txDetails['from'] = inputs.find(
-              (input) => input.coin.address != address
-            ).coin.address
+            const evalFrom = inputs.find(
+              (input) => (input.coin ? input.coin.address: input.address) != address
+            )
+            txDetails['from'] = evalFrom.coin? evalFrom.coin.address : evalFrom.address
           }
         }
         txDetails['symbol'] = 'BTC'
@@ -284,27 +304,7 @@ export class Wallet {
   async getFees(): Promise<{ High: number; Medium: number; Low: number }> {
     return await this.apiClient.getFees()
   }
-
-  // async getActiveAddresses({ xpub, lookAhead = 10 }) {
-  //   const childKeyB58 = bip32.fromBase58(xpub)
-  //   const chain = new Chain(childKeyB58)
-  //   const batch = [chain.get()] //get first at index 0
-  //   let seenUnused = false
-
-  //   //Check through each Address to see which one has been used
-  //   while (batch.length < lookAhead && seenUnused === false) {
-  //     chain.next()
-  //     batch.push(chain.get())
-  //     const res = await this.getAddressSummary({ address: batch })
-  //     res.map(function (res) {
-  //       if (res.balance > 0) {
-  //         seenUnused = true
-  //       }
-  //     })
-  //   }
-
-  //   return batch
-  // }
+  
 
   async getTotalBalance({ batch }) {
     const res = await this.getAddressSummary({ address: batch })
