@@ -95,7 +95,6 @@ export class Inscriber {
       redeem: this.getInscriptionRedeemScript(),
     })
 
-    //estimate fees
 
     return {
       address: this.payment.address!,

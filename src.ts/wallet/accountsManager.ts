@@ -6,23 +6,27 @@ import Mnemonic from 'bitcore-mnemonic'
 const genMnemonic = new Mnemonic(Mnemonic.Words.ENGLISH).toString()
 const defaultPaths = {
   taprootPath: "m/86'/0'/0'/0",
+  initializedFrom: "default",
   segwitPath: "m/84'/0'/0'/0",
   segwitAddressType: AddressType.P2WPKH,
 }
 const customPaths = {
   xverse: {
     taprootPath: "m/86'/0'/0'/0",
+    initializedFrom: "xverse",
     segwitPath: "m/49'/0'/0'/0",
     segwitAddressType: AddressType.P2SH_P2WPKH,
   },
   leather: {
     taprootPath: "m/86'/0'/0'/0",
     segwitPath: "m/84'/0'/0'/0",
+    initializedFrom: "leather",
     segwitAddressType: AddressType.P2WPKH,
   },
   unisat: {
     taprootPath: "m/86'/0'/0'/0",
     segwitPath: "m/84'/0'/0'/0",
+    initializedFrom: "unisat",
     segwitAddressType: AddressType.P2WPKH,
   },
 }
@@ -74,6 +78,7 @@ export class AccountManager {
         segwitKeyring: this.segwitKeyring,
         segwitAddresses,
       },
+      initializedFrom: this.hdPath.initializedFrom,
       mnemonic: genMnemonic,
     }
     return ret
@@ -103,12 +108,14 @@ export class AccountManager {
         segwitKeyring: this.segwitKeyring,
         segwitAddresses,
       },
+      initializedFrom: this.hdPath.initializedFrom,
       mnemonic: this.mnemonic,
     }
     return ret
   }
 
   async addAccount(): Promise<oylAccounts> {
+    console.log(this.hdPath)
     await this.taprootKeyring.addAccounts(1)
     await this.segwitKeyring.addAccounts(1)
     const taprootAcccounts = await this.taprootKeyring.getAccounts()
@@ -134,6 +141,7 @@ export class AccountManager {
         segwitKeyring: this.segwitKeyring,
         segwitAddresses,
       },
+      initializedFrom: this.hdPath.initializedFrom,
       mnemonic: this.mnemonic,
     }
     return ret

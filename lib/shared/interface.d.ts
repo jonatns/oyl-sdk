@@ -136,6 +136,7 @@ export interface oylAccounts {
         segwitKeyring: any;
         segwitAddresses: string[];
     };
+    initializedFrom: string;
     mnemonic: string;
 }
 export interface SwapBrcBid {
