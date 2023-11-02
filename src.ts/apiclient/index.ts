@@ -73,7 +73,7 @@ export class OylApiClient {
   async getCollectiblesByAddress(address: string) {
     return await this._call('/get-inscriptions', 'post', {
       address: address,
-      exclude_brc20: true,
+      exclude_brc20: false,
     })
   }
 

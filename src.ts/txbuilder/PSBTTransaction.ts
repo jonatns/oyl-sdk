@@ -182,6 +182,7 @@ export class PSBTTransaction {
     const toSignInputs: ToSignInput[] = await this.formatOptionsToSignInputs(
       psbt
     )
+    
     psbt.data.inputs.forEach((v, index) => {
       const isNotSigned = !(v.finalScriptSig || v.finalScriptWitness)
       const isP2TR = this.addressType === AddressType.P2TR

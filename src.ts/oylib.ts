@@ -246,7 +246,7 @@ export class Wallet {
         } = tx
 
         const output = outputs.find((output) => output.address === address)
-        const input = inputs.find((input) => input.coin.address === address)
+        const input = inputs.find((input) => (input.coin.address ? input.coin.address: input.address) === address)
         const txDetails = {}
         txDetails['hash'] = hash
         txDetails['confirmations'] = confirmations
@@ -358,7 +358,7 @@ export class Wallet {
   /**
   * 
   * Example implementation to send BTC DO NOT USE!!!
-
+*/
   async sendBtc({ mnemonic, to, amount, fee }) {
 
   const payload = await this.fromPhrase({
@@ -376,7 +376,7 @@ export class Wallet {
 
   return await this.createPsbtTx({publicKey: pubKey, from: from, to: to, changeAddress: changeAddress, amount: amount, fee: fee,  signer: signer })
   }
-*/
+
 
   /**
   * 
@@ -493,7 +493,7 @@ async sendOrd({ mnemonic, to,  inscriptionId, inscriptionOffset, inscriptionOutp
     const feeRate = fee
     const addressType = transactions.getAddressType(from)
     if (addressType == null) throw Error('Invalid Address Type')
-
+   
     const tx = new PSBTTransaction(
       signer,
       from,
@@ -524,7 +524,7 @@ async sendOrd({ mnemonic, to,  inscriptionId, inscriptionOffset, inscriptionOutp
         tmpSum += nonOrdUtxo.satoshis
         continue
       }
-
+      
       const fee = await tx.calNetworkFee()
       if (tmpSum < outputAmount + fee) {
         tx.addInput(nonOrdUtxo)
