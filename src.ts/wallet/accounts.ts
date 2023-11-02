@@ -41,6 +41,11 @@ export function publicKeyToAddress(publicKey: string, type: AddressType) {
       network,
     })
     return address || null
+  } else if (type === AddressType.P2SH_P2WPKH) {
+    const { address } = bitcoin.payments.p2sh({
+      redeem: bitcoin.payments.p2wpkh({ pubkey: pubkey }),
+    })
+    return address || null
   } else if (type === AddressType.P2TR) {
     const { address } = bitcoin.payments.p2tr({
       internalPubkey: pubkey.slice(1, 33),
