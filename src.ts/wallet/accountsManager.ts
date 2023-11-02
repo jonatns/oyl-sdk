@@ -115,7 +115,6 @@ export class AccountManager {
   }
 
   async addAccount(): Promise<oylAccounts> {
-    console.log(this.hdPath)
     await this.taprootKeyring.addAccounts(1)
     await this.segwitKeyring.addAccounts(1)
     const taprootAcccounts = await this.taprootKeyring.getAccounts()
@@ -123,7 +122,7 @@ export class AccountManager {
     const taprootAddresses: string[] = []
     const segwitAddresses: string[] = []
     let i = 0
-    while (i < taprootAcccounts.length - 1) {
+    while (i < taprootAcccounts.length) {
       taprootAddresses.push(
         publicKeyToAddress(taprootAcccounts[i], AddressType.P2TR)!
       )

@@ -85,7 +85,7 @@ export async function swapFlow(options) {
 
 async function recoverTest() {
   const wallet = new Wallet()
-  const tx = await wallet.recoverWallet({
+  const tx = await wallet.addAccountToWallet({
     mnemonic: '',
     activeIndexes: [0],
     customPath: 'xverse',
