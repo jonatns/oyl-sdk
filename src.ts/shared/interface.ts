@@ -132,6 +132,8 @@ export interface ProviderOptions {
 export interface RecoverAccountOptions {
   mnemonic: string
   activeIndexes: number[]
+  taprootPath: string
+  segwitPath: string
 }
 
 export enum Providers {

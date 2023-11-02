@@ -120,6 +120,8 @@ export interface ProviderOptions {
 export interface RecoverAccountOptions {
     mnemonic: string;
     activeIndexes: number[];
+    taprootPath: string;
+    segwitPath: string;
 }
 export declare enum Providers {
     bcoin = 0,
