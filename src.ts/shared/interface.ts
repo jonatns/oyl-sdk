@@ -190,14 +190,14 @@ export interface SwapBrc {
 }
 
 export interface TickerDetails {
-  ticker: string;
-  overall_balance: string;
-  available_balance: string;
-  transferrable_balance: string;
-  image_url: string | null;
+  ticker: string
+  overall_balance: string
+  available_balance: string
+  transferrable_balance: string
+  image_url: string | null
 }
 
 export interface ApiResponse {
-  statusCode: number;
-  data: TickerDetails[];
+  statusCode: number
+  data: TickerDetails[]
 }

@@ -42,13 +42,13 @@ export class Inscriber {
     outputs = [],
     meta = {},
   }: {
-    address: string,
-    destinationAddress: string,
-    pubKey: string,
-    postage: number,
-    mediaContent: string,
-    mediaType: string,
-    outputs?: any[],
+    address: string
+    destinationAddress: string
+    pubKey: string
+    postage: number
+    mediaContent: string
+    mediaType: string
+    outputs?: any[]
     meta?: Record<string, any>
   }) {
     if (!pubKey || !mediaContent) {
@@ -119,7 +119,7 @@ export class Inscriber {
    * Generates the commitment for the inscription.
    * @returns The generated commitment.
    */
-  async generateCommit(): Promise<{ address: string, revealFee: null }> {
+  async generateCommit(): Promise<{ address: string; revealFee: null }> {
     this.buildTaprootTree()
     this.payment = bitcoin.payments.p2tr({
       internalPubkey: Buffer.from(this.pubKey, 'hex'),
@@ -139,7 +139,7 @@ export class Inscriber {
    * @param utxo - The unspent transaction output to use.
    * @returns The generated PSBT inputs and outputs.
    */
-  async build(utxo: UnspentOutput): Promise<{ inputs: any[], outputs: any[] }> {
+  async build(utxo: UnspentOutput): Promise<{ inputs: any[]; outputs: any[] }> {
     if (!this.payment) {
       throw new Error('Failed to build PSBT. Transaction not ready')
     }
@@ -158,7 +158,8 @@ export class Inscriber {
           {
             leafVersion: this.payment.redeemVersion!,
             script: this.payment.redeem!.output!,
-            controlBlock: this.payment.witness![this.payment.witness!.length - 1],
+            controlBlock:
+              this.payment.witness![this.payment.witness!.length - 1],
           },
         ],
       },
@@ -169,7 +170,7 @@ export class Inscriber {
         address: this.destinationAddress || this.address,
         value: this.postage,
       },
-      ...this.outputs
+      ...this.outputs,
     ]
 
     return { inputs: this.inputs, outputs: this.outputs }

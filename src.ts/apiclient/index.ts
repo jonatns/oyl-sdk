@@ -1,18 +1,18 @@
-import fetch from 'node-fetch';
-import { SwapBrcBid, SignedBid } from '../shared/interface';
+import fetch from 'node-fetch'
+import { SwapBrcBid, SignedBid } from '../shared/interface'
 
 /**
  * Represents the client for interacting with the Oyl API.
  */
 export class OylApiClient {
-  private host: string;
+  private host: string
 
   /**
    * Create an instance of the OylApiClient.
    * @param options - Configuration object containing the API host.
    */
   constructor(options?: { host: string }) {
-    this.host = options?.host || '';
+    this.host = options?.host || ''
   }
 
   /**
@@ -21,7 +21,7 @@ export class OylApiClient {
    * @returns An instance of OylApiClient.
    */
   static fromObject(data: { host: string }): OylApiClient {
-    return new this(data);
+    return new this(data)
   }
 
   /**
@@ -31,24 +31,24 @@ export class OylApiClient {
   toObject(): { host: string } {
     return {
       host: this.host,
-    };
+    }
   }
 
   private async _call(path: string, method: string, data?: any) {
     try {
       const options: RequestInit = {
         method: method,
-        headers: { 'Content-Type': 'application/json' }
-      };
-
-      if (['post', 'put', 'patch'].includes(method)) {
-        options.body = JSON.stringify(data);
+        headers: { 'Content-Type': 'application/json' },
       }
 
-      const response = await fetch(`${this.host}${path}`, options);
-      return await response.json();
+      if (['post', 'put', 'patch'].includes(method)) {
+        options.body = JSON.stringify(data)
+      }
+
+      const response = await fetch(`${this.host}${path}`, options)
+      return await response.json()
     } catch (err) {
-      throw err;
+      throw err
     }
   }
 
@@ -57,7 +57,7 @@ export class OylApiClient {
    * @param address - The address to be imported.
    */
   async importAddress({ address }: { address: string }): Promise<any> {
-    return await this._call('/import-address', 'post', { address });
+    return await this._call('/import-address', 'post', { address })
   }
 
   /**
@@ -65,7 +65,9 @@ export class OylApiClient {
    * @param transactionHex - The hex of the transaction.
    */
   async pushTx({ transactionHex }: { transactionHex: string }): Promise<any> {
-    return await this._call('/broadcast-transaction', 'post', { transactionHex });
+    return await this._call('/broadcast-transaction', 'post', {
+      transactionHex,
+    })
   }
 
   /**
@@ -73,9 +75,9 @@ export class OylApiClient {
    * @param address - The address to query.
    */
   async getTxByAddress(address: string): Promise<any> {
-    return await this._call('/address-transactions', 'post', { address });
+    return await this._call('/address-transactions', 'post', { address })
   }
-  
+
   /**
    * Get transactions by hash.
    * @param address - The hash to query.
@@ -86,7 +88,7 @@ export class OylApiClient {
     })
   }
 
-   /**
+  /**
    * Get brc20 info by ticker.
    * @param ticker - The hash to query.
    */
@@ -111,7 +113,9 @@ export class OylApiClient {
    * @param id - The ID of the collectible.
    */
   async getCollectiblesById(id: string): Promise<any> {
-    return await this._call('/get-inscription-info', 'post', { inscription_id: id });
+    return await this._call('/get-inscription-info', 'post', {
+      inscription_id: id,
+    })
   }
 
   /**
@@ -129,28 +133,28 @@ export class OylApiClient {
    * List wallets.
    */
   async listWallet(): Promise<any> {
-    return await this._call('/list-wallets', 'get');
+    return await this._call('/list-wallets', 'get')
   }
 
   /**
    * List transactions.
    */
   async listTx(): Promise<any> {
-    return await this._call('/list-tx', 'get');
+    return await this._call('/list-tx', 'get')
   }
 
   /**
    * Get raw mempool.
    */
   async getRawMempool(): Promise<any> {
-    return await this._call('/mempool', 'get');
+    return await this._call('/mempool', 'get')
   }
 
   /**
    * Get mempool information.
    */
   async getMempoolInfo(): Promise<any> {
-    return await this._call('/mempool-info', 'get');
+    return await this._call('/mempool-info', 'get')
   }
 
   /**
@@ -158,8 +162,10 @@ export class OylApiClient {
    * @param _ticker - The ticker to query.
    */
   async getTickerOffers({ _ticker }: { _ticker: string }): Promise<any> {
-    const response = await this._call('/get-token-offers', 'post', { ticker: _ticker });
-    return response.data.list;
+    const response = await this._call('/get-token-offers', 'post', {
+      ticker: _ticker,
+    })
+    return response.data.list
   }
 
   /**
@@ -167,7 +173,7 @@ export class OylApiClient {
    * @param params - Parameters for the bid.
    */
   async initSwapBid(params: SwapBrcBid): Promise<any> {
-    return await this._call('/initiate-bid', 'post', params);
+    return await this._call('/initiate-bid', 'post', params)
   }
 
   /**
@@ -175,14 +181,14 @@ export class OylApiClient {
    * @param params - Parameters for the signed bid.
    */
   async submitSignedBid(params: SignedBid): Promise<any> {
-    return await this._call('/finalize-bid', 'post', params);
+    return await this._call('/finalize-bid', 'post', params)
   }
 
   /**
    * Get transaction fees.
    */
   async getFees(): Promise<any> {
-    return await this._call('/get-fees', 'get');
+    return await this._call('/get-fees', 'get')
   }
 
   /**
@@ -194,13 +200,13 @@ export class OylApiClient {
     webhookUrl,
     rbf = false,
   }: {
-    webhookUrl: string;
-    rbf?: boolean;
+    webhookUrl: string
+    rbf?: boolean
   }): Promise<any> {
     return await this._call('/subscribe-webhook', 'post', {
       webhookUrl,
       rbf,
-    });
+    })
   }
 
   /**
@@ -214,11 +220,11 @@ export class OylApiClient {
     webhookUrl,
     rbf,
   }: {
-    address: string;
-    webhookUrl: string;
-    rbf?: boolean;
+    address: string
+    webhookUrl: string
+    rbf?: boolean
   }): Promise<void> {
-    await this.importAddress({ address });
-    await this.subscribe({ webhookUrl, rbf });
+    await this.importAddress({ address })
+    await this.subscribe({ webhookUrl, rbf })
   }
 }

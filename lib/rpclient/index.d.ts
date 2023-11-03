@@ -28,9 +28,9 @@ declare class BcoinRpc extends Client {
      */
     execute(name: string, params?: any): Promise<any>;
     /**
-    * Retrieves the mempool state.
-    * @returns A promise resolving with mempool data.
-    */
+     * Retrieves the mempool state.
+     * @returns A promise resolving with mempool data.
+     */
     getMempool(): Promise<any>;
     /**
      * Retrieves blockchain and node information.
@@ -44,17 +44,17 @@ declare class BcoinRpc extends Client {
      */
     getCoinsByAddress(address: string): Promise<any>;
     /**
-    * Fetches coins associated with multiple addresses.
-    * @param addresses - Array of addresses to query.
-    * @returns A promise resolving with the coin data.
-    */
+     * Fetches coins associated with multiple addresses.
+     * @param addresses - Array of addresses to query.
+     * @returns A promise resolving with the coin data.
+     */
     getCoinsByAddresses(addresses: string[]): Promise<any>;
     /**
-    * Fetches coin data based on its hash and output index.
-    * @param hash - The transaction hash of the coin.
-    * @param index - The output index of the coin.
-    * @returns A promise resolving with the coin data.
-    */
+     * Fetches coin data based on its hash and output index.
+     * @param hash - The transaction hash of the coin.
+     * @param index - The output index of the coin.
+     * @returns A promise resolving with the coin data.
+     */
     getCoin(hash: string, index: number): Promise<any>;
     /**
      * Retrieves transactions associated with a given address.
@@ -69,10 +69,10 @@ declare class BcoinRpc extends Client {
      */
     getTxByAddresses(addresses: string[]): Promise<any>;
     /**
-    * Fetches a transaction based on its hash.
-    * @param hash - The transaction hash to query.
-    * @returns A promise resolving with the transaction data.
-    */
+     * Fetches a transaction based on its hash.
+     * @param hash - The transaction hash to query.
+     * @returns A promise resolving with the transaction data.
+     */
     getTX(hash: string): Promise<any>;
     /**
      * Broadcasts a transaction based on its hash.
@@ -116,9 +116,9 @@ declare class BcoinRpc extends Client {
      */
     private watchChain;
     /**
-    * Subscribes to watch changes in the mempool.
-    * @returns A promise resolving with the subscription result.
-    */
+     * Subscribes to watch changes in the mempool.
+     * @returns A promise resolving with the subscription result.
+     */
     private watchMempool;
     /**
      * Retrieves the current tip of the blockchain.

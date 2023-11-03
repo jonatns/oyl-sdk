@@ -52,9 +52,9 @@ export declare class OylApiClient {
      */
     getTxByHash(hash: string): Promise<any>;
     /**
-    * Get brc20 info by ticker.
-    * @param ticker - The hash to query.
-    */
+     * Get brc20 info by ticker.
+     * @param ticker - The hash to query.
+     */
     getBrc20TokenInfo(ticker: string): Promise<any>;
     /**
      * Get Brc20 balances by address.

@@ -120,7 +120,7 @@ export class HdKeyring extends EventEmitter {
 
     let count = numberOfAccounts
     let currentIdx = 0
-    
+
     if (this.activeIndexes.length > 1) {
       currentIdx = this.activeIndexes[this.activeIndexes.length - 1]
     }
@@ -206,13 +206,17 @@ export class HdKeyring extends EventEmitter {
       const input = psbt.data.inputs[index]
       if (isTaprootInput(input)) {
         const tweakedSigner = tweakSigner(keyPair, {
-          network: bitcoin.networks["bitcoin"]
+          network: bitcoin.networks['bitcoin'],
         })
 
         const signer =
-          input.witnessUtxo?.script && input.tapInternalKey && !input.tapLeafScript ? tweakedSigner : keyPair
-    
-      psbt.signInput(index, signer, sighashTypes)
+          input.witnessUtxo?.script &&
+          input.tapInternalKey &&
+          !input.tapLeafScript
+            ? tweakedSigner
+            : keyPair
+
+        psbt.signInput(index, signer, sighashTypes)
       } else {
         psbt.signInput(index, keyPair, sighashTypes)
       }

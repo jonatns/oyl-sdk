@@ -2,13 +2,12 @@ import assert from 'assert'
 const bcurl = require('bcurl')
 const { Client } = bcurl
 
-
 /**
  * Interface for Bcoin RPC client options.
  */
 interface BcoinRpcOptions {
-  password?: string;
-  [key: string]: any;
+  password?: string
+  [key: string]: any
 }
 
 /**
@@ -45,7 +44,7 @@ class BcoinRpc extends Client {
     return super.execute('/', name, params)
   }
 
-   /**
+  /**
    * Retrieves the mempool state.
    * @returns A promise resolving with mempool data.
    */
@@ -71,7 +70,7 @@ class BcoinRpc extends Client {
     return this.get(`/coin/address/${address}`)
   }
 
-   /**
+  /**
    * Fetches coins associated with multiple addresses.
    * @param addresses - Array of addresses to query.
    * @returns A promise resolving with the coin data.
@@ -81,7 +80,7 @@ class BcoinRpc extends Client {
     return this.post('/coin/address', { addresses })
   }
 
-   /**
+  /**
    * Fetches coin data based on its hash and output index.
    * @param hash - The transaction hash of the coin.
    * @param index - The output index of the coin.
@@ -113,7 +112,7 @@ class BcoinRpc extends Client {
     return this.post('/tx/address', { addresses })
   }
 
-   /**
+  /**
    * Fetches a transaction based on its hash.
    * @param hash - The transaction hash to query.
    * @returns A promise resolving with the transaction data.
@@ -190,7 +189,7 @@ class BcoinRpc extends Client {
     return this.call('watch chain')
   }
 
-   /**
+  /**
    * Subscribes to watch changes in the mempool.
    * @returns A promise resolving with the subscription result.
    */
