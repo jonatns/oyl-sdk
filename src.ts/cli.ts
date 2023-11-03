@@ -5,6 +5,8 @@ import { PSBTTransaction } from './txbuilder/PSBTTransaction'
 import * as transactions from './transactions'
 import * as bitcoin from 'bitcoinjs-lib'
 import { Inscriber } from "@sadoprotocol/ordit-sdk"
+import { BRC_20_TRANSFER_META } from './shared/constants'
+import { InscribeTransfer } from './shared/interface'
 
 export async function loadRpc(options) {
   const rpcOptions = {
@@ -56,67 +58,92 @@ export async function swapFlow(options) {
   return psbt_.toHex()
 }
 
-// export async function getOrdInscription() {
-//    const address = "";
-//    const inscriptions = await getInscriptionsByAddr(address);
-//    let ordInscriptions = [];
-//    for (let i = 0; i < inscriptions.length; i++) {
-//     const genesisTransaction = inscriptions[i].genesis_transaction;
-//     const txhash = genesisTransaction.substring(genesisTransaction.lastIndexOf("/") + 1);
 
-//     if (await checkProtocol(txhash)) {
-//       ordInscriptions.push(inscriptions[i]);
-//     }
-//   }
-//   console.log(ordInscriptions.length)
-//   return ordInscriptions;
-// }
-
-async function inscribeTest () {
-   // new inscription tx
-   const transaction = new Inscriber({
+async function inscribeTest(options: InscribeTransfer) {
+  //WORKFLOW TO INSCRIBE 
+  //GET & PASS PUBLIC KEY, ADDRESS SENDING FROM, ADDRESS INSCRIPTIOM WILL END UP IN, AND CHANGE ADDRESS
+  //PASS THE MEDIA CONTENT (e.g: 'Hello World'), MEDIA TYPE (e.g 'text/plain'), AND META (which will be encoded )
+  //PASS feerate and postage (default 1500)
+  //Initialize the Inscriber class with these values
+  const transaction = new Inscriber({
     network: "mainnet",
-    address: "bc1p2hq8sx32n8993teqgcgrndw4qege6shjkcewgwpudqkqelgmw4ksmv4hud",
-    publicKey: "03223e9553641f278d14dff04a90fa14eedc3789279804832a7e01db3317c7e92d",
-    changeAddress: "bc1p2hq8sx32n8993teqgcgrndw4qege6shjkcewgwpudqkqelgmw4ksmv4hud",
-    destinationAddress: "bc1p2hq8sx32n8993teqgcgrndw4qege6shjkcewgwpudqkqelgmw4ksmv4hud",
-    mediaContent: 'Hello World',
-    mediaType: "text/plain",
-    feeRate: 3,
-    meta: { // Flexible object: Record<string, any>
-      title: "Example title",
-      desc: "Lorem ipsum",
-      slug: "cool-digital-artifact",
-      creator: {
-        name: "Your Name",
-        email: "artist@example.org",
-        address: "bc1p2hq8sx32n8993teqgcgrndw4qege6shjkcewgwpudqkqelgmw4ksmv4hud"
-      }
-    },
-    postage: 1500 // base value of the inscription in sats
+    address: options.feeFromAddress,
+    publicKey: options.taprootPublicKey,
+    changeAddress: options.feeFromAddress,
+    destinationAddress: options.destinationAddress,
+    mediaContent: BRC_20_TRANSFER_META.mediaContent,
+    mediaType: BRC_20_TRANSFER_META.mediaType,
+    feeRate: options.feeRate,
+    meta: BRC_20_TRANSFER_META.meta,
+    postage: options?.postage || 1500 // base value of the inscription in sats
   })
-
+  //GENERATE COMMIT PAYMENT REQUEST - THIS DUMPS AN ADDRESS FROM THE PUBKEY & TOTAL COST FOR INSCRIPTION
   const revealed = await transaction.generateCommit();
-  console.log("Revealed: ", revealed)
+  //SEND BITCOIN FROM REGULAR ADDRESS TO THE DUMPED ADDRESS
   const wallet = new Wallet()
-  const depositRevealFee = await wallet.sendBtc({
-    mnemonic: 'great move degree abstract scatter become lab walnut infant evoke quick impose',
-    to: revealed.address,
-    amount: revealed.revealFee / 100000000,
-    fee: 5,
+  const depositRevealFee = await wallet.createPsbtTx({
+    publicKey: options.taprootPublicKey, 
+    from: options.feeFromAddress, 
+    to: revealed.address, 
+    changeAddress: options.feeFromAddress, 
+    amount: (revealed.revealFee/100000000).toString(), 
+    fee: options.feeRate,
+    signer: options.signer
   })
   console.log("deposit reveal fee", depositRevealFee)
+  //COLLECT_TX_HASH
+  const tx_hash = depositRevealFee.txId
+  //WAIT FOR TRANSACTION TO BE CONFIRMED BEFORE PROCEEDING
+  //ONCE THE TX IS CONFIRMED, CHECK IF ITS READY TO BE BUILT
   const ready = await transaction.isReady();
   if (ready) {
+    //IF READY, BUILD THE REVEAL TX
     await transaction.build();
-    console.log("transaction: ", transaction.toHex())
+    //YOU WILL GET THE PSBT HEX
+    const psbtHex = transaction.toHex()
+    console.log("transaction: ", psbtHex)
+    //PREPARE THE PSBT FOR SIGNING
+    const vPsbt = bitcoin.Psbt.fromHex(psbtHex, {
+      network: bitcoin.networks.bitcoin,
+    })
+    //SIGN THE PSBT
+    const completeInscription = await signInscriptionPsbt(vPsbt, options.feeRate, options.taprootPublicKey, options.signer)
+      console.log(completeInscription)
+  }
 }
+
+async function signInscriptionPsbt(psbt, fee, pubKey, signer, address = ""){
+  //INITIALIZE NEW PSBTTransaction INSTANCE
+  const wallet = new Wallet()
+  const addressType = transactions.getAddressType(address)
+  if (addressType == null) throw Error('Invalid Address Type')
+  const tx = new PSBTTransaction(
+    signer,
+    address,
+    pubKey,
+    addressType,
+    fee
+  )
+    
+  //SIGN AND FINALIZE THE PSBT
+  const signedPsbt = await tx.signPsbt(psbt, true, true)
+  //@ts-ignore
+  psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
+  
+  //EXTRACT THE RAW TX
+  const rawtx = signedPsbt.extractTransaction().toHex()
+  console.log("rawtx", rawtx)
+  //BROADCAST THE RAW TX TO THE NETWORK
+  const result = await wallet.apiClient.pushTx({ transactionHex: rawtx })
+  //GET THE TX_HASH
+  const ready_txId = psbt.extractTransaction().getId()
+  //CONFIRM TRANSACTION IS CONFIRMED
 }
 
 async function recoverTest() {
   const wallet = new Wallet()
   const tx = await wallet.addAccountToWallet({
-    mnemonic: 'great move degree abstract scatter become lab walnut infant evoke quick impose',
+    mnemonic: '',
     activeIndexes: [0],
     customPath: 'xverse',
   })
@@ -133,7 +160,7 @@ export async function runCLI() {
       return await loadRpc(options)
       break
     case 'recover':
-      return await inscribeTest()
+      return await recoverTest()
       break
     default:
       return await callAPI(yargs.argv._[0], options)

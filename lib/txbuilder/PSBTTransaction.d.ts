@@ -28,9 +28,9 @@ export declare class PSBTTransaction {
     getChangeAmount(): number;
     removeChangeOutput(): void;
     removeRecentOutputs(count: number): void;
-    formatOptionsToSignInputs: (_psbt: string | bitcoin.Psbt) => Promise<ToSignInput[]>;
+    formatOptionsToSignInputs: (_psbt: string | bitcoin.Psbt, isRevealTx?: boolean) => Promise<ToSignInput[]>;
     createSignedPsbt(): Promise<bitcoin.Psbt>;
-    signPsbt(psbt: bitcoin.Psbt, autoFinalized?: boolean): Promise<bitcoin.Psbt>;
+    signPsbt(psbt: bitcoin.Psbt, autoFinalized?: boolean, isRevealTx?: boolean): Promise<bitcoin.Psbt>;
     generate(autoAdjust: boolean): Promise<{
         fee: number;
         rawtx: string;
