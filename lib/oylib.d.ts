@@ -60,48 +60,6 @@ export declare class Wallet {
     importWatchOnlyAddress({ addresses }: {
         addresses?: any[];
     }): Promise<void>;
-    /**
-    *
-    * Example implementation to send BTC DO NOT USE!!!
-  */
-    sendBtc({ mnemonic, to, amount, fee }: {
-        mnemonic: any;
-        to: any;
-        amount: any;
-        fee: any;
-    }): Promise<any>;
-    signInscriptionPsbt({ psbt, fee }: {
-        psbt: any;
-        fee: any;
-    }): Promise<void>;
-    /**
-    *
-    * Example implementation to send Ordinal DO NOT USE!!!
-  
-  async sendOrd({ mnemonic, to,  inscriptionId, inscriptionOffset, inscriptionOutputValue, fee }) {
-    const payload = await this.fromPhrase({
-      mnemonic: mnemonic.trim(),
-      hdPath: "m/49'/0'/0'",
-      type: 'segwit',
-    })
-    const keyring = payload.keyring.keyring;
-    const pubKey = keyring.wallets[0].publicKey.toString('hex');
-    const signer = keyring.signTransaction.bind(keyring);
-    const from = payload.keyring.address;
-    const changeAddress = from;
-    return await this.createOrdPsbtTx({
-      publicKey: pubKey,
-      fromAddress: from,
-      toAddress: to,
-      changeAddress: changeAddress,
-      txFee: fee,
-      signer: signer,
-      inscriptionId,
-      metaOffset: inscriptionOffset,
-      metaOutputValue: inscriptionOutputValue
-    })
-  }
-  */
     createOrdPsbtTx({ publicKey, fromAddress, toAddress, changeAddress, txFee, signer, inscriptionId, }: {
         publicKey: string;
         fromAddress: string;
