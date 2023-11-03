@@ -5,25 +5,54 @@ import Mnemonic from 'bitcore-mnemonic'
 
 const genMnemonic = new Mnemonic(Mnemonic.Words.ENGLISH).toString()
 
+const customPaths = {
+  oyl: {
+    taprootPath: "m/86'/0'/0'/0",
+    initializedFrom: 'oyl',
+    segwitPath: "m/84'/0'/0'/0",
+    segwitAddressType: AddressType.P2WPKH,
+  },
+  xverse: {
+    taprootPath: "m/86'/0'/0'/0",
+    initializedFrom: 'xverse',
+    segwitPath: "m/49'/0'/0'/0",
+    segwitAddressType: AddressType.P2SH_P2WPKH,
+  },
+  leather: {
+    taprootPath: "m/86'/0'/0'/0",
+    segwitPath: "m/84'/0'/0'/0",
+    initializedFrom: 'leather',
+    segwitAddressType: AddressType.P2WPKH,
+  },
+  unisat: {
+    taprootPath: "m/86'/0'/0'/0",
+    segwitPath: "m/84'/0'/0'/0",
+    initializedFrom: 'unisat',
+    segwitAddressType: AddressType.P2WPKH,
+  },
+}
+
 export class AccountManager {
   private mnemonic: string = genMnemonic
   private taprootKeyring: any
   private segwitKeyring: any
   public activeIndexes: number[]
-  public taprootPath: string = "m/86'/0'/0'/0'"
-  public segwitPath: string = "m/84'/0'/0'/0'"
+  private hdPath: any
 
   constructor(options?) {
     this.mnemonic = options?.mnemonic
     this.activeIndexes = options?.activeIndexes
+    this.hdPath = options?.customPath
+      ? customPaths[options.customPath]
+      : customPaths.oyl
     this.taprootKeyring = new HdKeyring({
       mnemonic: this.mnemonic || genMnemonic,
-      hdPath: this.taprootPath,
+      hdPath: this.hdPath.taprootPath,
       activeIndexes: this.activeIndexes,
     })
     this.segwitKeyring = new HdKeyring({
       mnemonic: this.mnemonic || genMnemonic,
-      hdPath: this.segwitPath,
+      hdPath: this.hdPath.segwitPath,
       activeIndexes: this.activeIndexes,
     })
   }
@@ -39,7 +68,7 @@ export class AccountManager {
       publicKeyToAddress(taprootAcccounts[0], AddressType.P2TR)!
     )
     segwitAddresses.push(
-      publicKeyToAddress(segwitAccounts[0], AddressType.P2WPKH)!
+      publicKeyToAddress(segwitAccounts[0], this.hdPath.segwitAddressType)!
     )
     const ret: oylAccounts = {
       taproot: {
@@ -50,6 +79,7 @@ export class AccountManager {
         segwitKeyring: this.segwitKeyring,
         segwitAddresses,
       },
+      initializedFrom: this.hdPath.initializedFrom,
       mnemonic: genMnemonic,
     }
     return ret
@@ -66,7 +96,7 @@ export class AccountManager {
         publicKeyToAddress(taprootAcccounts[i], AddressType.P2TR)!
       )
       segwitAddresses.push(
-        publicKeyToAddress(segwitAccounts[i], AddressType.P2WPKH)!
+        publicKeyToAddress(segwitAccounts[i], this.hdPath.segwitAddressType)!
       )
       i++
     }
@@ -79,6 +109,7 @@ export class AccountManager {
         segwitKeyring: this.segwitKeyring,
         segwitAddresses,
       },
+      initializedFrom: this.hdPath.initializedFrom,
       mnemonic: this.mnemonic,
     }
     return ret
@@ -89,6 +120,7 @@ export class AccountManager {
     await this.segwitKeyring.addAccounts(1)
     const taprootAcccounts = await this.taprootKeyring.getAccounts()
     const segwitAccounts = await this.segwitKeyring.getAccounts()
+    console.log(taprootAcccounts)
     const taprootAddresses: string[] = []
     const segwitAddresses: string[] = []
     let i = 0
@@ -97,7 +129,7 @@ export class AccountManager {
         publicKeyToAddress(taprootAcccounts[i], AddressType.P2TR)!
       )
       segwitAddresses.push(
-        publicKeyToAddress(segwitAccounts[i], AddressType.P2WPKH)!
+        publicKeyToAddress(segwitAccounts[i], this.hdPath.segwitAddressType)!
       )
       i++
     }
@@ -110,6 +142,7 @@ export class AccountManager {
         segwitKeyring: this.segwitKeyring,
         segwitAddresses,
       },
+      initializedFrom: this.hdPath.initializedFrom,
       mnemonic: this.mnemonic,
     }
     return ret

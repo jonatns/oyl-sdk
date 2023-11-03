@@ -118,7 +118,7 @@ export class PSBTTransaction {
     this.outputs.splice(-count)
   }
 
-  formatOptionsToSignInputs = async (_psbt: string | bitcoin.Psbt) => {
+  formatOptionsToSignInputs = async (_psbt: string | bitcoin.Psbt, isRevealTx: boolean = false) => {
     let toSignInputs: ToSignInput[] = []
     const psbtNetwork = bitcoin.networks.bitcoin
 
@@ -141,7 +141,7 @@ export class PSBTTransaction {
       const isSigned = v.finalScriptSig || v.finalScriptWitness
       if (script && !isSigned) {
         const address = PsbtAddress.fromOutputScript(script, psbtNetwork)
-        if (this.address === address) {
+        if (isRevealTx || (!isRevealTx && this.address === address)) {
           toSignInputs.push({
             index,
             publicKey: this.pubkey,
@@ -150,6 +150,8 @@ export class PSBTTransaction {
         }
       }
     })
+
+    console.log('toSignInputs', toSignInputs)
     return toSignInputs
   }
 
@@ -176,12 +178,14 @@ export class PSBTTransaction {
     return psbt
   }
 
-  async signPsbt(psbt: bitcoin.Psbt, autoFinalized = true) {
+  async signPsbt(psbt: bitcoin.Psbt, autoFinalized = true, isRevealTx: boolean = false) {
     const psbtNetwork = bitcoin.networks.bitcoin
 
     const toSignInputs: ToSignInput[] = await this.formatOptionsToSignInputs(
-      psbt
+      psbt,
+      isRevealTx
     )
+
     psbt.data.inputs.forEach((v, index) => {
       const isNotSigned = !(v.finalScriptSig || v.finalScriptWitness)
       const isP2TR = this.addressType === AddressType.P2TR
@@ -200,6 +204,7 @@ export class PSBTTransaction {
 
     psbt = await this.signer(psbt, toSignInputs)
     if (autoFinalized) {
+      console.log('autoFinalized')
       toSignInputs.forEach((v) => {
         psbt.finalizeInput(v.index)
       })
@@ -260,25 +265,25 @@ Summary
 ----------------------------------------------------------------------------------------------
 Inputs
 ${this.inputs
-  .map((input, index) => {
-    const str = `
+        .map((input, index) => {
+          const str = `
 =>${index} ${input.data.witnessUtxo.value} Sats
         lock-size: ${input.data.witnessUtxo.script.length}
         via ${input.data.hash} [${input.data.index}]
 `
-    return str
-  })
-  .join('')}
+          return str
+        })
+        .join('')}
 total: ${this.getTotalInput()} Sats
 ----------------------------------------------------------------------------------------------
 Outputs
 ${this.outputs
-  .map((output, index) => {
-    const str = `
+        .map((output, index) => {
+          const str = `
 =>${index} ${output.address} ${output.value} Sats`
-    return str
-  })
-  .join('')}
+          return str
+        })
+        .join('')}
 
 total: ${this.getTotalOutput() - feePaid} Sats
 =============================================================================================

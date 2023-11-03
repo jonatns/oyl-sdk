@@ -132,6 +132,7 @@ export interface ProviderOptions {
 export interface RecoverAccountOptions {
   mnemonic: string
   activeIndexes: number[]
+  customPath?: 'xverse' | 'leather' | 'unisat'
 }
 
 export enum Providers {
@@ -142,14 +143,27 @@ export enum Providers {
 
 export interface oylAccounts {
   taproot: {
-      taprootKeyring: any,
-      taprootAddresses: string[]
-  },
-  segwit: {
-      segwitKeyring: any,
-      segwitAddresses: string[]
+    taprootKeyring: any
+    taprootAddresses: string[]
   }
+  segwit: {
+    segwitKeyring: any
+    segwitAddresses: string[]
+  }
+  initializedFrom: string
   mnemonic: string
+}
+
+export interface InscribeTransfer {
+  feeFromAddress: string
+  taprootPublicKey: string
+  changeAddress: string
+  destinationAddress: string
+  feeRate: number
+  token: string
+  signer: any
+  amount: number
+  postage?: number
 }
 
 export interface SwapBrcBid {

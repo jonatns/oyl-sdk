@@ -120,6 +120,7 @@ export interface ProviderOptions {
 export interface RecoverAccountOptions {
     mnemonic: string;
     activeIndexes: number[];
+    customPath?: 'xverse' | 'leather' | 'unisat';
 }
 export declare enum Providers {
     bcoin = 0,
@@ -135,7 +136,19 @@ export interface oylAccounts {
         segwitKeyring: any;
         segwitAddresses: string[];
     };
+    initializedFrom: string;
     mnemonic: string;
+}
+export interface InscribeTransfer {
+    feeFromAddress: string;
+    taprootPublicKey: string;
+    changeAddress: string;
+    destinationAddress: string;
+    feeRate: number;
+    token: string;
+    signer: any;
+    amount: number;
+    postage?: number;
 }
 export interface SwapBrcBid {
     address: String;

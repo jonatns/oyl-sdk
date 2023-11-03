@@ -75,13 +75,26 @@ export class OylApiClient {
   async getTxByAddress(address: string): Promise<any> {
     return await this._call('/address-transactions', 'post', { address });
   }
+  
+  /**
+   * Get transactions by hash.
+   * @param address - The hash to query.
+   */
+  async getTxByHash(hash: string) {
+    return await this._call('/hash-transactions', 'post', {
+      hash: hash,
+    })
+  }
 
   /**
    * Get Brc20 balances by address.
    * @param address - The address to query.
    */
-  async getBrc20sByAddress(address: string): Promise<any> {
-    return await this._call('/get-address-brc20-balance', 'post', { address });
+
+  async getBrc20sByAddress(address: string) {
+    return await this._call('/get-address-brc20-balance', 'post', {
+      address: address,
+    })
   }
 
   /**
@@ -98,9 +111,9 @@ export class OylApiClient {
    */
   async getCollectiblesByAddress(address: string): Promise<any> {
     return await this._call('/get-inscriptions', 'post', {
-      address,
-      exclude_brc20: true,
-    });
+      address: address,
+      exclude_brc20: false,
+    })
   }
 
   /**

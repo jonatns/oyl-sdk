@@ -4,9 +4,8 @@ import { amountToSatoshis, satoshisToAmount } from './shared/utils'
 import BcoinRpc from './rpclient'
 import * as transactions from './transactions'
 import { publicKeyToAddress } from './wallet/accounts'
-import { bord, accounts } from './wallet'
+import { accounts } from './wallet'
 import { AccountManager } from './wallet/accountsManager'
-import { HDKeyringOption, HdKeyring } from './wallet/hdKeyring'
 import {
   AddressType,
   SwapBrc,
@@ -231,14 +230,42 @@ export class Wallet {
     return response
   }
 
+  async getTxValueFromPrevOut(inputs: any[], address: string): Promise<number> {
+      let totalMissingValue = 0;
+      for (const input of inputs) {
+        if (!input.coin && input.address === address) {
+          try {
+            const prevTx = await this.apiClient.getTxByHash(input.prevout.hash);
+            const output = prevTx.outputs[input.prevout.index];
+            if (output && output.value) {
+              totalMissingValue += output.value;
+            }
+          } catch (error) {
+            throw Error (`Error retrieving transaction`);
+          }
+        }
+      }
+      return totalMissingValue;
+  }
+  
+
   async getTxHistory({ address }) {
     const history = await this.apiClient.getTxByAddress(address)
-    const processedTransactions = history
-      .map((tx) => {
-        const { hash, height, time, outputs, inputs, confirmations, fee, rate } = tx
+    const processedTxPromises = history
+      .map(async (tx) => {
+        const {
+          hash,
+          height,
+          time,
+          outputs,
+          inputs,
+          confirmations,
+          fee,
+          rate,
+        } = tx
 
         const output = outputs.find((output) => output.address === address)
-        const input = inputs.find((input) => input.coin.address === address)
+        const input = inputs.find((input) => (input.coin ? input.coin.address: input.address) === address)
         const txDetails = {}
         txDetails['hash'] = hash
         txDetails['confirmations'] = confirmations
@@ -252,17 +279,18 @@ export class Wallet {
             (output) => output.address != address
           )?.address
           if (output) {
-            txDetails['amount'] = input.coin.value / 1e8 - output.value / 1e8
+            txDetails['amount'] = input.coin ? input.coin.value / 1e8 - output.value / 1e8 : (await this.getTxValueFromPrevOut(inputs, address)) / 1e8 - output.value / 1e8
           } else {
-            txDetails['amount'] = input.coin.value / 1e8
+            txDetails['amount'] = input.coin ? input.coin.value / 1e8 : (await this.getTxValueFromPrevOut(inputs, address)) / 1e8
           }
         } else {
           if (output) {
             txDetails['type'] = 'received'
             txDetails['amount'] = output.value / 1e8
-            txDetails['from'] = inputs.find(
-              (input) => input.coin.address != address
-            ).coin.address
+            const evalFrom = inputs.find(
+              (input) => (input.coin ? input.coin.address: input.address) != address
+            )
+            txDetails['from'] = evalFrom.coin? evalFrom.coin.address : evalFrom.address
           }
         }
         txDetails['symbol'] = 'BTC'
@@ -270,6 +298,7 @@ export class Wallet {
       })
       .filter((transaction) => transaction !== null) // Filter out null transactions
 
+    const processedTransactions = await Promise.all(processedTxPromises)
     return processedTransactions
   }
 
@@ -277,26 +306,6 @@ export class Wallet {
     return await this.apiClient.getFees()
   }
 
-  // async getActiveAddresses({ xpub, lookAhead = 10 }) {
-  //   const childKeyB58 = bip32.fromBase58(xpub)
-  //   const chain = new Chain(childKeyB58)
-  //   const batch = [chain.get()] //get first at index 0
-  //   let seenUnused = false
-
-  //   //Check through each Address to see which one has been used
-  //   while (batch.length < lookAhead && seenUnused === false) {
-  //     chain.next()
-  //     batch.push(chain.get())
-  //     const res = await this.getAddressSummary({ address: batch })
-  //     res.map(function (res) {
-  //       if (res.balance > 0) {
-  //         seenUnused = true
-  //       }
-  //     })
-  //   }
-
-  //   return batch
-  // }
 
   async getTotalBalance({ batch }) {
     const res = await this.getAddressSummary({ address: batch })
@@ -347,57 +356,6 @@ export class Wallet {
     }
   }
 
-  /**
-  * 
-  * Example implementation to send BTC DO NOT USE!!!
-
-  async sendBtc({ mnemonic, to, amount, fee }) {
-
-  const payload = await this.fromPhrase({
-    mnemonic: mnemonic.trim(),
-    hdPath: "m/49'/0'/0'",
-    type: 'segwit',
-  })
-
-  const keyring = payload.keyring.keyring;
-  const pubKey = keyring.wallets[0].publicKey.toString('hex');
-  const signer = keyring.signTransaction.bind(keyring);
-  const from = payload.keyring.address;
-  const changeAddress = from;
-
-
-  return await this.createPsbtTx({publicKey: pubKey, from: from, to: to, changeAddress: changeAddress, amount: amount, fee: fee,  signer: signer })
-  }
-*/
-
-  /**
-  * 
-  * Example implementation to send Ordinal DO NOT USE!!!
-
-async sendOrd({ mnemonic, to,  inscriptionId, inscriptionOffset, inscriptionOutputValue, fee }) {
-  const payload = await this.fromPhrase({
-    mnemonic: mnemonic.trim(),
-    hdPath: "m/49'/0'/0'",
-    type: 'segwit',
-  })
-  const keyring = payload.keyring.keyring;
-  const pubKey = keyring.wallets[0].publicKey.toString('hex');
-  const signer = keyring.signTransaction.bind(keyring);
-  const from = payload.keyring.address;
-  const changeAddress = from; 
-  return await this.createOrdPsbtTx({ 
-    publicKey: pubKey, 
-    fromAddress: from, 
-    toAddress: to, 
-    changeAddress: changeAddress, 
-    txFee: fee, 
-    signer: signer, 
-    inscriptionId, 
-    metaOffset: inscriptionOffset, 
-    metaOutputValue: inscriptionOutputValue 
-  })
-}
-*/
 
   async createOrdPsbtTx({
     publicKey,
@@ -485,7 +443,7 @@ async sendOrd({ mnemonic, to,  inscriptionId, inscriptionOffset, inscriptionOutp
     const feeRate = fee
     const addressType = transactions.getAddressType(from)
     if (addressType == null) throw Error('Invalid Address Type')
-
+   
     const tx = new PSBTTransaction(
       signer,
       from,
@@ -516,7 +474,7 @@ async sendOrd({ mnemonic, to,  inscriptionId, inscriptionOffset, inscriptionOutp
         tmpSum += nonOrdUtxo.satoshis
         continue
       }
-
+      
       const fee = await tx.calNetworkFee()
       if (tmpSum < outputAmount + fee) {
         tx.addInput(nonOrdUtxo)
@@ -665,5 +623,10 @@ async sendOrd({ mnemonic, to,  inscriptionId, inscriptionOffset, inscriptionOutp
 
   async listCollectibles({ address }: { address: string }) {
     return await this.apiClient.getCollectiblesByAddress(address)
+  }
+
+  async getCollectibleById(inscriptionId: string) {
+    const { data } = await this.apiClient.getCollectiblesById(inscriptionId)
+    return data
   }
 }

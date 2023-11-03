@@ -4,8 +4,7 @@ export declare class AccountManager {
     private taprootKeyring;
     private segwitKeyring;
     activeIndexes: number[];
-    taprootPath: string;
-    segwitPath: string;
+    private hdPath;
     constructor(options?: any);
     initializeAccounts(): Promise<oylAccounts>;
     recoverAccounts(): Promise<oylAccounts>;
