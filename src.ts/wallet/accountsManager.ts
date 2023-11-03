@@ -4,29 +4,30 @@ import { AddressType, oylAccounts } from '../shared/interface'
 import Mnemonic from 'bitcore-mnemonic'
 
 const genMnemonic = new Mnemonic(Mnemonic.Words.ENGLISH).toString()
-const defaultPaths = {
-  taprootPath: "m/86'/0'/0'/0",
-  initializedFrom: "default",
-  segwitPath: "m/84'/0'/0'/0",
-  segwitAddressType: AddressType.P2WPKH,
-}
+
 const customPaths = {
+  default: {
+    taprootPath: "m/86'/0'/0'/0",
+    initializedFrom: 'oyl',
+    segwitPath: "m/84'/0'/0'/0",
+    segwitAddressType: AddressType.P2WPKH,
+  },
   xverse: {
     taprootPath: "m/86'/0'/0'/0",
-    initializedFrom: "xverse",
+    initializedFrom: 'xverse',
     segwitPath: "m/49'/0'/0'/0",
     segwitAddressType: AddressType.P2SH_P2WPKH,
   },
   leather: {
     taprootPath: "m/86'/0'/0'/0",
     segwitPath: "m/84'/0'/0'/0",
-    initializedFrom: "leather",
+    initializedFrom: 'leather',
     segwitAddressType: AddressType.P2WPKH,
   },
   unisat: {
     taprootPath: "m/86'/0'/0'/0",
     segwitPath: "m/84'/0'/0'/0",
-    initializedFrom: "unisat",
+    initializedFrom: 'unisat',
     segwitAddressType: AddressType.P2WPKH,
   },
 }
@@ -43,7 +44,7 @@ export class AccountManager {
     this.activeIndexes = options?.activeIndexes
     this.hdPath = options?.customPath
       ? customPaths[options.customPath]
-      : defaultPaths
+      : customPaths.default
     this.taprootKeyring = new HdKeyring({
       mnemonic: this.mnemonic || genMnemonic,
       hdPath: this.hdPath.taprootPath,
