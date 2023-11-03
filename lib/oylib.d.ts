@@ -42,7 +42,7 @@ export declare class Wallet {
     getTxValueFromPrevOut(inputs: any[], address: string): Promise<number>;
     getTxHistory({ address }: {
         address: any;
-    }): Promise<any>;
+    }): Promise<any[]>;
     getFees(): Promise<{
         High: number;
         Medium: number;

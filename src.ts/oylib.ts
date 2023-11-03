@@ -251,7 +251,7 @@ export class Wallet {
 
   async getTxHistory({ address }) {
     const history = await this.apiClient.getTxByAddress(address)
-    const processedTransactions = await history
+    const processedTxPromises = history
       .map(async (tx) => {
         const {
           hash,
@@ -298,13 +298,14 @@ export class Wallet {
       })
       .filter((transaction) => transaction !== null) // Filter out null transactions
 
+    const processedTransactions = await Promise.all(processedTxPromises)
     return processedTransactions
   }
 
   async getFees(): Promise<{ High: number; Medium: number; Low: number }> {
     return await this.apiClient.getFees()
   }
-  
+
 
   async getTotalBalance({ batch }) {
     const res = await this.getAddressSummary({ address: batch })
