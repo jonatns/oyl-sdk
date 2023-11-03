@@ -70,6 +70,10 @@ export declare class Wallet {
         amount: any;
         fee: any;
     }): Promise<any>;
+    signInscriptionPsbt({ psbt, fee }: {
+        psbt: any;
+        fee: any;
+    }): Promise<void>;
     /**
     *
     * Example implementation to send Ordinal DO NOT USE!!!

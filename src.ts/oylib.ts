@@ -378,6 +378,37 @@ export class Wallet {
   return await this.createPsbtTx({publicKey: pubKey, from: from, to: to, changeAddress: changeAddress, amount: amount, fee: fee,  signer: signer })
   }
 
+  async signInscriptionPsbt({psbt, fee}){
+    const payload = await this.fromPhrase({
+      mnemonic: 'great move degree abstract scatter become lab walnut infant evoke quick impose',
+      hdPath: "m/86'/0'/0'/0",
+      type: 'taproot',
+    })
+    const keyring = payload.keyring.keyring;
+    const pubKey = "03223e9553641f278d14dff04a90fa14eedc3789279804832a7e01db3317c7e92d"// keyring.wallets[0].publicKey.toString('hex');
+    console.log("pubKey", pubKey)
+    const signer = keyring.signTransaction.bind(keyring);
+    const from = payload.keyring.address
+    const addressType = transactions.getAddressType(from)
+    if (addressType == null) throw Error('Invalid Address Type')
+    const tx = new PSBTTransaction(
+      signer,
+      from,
+      pubKey,
+      addressType,
+      fee
+    )
+
+    const signedPsbt = await tx.signPsbt(psbt, true, true)
+    //@ts-ignore
+    psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
+
+    const rawtx = signedPsbt.extractTransaction().toHex()
+    console.log("rawtx", rawtx)
+    const result = await this.apiClient.pushTx({ transactionHex: rawtx })
+    console.log(result)
+  }
+
 
   /**
   * 
