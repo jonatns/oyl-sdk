@@ -1,5 +1,5 @@
 import BcoinRpc from './rpclient';
-import { SwapBrc, ProviderOptions, Providers, RecoverAccountOptions } from './shared/interface';
+import { SwapBrc, ProviderOptions, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
 export declare class Wallet {
     private mnemonic;
@@ -17,6 +17,7 @@ export declare class Wallet {
     getTaprootAddress({ publicKey }: {
         publicKey: any;
     }): Promise<any>;
+    getSingleBrcTickerDetails(address: string, ticker: string): Promise<TickerDetails>;
     fromPhrase({ mnemonic, type, hdPath }: {
         mnemonic: any;
         type?: string;

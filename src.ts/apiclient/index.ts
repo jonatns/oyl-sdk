@@ -64,6 +64,11 @@ export class OylApiClient {
     })
   }
 
+  async getBrc20TokenInfo(ticker: string) {
+    return await this._call('/get-brc20-token-info', 'post', {
+      ticker: ticker,
+    })
+  }
 
   async getBrc20sByAddress(address: string) {
     return await this._call('/get-address-brc20-balance', 'post', {

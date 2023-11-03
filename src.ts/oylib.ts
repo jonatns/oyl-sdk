@@ -6,12 +6,14 @@ import * as transactions from './transactions'
 import { publicKeyToAddress } from './wallet/accounts'
 import { accounts } from './wallet'
 import { AccountManager } from './wallet/accountsManager'
+
 import {
   AddressType,
   SwapBrc,
   ProviderOptions,
   Providers,
   RecoverAccountOptions,
+  TickerDetails,
 } from './shared/interface'
 import { OylApiClient } from './apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
@@ -94,6 +96,13 @@ export class Wallet {
       return err
     }
   }
+
+  async getSingleBrcTickerDetails(address: string, ticker: string): Promise<TickerDetails>  {
+    const response = await this.apiClient.getBrc20sByAddress(address);
+    const tickerDetails = response.data.find((details) => details.ticker.toLowerCase() === ticker.toLowerCase());
+    return tickerDetails;
+  };
+  
 
   async fromPhrase({ mnemonic, type = 'taproot', hdPath = RequiredPath[3] }) {
     try {
