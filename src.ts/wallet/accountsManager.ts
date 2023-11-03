@@ -6,7 +6,7 @@ import Mnemonic from 'bitcore-mnemonic'
 const genMnemonic = new Mnemonic(Mnemonic.Words.ENGLISH).toString()
 
 const customPaths = {
-  default: {
+  oyl: {
     taprootPath: "m/86'/0'/0'/0",
     initializedFrom: 'oyl',
     segwitPath: "m/84'/0'/0'/0",
@@ -44,7 +44,7 @@ export class AccountManager {
     this.activeIndexes = options?.activeIndexes
     this.hdPath = options?.customPath
       ? customPaths[options.customPath]
-      : customPaths.default
+      : customPaths.oyl
     this.taprootKeyring = new HdKeyring({
       mnemonic: this.mnemonic || genMnemonic,
       hdPath: this.hdPath.taprootPath,
