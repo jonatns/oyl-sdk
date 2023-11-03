@@ -86,6 +86,10 @@ export class OylApiClient {
     })
   }
 
+   /**
+   * Get brc20 info by ticker.
+   * @param ticker - The hash to query.
+   */
   async getBrc20TokenInfo(ticker: string) {
     return await this._call('/get-brc20-token-info', 'post', {
       ticker: ticker,

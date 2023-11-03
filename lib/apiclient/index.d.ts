@@ -46,18 +46,20 @@ export declare class OylApiClient {
      * @param address - The address to query.
      */
     getTxByAddress(address: string): Promise<any>;
-      /**
+    /**
      * Get transactions by hash.
      * @param address - The hash to query.
      */
     getTxByHash(hash: string): Promise<any>;
+    /**
+    * Get brc20 info by ticker.
+    * @param ticker - The hash to query.
+    */
     getBrc20TokenInfo(ticker: string): Promise<any>;
-
     /**
      * Get Brc20 balances by address.
      * @param address - The address to query.
      */
-
     getBrc20sByAddress(address: string): Promise<any>;
     /**
      * Get collectible by ID.
