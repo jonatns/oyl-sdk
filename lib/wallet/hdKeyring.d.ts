@@ -31,20 +31,20 @@ export declare class HdKeyring extends EventEmitter {
      */
     serialize(): Promise<HDKeyringOption>;
     /**
-    * Deserializes options to a HDKeyring instance.
-    * @param {HDKeyringOption} _opts - The HDKeyring options object.
-    * @returns {HdKeyring} The instance of the HDKeyring.
-    */
+     * Deserializes options to a HDKeyring instance.
+     * @param {HDKeyringOption} _opts - The HDKeyring options object.
+     * @returns {HdKeyring} The instance of the HDKeyring.
+     */
     deserialize(_opts?: HDKeyringOption): HdKeyring;
     /**
-   * Initializes the HD keyring from a mnemonic phrase.
-   * @param {string} mnemonic - The mnemonic phrase to use for initialization.
-   */
+     * Initializes the HD keyring from a mnemonic phrase.
+     * @param {string} mnemonic - The mnemonic phrase to use for initialization.
+     */
     initFromMnemonic(mnemonic: string): void;
     /**
-    * Changes the HD path used by the keyring and reinitializes accounts.
-    * @param {string} hdPath - The new HD path to be used.
-    */
+     * Changes the HD path used by the keyring and reinitializes accounts.
+     * @param {string} hdPath - The new HD path to be used.
+     */
     changeHdPath(hdPath: string): void;
     /**
      * Retrieves an account's address by its HD path and index.
@@ -54,10 +54,10 @@ export declare class HdKeyring extends EventEmitter {
      */
     getAccountByHdPath(hdPath: string, index: number): string;
     /**
-    * Adds a specified number of new accounts to the keyring.
-    * @param {number} numberOfAccounts - The number of new accounts to add. Defaults to 1 if not specified.
-    * @returns {Promise<string[]>} A promise that resolves to an array of new account addresses in hex format.
-    */
+     * Adds a specified number of new accounts to the keyring.
+     * @param {number} numberOfAccounts - The number of new accounts to add. Defaults to 1 if not specified.
+     * @returns {Promise<string[]>} A promise that resolves to an array of new account addresses in hex format.
+     */
     addAccounts(numberOfAccounts?: number): Promise<string[]>;
     /**
      * Activates a list of accounts by their indexes.
@@ -76,16 +76,16 @@ export declare class HdKeyring extends EventEmitter {
         index: number;
     }[];
     /**
-    * Gets the hex string representations of public keys for all accounts.
-    * @returns {string[]} An array of account addresses in hex format.
-    */
+     * Gets the hex string representations of public keys for all accounts.
+     * @returns {string[]} An array of account addresses in hex format.
+     */
     getAccounts(): string[];
     /**
-    * Retrieves the private key for the given public key.
-    * @param {string} publicKey - The public key to retrieve the private key for.
-    * @returns {ECPairInterface} The corresponding private key.
-    * @private
-    */
+     * Retrieves the private key for the given public key.
+     * @param {string} publicKey - The public key to retrieve the private key for.
+     * @returns {ECPairInterface} The corresponding private key.
+     * @private
+     */
     private _getPrivateKeyFor;
     /**
      * Retrieves the wallet for a given account's public key.
@@ -95,21 +95,21 @@ export declare class HdKeyring extends EventEmitter {
      */
     private _getWalletForAccount;
     /**
-    * Signs a PSBT (Partially Signed Bitcoin Transaction) using the private keys managed by this keyring.
-    * @param {bitcoin.Psbt} psbt - The PSBT to sign.
-    * @param {{ index: number; publicKey: string; sighashTypes?: number[] }[]} inputs - The inputs to sign, with their index, public key, and optional sighash types.
-    * @param opts - Additional options.
-    * @returns {Promise<bitcoin.Psbt>} A promise that resolves to the signed PSBT.
-    */
+     * Signs a PSBT (Partially Signed Bitcoin Transaction) using the private keys managed by this keyring.
+     * @param {bitcoin.Psbt} psbt - The PSBT to sign.
+     * @param {{ index: number; publicKey: string; sighashTypes?: number[] }[]} inputs - The inputs to sign, with their index, public key, and optional sighash types.
+     * @param opts - Additional options.
+     * @returns {Promise<bitcoin.Psbt>} A promise that resolves to the signed PSBT.
+     */
     signTransaction(psbt: bitcoin.Psbt, inputs: {
         index: number;
         publicKey: string;
         sighashTypes?: number[];
     }[], opts?: any): Promise<bitcoin.Psbt>;
     /**
-    * Retrieves the address and corresponding ECPair object from a given index.
-    * @param {number} i - The index to derive the address from.
-    * @returns {[string, ECPairInterface]} A tuple containing the address and the ECPair object.
-    */
+     * Retrieves the address and corresponding ECPair object from a given index.
+     * @param {number} i - The index to derive the address from.
+     * @returns {[string, ECPairInterface]} A tuple containing the address and the ECPair object.
+     */
     private _addressFromIndex;
 }

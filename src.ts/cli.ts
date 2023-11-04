@@ -4,7 +4,7 @@ import { Wallet } from './oylib'
 import { PSBTTransaction } from './txbuilder/PSBTTransaction'
 import * as transactions from './transactions'
 import * as bitcoin from 'bitcoinjs-lib'
-import { Inscriber } from "@sadoprotocol/ordit-sdk"
+import { Inscriber } from '@sadoprotocol/ordit-sdk'
 import { BRC_20_TRANSFER_META } from './shared/constants'
 import { InscribeTransfer } from './shared/interface'
 
@@ -58,15 +58,14 @@ export async function swapFlow(options) {
   return psbt_.toHex()
 }
 
-
 async function inscribeTest(options: InscribeTransfer) {
-  //WORKFLOW TO INSCRIBE 
+  //WORKFLOW TO INSCRIBE
   //GET & PASS PUBLIC KEY, ADDRESS SENDING FROM, ADDRESS INSCRIPTIOM WILL END UP IN, AND CHANGE ADDRESS
   //PASS THE MEDIA CONTENT (e.g: 'Hello World'), MEDIA TYPE (e.g 'text/plain'), AND META (which will be encoded )
   //PASS feerate and postage (default 1500)
   //Initialize the Inscriber class with these values
   const transaction = new Inscriber({
-    network: "mainnet",
+    network: 'mainnet',
     address: options.feeFromAddress,
     publicKey: options.taprootPublicKey,
     changeAddress: options.feeFromAddress,
@@ -75,64 +74,63 @@ async function inscribeTest(options: InscribeTransfer) {
     mediaType: BRC_20_TRANSFER_META.mediaType,
     feeRate: options.feeRate,
     meta: BRC_20_TRANSFER_META.meta,
-    postage: options?.postage || 1500 // base value of the inscription in sats
+    postage: options?.postage || 1500, // base value of the inscription in sats
   })
   //GENERATE COMMIT PAYMENT REQUEST - THIS DUMPS AN ADDRESS FROM THE PUBKEY & TOTAL COST FOR INSCRIPTION
-  const revealed = await transaction.generateCommit();
+  const revealed = await transaction.generateCommit()
   //SEND BITCOIN FROM REGULAR ADDRESS TO THE DUMPED ADDRESS
   const wallet = new Wallet()
   const depositRevealFee = await wallet.createPsbtTx({
-    publicKey: options.taprootPublicKey, 
-    from: options.feeFromAddress, 
-    to: revealed.address, 
-    changeAddress: options.feeFromAddress, 
-    amount: (revealed.revealFee/100000000).toString(), 
+    publicKey: options.taprootPublicKey,
+    from: options.feeFromAddress,
+    to: revealed.address,
+    changeAddress: options.feeFromAddress,
+    amount: (revealed.revealFee / 100000000).toString(),
     fee: options.feeRate,
-    signer: options.signer
+    signer: options.signer,
   })
-  console.log("deposit reveal fee", depositRevealFee)
+  console.log('deposit reveal fee', depositRevealFee)
   //COLLECT_TX_HASH
   const tx_hash = depositRevealFee.txId
   //WAIT FOR TRANSACTION TO BE CONFIRMED BEFORE PROCEEDING
   //ONCE THE TX IS CONFIRMED, CHECK IF ITS READY TO BE BUILT
-  const ready = await transaction.isReady();
+  const ready = await transaction.isReady()
   if (ready) {
     //IF READY, BUILD THE REVEAL TX
-    await transaction.build();
+    await transaction.build()
     //YOU WILL GET THE PSBT HEX
     const psbtHex = transaction.toHex()
-    console.log("transaction: ", psbtHex)
+    console.log('transaction: ', psbtHex)
     //PREPARE THE PSBT FOR SIGNING
     const vPsbt = bitcoin.Psbt.fromHex(psbtHex, {
       network: bitcoin.networks.bitcoin,
     })
     //SIGN THE PSBT
-    const completeInscription = await signInscriptionPsbt(vPsbt, options.feeRate, options.taprootPublicKey, options.signer)
-      console.log(completeInscription)
+    const completeInscription = await signInscriptionPsbt(
+      vPsbt,
+      options.feeRate,
+      options.taprootPublicKey,
+      options.signer
+    )
+    console.log(completeInscription)
   }
 }
 
-async function signInscriptionPsbt(psbt, fee, pubKey, signer, address = ""){
+async function signInscriptionPsbt(psbt, fee, pubKey, signer, address = '') {
   //INITIALIZE NEW PSBTTransaction INSTANCE
   const wallet = new Wallet()
   const addressType = transactions.getAddressType(address)
   if (addressType == null) throw Error('Invalid Address Type')
-  const tx = new PSBTTransaction(
-    signer,
-    address,
-    pubKey,
-    addressType,
-    fee
-  )
-    
+  const tx = new PSBTTransaction(signer, address, pubKey, addressType, fee)
+
   //SIGN AND FINALIZE THE PSBT
   const signedPsbt = await tx.signPsbt(psbt, true, true)
   //@ts-ignore
   psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
-  
+
   //EXTRACT THE RAW TX
   const rawtx = signedPsbt.extractTransaction().toHex()
-  console.log("rawtx", rawtx)
+  console.log('rawtx', rawtx)
   //BROADCAST THE RAW TX TO THE NETWORK
   const result = await wallet.apiClient.pushTx({ transactionHex: rawtx })
   //GET THE TX_HASH

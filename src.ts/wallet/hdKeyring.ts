@@ -49,10 +49,10 @@ export class HdKeyring extends EventEmitter {
   }
 
   /**
-  * Deserializes options to a HDKeyring instance.
-  * @param {HDKeyringOption} _opts - The HDKeyring options object.
-  * @returns {HdKeyring} The instance of the HDKeyring.
-  */
+   * Deserializes options to a HDKeyring instance.
+   * @param {HDKeyringOption} _opts - The HDKeyring options object.
+   * @returns {HdKeyring} The instance of the HDKeyring.
+   */
   deserialize(_opts: HDKeyringOption = {}): HdKeyring {
     if (this.root) {
       throw new Error('Btc-Hd-Keyring: Secret recovery phrase already provided')
@@ -79,9 +79,9 @@ export class HdKeyring extends EventEmitter {
   }
 
   /**
- * Initializes the HD keyring from a mnemonic phrase.
- * @param {string} mnemonic - The mnemonic phrase to use for initialization.
- */
+   * Initializes the HD keyring from a mnemonic phrase.
+   * @param {string} mnemonic - The mnemonic phrase to use for initialization.
+   */
   initFromMnemonic(mnemonic: string) {
     if (this.root) {
       throw new Error('Btc-Hd-Keyring: Secret recovery phrase already provided')
@@ -101,9 +101,9 @@ export class HdKeyring extends EventEmitter {
   }
 
   /**
-  * Changes the HD path used by the keyring and reinitializes accounts.
-  * @param {string} hdPath - The new HD path to be used.
-  */
+   * Changes the HD path used by the keyring and reinitializes accounts.
+   * @param {string} hdPath - The new HD path to be used.
+   */
   changeHdPath(hdPath: string) {
     this.hdPath = hdPath
 
@@ -141,10 +141,10 @@ export class HdKeyring extends EventEmitter {
   }
 
   /**
-  * Adds a specified number of new accounts to the keyring.
-  * @param {number} numberOfAccounts - The number of new accounts to add. Defaults to 1 if not specified.
-  * @returns {Promise<string[]>} A promise that resolves to an array of new account addresses in hex format.
-  */
+   * Adds a specified number of new accounts to the keyring.
+   * @param {number} numberOfAccounts - The number of new accounts to add. Defaults to 1 if not specified.
+   * @returns {Promise<string[]>} A promise that resolves to an array of new account addresses in hex format.
+   */
   addAccounts(numberOfAccounts = 1) {
     if (!this.root) {
       this.initFromMnemonic(new Mnemonic().toString())
@@ -216,9 +216,9 @@ export class HdKeyring extends EventEmitter {
   }
 
   /**
-  * Gets the hex string representations of public keys for all accounts.
-  * @returns {string[]} An array of account addresses in hex format.
-  */
+   * Gets the hex string representations of public keys for all accounts.
+   * @returns {string[]} An array of account addresses in hex format.
+   */
   getAccounts() {
     return this.wallets.map((w) => {
       return w.publicKey.toString('hex')
@@ -226,11 +226,11 @@ export class HdKeyring extends EventEmitter {
   }
 
   /**
-  * Retrieves the private key for the given public key.
-  * @param {string} publicKey - The public key to retrieve the private key for.
-  * @returns {ECPairInterface} The corresponding private key.
-  * @private
-  */
+   * Retrieves the private key for the given public key.
+   * @param {string} publicKey - The public key to retrieve the private key for.
+   * @returns {ECPairInterface} The corresponding private key.
+   * @private
+   */
   private _getPrivateKeyFor(publicKey: string) {
     if (!publicKey) {
       throw new Error('Must specify publicKey.')
@@ -256,12 +256,12 @@ export class HdKeyring extends EventEmitter {
   }
 
   /**
-  * Signs a PSBT (Partially Signed Bitcoin Transaction) using the private keys managed by this keyring.
-  * @param {bitcoin.Psbt} psbt - The PSBT to sign.
-  * @param {{ index: number; publicKey: string; sighashTypes?: number[] }[]} inputs - The inputs to sign, with their index, public key, and optional sighash types.
-  * @param opts - Additional options.
-  * @returns {Promise<bitcoin.Psbt>} A promise that resolves to the signed PSBT.
-  */
+   * Signs a PSBT (Partially Signed Bitcoin Transaction) using the private keys managed by this keyring.
+   * @param {bitcoin.Psbt} psbt - The PSBT to sign.
+   * @param {{ index: number; publicKey: string; sighashTypes?: number[] }[]} inputs - The inputs to sign, with their index, public key, and optional sighash types.
+   * @param opts - Additional options.
+   * @returns {Promise<bitcoin.Psbt>} A promise that resolves to the signed PSBT.
+   */
   async signTransaction(
     psbt: bitcoin.Psbt,
     inputs: { index: number; publicKey: string; sighashTypes?: number[] }[],
@@ -277,8 +277,8 @@ export class HdKeyring extends EventEmitter {
 
         const signer =
           input.witnessUtxo?.script &&
-            input.tapInternalKey &&
-            !input.tapLeafScript
+          input.tapInternalKey &&
+          !input.tapLeafScript
             ? tweakedSigner
             : keyPair
 
@@ -291,10 +291,10 @@ export class HdKeyring extends EventEmitter {
   }
 
   /**
-  * Retrieves the address and corresponding ECPair object from a given index.
-  * @param {number} i - The index to derive the address from.
-  * @returns {[string, ECPairInterface]} A tuple containing the address and the ECPair object.
-  */
+   * Retrieves the address and corresponding ECPair object from a given index.
+   * @param {number} i - The index to derive the address from.
+   * @returns {[string, ECPairInterface]} A tuple containing the address and the ECPair object.
+   */
   private _addressFromIndex(i: number): [string, ECPairInterface] {
     if (!this._index2wallet[i]) {
       const child = this.root!.deriveChild(i)

@@ -40,10 +40,10 @@ export class AccountManager {
   private hdPath: any
 
   /**
-  * Initializes a new AccountManager instance with the given options.
-  *
-  * @param options - Configuration options for the AccountManager.
-  */
+   * Initializes a new AccountManager instance with the given options.
+   *
+   * @param options - Configuration options for the AccountManager.
+   */
   constructor(options?) {
     this.mnemonic = options?.mnemonic
     this.activeIndexes = options?.activeIndexes
@@ -96,10 +96,10 @@ export class AccountManager {
   }
 
   /**
- * Recovers existing accounts by fetching and converting the public keys to addresses.
- *
- * @returns {Promise<oylAccounts>} A promise that resolves to an object containing the recovered accounts.
- */
+   * Recovers existing accounts by fetching and converting the public keys to addresses.
+   *
+   * @returns {Promise<oylAccounts>} A promise that resolves to an object containing the recovered accounts.
+   */
   async recoverAccounts(): Promise<oylAccounts> {
     const taprootAcccounts = await this.taprootKeyring.getAccounts()
     const segwitAccounts = await this.segwitKeyring.getAccounts()
@@ -131,10 +131,10 @@ export class AccountManager {
   }
 
   /**
-  * Adds a new account for both taproot and segwit and returns the updated account information.
-  *
-  * @returns {Promise<oylAccounts>} A promise that resolves to an object containing the updated accounts.
-  */
+   * Adds a new account for both taproot and segwit and returns the updated account information.
+   *
+   * @returns {Promise<oylAccounts>} A promise that resolves to an object containing the updated accounts.
+   */
   async addAccount(): Promise<oylAccounts> {
     await this.taprootKeyring.addAccounts(1)
     await this.segwitKeyring.addAccounts(1)
