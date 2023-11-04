@@ -39,6 +39,11 @@ export class AccountManager {
   public activeIndexes: number[]
   private hdPath: any
 
+  /**
+  * Initializes a new AccountManager instance with the given options.
+  *
+  * @param options - Configuration options for the AccountManager.
+  */
   constructor(options?) {
     this.mnemonic = options?.mnemonic
     this.activeIndexes = options?.activeIndexes
@@ -57,6 +62,11 @@ export class AccountManager {
     })
   }
 
+  /**
+   * Initializes taproot and segwit accounts by generating the necessary addresses.
+   *
+   * @returns {Promise<oylAccounts>} A promise that resolves to an object containing the initialized accounts.
+   */
   async initializeAccounts(): Promise<oylAccounts> {
     await this.taprootKeyring.addAccounts(1)
     await this.segwitKeyring.addAccounts(1)
@@ -85,6 +95,11 @@ export class AccountManager {
     return ret
   }
 
+  /**
+ * Recovers existing accounts by fetching and converting the public keys to addresses.
+ *
+ * @returns {Promise<oylAccounts>} A promise that resolves to an object containing the recovered accounts.
+ */
   async recoverAccounts(): Promise<oylAccounts> {
     const taprootAcccounts = await this.taprootKeyring.getAccounts()
     const segwitAccounts = await this.segwitKeyring.getAccounts()
@@ -115,6 +130,11 @@ export class AccountManager {
     return ret
   }
 
+  /**
+  * Adds a new account for both taproot and segwit and returns the updated account information.
+  *
+  * @returns {Promise<oylAccounts>} A promise that resolves to an object containing the updated accounts.
+  */
   async addAccount(): Promise<oylAccounts> {
     await this.taprootKeyring.addAccounts(1)
     await this.segwitKeyring.addAccounts(1)
