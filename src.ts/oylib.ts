@@ -831,4 +831,28 @@ export class Wallet {
     const { data } = await this.apiClient.getCollectiblesById(inscriptionId)
     return data
   }
+
+  async signInscriptionPsbt(psbt, fee, pubKey, signer, address = '') {
+    //INITIALIZE NEW PSBTTransaction INSTANCE
+    const wallet = new Wallet()
+    const addressType = transactions.getAddressType(address)
+    if (addressType == null) throw Error('Invalid Address Type')
+    const tx = new PSBTTransaction(signer, address, pubKey, addressType, fee)
+
+    //SIGN AND FINALIZE THE PSBT
+    const signedPsbt = await tx.signPsbt(psbt, true, true)
+    //@ts-ignore
+    psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
+
+    //EXTRACT THE RAW TX
+    const rawtx = signedPsbt.extractTransaction().toHex()
+    console.log('rawtx', rawtx)
+    //BROADCAST THE RAW TX TO THE NETWORK
+    const result = await wallet.apiClient.pushTx({ transactionHex: rawtx })
+    //GET THE TX_HASH
+    const ready_txId = psbt.extractTransaction().getId()
+    //CONFIRM TRANSACTION IS CONFIRMED
+
+    return ready_txId
+  }
 }
