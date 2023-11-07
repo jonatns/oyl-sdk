@@ -313,6 +313,8 @@ export class PSBTTransaction {
       })
     }
 
+    console.log('signPsbt')
+
     return psbt
   }
 
