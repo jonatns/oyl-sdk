@@ -265,6 +265,8 @@ export class PSBTTransaction {
 
     await this.signPsbt(psbt)
 
+    console.log('createSignedPsbt - signed')
+
     return psbt
   }
 

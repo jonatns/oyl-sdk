@@ -674,6 +674,8 @@ export class Wallet {
     }
 
     const psbt = await tx.createSignedPsbt()
+    console.log('dumpTx - dumping')
+
     tx.dumpTx(psbt)
 
     //@ts-ignore
@@ -681,8 +683,14 @@ export class Wallet {
 
     const rawtx = psbt.extractTransaction().toHex()
     // console.log("rawtx", rawtx)
+
+    console.log('pushTx - pushing')
+    console.log(rawtx)
+
     const result = await this.apiClient.pushTx({ transactionHex: rawtx })
     // console.log(result)
+
+    console.log(result)
 
     return {
       txId: psbt.extractTransaction().getId(),
