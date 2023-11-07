@@ -289,4 +289,5 @@ export declare class Wallet {
      * @returns {Promise<any>} A promise that resolves to the collectible data.
      */
     getCollectibleById(inscriptionId: string): Promise<any>;
+    signInscriptionPsbt(psbt: any, fee: any, pubKey: any, signer: any, address?: string): Promise<any>;
 }
