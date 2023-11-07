@@ -97,7 +97,6 @@ export class Wallet {
     const addressesUtxo = []
     for (let i = 0; i < address.length; i++) {
       let utxos = await transactions.getUnspentOutputs(address[i])
-      //console.log(utxos)
       addressesUtxo[i] = {}
       addressesUtxo[i]['utxo'] = utxos.unspent_outputs
       addressesUtxo[i]['balance'] = transactions.calculateBalance(
@@ -674,7 +673,6 @@ export class Wallet {
     }
 
     const psbt = await tx.createSignedPsbt()
-    console.log('dumpTx - dumping')
 
     tx.dumpTx(psbt)
 
@@ -682,15 +680,8 @@ export class Wallet {
     psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
 
     const rawtx = psbt.extractTransaction().toHex()
-    // console.log("rawtx", rawtx)
-
-    console.log('pushTx - pushing')
-    console.log(rawtx)
 
     const result = await this.apiClient.pushTx({ transactionHex: rawtx })
-    // console.log(result)
-
-    console.log(result)
 
     return {
       txId: psbt.extractTransaction().getId(),
@@ -854,7 +845,7 @@ export class Wallet {
 
     //EXTRACT THE RAW TX
     const rawtx = signedPsbt.extractTransaction().toHex()
-    console.log('rawtx', rawtx)
+
     //BROADCAST THE RAW TX TO THE NETWORK
     const result = await wallet.apiClient.pushTx({ transactionHex: rawtx })
     //GET THE TX_HASH
