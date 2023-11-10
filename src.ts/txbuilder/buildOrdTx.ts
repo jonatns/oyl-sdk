@@ -2,10 +2,12 @@ import { UTXO_DUST } from '../shared/constants'
 
 export async function buildOrdTx(
   psbtTx,
+  segwitUtxos,
   allUtxos,
   toAddress,
   metaOutputValue,
-  inscriptionId
+  inscriptionId,
+  fee
 ) {
   const { metaUtxos, nonMetaUtxos } = allUtxos.reduce(
     (acc, utxo) => {
@@ -15,6 +17,16 @@ export async function buildOrdTx(
       return acc
     },
     { metaUtxos: [], nonMetaUtxos: [] }
+  )
+
+  const { nonMetaSegwitUtxos } = segwitUtxos.reduce(
+    (acc, utxo) => {
+      utxo.inscriptions.length
+        ? acc.metaUtxos.push(utxo)
+        : acc.nonMetaUtxos.push(utxo)
+      return acc
+    },
+    { nonMetaSegwitUtxos: [] }
   )
 
   const matchedUtxo = metaUtxos.find((utxo) =>
@@ -27,7 +39,18 @@ export async function buildOrdTx(
         : 'Inscription not detected.'
     )
   }
+  let feeUtxo
+  nonMetaSegwitUtxos.sort((a, b) => a.value - b.value)
 
+  for (let utxo of nonMetaSegwitUtxos) {
+    if (utxo.value > fee) {
+      feeUtxo = utxo
+      return
+    }
+    throw new Error('Not available UTXOs')
+  }
+
+  psbtTx.addInput(feeUtxo, true)
   psbtTx.addInput(matchedUtxo)
   psbtTx.addOutput(toAddress, matchedUtxo.satoshis)
 

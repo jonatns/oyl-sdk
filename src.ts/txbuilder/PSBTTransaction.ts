@@ -15,6 +15,9 @@ export class PSBTTransaction {
   public outputs: TxOutput[] = []
   private changeOutputIndex = -1
   private signer: any
+  private segwitSigner: any
+  private segwitPubKey: any
+  private segwitAddressType: AddressType
   private address: string
   public changedAddress: string
   private network: bitcoin.Network = bitcoin.networks.bitcoin
@@ -32,15 +35,21 @@ export class PSBTTransaction {
    * @param feeRate - The fee rate in satoshis per byte.
    */
   constructor(
-    signer: any,
-    address: string,
-    pubkey: string,
-    addressType: AddressType,
-    feeRate?: number
+    signer,
+    address,
+    publicKey,
+    addressType,
+    feeRate,
+    segwitSigner?,
+    segwitPubKey?,
+    segwitAddressType?
   ) {
     this.signer = signer
+    this.segwitSigner = segwitSigner
+    this.segwitPubKey = segwitPubKey
+    this.segwitAddressType = segwitAddressType
     this.address = address
-    this.pubkey = pubkey
+    this.pubkey = publicKey
     this.addressType = addressType
     this.feeRate = feeRate || 5
   }
@@ -65,7 +74,10 @@ export class PSBTTransaction {
    * Adds an input to the transaction.
    * @param {UnspentOutput} utxo - The unspent transaction output to add as an input.
    */
-  addInput(utxo: UnspentOutput) {
+  addInput(utxo: UnspentOutput, isSegwit?: boolean) {
+    if (isSegwit) {
+      this.inputs.push(utxoToInput(utxo, Buffer.from(this.segwitPubKey, 'hex')))
+    }
     this.inputs.push(utxoToInput(utxo, Buffer.from(this.pubkey, 'hex')))
   }
 
@@ -297,6 +309,7 @@ export class PSBTTransaction {
           internalPubkey: tapInternalKey,
           network: psbtNetwork,
         })
+        //check if it is a segwit input and sign using segwit
         if (v.witnessUtxo?.script.toString('hex') == output?.toString('hex')) {
           v.tapInternalKey = tapInternalKey
         }

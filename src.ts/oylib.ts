@@ -508,6 +508,9 @@ export class Wallet {
     changeAddress,
     txFee,
     signer,
+    segwitAddress,
+    segwitPubKey,
+    segwitSigner,
     inscriptionId,
   }: {
     publicKey: string
@@ -516,6 +519,9 @@ export class Wallet {
     changeAddress: string
     txFee: number
     signer: any
+    segwitAddress: string
+    segwitPubKey: string
+    segwitSigner: any
     inscriptionId: string
   }) {
     const { data: collectibleData } = await this.apiClient.getCollectiblesById(
@@ -534,12 +540,18 @@ export class Wallet {
     }
 
     const allUtxos = await this.getUtxosArtifacts({ address: fromAddress })
+    const segwitUtxos = await this.getUtxosArtifacts({ address: segwitAddress })
     const feeRate = txFee
+    const segwitAddressType = transactions.getAddressType(segwitAddress)
     const addressType = transactions.getAddressType(fromAddress)
-    if (addressType == null) throw Error('Unrecognized Address Type')
+    if (addressType == null || segwitAddressType)
+      throw Error('Unrecognized Address Type')
 
     const psbtTx = new PSBTTransaction(
       signer,
+      segwitSigner,
+      segwitPubKey,
+      segwitAddressType,
       fromAddress,
       publicKey,
       addressType,
@@ -549,9 +561,11 @@ export class Wallet {
     const finalizedPsbt = await buildOrdTx(
       psbtTx,
       allUtxos,
+      segwitUtxos,
       toAddress,
       metaOutputValue,
-      inscriptionId
+      inscriptionId,
+      feeRate
     )
 
     //@ts-ignore
