@@ -47,7 +47,7 @@ export async function buildOrdTx(
       feeUtxo = utxo
       return
     }
-    throw new Error('Not available UTXOs')
+    throw new Error('No available UTXOs')
   }
 
   psbtTx.addInput(feeUtxo, true)

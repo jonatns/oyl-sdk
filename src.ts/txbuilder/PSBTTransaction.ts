@@ -302,6 +302,8 @@ export class PSBTTransaction {
     psbt.data.inputs.forEach((v, index) => {
       const isNotSigned = !(v.finalScriptSig || v.finalScriptWitness)
       const isP2TR = this.addressType === AddressType.P2TR
+      const isP2WPKH = this.segwitAddressType === AddressType.P2WPKH
+      const isP2SH_P2WPKH = this.segwitAddressType === AddressType.P2SH_P2WPKH
       const lostInternalPubkey = !v.tapInternalKey
       if (isNotSigned && isP2TR && lostInternalPubkey) {
         const tapInternalKey = assertHex(Buffer.from(this.pubkey, 'hex'))
@@ -309,9 +311,34 @@ export class PSBTTransaction {
           internalPubkey: tapInternalKey,
           network: psbtNetwork,
         })
-        //check if it is a segwit input and sign using segwit
         if (v.witnessUtxo?.script.toString('hex') == output?.toString('hex')) {
           v.tapInternalKey = tapInternalKey
+        }
+      }
+      if (isNotSigned && isP2WPKH) {
+        const segwitInternalKey = assertHex(
+          Buffer.from(this.segwitPubKey, 'hex')
+        )
+        const { output } = bitcoin.payments.p2wpkh({
+          internalPubkey: segwitInternalKey,
+          network: psbtNetwork,
+        })
+
+        if (v.witnessUtxo?.script.toString('hex') == output?.toString('hex')) {
+          v.segwitInternalKey = segwitInternalKey
+        }
+      }
+      if (isNotSigned && isP2SH_P2WPKH) {
+        const segwitInternalKey = assertHex(
+          Buffer.from(this.segwitPubKey, 'hex')
+        )
+        const { output } = bitcoin.payments.p2wsh({
+          internalPubkey: segwitInternalKey,
+          network: psbtNetwork,
+        })
+
+        if (v.witnessUtxo?.script.toString('hex') == output?.toString('hex')) {
+          v.segwitInternalKey = segwitInternalKey
         }
       }
     })

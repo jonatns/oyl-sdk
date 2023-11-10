@@ -544,7 +544,7 @@ export class Wallet {
     const feeRate = txFee
     const segwitAddressType = transactions.getAddressType(segwitAddress)
     const addressType = transactions.getAddressType(fromAddress)
-    if (addressType == null || segwitAddressType)
+    if (addressType == null || segwitAddressType == null)
       throw Error('Unrecognized Address Type')
 
     const psbtTx = new PSBTTransaction(
