@@ -22,7 +22,7 @@ export async function buildOrdTx(
     (acc, utxo) => {
       utxo.inscriptions.length
         ? acc.metaUtxos.push(utxo)
-        : acc.nonMetaUtxos.push(utxo)
+        : acc.nonMetaSegwitUtxos.push(utxo)
       return acc
     },
     { metaUtxos: [], nonMetaSegwitUtxos: [] }
