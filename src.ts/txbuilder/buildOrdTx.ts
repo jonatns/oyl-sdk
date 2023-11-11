@@ -27,8 +27,11 @@ export async function buildOrdTx(
     },
     { metaUtxos: [], nonMetaSegwitUtxos: [] }
   )
+  console.log(metaUtxos)
   const matchedUtxo = metaUtxos.find((utxo) => {
-    utxo.inscriptions.some((inscription) => inscription.id === inscriptionId)
+    return utxo.inscriptions.some(
+      (inscription) => inscription.id === inscriptionId
+    )
   })
   if (!matchedUtxo || matchedUtxo.inscriptions.length > 1) {
     throw new Error(
