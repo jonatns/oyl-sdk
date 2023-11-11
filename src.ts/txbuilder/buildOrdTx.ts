@@ -25,7 +25,7 @@ export async function buildOrdTx(
         : acc.nonMetaUtxos.push(utxo)
       return acc
     },
-    { nonMetaSegwitUtxos: [] }
+    { metaUtxos: [], nonMetaSegwitUtxos: [] }
   )
 
   const matchedUtxo = metaUtxos.find((utxo) =>
