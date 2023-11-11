@@ -18,8 +18,6 @@ export async function buildOrdTx(
     { metaUtxos: [], nonMetaUtxos: [] }
   )
 
-  console.log(allUtxos, segwitUtxos)
-
   const { nonMetaSegwitUtxos } = segwitUtxos.reduce(
     (acc, utxo) => {
       utxo.inscriptions.length
@@ -29,9 +27,7 @@ export async function buildOrdTx(
     },
     { metaUtxos: [], nonMetaSegwitUtxos: [] }
   )
-
   const matchedUtxo = metaUtxos.find((utxo) => {
-    console.log('matched', utxo.inscriptions)
     utxo.inscriptions.some((inscription) => inscription.id === inscriptionId)
   })
   if (!matchedUtxo || matchedUtxo.inscriptions.length > 1) {

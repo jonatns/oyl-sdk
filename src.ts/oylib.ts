@@ -560,8 +560,8 @@ export class Wallet {
     psbtTx.setChangeAddress(changeAddress)
     const finalizedPsbt = await buildOrdTx(
       psbtTx,
-      allUtxos,
       segwitUtxos,
+      allUtxos,
       toAddress,
       metaOutputValue,
       inscriptionId
