@@ -567,6 +567,8 @@ export class Wallet {
       inscriptionId
     )
 
+    console.log(finalizedPsbt)
+
     //@ts-ignore
     finalizedPsbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
 
