@@ -29,7 +29,6 @@ export async function buildOrdTx(
   )
 
   const matchedUtxo = metaUtxos.find((utxo) => {
-    console.log(utxo.inscriptions)
     utxo.inscriptions.some((inscription) => inscription.id === inscriptionId)
   })
   if (!matchedUtxo || matchedUtxo.inscriptions.length > 1) {

@@ -542,6 +542,7 @@ export class Wallet {
     const allUtxos = await this.getUtxosArtifacts({ address: fromAddress })
     const segwitUtxos = await this.getUtxosArtifacts({ address: segwitAddress })
     console.log(segwitUtxos)
+    console.log(allUtxos)
     const feeRate = txFee
     const segwitAddressType = transactions.getAddressType(segwitAddress)
     const addressType = transactions.getAddressType(fromAddress)
