@@ -184,13 +184,16 @@ export declare class Wallet {
      * @param {string} params.inscriptionId - The ID of the inscription to include in the transaction.
      * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
      */
-    createOrdPsbtTx({ publicKey, fromAddress, toAddress, changeAddress, txFee, signer, inscriptionId, }: {
+    createOrdPsbtTx({ publicKey, fromAddress, toAddress, changeAddress, txFee, signer, segwitAddress, segwitPubKey, segwitSigner, inscriptionId, }: {
         publicKey: string;
         fromAddress: string;
         toAddress: string;
         changeAddress: string;
         txFee: number;
         signer: any;
+        segwitAddress: string;
+        segwitPubKey: string;
+        segwitSigner: any;
         inscriptionId: string;
     }): Promise<any>;
     /**

@@ -564,8 +564,7 @@ export class Wallet {
       segwitUtxos,
       toAddress,
       metaOutputValue,
-      inscriptionId,
-      feeRate
+      inscriptionId
     )
 
     //@ts-ignore

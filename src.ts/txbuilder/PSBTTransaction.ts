@@ -319,26 +319,19 @@ export class PSBTTransaction {
         const segwitInternalKey = assertHex(
           Buffer.from(this.segwitPubKey, 'hex')
         )
-        const { output } = bitcoin.payments.p2wpkh({
+        bitcoin.payments.p2wpkh({
           internalPubkey: segwitInternalKey,
           network: psbtNetwork,
         })
 
-        if (v.witnessUtxo?.script.toString('hex') == output?.toString('hex')) {
-          v.segwitInternalKey = segwitInternalKey
-        }
-      }
-      if (isNotSigned && isP2SH_P2WPKH) {
-        const segwitInternalKey = assertHex(
-          Buffer.from(this.segwitPubKey, 'hex')
-        )
-        const { output } = bitcoin.payments.p2wsh({
-          internalPubkey: segwitInternalKey,
-          network: psbtNetwork,
-        })
-
-        if (v.witnessUtxo?.script.toString('hex') == output?.toString('hex')) {
-          v.segwitInternalKey = segwitInternalKey
+        if (isNotSigned && isP2SH_P2WPKH) {
+          const segwitInternalKey = assertHex(
+            Buffer.from(this.segwitPubKey, 'hex')
+          )
+          bitcoin.payments.p2wsh({
+            internalPubkey: segwitInternalKey,
+            network: psbtNetwork,
+          })
         }
       }
     })

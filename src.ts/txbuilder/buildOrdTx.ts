@@ -6,8 +6,7 @@ export async function buildOrdTx(
   allUtxos,
   toAddress,
   metaOutputValue,
-  inscriptionId,
-  fee
+  inscriptionId
 ) {
   const { metaUtxos, nonMetaUtxos } = allUtxos.reduce(
     (acc, utxo) => {
@@ -39,11 +38,14 @@ export async function buildOrdTx(
         : 'Inscription not detected.'
     )
   }
+  psbtTx.addInput(matchedUtxo)
+  const fee = await psbtTx.calNetworkFee()
+
   let feeUtxo
-  nonMetaSegwitUtxos.sort((a, b) => a.value - b.value)
+  nonMetaSegwitUtxos.sort((a, b) => a.satoshis - b.satoshis)
 
   for (let utxo of nonMetaSegwitUtxos) {
-    if (utxo.value > fee) {
+    if (utxo.satoshis - fee > 0) {
       feeUtxo = utxo
       return
     }
@@ -51,7 +53,7 @@ export async function buildOrdTx(
   }
 
   psbtTx.addInput(feeUtxo, true)
-  psbtTx.addInput(matchedUtxo)
+
   psbtTx.addOutput(toAddress, matchedUtxo.satoshis)
 
   psbtTx.outputs[0].value = metaOutputValue
