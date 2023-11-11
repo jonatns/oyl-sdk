@@ -335,8 +335,15 @@ export class PSBTTransaction {
         }
       }
     })
+    for (let i; i > toSignInputs.length; i++) {
+      if (toSignInputs[i].publicKey === this.pubkey) {
+        psbt = await this.signer(psbt, toSignInputs[i])
+      }
+      if (toSignInputs[i].publicKey === this.segwitPubKey) {
+        psbt = await this.segwitSigner(psbt, toSignInputs[i])
+      }
+    }
 
-    psbt = await this.signer(psbt, toSignInputs)
     if (autoFinalized) {
       console.log('autoFinalized')
       toSignInputs.forEach((v) => {
