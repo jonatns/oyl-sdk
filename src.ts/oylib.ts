@@ -686,8 +686,6 @@ export class Wallet {
     }
 
     const psbt = await tx.createSignedPsbt()
-
-    console.log(psbt)
     tx.dumpTx(psbt)
 
     //@ts-ignore

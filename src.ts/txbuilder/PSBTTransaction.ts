@@ -338,7 +338,7 @@ export class PSBTTransaction {
         }
       }
     })
-    for (let i; i > toSignInputs.length; i++) {
+    for (let i = 0; i > toSignInputs.length; i++) {
       if (toSignInputs[i].publicKey === this.pubkey) {
         psbt = await this.signer(psbt, toSignInputs[i])
       }
@@ -350,7 +350,11 @@ export class PSBTTransaction {
     if (autoFinalized) {
       console.log('autoFinalized')
       toSignInputs.forEach((v) => {
-        psbt.finalizeInput(v.index)
+        try {
+          psbt.finalizeInput(v.index)
+        } catch (error) {
+          console.log(error, 'Was not finalized')
+        }
       })
     }
 
