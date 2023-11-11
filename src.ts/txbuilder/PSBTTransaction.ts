@@ -261,7 +261,10 @@ export class PSBTTransaction {
     const psbt = new bitcoin.Psbt({ network: this.network })
 
     this.inputs.forEach((v, index) => {
-      if (v.utxo.addressType === AddressType.P2PKH) {
+      if (
+        v.utxo.addressType === AddressType.P2PKH ||
+        v.utxo.addressType === AddressType.P2SH_P2WPKH
+      ) {
         //@ts-ignore
         psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = true
       }
