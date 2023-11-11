@@ -348,6 +348,7 @@ export class PSBTTransaction {
     }
 
     if (autoFinalized) {
+      console.log(psbt)
       console.log('autoFinalized')
       toSignInputs.forEach((v) => {
         try {
