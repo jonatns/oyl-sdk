@@ -273,10 +273,9 @@ export class PSBTTransaction {
     //   }
     // })
 
-    this.outputs.forEach((v) => {
-      psbt.addOutput(v)
-    })
-
+    // this.outputs.forEach((v) => {
+    //   psbt.addOutput(v)
+    // })
     psbt.signInput(0, taprootSigner)
     psbt.signInput(1, segwitSigner)
     psbt.finalizeAllInputs()

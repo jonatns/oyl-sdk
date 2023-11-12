@@ -290,6 +290,11 @@ export class HdKeyring extends EventEmitter {
     return psbt
   }
 
+  async fetchKeyPair(publicKey) {
+    const keyPair = this._getPrivateKeyFor(publicKey)
+    return keyPair
+  }
+
   /**
    * Retrieves the address and corresponding ECPair object from a given index.
    * @param {number} i - The index to derive the address from.

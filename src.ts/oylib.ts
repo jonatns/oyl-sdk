@@ -507,23 +507,35 @@ export class Wallet {
     toAddress,
     changeAddress,
     txFee,
-    signer,
     segwitAddress,
     segwitPubKey,
-    segwitSigner,
     inscriptionId,
+    mnemonic,
   }: {
     publicKey: string
     fromAddress: string
     toAddress: string
     changeAddress: string
     txFee: number
-    signer: any
     segwitAddress: string
     segwitPubKey: string
-    segwitSigner: any
     inscriptionId: string
+    mnemonic: string
   }) {
+    const segwitKeyring = new HdKeyring({
+      mnemonic: mnemonic,
+      hdPath: "m/49'/0'/0'/0",
+      activeIndexes: [0],
+    })
+
+    const taprootKeyring = new HdKeyring({
+      mnemonic: mnemonic,
+      hdPath: "m/86'/0'/0'/0",
+      activeIndexes: [0],
+    })
+
+    const segwitSigner = await segwitKeyring.fetchKeyPair(segwitPubKey)
+    const signer = await taprootKeyring.fetchKeyPair(publicKey)
     const { data: collectibleData } = await this.apiClient.getCollectiblesById(
       inscriptionId
     )
@@ -549,7 +561,6 @@ export class Wallet {
 
     const psbtTx = new PSBTTransaction(
       signer,
-      segwitSigner,
       segwitPubKey,
       segwitAddressType,
       fromAddress,
@@ -557,6 +568,7 @@ export class Wallet {
       addressType,
       feeRate
     )
+
     psbtTx.setChangeAddress(changeAddress)
     const finalizedPsbt = await buildOrdTx(
       psbtTx,
