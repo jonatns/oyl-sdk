@@ -138,15 +138,7 @@ async function signInscriptionPsbt(psbt, fee, pubKey, signer, address = '') {
   //CONFIRM TRANSACTION IS CONFIRMED
 }
 
-async function recoverTest() {
-  const wallet = new Wallet()
-  const tx = await wallet.addAccountToWallet({
-    mnemonic: '',
-    activeIndexes: [0],
-    customPath: 'xverse',
-  })
-  console.log(tx)
-}
+async function recoverTest() {}
 
 export async function runCLI() {
   const [command] = yargs.argv._

@@ -570,8 +570,7 @@ export class Wallet {
       addressType,
       feeRate,
       segwitSigner,
-      segwitPubKey,
-      segwitAddressType
+      segwitPubKey
     )
 
     psbtTx.setChangeAddress(changeAddress)

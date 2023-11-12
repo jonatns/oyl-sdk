@@ -60,15 +60,15 @@ export async function buildOrdTx(
   psbtTx.addOutput(segwitAddress, feeUtxo.satoshis - fee)
   psbtTx.outputs[0].value = metaOutputValue
 
-  let inputSum = psbtTx.getTotalInput()
-  for (const utxo of nonMetaUtxos) {
-    if (inputSum < psbtTx.getTotalOutput() + (await psbtTx.calNetworkFee())) {
-      psbtTx.addInput(utxo)
-      inputSum += utxo.satoshis
-    } else {
-      break
-    }
-  }
+  // let inputSum = psbtTx.getTotalInput()
+  // for (const utxo of nonMetaUtxos) {
+  //   if (inputSum < psbtTx.getTotalOutput() + (await psbtTx.calNetworkFee())) {
+  //     psbtTx.addInput(utxo)
+  //     inputSum += utxo.satoshis
+  //   } else {
+  //     break
+  //   }
+  // }
 
   const remainingUnspent = psbtTx.getUnspent()
   if (remainingUnspent <= 0) {

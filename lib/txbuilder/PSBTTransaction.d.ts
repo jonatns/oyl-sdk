@@ -7,7 +7,6 @@ export declare class PSBTTransaction {
     private signer;
     private segwitSigner;
     private segwitPubKey;
-    private segwitAddressType;
     private address;
     changedAddress: string;
     private network;
@@ -23,7 +22,7 @@ export declare class PSBTTransaction {
      * @param addressType - The type of address being used.
      * @param feeRate - The fee rate in satoshis per byte.
      */
-    constructor(signer: any, address: any, publicKey: any, addressType: any, feeRate: any, segwitSigner?: any, segwitPubKey?: any, segwitAddressType?: any);
+    constructor(signer: any, address: any, publicKey: any, addressType: any, feeRate: any, segwitSigner?: any, segwitPubKey?: any);
     /**
      * Sets whether to enable Replace-by-Fee for the transaction.
      * @param {boolean} enable - A boolean to enable or disable RBF.

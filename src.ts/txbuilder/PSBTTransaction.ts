@@ -17,7 +17,6 @@ export class PSBTTransaction {
   private signer: any
   private segwitSigner: any
   private segwitPubKey: any
-  private segwitAddressType: AddressType
   private address: string
   public changedAddress: string
   private network: bitcoin.Network = bitcoin.networks.bitcoin
@@ -41,13 +40,11 @@ export class PSBTTransaction {
     addressType,
     feeRate,
     segwitSigner?,
-    segwitPubKey?,
-    segwitAddressType?
+    segwitPubKey?
   ) {
     this.signer = signer
     this.segwitSigner = segwitSigner
     this.segwitPubKey = segwitPubKey
-    this.segwitAddressType = segwitAddressType
     this.address = address
     this.pubkey = publicKey
     this.addressType = addressType
@@ -261,7 +258,7 @@ export class PSBTTransaction {
     const psbt = new bitcoin.Psbt({ network: this.network })
 
     this.inputs.forEach((v, index) => {
-      if (v.utxo.addressType === AddressType.P2SH_P2WPKH) {
+      if (v.utxo.addressType === AddressType.P2PKH) {
         //@ts-ignore
         psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = true
       }
@@ -316,10 +313,10 @@ export class PSBTTransaction {
     })
     for (let i = 0; i > toSignInputs.length; i++) {
       if (toSignInputs[i].publicKey === this.pubkey) {
-        psbt = await this.signer(psbt, toSignInputs[i])
+        psbt = await this.signer(psbt, [toSignInputs[i]])
       }
       if (toSignInputs[i].publicKey === this.segwitPubKey) {
-        psbt = await this.segwitSigner(psbt, toSignInputs[i])
+        psbt = await this.segwitSigner(psbt, [toSignInputs[i]])
       }
     }
 

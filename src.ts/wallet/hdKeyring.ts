@@ -290,11 +290,6 @@ export class HdKeyring extends EventEmitter {
     return psbt
   }
 
-  async fetchKeyPair() {
-    const keyPair = this.wallets[0]
-    return keyPair
-  }
-
   /**
    * Retrieves the address and corresponding ECPair object from a given index.
    * @param {number} i - The index to derive the address from.
