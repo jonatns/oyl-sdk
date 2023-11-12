@@ -267,6 +267,7 @@ export class HdKeyring extends EventEmitter {
     inputs: { index: number; publicKey: string; sighashTypes?: number[] }[],
     opts?: any
   ) {
+    console.log(inputs)
     inputs.forEach(({ index, publicKey, sighashTypes }) => {
       const keyPair = this._getPrivateKeyFor(publicKey)
       const input = psbt.data.inputs[index]
