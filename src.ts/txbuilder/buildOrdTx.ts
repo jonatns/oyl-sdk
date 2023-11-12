@@ -4,8 +4,6 @@ export async function buildOrdTx(
   psbtTx,
   segwitUtxos,
   allUtxos,
-  taprootSigner,
-  segwitSigner,
   segwitAddress,
   toAddress,
   metaOutputValue,
@@ -87,7 +85,7 @@ export async function buildOrdTx(
     psbtTx.removeChangeOutput()
   }
 
-  const psbt = await psbtTx.createSignedPsbt(segwitSigner, taprootSigner)
+  const psbt = await psbtTx.createSignedPsbt()
   psbtTx.dumpTx(psbt)
 
   return psbt

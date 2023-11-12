@@ -17,7 +17,6 @@ import {
 } from './shared/interface'
 import { OylApiClient } from './apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
-import { HdKeyring } from './wallet/hdKeyring'
 
 const RequiredPath = [
   "m/44'/0'/0'/0", // P2PKH (Legacy)
@@ -154,8 +153,11 @@ export class Wallet {
         case 'taproot':
           addrType = AddressType.P2TR
           break
-        case 'segwit':
+        case 'native-segwit':
           addrType = AddressType.P2WPKH
+          break
+        case 'nested-segwit':
+          addrType = AddressType.P2SH_P2WPKH
           break
         case 'legacy':
           addrType = AddressType.P2PKH
@@ -522,20 +524,22 @@ export class Wallet {
     inscriptionId: string
     mnemonic: string
   }) {
-    const segwitKeyring = new HdKeyring({
-      mnemonic: mnemonic,
-      hdPath: "m/49'/0'/0'/0",
-      activeIndexes: [0],
+    const wallet = new Wallet()
+    const payload = await wallet.fromPhrase({
+      mnemonic: mnemonic.trim(),
+      hdPath: RequiredPath[1],
+      type: 'nested-segwit',
     })
-
-    const taprootKeyring = new HdKeyring({
-      mnemonic: mnemonic,
-      hdPath: "m/86'/0'/0'/0",
-      activeIndexes: [0],
+    const tapWallet = new Wallet()
+    const tapPayload = await tapWallet.fromPhrase({
+      mnemonic: mnemonic.trim(),
+      hdPath: RequiredPath[3],
+      type: 'taproot',
     })
-
-    const segwitSigner = await segwitKeyring.fetchKeyPair()
-    const signer = await taprootKeyring.fetchKeyPair()
+    const segwitKeyring = payload.keyring.keyring
+    const tapKeyring = tapPayload.keyring.keyring
+    const segwitSigner = segwitKeyring.signTransaction.bind(segwitKeyring)
+    const signer = tapKeyring.signTransaction.bind(tapKeyring)
     const { data: collectibleData } = await this.apiClient.getCollectiblesById(
       inscriptionId
     )
@@ -561,12 +565,13 @@ export class Wallet {
 
     const psbtTx = new PSBTTransaction(
       signer,
-      segwitPubKey,
-      segwitAddressType,
       fromAddress,
       publicKey,
       addressType,
-      feeRate
+      feeRate,
+      segwitSigner,
+      segwitPubKey,
+      segwitAddressType
     )
 
     psbtTx.setChangeAddress(changeAddress)
@@ -574,8 +579,6 @@ export class Wallet {
       psbtTx,
       segwitUtxos,
       allUtxos,
-      signer,
-      segwitSigner,
       segwitAddress,
       toAddress,
       metaOutputValue,

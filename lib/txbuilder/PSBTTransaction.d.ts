@@ -119,7 +119,7 @@ export declare class PSBTTransaction {
      * Creates a signed PSBT for the transaction.
      * @returns {Promise<bitcoin.Psbt>} A promise that resolves to the signed PSBT instance.
      */
-    createSignedPsbt(segwitSigner?: any, taprootSigner?: any): Promise<bitcoin.Psbt>;
+    createSignedPsbt(): Promise<bitcoin.Psbt>;
     /**
      * Signs the provided PSBT with the available keys.
      * @param {bitcoin.Psbt} psbt - The PSBT to sign.

@@ -257,29 +257,25 @@ export class PSBTTransaction {
    * Creates a signed PSBT for the transaction.
    * @returns {Promise<bitcoin.Psbt>} A promise that resolves to the signed PSBT instance.
    */
-  async createSignedPsbt(segwitSigner?: any, taprootSigner?: any) {
+  async createSignedPsbt() {
     const psbt = new bitcoin.Psbt({ network: this.network })
 
-    // this.inputs.forEach((v, index) => {
-    //   if (
-    //     v.utxo.addressType === AddressType.P2PKH
-    //   ) {
-    //     //@ts-ignore
-    //     psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = true
-    //   }
-    //   psbt.addInput(v.data)
-    //   if (this.enableRBF) {
-    //     psbt.setInputSequence(index, 0xfffffffd) // support RBF
-    //   }
-    // })
+    this.inputs.forEach((v, index) => {
+      if (v.utxo.addressType === AddressType.P2PKH) {
+        //@ts-ignore
+        psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = true
+      }
+      psbt.addInput(v.data)
+      if (this.enableRBF) {
+        psbt.setInputSequence(index, 0xfffffffd) // support RBF
+      }
+    })
 
-    // this.outputs.forEach((v) => {
-    //   psbt.addOutput(v)
-    // })
-    psbt.signInput(0, taprootSigner)
-    psbt.signInput(1, segwitSigner)
-    psbt.finalizeAllInputs()
-    // await this.signPsbt(psbt)
+    this.outputs.forEach((v) => {
+      psbt.addOutput(v)
+    })
+
+    await this.signPsbt(psbt, true)
 
     return psbt
   }
@@ -319,31 +315,14 @@ export class PSBTTransaction {
           v.tapInternalKey = tapInternalKey
         }
       }
-      if (isNotSigned && isP2WPKH) {
-        const segwitInternalKey = assertHex(
-          Buffer.from(this.segwitPubKey, 'hex')
-        )
-        bitcoin.payments.p2wpkh({
-          internalPubkey: segwitInternalKey,
-          network: psbtNetwork,
-        })
-
-        if (isNotSigned && isP2SH_P2WPKH) {
-          const segwitInternalKey = assertHex(
-            Buffer.from(this.segwitPubKey, 'hex')
-          )
-          bitcoin.payments.p2wsh({
-            internalPubkey: segwitInternalKey,
-            network: psbtNetwork,
-          })
-        }
-      }
     })
     for (let i = 0; i > toSignInputs.length; i++) {
       if (toSignInputs[i].publicKey === this.pubkey) {
+        console.log(toSignInputs[i])
         psbt = await this.signer(psbt, toSignInputs[i])
       }
       if (toSignInputs[i].publicKey === this.segwitPubKey) {
+        console.log(toSignInputs[i])
         psbt = await this.segwitSigner(psbt, toSignInputs[i])
       }
     }
