@@ -534,8 +534,8 @@ export class Wallet {
       activeIndexes: [0],
     })
 
-    const segwitSigner = await segwitKeyring.fetchKeyPair(segwitPubKey)
-    const signer = await taprootKeyring.fetchKeyPair(publicKey)
+    const segwitSigner = await segwitKeyring.fetchKeyPair()
+    const signer = await taprootKeyring.fetchKeyPair()
     const { data: collectibleData } = await this.apiClient.getCollectiblesById(
       inscriptionId
     )

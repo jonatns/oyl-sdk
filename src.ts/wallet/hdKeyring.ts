@@ -290,8 +290,8 @@ export class HdKeyring extends EventEmitter {
     return psbt
   }
 
-  async fetchKeyPair(publicKey) {
-    const keyPair = this._getPrivateKeyFor(publicKey)
+  async fetchKeyPair() {
+    const keyPair = this.wallets[0]
     return keyPair
   }
 
