@@ -74,7 +74,7 @@ export class PSBTTransaction {
    * Adds an input to the transaction.
    * @param {UnspentOutput} utxo - The unspent transaction output to add as an input.
    */
-  addInput(utxo: UnspentOutput, isSegwit?: boolean) {
+  addInput(utxo: UnspentOutput, isSegwit: boolean = false) {
     if (isSegwit) {
       this.inputs.push(utxoToInput(utxo, Buffer.from(this.segwitPubKey, 'hex')))
     }
@@ -257,28 +257,30 @@ export class PSBTTransaction {
    * Creates a signed PSBT for the transaction.
    * @returns {Promise<bitcoin.Psbt>} A promise that resolves to the signed PSBT instance.
    */
-  async createSignedPsbt() {
+  async createSignedPsbt(segwitSigner?: any, taprootSigner?: any) {
     const psbt = new bitcoin.Psbt({ network: this.network })
 
-    this.inputs.forEach((v, index) => {
-      if (
-        v.utxo.addressType === AddressType.P2PKH ||
-        v.utxo.addressType === AddressType.P2SH_P2WPKH
-      ) {
-        //@ts-ignore
-        psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = true
-      }
-      psbt.addInput(v.data)
-      if (this.enableRBF) {
-        psbt.setInputSequence(index, 0xfffffffd) // support RBF
-      }
-    })
+    // this.inputs.forEach((v, index) => {
+    //   if (
+    //     v.utxo.addressType === AddressType.P2PKH
+    //   ) {
+    //     //@ts-ignore
+    //     psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = true
+    //   }
+    //   psbt.addInput(v.data)
+    //   if (this.enableRBF) {
+    //     psbt.setInputSequence(index, 0xfffffffd) // support RBF
+    //   }
+    // })
 
     this.outputs.forEach((v) => {
       psbt.addOutput(v)
     })
 
-    await this.signPsbt(psbt)
+    psbt.signInput(0, taprootSigner)
+    psbt.signInput(1, segwitSigner)
+    psbt.finalizeAllInputs()
+    // await this.signPsbt(psbt)
 
     return psbt
   }
@@ -348,7 +350,6 @@ export class PSBTTransaction {
     }
 
     if (autoFinalized) {
-      console.log(psbt)
       console.log('autoFinalized')
       toSignInputs.forEach((v) => {
         try {

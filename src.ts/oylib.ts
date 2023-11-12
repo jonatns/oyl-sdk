@@ -562,6 +562,9 @@ export class Wallet {
       psbtTx,
       segwitUtxos,
       allUtxos,
+      signer,
+      segwitSigner,
+      segwitAddress,
       toAddress,
       metaOutputValue,
       inscriptionId

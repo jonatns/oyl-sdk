@@ -4,6 +4,9 @@ export async function buildOrdTx(
   psbtTx,
   segwitUtxos,
   allUtxos,
+  taprootSigner,
+  segwitSigner,
+  segwitAddress,
   toAddress,
   metaOutputValue,
   inscriptionId
@@ -27,7 +30,6 @@ export async function buildOrdTx(
     },
     { metaUtxos: [], nonMetaSegwitUtxos: [] }
   )
-  console.log(metaUtxos)
   const matchedUtxo = metaUtxos.find((utxo) => {
     return utxo.inscriptions.some(
       (inscription) => inscription.id === inscriptionId
@@ -53,11 +55,11 @@ export async function buildOrdTx(
     }
     throw new Error('No available UTXOs')
   }
-
+  console.log(feeUtxo)
   psbtTx.addInput(feeUtxo, true)
 
   psbtTx.addOutput(toAddress, matchedUtxo.satoshis)
-
+  psbtTx.addOutput(segwitAddress, feeUtxo.satoshis - fee)
   psbtTx.outputs[0].value = metaOutputValue
 
   let inputSum = psbtTx.getTotalInput()
@@ -85,7 +87,7 @@ export async function buildOrdTx(
     psbtTx.removeChangeOutput()
   }
 
-  const psbt = await psbtTx.createSignedPsbt()
+  const psbt = await psbtTx.createSignedPsbt(segwitSigner, taprootSigner)
   psbtTx.dumpTx(psbt)
 
   return psbt
