@@ -43,7 +43,7 @@ export async function buildOrdTx(
   psbtTx.addInput(matchedUtxo)
   const fee = await psbtTx.calNetworkFee()
 
-  let feeUtxo
+  let feeUtxo: any
   nonMetaSegwitUtxos.sort((a, b) => a.satoshis - b.satoshis)
 
   for (let utxo of nonMetaSegwitUtxos) {

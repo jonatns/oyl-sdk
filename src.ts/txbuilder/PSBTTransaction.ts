@@ -261,7 +261,7 @@ export class PSBTTransaction {
     const psbt = new bitcoin.Psbt({ network: this.network })
 
     this.inputs.forEach((v, index) => {
-      if (v.utxo.addressType === AddressType.P2PKH) {
+      if (v.utxo.addressType === AddressType.P2SH_P2WPKH) {
         //@ts-ignore
         psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = true
       }
@@ -302,8 +302,6 @@ export class PSBTTransaction {
     psbt.data.inputs.forEach((v, index) => {
       const isNotSigned = !(v.finalScriptSig || v.finalScriptWitness)
       const isP2TR = this.addressType === AddressType.P2TR
-      const isP2WPKH = this.segwitAddressType === AddressType.P2WPKH
-      const isP2SH_P2WPKH = this.segwitAddressType === AddressType.P2SH_P2WPKH
       const lostInternalPubkey = !v.tapInternalKey
       if (isNotSigned && isP2TR && lostInternalPubkey) {
         const tapInternalKey = assertHex(Buffer.from(this.pubkey, 'hex'))
@@ -318,24 +316,20 @@ export class PSBTTransaction {
     })
     for (let i = 0; i > toSignInputs.length; i++) {
       if (toSignInputs[i].publicKey === this.pubkey) {
-        console.log(toSignInputs[i])
         psbt = await this.signer(psbt, toSignInputs[i])
       }
       if (toSignInputs[i].publicKey === this.segwitPubKey) {
-        console.log(toSignInputs[i])
         psbt = await this.segwitSigner(psbt, toSignInputs[i])
       }
     }
 
     if (autoFinalized) {
       console.log('autoFinalized')
-      toSignInputs.forEach((v) => {
-        try {
-          psbt.finalizeInput(v.index)
-        } catch (error) {
-          console.log(error, 'Was not finalized')
-        }
-      })
+      try {
+        psbt.finalizeAllInputs()
+      } catch (error) {
+        console.log(error, 'Was not finalized')
+      }
     }
 
     return psbt
