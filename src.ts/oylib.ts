@@ -831,6 +831,18 @@ export class Wallet {
     return data
   }
 
+  async signPsbt(psbtHex, fee, pubKey, signer, address){
+    const wallet = new Wallet()
+    const addressType = transactions.getAddressType(address)
+    if (addressType == null) throw Error('Invalid Address Type')
+    const tx = new PSBTTransaction(signer, address, pubKey, addressType, fee)
+
+    const signedPsbt = await tx.signPsbt(psbt)
+
+    const rawtx = signedPsbt.extractTransaction().toHex()
+    return rawtx
+  }
+
   async signInscriptionPsbt(psbt, fee, pubKey, signer, address = '') {
     //INITIALIZE NEW PSBTTransaction INSTANCE
     const wallet = new Wallet()
@@ -854,4 +866,5 @@ export class Wallet {
 
     return ready_txId
   }
+
 }
