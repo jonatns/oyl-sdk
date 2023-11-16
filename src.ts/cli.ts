@@ -150,7 +150,7 @@ async function createOrdPsbtTx() {
       '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
     segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
     segwitPubKey:
-      '03ea758e8b0d4da67e1f784d7c01cbec13e7f109fe12093332b7df31d65b308bad',
+      '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
     toAddress: 'bc1pjrpg3nxzkx6pqfykcw6w5das4nzz78xq23ejtl4xpfxt7xeh0jwq2ywzlz',
     txFee: 68,
     mnemonic:

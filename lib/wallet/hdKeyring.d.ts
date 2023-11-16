@@ -113,3 +113,4 @@ export declare class HdKeyring extends EventEmitter {
      */
     private _addressFromIndex;
 }
+export declare function truncateString(str: string, maxLength: number): string;

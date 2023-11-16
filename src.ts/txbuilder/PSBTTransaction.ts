@@ -1,6 +1,6 @@
 import { UTXO_DUST } from '../shared/constants'
 import * as bitcoin from 'bitcoinjs-lib'
-import { assertHex, utxoToInput, validator } from '../shared/utils'
+import {assertHex, ECPair, utxoToInput, validator} from '../shared/utils'
 import {
   AddressType,
   UnspentOutput,
@@ -225,8 +225,8 @@ export class PSBTTransaction {
         ? bitcoin.Psbt.fromHex(_psbt as string, { network: psbtNetwork })
         : (_psbt as bitcoin.Psbt)
 
+
     psbt.data.inputs.forEach((v, index: number) => {
-      console.log(v, index)
       let script: any = null
       let value = 0
       if (v.witnessUtxo) {
@@ -249,6 +249,7 @@ export class PSBTTransaction {
               sighashTypes: v.sighashType ? [v.sighashType] : undefined,
             })
           }
+        } else {
           toSignInputs.push({
             index: index,
             publicKey: this.segwitPubKey,
