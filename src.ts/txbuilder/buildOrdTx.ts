@@ -2,13 +2,13 @@ import { UTXO_DUST } from '../shared/constants'
 import { PSBTTransaction } from './PSBTTransaction'
 
 export async function buildOrdTx(
-    psbtTx: PSBTTransaction,
-    segwitUtxos: any[],
-    allUtxos: any[],
-    segwitAddress: string,
-    toAddress: string,
-    metaOutputValue: any,
-    inscriptionId: string
+  psbtTx: PSBTTransaction,
+  segwitUtxos: any[],
+  allUtxos: any[],
+  segwitAddress: string,
+  toAddress: string,
+  metaOutputValue: any,
+  inscriptionId: string
 ) {
   const { metaUtxos, nonMetaUtxos } = allUtxos.reduce(
     (acc, utxo) => {
@@ -83,11 +83,9 @@ export async function buildOrdTx(
   //   psbtTx.removeChangeOutput()
   // }
 
-  // const psbt = await psbtTx.createSignedPsbt()
+  const psbt = await psbtTx.createSignedPsbt()
 
-  await psbtTx.createSignedPsbt()
-  // psbtTx.dumpTx(psbt)
+  psbtTx.dumpTx(psbt)
 
-  // return psbt
-  return
+  return psbt
 }

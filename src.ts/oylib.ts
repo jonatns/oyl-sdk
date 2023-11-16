@@ -575,17 +575,7 @@ export class Wallet {
     )
 
     psbtTx.setChangeAddress(changeAddress)
-    // const finalizedPsbt = await buildOrdTx(
-    //   psbtTx,
-    //   segwitUtxos,
-    //   allUtxos,
-    //   segwitAddress,
-    //   toAddress,
-    //   metaOutputValue,
-    //   inscriptionId
-    // )
-
-    await buildOrdTx(
+    const finalizedPsbt = await buildOrdTx(
       psbtTx,
       segwitUtxos,
       allUtxos,
@@ -595,19 +585,16 @@ export class Wallet {
       inscriptionId
     )
 
-    // console.log(finalizedPsbt)
+    //@ts-ignore
+    finalizedPsbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
 
-    // //@ts-ignore
-    // finalizedPsbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
+    const rawtx = finalizedPsbt.extractTransaction().toHex()
+    const result = await this.apiClient.pushTx({ transactionHex: rawtx })
 
-    // const rawtx = finalizedPsbt.extractTransaction().toHex()
-    // const result = await this.apiClient.pushTx({ transactionHex: rawtx })
-
-    // return {
-    //   txId: finalizedPsbt.extractTransaction().getId(),
-    //   ...result,
-    // }
-    return
+    return {
+      txId: finalizedPsbt.extractTransaction().getId(),
+      ...result,
+    }
   }
 
   /**
