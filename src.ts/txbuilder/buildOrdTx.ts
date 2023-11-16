@@ -1,13 +1,14 @@
 import { UTXO_DUST } from '../shared/constants'
+import { PSBTTransaction } from './PSBTTransaction'
 
 export async function buildOrdTx(
-  psbtTx,
-  segwitUtxos,
-  allUtxos,
-  segwitAddress,
-  toAddress,
-  metaOutputValue,
-  inscriptionId
+    psbtTx: PSBTTransaction,
+    segwitUtxos: any[],
+    allUtxos: any[],
+    segwitAddress: string,
+    toAddress: string,
+    metaOutputValue: any,
+    inscriptionId: string
 ) {
   const { metaUtxos, nonMetaUtxos } = allUtxos.reduce(
     (acc, utxo) => {
