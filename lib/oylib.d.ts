@@ -184,17 +184,17 @@ export declare class Wallet {
      * @param {string} params.inscriptionId - The ID of the inscription to include in the transaction.
      * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
      */
-    createOrdPsbtTx({ publicKey, fromAddress, toAddress, changeAddress, txFee, segwitAddress, segwitPubKey, inscriptionId, mnemonic, }: {
-        publicKey: string;
+    createOrdPsbtTx({ fromAddress, toAddress, changeAddress, txFee, segwitAddress, taprootPubKey, segwitPubKey, inscriptionId, mnemonic, }: {
         fromAddress: string;
         toAddress: string;
         changeAddress: string;
         txFee: number;
         segwitAddress: string;
+        taprootPubKey: string;
         segwitPubKey: string;
         inscriptionId: string;
         mnemonic: string;
-    }): Promise<any>;
+    }): Promise<void>;
     /**
      * Creates a Partially Signed Bitcoin Transaction (PSBT) to send regular satoshis, signs and broadcasts it.
      * @param {Object} params - The parameters for creating the PSBT.

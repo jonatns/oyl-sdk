@@ -63,6 +63,7 @@ export const validator = (
 
 export function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput {
   let data
+  console.log(utxo)
   switch (utxo.addressType) {
     case AddressType.P2TR:
       data = {

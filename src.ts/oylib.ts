@@ -504,22 +504,22 @@ export class Wallet {
    * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
    */
   async createOrdPsbtTx({
-    publicKey,
     fromAddress,
     toAddress,
     changeAddress,
     txFee,
     segwitAddress,
+    taprootPubKey,
     segwitPubKey,
     inscriptionId,
     mnemonic,
   }: {
-    publicKey: string
     fromAddress: string
     toAddress: string
     changeAddress: string
     txFee: number
     segwitAddress: string
+    taprootPubKey: string
     segwitPubKey: string
     inscriptionId: string
     mnemonic: string
@@ -560,13 +560,14 @@ export class Wallet {
     const feeRate = txFee
     const segwitAddressType = transactions.getAddressType(segwitAddress)
     const addressType = transactions.getAddressType(fromAddress)
-    if (addressType == null || segwitAddressType == null)
+    if (addressType == null || segwitAddressType == null) {
       throw Error('Unrecognized Address Type')
+    }
 
     const psbtTx = new PSBTTransaction(
       signer,
       fromAddress,
-      publicKey,
+      taprootPubKey,
       addressType,
       feeRate,
       segwitSigner,
@@ -574,7 +575,17 @@ export class Wallet {
     )
 
     psbtTx.setChangeAddress(changeAddress)
-    const finalizedPsbt = await buildOrdTx(
+    // const finalizedPsbt = await buildOrdTx(
+    //   psbtTx,
+    //   segwitUtxos,
+    //   allUtxos,
+    //   segwitAddress,
+    //   toAddress,
+    //   metaOutputValue,
+    //   inscriptionId
+    // )
+
+    await buildOrdTx(
       psbtTx,
       segwitUtxos,
       allUtxos,
@@ -584,18 +595,19 @@ export class Wallet {
       inscriptionId
     )
 
-    console.log(finalizedPsbt)
+    // console.log(finalizedPsbt)
 
-    //@ts-ignore
-    finalizedPsbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
+    // //@ts-ignore
+    // finalizedPsbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
 
-    const rawtx = finalizedPsbt.extractTransaction().toHex()
-    const result = await this.apiClient.pushTx({ transactionHex: rawtx })
+    // const rawtx = finalizedPsbt.extractTransaction().toHex()
+    // const result = await this.apiClient.pushTx({ transactionHex: rawtx })
 
-    return {
-      txId: finalizedPsbt.extractTransaction().getId(),
-      ...result,
-    }
+    // return {
+    //   txId: finalizedPsbt.extractTransaction().getId(),
+    //   ...result,
+    // }
+    return
   }
 
   /**

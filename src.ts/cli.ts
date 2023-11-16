@@ -138,7 +138,26 @@ async function signInscriptionPsbt(psbt, fee, pubKey, signer, address = '') {
   //CONFIRM TRANSACTION IS CONFIRMED
 }
 
-async function recoverTest() {}
+async function createOrdPsbtTx() {
+  const wallet = new Wallet()
+  const test0 = await wallet.createOrdPsbtTx({
+    changeAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+    fromAddress:
+      'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+    inscriptionId:
+      '17b5fa0de0a753b4dd3140039a3c61ea213ea5dddbfafcb79dfd63d731e1aff2i0',
+    taprootPubKey:
+      '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
+    segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+    segwitPubKey:
+      '03ea758e8b0d4da67e1f784d7c01cbec13e7f109fe12093332b7df31d65b308bad',
+    toAddress: 'bc1pjrpg3nxzkx6pqfykcw6w5das4nzz78xq23ejtl4xpfxt7xeh0jwq2ywzlz',
+    txFee: 68,
+    mnemonic:
+      'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
+  })
+  console.log(test0)
+}
 
 export async function runCLI() {
   const [command] = yargs.argv._
@@ -150,7 +169,7 @@ export async function runCLI() {
       return await loadRpc(options)
       break
     case 'recover':
-      return await recoverTest()
+      return await createOrdPsbtTx()
       break
     default:
       return await callAPI(yargs.argv._[0], options)
