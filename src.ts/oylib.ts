@@ -524,12 +524,27 @@ export class Wallet {
     inscriptionId: string
     mnemonic: string
   }) {
+    const segwitAddressType = transactions.getAddressType(segwitAddress)
+    const addressType = transactions.getAddressType(fromAddress)
+    if (addressType == null || segwitAddressType == null) {
+      throw Error('Unrecognized Address Type')
+    }
     const wallet = new Wallet()
-    const payload = await wallet.fromPhrase({
-      mnemonic: mnemonic.trim(),
-      hdPath: RequiredPath[1],
-      type: 'nested-segwit',
-    })
+    let payload: any
+    if (segwitAddressType === 2) {
+      payload = await wallet.fromPhrase({
+        mnemonic: mnemonic.trim(),
+        hdPath: RequiredPath[1],
+        type: 'nested-segwit',
+      })
+    }
+    if (segwitAddressType === 3) {
+      payload = await wallet.fromPhrase({
+        mnemonic: mnemonic.trim(),
+        hdPath: RequiredPath[2],
+        type: 'native-segwit',
+      })
+    }
     const tapWallet = new Wallet()
     const tapPayload = await tapWallet.fromPhrase({
       mnemonic: mnemonic.trim(),
@@ -558,11 +573,6 @@ export class Wallet {
     const allUtxos = await this.getUtxosArtifacts({ address: fromAddress })
     const segwitUtxos = await this.getUtxosArtifacts({ address: segwitAddress })
     const feeRate = txFee
-    const segwitAddressType = transactions.getAddressType(segwitAddress)
-    const addressType = transactions.getAddressType(fromAddress)
-    if (addressType == null || segwitAddressType == null) {
-      throw Error('Unrecognized Address Type')
-    }
 
     const psbtTx = new PSBTTransaction(
       signer,
@@ -582,6 +592,7 @@ export class Wallet {
       segwitAddress,
       toAddress,
       metaOutputValue,
+      feeRate,
       inscriptionId
     )
 
