@@ -76,6 +76,7 @@ export interface TxInput {
     index: number
     witnessUtxo: { value: number; script: Buffer }
     tapInternalKey?: Buffer
+    segwitInternalKey?: Buffer
   }
   utxo: UnspentOutput
 }

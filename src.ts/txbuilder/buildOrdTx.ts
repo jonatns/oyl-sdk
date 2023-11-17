@@ -1,11 +1,14 @@
-import { UTXO_DUST } from '../shared/constants'
+import { PSBTTransaction } from './PSBTTransaction'
 
 export async function buildOrdTx(
-  psbtTx,
-  allUtxos,
-  toAddress,
-  metaOutputValue,
-  inscriptionId
+  psbtTx: PSBTTransaction,
+  segwitUtxos: any[],
+  allUtxos: any[],
+  segwitAddress: string,
+  toAddress: string,
+  metaOutputValue: any,
+  feeRate: number,
+  inscriptionId: string
 ) {
   const { metaUtxos, nonMetaUtxos } = allUtxos.reduce(
     (acc, utxo) => {
@@ -17,9 +20,20 @@ export async function buildOrdTx(
     { metaUtxos: [], nonMetaUtxos: [] }
   )
 
-  const matchedUtxo = metaUtxos.find((utxo) =>
-    utxo.inscriptions.some((inscription) => inscription.id === inscriptionId)
+  const { nonMetaSegwitUtxos } = segwitUtxos.reduce(
+    (acc, utxo) => {
+      utxo.inscriptions.length > 0
+        ? acc.metaUtxos.push(utxo)
+        : acc.nonMetaSegwitUtxos.push(utxo)
+      return acc
+    },
+    { metaUtxos: [], nonMetaSegwitUtxos: [] }
   )
+  const matchedUtxo = metaUtxos.find((utxo) => {
+    return utxo.inscriptions.some(
+      (inscription) => inscription.id === inscriptionId
+    )
+  })
   if (!matchedUtxo || matchedUtxo.inscriptions.length > 1) {
     throw new Error(
       matchedUtxo
@@ -27,38 +41,30 @@ export async function buildOrdTx(
         : 'Inscription not detected.'
     )
   }
-
   psbtTx.addInput(matchedUtxo)
-  psbtTx.addOutput(toAddress, matchedUtxo.satoshis)
+  nonMetaSegwitUtxos.sort((a, b) => a.satoshis - b.satoshis)
+  const vB = psbtTx.getNumberOfInputs() * 149 + 3 * 32 + 12
+  const fee = vB * feeRate
+  const feeUtxo = nonMetaSegwitUtxos.find((utxo) => {
+    return utxo.satoshis - fee > 0 ? utxo : undefined
+  })
 
-  psbtTx.outputs[0].value = metaOutputValue
-
-  let inputSum = psbtTx.getTotalInput()
-  for (const utxo of nonMetaUtxos) {
-    if (inputSum < psbtTx.getTotalOutput() + (await psbtTx.calNetworkFee())) {
-      psbtTx.addInput(utxo)
-      inputSum += utxo.satoshis
-    } else {
-      break
-    }
+  if (!feeUtxo) {
+    throw new Error('No available UTXOs')
   }
+
+  psbtTx.addInput(feeUtxo, true)
+  psbtTx.addOutput(toAddress, matchedUtxo.satoshis)
+  psbtTx.addOutput(segwitAddress, feeUtxo.satoshis - fee)
+  psbtTx.outputs[0].value = metaOutputValue
 
   const remainingUnspent = psbtTx.getUnspent()
   if (remainingUnspent <= 0) {
     throw new Error('Not enough balance for the fee')
   }
 
-  // add dummy output
-  psbtTx.addChangeOutput(1)
-
-  if (remainingUnspent - (await psbtTx.calNetworkFee()) >= UTXO_DUST) {
-    psbtTx.getChangeOutput().value =
-      remainingUnspent - (await psbtTx.calNetworkFee())
-  } else {
-    psbtTx.removeChangeOutput()
-  }
-
   const psbt = await psbtTx.createSignedPsbt()
+
   psbtTx.dumpTx(psbt)
 
   return psbt

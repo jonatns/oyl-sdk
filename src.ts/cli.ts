@@ -106,13 +106,12 @@ async function inscribeTest(options: InscribeTransfer) {
       network: bitcoin.networks.bitcoin,
     })
     //SIGN THE PSBT
-    const completeInscription = await signInscriptionPsbt(
+    await signInscriptionPsbt(
       vPsbt,
       options.feeRate,
       options.taprootPublicKey,
       options.signer
     )
-    console.log(completeInscription)
   }
 }
 
@@ -138,14 +137,20 @@ async function signInscriptionPsbt(psbt, fee, pubKey, signer, address = '') {
   //CONFIRM TRANSACTION IS CONFIRMED
 }
 
-async function recoverTest() {
+async function createOrdPsbtTx() {
   const wallet = new Wallet()
-  const tx = await wallet.addAccountToWallet({
+  const test0 = await wallet.createOrdPsbtTx({
+    changeAddress: '',
+    fromAddress: '',
+    inscriptionId: '',
+    taprootPubKey: '',
+    segwitAddress: '',
+    segwitPubKey: '',
+    toAddress: '',
+    txFee: 0,
     mnemonic: '',
-    activeIndexes: [0],
-    customPath: 'xverse',
   })
-  console.log(tx)
+  console.log(test0)
 }
 
 export async function runCLI() {
@@ -158,7 +163,7 @@ export async function runCLI() {
       return await loadRpc(options)
       break
     case 'recover':
-      return await recoverTest()
+      return await createOrdPsbtTx()
       break
     default:
       return await callAPI(yargs.argv._[0], options)

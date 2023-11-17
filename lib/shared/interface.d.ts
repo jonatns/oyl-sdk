@@ -73,6 +73,7 @@ export interface TxInput {
             script: Buffer;
         };
         tapInternalKey?: Buffer;
+        segwitInternalKey?: Buffer;
     };
     utxo: UnspentOutput;
 }
