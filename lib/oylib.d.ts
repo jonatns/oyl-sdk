@@ -212,7 +212,7 @@ export declare class Wallet {
         from: string;
         to: string;
         changeAddress: string;
-        amount: string;
+        amount: number;
         fee: number;
         signer: any;
     }): Promise<any>;

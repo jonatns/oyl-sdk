@@ -633,7 +633,7 @@ export class Wallet {
     from: string
     to: string
     changeAddress: string
-    amount: string
+    amount: number
     fee: number
     signer: any
   }) {
@@ -650,7 +650,7 @@ export class Wallet {
       feeRate
     )
 
-    tx.addOutput(to, amountToSatoshis(amount))
+    tx.addOutput(to, amount)
     tx.setChangeAddress(changeAddress)
     const outputAmount = tx.getTotalOutput()
 
@@ -673,16 +673,16 @@ export class Wallet {
         continue
       }
 
-      const fee = await tx.calNetworkFee()
+      const vB = tx.getNumberOfInputs() * 149 + 3 * 32 + 12
+      const fee = vB * feeRate
+
       if (tmpSum < outputAmount + fee) {
         tx.addInput(nonOrdUtxo)
         tmpSum += nonOrdUtxo.satoshis
-      } else {
-        break
       }
     }
-
-    if (nonOrdUtxos.length === 0) {
+    console.log(tx.getTotalOutput(), tx.getTotalInput())
+    if (nonOrdUtxos.length === 0 || tx.getTotalOutput() > tx.getTotalInput()) {
       throw new Error('Balance not enough')
     }
 
@@ -693,7 +693,6 @@ export class Wallet {
 
     // add dummy output
     tx.addChangeOutput(1)
-
     const estimatedNetworkFee = await tx.calNetworkFee()
     if (totalUnspentAmount < estimatedNetworkFee) {
       throw new Error(
