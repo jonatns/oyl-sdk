@@ -5,6 +5,53 @@ bitcoin.initEccLib(ecc)
 import { AddressType, UnspentOutput, TxInput } from '../shared/interface'
 import BigNumber from 'bignumber.js'
 import { maximumScriptBytes } from './constants'
+import axios from 'axios'
+import { getUnspentOutputs } from '../transactions'
+
+export interface IBlockchainInfoUTXO {
+  tx_hash_big_endian: string
+  tx_hash: string
+  tx_output_n: number
+  script: string
+  value: number
+  value_hex: string
+  confirmations: number
+  tx_index: number
+}
+
+export interface IBISWalletIx {
+  validity: any
+  isBrc: boolean
+  isSns: boolean
+  name: any
+  amount: any
+  isValidTransfer: any
+  operation: any
+  ticker: any
+  isJson: boolean
+  content?: string
+  inscription_name: any
+  inscription_id: string
+  inscription_number: number
+  metadata: any
+  owner_wallet_addr: string
+  mime_type: string
+  last_sale_price: any
+  slug: any
+  collection_name: any
+  content_url: string
+  bis_url: string
+
+  wallet?: string
+  media_length?: number
+  genesis_ts?: number
+  genesis_height?: number
+  genesis_fee?: number
+  output_value?: number
+  satpoint?: string
+  collection_slug?: string
+  confirmations?: number
+}
 
 export const ECPair = ECPairFactory(ecc)
 
@@ -155,4 +202,201 @@ export const getWitnessDataChunk = function (
   }
 
   return contentChunks
+}
+
+export const getUnspentsWithConfirmationsForAddress = async (
+  address: string
+) => {
+  try {
+    return await getUnspentOutputs(address).then(
+      (unspents) =>
+        unspents?.unspent_outputs.filter(
+          (utxo: IBlockchainInfoUTXO) => utxo.confirmations >= 0
+        ) as IBlockchainInfoUTXO[]
+    )
+  } catch (e: any) {
+    throw new Error(e)
+  }
+}
+
+export const getUTXOWorthGreatestValueForAddress = async (address: string) => {
+  const unspents = await getUnspentsWithConfirmationsForAddress(address)
+  return unspents.reduce(function (prev, current) {
+    return prev.value > current.value ? prev : current
+  })
+}
+
+export const getSatpointFromUtxo = (utxo: IBlockchainInfoUTXO) => {
+  return `${utxo.tx_hash_big_endian}:${utxo.tx_output_n}:0`
+}
+
+export const getUnspentsForAddressInOrderByValue = async (address: string) => {
+  const unspents = await getUnspentsWithConfirmationsForAddress(address)
+  return unspents.sort((a, b) => b.value - a.value)
+}
+
+export const getInscriptionsByWalletBIS = async (
+  walletAddress: string,
+  offset: number = 0
+) => {
+  console.log(walletAddress)
+  return (await axios
+    .get(
+      `https://api.bestinslot.xyz/v3/wallet/inscriptions?address=${walletAddress}&sort_by=inscr_num&order=asc&offset=${offset}&count=100`,
+      {
+        headers: {
+          'X-Api-Key': 'abbfff3d-49fa-4f7f-883a-0a5fce48a9f1',
+        },
+      }
+    )
+    .then((res) => res.data?.data)) as IBISWalletIx[]
+}
+
+export const getUTXOsToCoverAmount = async (
+  address: string,
+  amountNeeded: number,
+  inscriptionLocs?: string[]
+) => {
+  const unspentsOrderedByValue = await getUnspentsForAddressInOrderByValue(
+    address
+  )
+  const retrievedIxs = await getInscriptionsByWalletBIS(address)
+  const bisInscriptionLocs = retrievedIxs.map(
+    (utxo) => utxo.satpoint
+  ) as string[]
+
+  if (bisInscriptionLocs.length === 0) {
+    inscriptionLocs = []
+  } else {
+    inscriptionLocs = bisInscriptionLocs
+  }
+
+  let sum = 0
+  const result: IBlockchainInfoUTXO[] = []
+
+  for await (let utxo of unspentsOrderedByValue) {
+    const currentUTXO = utxo
+    const utxoSatpoint = getSatpointFromUtxo(currentUTXO)
+    if (
+      (inscriptionLocs &&
+        inscriptionLocs?.find((utxoLoc: any) => utxoLoc === utxoSatpoint)) ||
+      currentUTXO.value <= 546
+    ) {
+      continue
+    }
+
+    sum += currentUTXO.value
+    result.push(currentUTXO)
+    console.log(sum)
+    if (sum > amountNeeded) {
+      console.log('AMOUNT RETRIEVED: ', sum)
+      return result
+    }
+  }
+
+  return [] as IBlockchainInfoUTXO[]
+}
+
+export const getUTXOsToCoverAmountWithRemainder = async (
+  address: string,
+  amountNeeded: number,
+  inscriptionLocs?: string[]
+) => {
+  const unspentsOrderedByValue = await getUnspentsForAddressInOrderByValue(
+    address
+  )
+  const retrievedIxs = await getInscriptionsByWalletBIS(address)
+  const bisInscriptionLocs = retrievedIxs.map(
+    (utxo) => utxo.satpoint
+  ) as string[]
+
+  if (bisInscriptionLocs.length === 0) {
+    inscriptionLocs = []
+  } else {
+    inscriptionLocs = bisInscriptionLocs
+  }
+
+  let sum = 0
+  const result: IBlockchainInfoUTXO[] = []
+
+  for await (let utxo of unspentsOrderedByValue) {
+    const currentUTXO = utxo
+    const utxoSatpoint = getSatpointFromUtxo(currentUTXO)
+    if (
+      (inscriptionLocs &&
+        inscriptionLocs?.find((utxoLoc: any) => utxoLoc === utxoSatpoint)) ||
+      currentUTXO.value <= 546
+    ) {
+      continue
+    }
+
+    sum += currentUTXO.value
+    result.push(currentUTXO)
+    if (sum > amountNeeded) {
+      return result
+    }
+  }
+
+  return result as IBlockchainInfoUTXO[]
+}
+
+export const getTheOtherUTXOsToCoverAmount = async (
+  address: string,
+  amountNeeded: number,
+  inscriptionLocs?: string[]
+) => {
+  const unspentsOrderedByValue = await getUnspentOutputs(address)
+
+  const retrievedIxs = await getInscriptionsByWalletBIS(address)
+  const bisInscriptions = retrievedIxs.map((utxo) => utxo.satpoint) as string[]
+
+  if (bisInscriptions.length === 0) {
+    inscriptionLocs = []
+  } else {
+    inscriptionLocs = bisInscriptions
+  }
+
+  let sum = 0
+  const result: IBlockchainInfoUTXO[] = []
+
+  for (let i = 0; i < unspentsOrderedByValue.length; i++) {
+    const currentUTXO = unspentsOrderedByValue.reverse()[i]
+    const utxoSatpoint = getSatpointFromUtxo(currentUTXO)
+    if (
+      inscriptionLocs &&
+      inscriptionLocs?.find((utxoLoc: any) => utxoLoc === utxoSatpoint)
+    ) {
+      continue
+    }
+
+    sum += currentUTXO.value
+    result.push(currentUTXO)
+
+    if (sum > amountNeeded) {
+      return result
+    }
+  }
+
+  return [] as IBlockchainInfoUTXO[]
+}
+
+export const getUTXOByAddressTxIDAndVOut = async (
+  address: string,
+  txId: string,
+  vOut: number
+) => {
+  const unspents = await getUnspentsWithConfirmationsForAddress(address)
+  return unspents.find(
+    (utxo) => utxo.tx_hash_big_endian === txId && utxo.tx_output_n === vOut
+  )
+}
+
+export function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]) {
+  return utxoArray?.reduce((prev, currentValue) => prev + currentValue.value, 0)
+}
+
+export const getScriptForAddress = async (address: string) => {
+  const utxos = await getUnspentOutputs(address)
+  const { script } = utxos[0]
+  return script
 }

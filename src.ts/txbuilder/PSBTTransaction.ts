@@ -327,9 +327,10 @@ export class PSBTTransaction {
         }
       }
     })
-    await this.signer(psbt, [toSignInputs[0]])
-    await this.segwitSigner(psbt, [toSignInputs[1]])
-
+    await this.signer(psbt, toSignInputs)
+    if (this.segwitSigner) {
+      await this.segwitSigner(psbt, [toSignInputs[1]])
+    }
     if (autoFinalized) {
       console.log('autoFinalized')
       try {
