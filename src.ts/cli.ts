@@ -6,8 +6,10 @@ import * as transactions from './transactions'
 import * as bitcoin from 'bitcoinjs-lib'
 import { Inscriber } from '@sadoprotocol/ordit-sdk'
 import { getBrc20Data } from './shared/constants'
-import { InscribeTransfer } from './shared/interface'
+import { AddressType, InscribeTransfer, ToSignInput } from './shared/interface'
+import { address as PsbtAddress } from 'bitcoinjs-lib'
 import {
+  assertHex,
   calculateAmountGathered,
   getScriptForAddress,
   getUTXOsToCoverAmount,
@@ -63,6 +65,57 @@ export async function swapFlow(options) {
   return psbt_.toHex()
 }
 
+const formatOptionsToSignInputs = async (
+  _psbt: string | bitcoin.Psbt,
+  isRevealTx: boolean = false,
+  pubkey: string,
+  tapAddress: string
+) => {
+  let toSignInputs: ToSignInput[] = []
+  const psbtNetwork = bitcoin.networks.bitcoin
+
+  const psbt =
+    typeof _psbt === 'string'
+      ? bitcoin.Psbt.fromHex(_psbt as string, { network: psbtNetwork })
+      : (_psbt as bitcoin.Psbt)
+
+  psbt.data.inputs.forEach((v, index: number) => {
+    let script: any = null
+    let value = 0
+    if (v.witnessUtxo) {
+      script = v.witnessUtxo.script
+      value = v.witnessUtxo.value
+    } else if (v.nonWitnessUtxo) {
+      const tx = bitcoin.Transaction.fromBuffer(v.nonWitnessUtxo)
+      const output = tx.outs[psbt.txInputs[index].index]
+      script = output.script
+      value = output.value
+    }
+    const isSigned = v.finalScriptSig || v.finalScriptWitness
+    if (script && !isSigned) {
+      const address = PsbtAddress.fromOutputScript(script, psbtNetwork)
+      if (isRevealTx || tapAddress === address) {
+        if (v.tapInternalKey) {
+          toSignInputs.push({
+            index: index,
+            publicKey: pubkey,
+            sighashTypes: v.sighashType ? [v.sighashType] : undefined,
+          })
+        }
+      }
+      // else {
+      //   toSignInputs.push({
+      //     index: index,
+      //     publicKey: this.segwitPubKey,
+      //     sighashTypes: v.sighashType ? [v.sighashType] : undefined,
+      //   })
+      // }
+    }
+  })
+
+  return toSignInputs
+}
+
 async function inscribeTest(options: InscribeTransfer) {
   //WORKFLOW TO INSCRIBE
   //GET & PASS PUBLIC KEY, ADDRESS SENDING FROM, ADDRESS INSCRIPTIOM WILL END UP IN, AND CHANGE ADDRESS
@@ -78,7 +131,7 @@ async function inscribeTest(options: InscribeTransfer) {
     address: options.feeFromAddress,
     publicKey: options.taprootPublicKey,
     changeAddress: options.feeFromAddress,
-    destinationAddress: options.destinationAddress,
+    destinationAddress: options.feeFromAddress,
     mediaContent: brc20TransferMeta.mediaContent,
     mediaType: brc20TransferMeta.mediaType,
     feeRate: options.feeRate,
@@ -139,9 +192,12 @@ async function inscribeTest(options: InscribeTransfer) {
   })
   const vB = psbt.inputCount * 149 + 3 * 32 + 12
   const fee = vB * options.feeRate
+
+  console.log('fee', fee)
   const utxosGathered = await getUTXOsToCoverAmount(options.feeFromAddress, fee)
   const amountGathered = calculateAmountGathered(utxosGathered)
-  if (amountGathered === 0) {
+  console.log({ amountGathered })
+  if (amountGathered === 0 || utxosGathered.length === 0) {
     throw Error('INSUFFICIENT_FUNDS_FOR_INSCRIBE')
   }
 
@@ -167,12 +223,40 @@ async function inscribeTest(options: InscribeTransfer) {
 
   psbt.addOutput({
     value: amountGathered - fee,
-    address: String(bitcoin.address), // address for inscriber for the user
+    address: options.destinationAddress, // address for inscriber for the user
   })
 
-  psbt.signAllInputs(options.signer)
-  psbt.finalizeAllInputs()
+  const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs(
+    psbt,
+    false,
+    options.taprootPublicKey,
+    options.feeFromAddress
+  )
+  const addressType = transactions.getAddressType(options.feeFromAddress)
 
+  psbt.data.inputs.forEach((v, index) => {
+    const isNotSigned = !(v.finalScriptSig || v.finalScriptWitness)
+    const isP2TR = addressType === AddressType.P2TR
+    const lostInternalPubkey = !v.tapInternalKey
+    if (isNotSigned && isP2TR && lostInternalPubkey) {
+      const tapInternalKey = assertHex(
+        Buffer.from(options.taprootPublicKey, 'hex')
+      )
+      const p2tr = bitcoin.payments.p2tr({
+        internalPubkey: tapInternalKey,
+        network: bitcoin.networks.bitcoin,
+      })
+      if (
+        v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
+      ) {
+        v.tapInternalKey = tapInternalKey
+      }
+    }
+  })
+
+  console.log(psbt.toBase64())
+  await options.signer(psbt, toSignInputs)
+  psbt.finalizeAllInputs()
   const rawtx = psbt.extractTransaction().toHex()
   console.log('rawtx', rawtx)
   //BROADCAST THE RAW TX TO THE NETWORK
@@ -238,53 +322,55 @@ export async function runCLI() {
       return await loadRpc(options)
       break
     case 'test':
-      const mnemonic =
-        'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
-      const tapWallet = new Wallet()
-      const tapPayload = await tapWallet.fromPhrase({
-        mnemonic: mnemonic.trim(),
-        hdPath: RequiredPath[3],
-        type: 'taproot',
-      })
-      const signer = tapPayload.keyring.keyring
-      const tapSigner = signer.signTransaction.bind(signer)
+      // const mnemonic =
+      //   'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
+      // const tapWallet = new Wallet()
+      // const tapPayload = await tapWallet.fromPhrase({
+      //   mnemonic: mnemonic.trim(),
+      //   hdPath: RequiredPath[3],
+      //   type: 'taproot',
+      // })
+      // const signer = tapPayload.keyring.keyring
+      // const tapSigner = signer.signTransaction.bind(signer)
 
-      return await inscribeTest({
-        feeFromAddress:
-          'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-        taprootPublicKey:
-          '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
-        changeAddress:
-          'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-        destinationAddress:
-          'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
-        feeRate: 100,
-        token: 'HODL',
-        signer: tapSigner,
-        amount: 100,
-      })
+      // return await inscribeTest({
+      //   feeFromAddress:
+      //     'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+      //   taprootPublicKey:
+      //     '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
+      //   changeAddress:
+      //     'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+      //   destinationAddress:
+      //     'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
+      //   feeRate: 70,
+      //   token: 'HODL',
+      //   signer: tapSigner,
+      //   amount: 100,
+      // })
 
-      // async function createOrdPsbtTx() {
-      //   const wallet = new Wallet()
-      //   const test0 = await wallet.createOrdPsbtTx({
-      //     changeAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-      //     fromAddress:
-      //       'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-      //     inscriptionId:
-      //       '17b5fa0de0a753b4dd3140039a3c61ea213ea5dddbfafcb79dfd63d731e1aff2i0',
-      //     taprootPubKey:
-      //       '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
-      //     segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-      //     segwitPubKey:
-      //       '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
-      //     toAddress:
-      //       'bc1pjrpg3nxzkx6pqfykcw6w5das4nzz78xq23ejtl4xpfxt7xeh0jwq2ywzlz',
-      //     txFee: 68,
-      //     mnemonic:
-      //       'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
-      //   })
-      //   console.log(test0)
-      // }
+      async function createOrdPsbtTx() {
+        const wallet = new Wallet()
+        const test0 = await wallet.createOrdPsbtTx({
+          changeAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+          fromAddress:
+            'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+          inscriptionId:
+            '275d099a2244bee278d451859a74918e7422d20627245c31c86e154a03f0ded7i0',
+          taprootPubKey:
+            '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
+          segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+          segwitPubKey:
+            '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
+          toAddress:
+            'bc1pkvt4pj7jgj02s95n6sn56fhgl7t7cfx5mj4dedsqyzast0whpchs7ujd7y',
+          txFee: 68,
+          mnemonic:
+            'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
+        })
+        console.log(test0)
+      }
+      const resp = await createOrdPsbtTx()
+      return resp
       break
     default:
       return await callAPI(yargs.argv._[0], options)

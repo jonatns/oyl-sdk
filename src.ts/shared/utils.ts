@@ -239,7 +239,6 @@ export const getInscriptionsByWalletBIS = async (
   walletAddress: string,
   offset: number = 0
 ) => {
-  console.log(walletAddress)
   return (await axios
     .get(
       `https://api.bestinslot.xyz/v3/wallet/inscriptions?address=${walletAddress}&sort_by=inscr_num&order=asc&offset=${offset}&count=100`,
@@ -397,6 +396,6 @@ export function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]) {
 
 export const getScriptForAddress = async (address: string) => {
   const utxos = await getUnspentOutputs(address)
-  const { script } = utxos[0]
+  const { script } = utxos.unspent_outputs[0]
   return script
 }
