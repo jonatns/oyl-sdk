@@ -13,6 +13,7 @@ import {
   delay,
   getScriptForAddress,
   getUTXOsToCoverAmount,
+  getUTXOsToCoverAmountWithRemainder,
   tweakSigner,
 } from './shared/utils'
 import axios from 'axios'
@@ -117,7 +118,6 @@ const formatOptionsToSignInputs = async (
       if (isRevealTx || tapAddress === address) {
         console.log('entered', index)
         if (v.tapInternalKey) {
-          console.log('hasTapInternal')
           toSignInputs.push({
             index: index,
             publicKey: pubkey,
@@ -217,6 +217,7 @@ export const inscribe = async ({
   const vB = inputs * 149 + 3 * 32 + 12
   const minerFee = vB * fastestFee
   const fees = minerFee + 4000
+  console.log(fees)
 
   try {
     console.log('TRYING')
@@ -239,9 +240,13 @@ export const inscribe = async ({
       console.log('NO COMMIT TX ID')
       let reimbursementAmount = 0
       const psbt = new bitcoin.Psbt()
-      const utxosGathered = await getUTXOsToCoverAmount(inputAddress, fees)
+      const utxosGathered = await getUTXOsToCoverAmountWithRemainder(
+        inputAddress,
+        fees
+      )
       const amountGathered = calculateAmountGathered(utxosGathered)
-      if (amountGathered === 0) {
+      console.log(amountGathered)
+      if (amountGathered < fees) {
         console.log('WAHAHAHAHAH')
         return { error: 'insuffICIENT funds for inscribe' }
       }
@@ -345,7 +350,7 @@ async function inscribeTest(options: InscribeTransfer) {
     console.log({ brc20TransferMeta })
 
     // START CREATING TRANSFER INSCRIPTION
-    const { psbtHex: commitTxHex } = await inscribe({
+    const { psbtHex: commitTxResponse } = await inscribe({
       ticker: options.token,
       amount: options.amount,
       inputAddress: options.feeFromAddress,
@@ -353,131 +358,129 @@ async function inscribeTest(options: InscribeTransfer) {
       isDry: false,
     })
 
-    const commitTxPsbt = bitcoin.Psbt.fromHex(commitTxHex)
+    const commitTxPsbt = bitcoin.Psbt.fromHex(commitTxResponse)
 
-    console.log({ commitTxHex })
     console.log({ commitBase64: commitTxPsbt.toBase64() })
     // TODO: NEED TO SIGN HERE
+
+    const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs(
+      commitTxPsbt,
+      false,
+      options.taprootPublicKey,
+      options.feeFromAddress
+    )
+
+    await options.signer(commitTxPsbt, toSignInputs)
+    commitTxPsbt.finalizeAllInputs()
 
     // console.log('signing all inputs')
     // console.log(options.signer)
     // console.log('input count', commitTx.inputCount)
     // await commitTx.signAllInputsAsync(options.signer)
-    // console.log('finalizing')
-    // commitTx.finalizeAllInputs()
+    console.log('finalizing')
 
-    // const commitTxId = commitTx.extractTransaction().toHex()
+    const commitTxHex = commitTxPsbt.extractTransaction().toHex()
 
-    // const rpcResponse = await callBTCRPCEndpoint(
-    //   'sendrawtransaction',
-    //   Tx.encode(commitTxHex).hex
-    // )
-    //
-    // console.log({ rpcResponse })
-    // console.log({ commitTxId })
-    return
+    const { result: commitTxId } = await callBTCRPCEndpoint(
+      'sendrawtransaction',
+      commitTxHex
+    )
+    console.log(commitTxId)
+    console.log('waiting for 10 seconds')
+    await delay(10000)
 
-    // console.log({ commitTxHex })
-    // return
+    const { result: revealTxId } = await inscribe({
+      ticker: options.token,
+      amount: options.amount,
+      inputAddress: options.feeFromAddress,
+      outputAddress: options.feeFromAddress,
+      isDry: false,
+      commitTxId,
+    })
+    console.log('result', revealTxId)
+    console.log('waiting for 10 seconds')
+    await delay(10000)
 
-    // console.log('waiting for 10 seconds')
-    // await delay(10000)
-
-    // const commitTxId =
-    //   '1bba54c7afa9506a9291461c3219b959051fa8a83d46006150bf803b4dcae932'
-    //
-    // const result = await inscribe({
-    //   ticker: options.token,
-    //   amount: options.amount,
-    //   inputAddress: options.feeFromAddress,
-    //   outputAddress: options.feeFromAddress,
-    //   isDry: false,
-    //   commitTxId,
-    // })
-
-    // const revealTxId =
-    //   'aaf3e91effa9380df4d4967b031c6331b4ab4a32705bcba05add25748e369b47'
-
-    // console.log('result', result)
-
-    //
     // // FINISHED CREATING TRANSFER INSCRIPTION
-    //
+
     // // START CREATING PSBT TO SEND TO RECIPIENT
-    // const sendTransferPsbt = new bitcoin.Psbt()
-    // let reimbursementAmount = 0
-    // const script = await getScriptForAddress(options.feeFromAddress)
-    // // const transferInscriptionOutput = vPsbt.txOutputs[0] as PsbtTxOutput
-    //
-    // // console.log({ transferInscriptionOutput })
-    //
-    // sendTransferPsbt.addInput({
-    //   hash: revealTxId as string,
-    //   index: 0,
-    //   witnessUtxo: {
-    //     value: 546,
-    //     script: Buffer.from(script, 'hex'),
-    //   },
-    // })
-    //
-    // sendTransferPsbt.addOutput({
-    //   value: 546,
-    //   address: options.destinationAddress,
-    // })
-    //
-    // const vB = sendTransferPsbt.inputCount * 149 + 3 * 32 + 12
-    // const fee = vB * options.feeRate
-    //
-    // const utxosGatheredForFees = await getUTXOsToCoverAmount(
-    //   options.feeFromAddress,
-    //   fee
-    // )
-    // const amountGathered = calculateAmountGathered(utxosGatheredForFees)
-    // if (amountGathered === 0 || utxosGatheredForFees.length === 0) {
-    //   new Error('INSUFFICIENT_FUNDS_FOR_INSCRIBE')
-    // }
-    //
-    // reimbursementAmount = amountGathered - fee
-    // if (reimbursementAmount < 0) {
-    //   new Error('FEES_LESS_THEN_GATHERED')
-    // }
-    //
-    // for (let utxo of utxosGatheredForFees) {
-    //   const {
-    //     tx_hash_big_endian,
-    //     tx_output_n,
-    //     value,
-    //     script: outputScript,
-    //   } = utxo
-    //
-    //   sendTransferPsbt.addInput({
-    //     hash: tx_hash_big_endian,
-    //     index: tx_output_n,
-    //     witnessUtxo: { value, script: Buffer.from(outputScript, 'hex') },
-    //   })
-    // }
-    //
-    // sendTransferPsbt.addOutput({
-    //   value: reimbursementAmount,
-    //   address: options.feeFromAddress, // address for inscriber for the user
-    // })
-    //
-    // console.log(sendTransferPsbt.toHex())
+    const sendTransferPsbt = new bitcoin.Psbt()
+    let reimbursementAmount = 0
+    const script = await getScriptForAddress(options.feeFromAddress)
 
-    // const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs(
-    //   sendTransferPsbt,
-    //   false,
-    //   options.taprootPublicKey,
-    //   options.feeFromAddress
-    // )
+    sendTransferPsbt.addInput({
+      hash: revealTxId as string,
+      index: 0,
+      witnessUtxo: {
+        value: 546,
+        script: Buffer.from(script, 'hex'),
+      },
+    })
 
-    // console.log(sendTransferPsbt.toBase64())
-    // await options.signer(sendTransferPsbt, toSignInputs)
-    // sendTransferPsbt.finalizeAllInputs()
-    // const rawTx = sendTransferPsbt.extractTransaction().toHex()
-    // console.log({ rawTx })
-    // await wallet.apiClient.pushTx({ transactionHex: rawTx })
-    // return sendTransferPsbt.extractTransaction().getId()
+    sendTransferPsbt.addOutput({
+      value: 546,
+      address: options.destinationAddress,
+    })
+
+    const vB = sendTransferPsbt.inputCount * 149 + 3 * 32 + 12
+    const fee = vB * options.feeRate
+
+    const utxosGatheredForFees = await getUTXOsToCoverAmount(
+      options.feeFromAddress,
+      fee
+    )
+    const amountGathered = calculateAmountGathered(utxosGatheredForFees)
+    if (amountGathered === 0 || utxosGatheredForFees.length === 0) {
+      new Error('INSUFFICIENT_FUNDS_FOR_INSCRIBE')
+    }
+
+    reimbursementAmount = amountGathered - fee
+    if (reimbursementAmount < 0) {
+      new Error('FEES_LESS_THEN_GATHERED')
+    }
+
+    for (let utxo of utxosGatheredForFees) {
+      const {
+        tx_hash_big_endian,
+        tx_output_n,
+        value,
+        script: outputScript,
+      } = utxo
+
+      sendTransferPsbt.addInput({
+        hash: tx_hash_big_endian,
+        index: tx_output_n,
+        witnessUtxo: { value, script: Buffer.from(outputScript, 'hex') },
+      })
+    }
+
+    sendTransferPsbt.addOutput({
+      value: reimbursementAmount,
+      address: options.feeFromAddress, // address for inscriber for the user
+    })
+
+    console.log(sendTransferPsbt.toHex())
+
+    const toSignInputsForTransfer: ToSignInput[] =
+      await formatOptionsToSignInputs(
+        sendTransferPsbt,
+        false,
+        options.taprootPublicKey,
+        options.feeFromAddress
+      )
+
+    console.log(sendTransferPsbt.toBase64())
+    await options.signer(sendTransferPsbt, toSignInputsForTransfer)
+    sendTransferPsbt.finalizeAllInputs()
+    const rawTx = sendTransferPsbt.extractTransaction().toHex()
+    console.log({ rawTx })
+
+    const { result: transferTxnId } = await callBTCRPCEndpoint(
+      'sendrawtransaction',
+      rawTx
+    )
+    console.log(transferTxnId)
+    return sendTransferPsbt.extractTransaction().getId()
   } catch (err: unknown) {
     if (err instanceof Error) {
       console.error(err)
@@ -552,7 +555,7 @@ export async function runCLI() {
       break
     case 'test':
       const mnemonic =
-        'speak sustain unfold umbrella lobster sword style kingdom notable agree supply come'
+        'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
       const tapWallet = new Wallet()
       const tapPayload = await tapWallet.fromPhrase({
         mnemonic: mnemonic.trim(),
@@ -562,37 +565,18 @@ export async function runCLI() {
       const signer = tapPayload.keyring.keyring
       const tapSigner = signer.signTransaction.bind(signer)
 
-      const mcndSeedFromMnemonic = await bip39.mnemonicToSeed(String(mnemonic))
-      const internalKey = bip32
-        .fromSeed(mcndSeedFromMnemonic)
-        .derivePath("m/86'/0'/0'/0/0")
-      const leafKey = bip32
-        .fromSeed(mcndSeedFromMnemonic)
-        .derivePath("m/86'/0'/0'/0/1")
-
-      const xOnlyInternalPubkey = toXOnly(internalKey.publicKey)
-      const xOnlyLeafPubkey = toXOnly(leafKey.publicKey)
-
-      const tweakedChildNode = internalKey.tweak(
-        bitcoin.crypto.taggedHash('TapTweak', internalKey.publicKey!)
-      )
-
-      const tweakedSigner = tweakSigner(internalKey!)
-
-      console.log({ xOnlyInternalPubkey: xOnlyInternalPubkey.toString('hex') })
-
       return await inscribeTest({
         feeFromAddress:
-          'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
-        taprootPublicKey:
-          '02859513d2338a02f032e55c57c10f418f9b727f9e9f3dc8d8bf90238e61699018',
-        changeAddress:
-          'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
-        destinationAddress:
           'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+        taprootPublicKey:
+          '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
+        changeAddress:
+          'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+        destinationAddress:
+          'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
         feeRate: 75,
         token: 'BONK',
-        signer: internalKey,
+        signer: tapSigner,
         amount: 10,
       })
 
