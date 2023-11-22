@@ -28,8 +28,6 @@ export class SandshrewBitcoinClient {
         };
 
         try {
-            console.log(requestOptions);
-            console.log(this.apiUrl)
             const response = await fetch(this.apiUrl, requestOptions);
             const responseData = await response.json();
 
@@ -210,7 +208,7 @@ export class SandshrewBitcoinClient {
                 return this._convertArg(arg, argType);
             });
 
-            return this._call("btc_" + methodName, convertedArgs);
+            return this._call("btc_" + methodName.toLowerCase(), convertedArgs);
         };
     }
 
