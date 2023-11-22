@@ -2,6 +2,7 @@ import { PSBTTransaction, buildOrdTx } from './txbuilder'
 import { UTXO_DUST } from './shared/constants'
 import { amountToSatoshis, satoshisToAmount } from './shared/utils'
 import BcoinRpc from './rpclient'
+import {SandshrewBitcoinClient }from './rpclient/sandshrew'
 import * as transactions from './transactions'
 import { publicKeyToAddress } from './wallet/accounts'
 import { accounts } from './wallet'
@@ -17,7 +18,6 @@ import {
 } from './shared/interface'
 import { OylApiClient } from './apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
-import { HdKeyring } from './wallet/hdKeyring'
 
 const RequiredPath = [
   "m/44'/0'/0'/0", // P2PKH (Legacy)
@@ -29,7 +29,7 @@ const RequiredPath = [
 export class Wallet {
   private mnemonic: String
   private wallet
-
+  public sandshrewBtcClient: SandshrewBitcoinClient
   public provider: Providers
   public rpcClient: BcoinRpc
   public apiClient: OylApiClient
@@ -40,6 +40,7 @@ export class Wallet {
    */
   constructor() {
     this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg' })
+    this.sandshrewBtcClient = new SandshrewBitcoinClient("https://sandshrew.io/v1/d6aebfed1769128379aca7d215f0b689");
     this.fromProvider()
     //create wallet should optionally take in a private key
     this.wallet = this.createWallet({})
@@ -154,8 +155,11 @@ export class Wallet {
         case 'taproot':
           addrType = AddressType.P2TR
           break
-        case 'segwit':
+        case 'native-segwit':
           addrType = AddressType.P2WPKH
+          break
+        case 'nested-segwit':
+          addrType = AddressType.P2SH_P2WPKH
           break
         case 'legacy':
           addrType = AddressType.P2PKH
@@ -502,22 +506,57 @@ export class Wallet {
    * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
    */
   async createOrdPsbtTx({
-    publicKey,
     fromAddress,
     toAddress,
     changeAddress,
     txFee,
-    signer,
+    segwitAddress,
+    taprootPubKey,
+    segwitPubKey,
     inscriptionId,
+    mnemonic,
   }: {
-    publicKey: string
     fromAddress: string
     toAddress: string
     changeAddress: string
     txFee: number
-    signer: any
+    segwitAddress: string
+    taprootPubKey: string
+    segwitPubKey: string
     inscriptionId: string
+    mnemonic: string
   }) {
+    const segwitAddressType = transactions.getAddressType(segwitAddress)
+    const addressType = transactions.getAddressType(fromAddress)
+    if (addressType == null || segwitAddressType == null) {
+      throw Error('Unrecognized Address Type')
+    }
+    const wallet = new Wallet()
+    let payload: any
+    if (segwitAddressType === 2) {
+      payload = await wallet.fromPhrase({
+        mnemonic: mnemonic.trim(),
+        hdPath: RequiredPath[1],
+        type: 'nested-segwit',
+      })
+    }
+    if (segwitAddressType === 3) {
+      payload = await wallet.fromPhrase({
+        mnemonic: mnemonic.trim(),
+        hdPath: RequiredPath[2],
+        type: 'native-segwit',
+      })
+    }
+    const tapWallet = new Wallet()
+    const tapPayload = await tapWallet.fromPhrase({
+      mnemonic: mnemonic.trim(),
+      hdPath: RequiredPath[3],
+      type: 'taproot',
+    })
+    const segwitKeyring = payload.keyring.keyring
+    const tapKeyring = tapPayload.keyring.keyring
+    const segwitSigner = segwitKeyring.signTransaction.bind(segwitKeyring)
+    const signer = tapKeyring.signTransaction.bind(tapKeyring)
     const { data: collectibleData } = await this.apiClient.getCollectiblesById(
       inscriptionId
     )
@@ -534,23 +573,28 @@ export class Wallet {
     }
 
     const allUtxos = await this.getUtxosArtifacts({ address: fromAddress })
+    const segwitUtxos = await this.getUtxosArtifacts({ address: segwitAddress })
     const feeRate = txFee
-    const addressType = transactions.getAddressType(fromAddress)
-    if (addressType == null) throw Error('Unrecognized Address Type')
 
     const psbtTx = new PSBTTransaction(
       signer,
       fromAddress,
-      publicKey,
+      taprootPubKey,
       addressType,
-      feeRate
+      feeRate,
+      segwitSigner,
+      segwitPubKey
     )
+
     psbtTx.setChangeAddress(changeAddress)
     const finalizedPsbt = await buildOrdTx(
       psbtTx,
+      segwitUtxos,
       allUtxos,
+      segwitAddress,
       toAddress,
       metaOutputValue,
+      feeRate,
       inscriptionId
     )
 
@@ -673,7 +717,6 @@ export class Wallet {
     }
 
     const psbt = await tx.createSignedPsbt()
-
     tx.dumpTx(psbt)
 
     //@ts-ignore

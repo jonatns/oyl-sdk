@@ -1,9 +1,11 @@
 import BcoinRpc from './rpclient';
+import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { SwapBrc, ProviderOptions, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
 export declare class Wallet {
     private mnemonic;
     private wallet;
+    sandshrewBtcClient: SandshrewBitcoinClient;
     provider: Providers;
     rpcClient: BcoinRpc;
     apiClient: OylApiClient;
@@ -184,14 +186,16 @@ export declare class Wallet {
      * @param {string} params.inscriptionId - The ID of the inscription to include in the transaction.
      * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
      */
-    createOrdPsbtTx({ publicKey, fromAddress, toAddress, changeAddress, txFee, signer, inscriptionId, }: {
-        publicKey: string;
+    createOrdPsbtTx({ fromAddress, toAddress, changeAddress, txFee, segwitAddress, taprootPubKey, segwitPubKey, inscriptionId, mnemonic, }: {
         fromAddress: string;
         toAddress: string;
         changeAddress: string;
         txFee: number;
-        signer: any;
+        segwitAddress: string;
+        taprootPubKey: string;
+        segwitPubKey: string;
         inscriptionId: string;
+        mnemonic: string;
     }): Promise<any>;
     /**
      * Creates a Partially Signed Bitcoin Transaction (PSBT) to send regular satoshis, signs and broadcasts it.

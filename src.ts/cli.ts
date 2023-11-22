@@ -7,17 +7,17 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { Inscriber } from '@sadoprotocol/ordit-sdk'
 import { BRC_20_TRANSFER_META } from './shared/constants'
 import { InscribeTransfer } from './shared/interface'
+import "dotenv/config";
+
 
 export async function loadRpc(options) {
-  const rpcOptions = {
-    host: options.host,
-    port: options.port,
-    network: options.network,
-    auth: options.apiKey,
-  }
-  const wallet = new Wallet()
-  const rpc = wallet.fromProvider(rpcOptions)
-  return rpc
+ const wallet = new Wallet()
+ try {
+  const blockInfo = await wallet.sandshrewBtcClient.bitcoindRpc.getBlock("000000000000000000030f0cd2974e34ffa8edb8824eec8bba01c008105ca0bb");
+  console.log('Block Info:', blockInfo);
+} catch (error) {
+  console.error('Error:', error);
+}
 }
 
 export async function callAPI(command, data, options = {}) {
@@ -29,33 +29,43 @@ export async function callAPI(command, data, options = {}) {
   return result
 }
 
-export async function swapFlow(options) {
-  const address = options.address
-  const feeRate = options.feeRate
-  const mnemonic = options.mnemonic
-  const pubKey = options.pubKey
+export async function swapFlow() {
+  const address = process.env.TAPROOT_ADDRESS
+   const feeRate = parseFloat(process.env.FEE_RATE)
+   const mnemonic = process.env.TAPROOT_MNEMONIC
+  const pubKey = process.env.TAPROOT_PUBKEY
 
-  const psbt = bitcoin.Psbt.fromHex(options.psbt, {
+  const psbt = bitcoin.Psbt.fromHex(process.env.PSBT_HEX, {
     network: bitcoin.networks.bitcoin,
   })
+
+  //console.log(psbt)
   const wallet = new Wallet()
   const payload = await wallet.fromPhrase({
     mnemonic: mnemonic.trim(),
-    hdPath: options.hdPath,
-    type: options.type,
+    hdPath: process.env.HD_PATH,
+    type: process.env.TYPE,
   })
 
-  const keyring = payload.keyring.keyring
-  const signer = keyring.signTransaction.bind(keyring)
-  const from = address
-  const addressType = transactions.getAddressType(from)
-  if (addressType == null) throw Error('Invalid Address Type')
+   const keyring = payload.keyring.keyring
+   const signer = keyring.signTransaction.bind(keyring)
+   const from = address
+   const addressType = transactions.getAddressType(from)
+   if (addressType == null) throw Error('Invalid Address Type')
 
-  const tx = new PSBTTransaction(signer, from, pubKey, addressType, feeRate)
-
-  const psbt_ = await tx.signPsbt(psbt)
-
-  return psbt_.toHex()
+   const tx = new PSBTTransaction(signer, from, pubKey, addressType, feeRate)
+   const signedPsbt = await tx.signPsbt(psbt)
+   //@ts-ignore
+   psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
+ 
+   //EXTRACT THE RAW TX
+   //const rawtx = signedPsbt.extractTransaction().toHex()
+   //console.log('rawtx', rawtx)
+   //BROADCAST THE RAW TX TO THE NETWORK
+   //const result = await wallet.apiClient.pushTx({ transactionHex: rawtx })
+   //GET THE TX_HASH
+   //const ready_txId = psbt.extractTransaction().getId()
+   //CONFIRM TRANSACTION IS CONFIRMED
 }
 
 async function inscribeTest(options: InscribeTransfer) {
@@ -106,13 +116,12 @@ async function inscribeTest(options: InscribeTransfer) {
       network: bitcoin.networks.bitcoin,
     })
     //SIGN THE PSBT
-    const completeInscription = await signInscriptionPsbt(
+    await signInscriptionPsbt(
       vPsbt,
       options.feeRate,
       options.taprootPublicKey,
       options.signer
     )
-    console.log(completeInscription)
   }
 }
 
@@ -138,14 +147,25 @@ async function signInscriptionPsbt(psbt, fee, pubKey, signer, address = '') {
   //CONFIRM TRANSACTION IS CONFIRMED
 }
 
-async function recoverTest() {
+async function createOrdPsbtTx() {
   const wallet = new Wallet()
   const tx = await wallet.addAccountToWallet({
-    mnemonic: '',
+    mnemonic: process.env.TAPROOT_MNEMONIC,
     activeIndexes: [0],
-    customPath: 'xverse',
+    customPath: 'unisat',
   })
-  console.log(tx)
+  const test0 = await wallet.createOrdPsbtTx({
+    changeAddress: '',
+    fromAddress: '',
+    inscriptionId: '',
+    taprootPubKey: '',
+    segwitAddress: '',
+    segwitPubKey: '',
+    toAddress: '',
+    txFee: 0,
+    mnemonic: '',
+  })
+  console.log(test0)
 }
 
 export async function runCLI() {
@@ -158,7 +178,10 @@ export async function runCLI() {
       return await loadRpc(options)
       break
     case 'recover':
-      return await recoverTest()
+      return await createOrdPsbtTx()
+      break
+    case 'swap':
+      return await swapFlow()
       break
     default:
       return await callAPI(yargs.argv._[0], options)
