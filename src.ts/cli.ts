@@ -13,12 +13,13 @@ import "dotenv/config";
 export async function loadRpc(options) {
  const wallet = new Wallet()
  try {
-  const blockInfo = await wallet.sandshrewBtcClient.bitcoindRpc.getBlock("000000000000000000030f0cd2974e34ffa8edb8824eec8bba01c008105ca0bb");
+  const blockInfo = await wallet.sandshrewBtcClient.bitcoindRpc.decodePSBT(process.env.PSBT_BASE64);
   console.log('Block Info:', blockInfo);
 } catch (error) {
   console.error('Error:', error);
 }
 }
+ 
 
 export async function callAPI(command, data, options = {}) {
   const oylSdk = new Wallet()

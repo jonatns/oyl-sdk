@@ -281,7 +281,7 @@ export interface IRpcMethods {
     listReceivedByLabel?(): Promise<any>;
     listSinceBlock?(arg1: string, arg2: number): Promise<any>;
     listTransactions?(arg1: string, arg2: number, arg3: number): Promise<any>;
-    listUnspent?(arg1: number, arg2: number): Promise<any>;
+    listUnspent?(arg1: number | undefined, arg2: number | undefined, arg3: string[]): Promise<any>;
     listWalletDir?(): Promise<any>;
     listWallets?(): Promise<any>;
     loadWallet?(arg: string): Promise<any>;
