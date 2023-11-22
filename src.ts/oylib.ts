@@ -2,6 +2,7 @@ import { PSBTTransaction, buildOrdTx } from './txbuilder'
 import { UTXO_DUST } from './shared/constants'
 import { amountToSatoshis, satoshisToAmount } from './shared/utils'
 import BcoinRpc from './rpclient'
+import {SandshrewBitcoinClient }from './rpclient/sandshrew'
 import * as transactions from './transactions'
 import { publicKeyToAddress } from './wallet/accounts'
 import { accounts } from './wallet'
@@ -28,7 +29,7 @@ const RequiredPath = [
 export class Wallet {
   private mnemonic: String
   private wallet
-
+  public sandshrewBtcClient: SandshrewBitcoinClient
   public provider: Providers
   public rpcClient: BcoinRpc
   public apiClient: OylApiClient
@@ -39,6 +40,7 @@ export class Wallet {
    */
   constructor() {
     this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg' })
+    this.sandshrewBtcClient = new SandshrewBitcoinClient("https://sandshrew.io/v1/d6aebfed1769128379aca7d215f0b689");
     this.fromProvider()
     //create wallet should optionally take in a private key
     this.wallet = this.createWallet({})
