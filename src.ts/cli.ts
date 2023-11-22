@@ -14,7 +14,8 @@ export async function loadRpc(options) {
  const wallet = new Wallet()
  try {
   const blockInfo = await wallet.sandshrewBtcClient.bitcoindRpc.decodePSBT(process.env.PSBT_BASE64);
-  console.log('Block Info:', blockInfo);
+  const fees = await wallet.esploraRpc.getAddressUtxo(process.env.TAPROOT_ADDRESS);
+  console.log('Block Info:', fees);
 } catch (error) {
   console.error('Error:', error);
 }
