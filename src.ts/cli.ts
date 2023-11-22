@@ -8,19 +8,16 @@ import { Inscriber } from '@sadoprotocol/ordit-sdk'
 import { BRC_20_TRANSFER_META } from './shared/constants'
 import { InscribeTransfer } from './shared/interface'
 import "dotenv/config";
-const RpcClient = require('bitcoind-rpc');
 
 
 export async function loadRpc(options) {
-  const rpcOptions = "https://sandshrew.io/v1/d6aebfed1769128379aca7d215f0b689"
-  let rpc = new RpcClient(rpcOptions);
-  rpc.getRawMemPool(function (err, ret) {
-    if (err) {
-      console.error(err);
-    }
-
-    console.log(ret.result)
-  })
+ const wallet = new Wallet()
+ try {
+  const blockInfo = await wallet.sandshrewBtcClient.bitcoindRpc.getBlock("000000000000000000030f0cd2974e34ffa8edb8824eec8bba01c008105ca0bb", 1);
+  console.log('Block Info:', blockInfo);
+} catch (error) {
+  console.error('Error:', error);
+}
 }
 
 export async function callAPI(command, data, options = {}) {

@@ -1,9 +1,11 @@
 import BcoinRpc from './rpclient';
+import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { SwapBrc, ProviderOptions, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
 export declare class Wallet {
     private mnemonic;
     private wallet;
+    sandshrewBtcClient: SandshrewBitcoinClient;
     provider: Providers;
     rpcClient: BcoinRpc;
     apiClient: OylApiClient;

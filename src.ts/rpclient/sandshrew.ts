@@ -1,11 +1,14 @@
 import fetch from 'node-fetch'
+import { IRpcMethods } from '../shared/interface';
 
 
 export class SandshrewBitcoinClient {
     public apiUrl: string
+    public bitcoindRpc: IRpcMethods
 
     constructor(apiUrl) {
         this.apiUrl = apiUrl;
+        this._initializeRpcMethods();
     }
 
     async _call(method, params = []) {
@@ -13,7 +16,7 @@ export class SandshrewBitcoinClient {
             jsonrpc: '2.0',
             method: method,
             params: params,
-            id: Date.now(), // Use a unique identifier for each request
+            id: Date.now(),
         };
 
         const requestOptions = {
@@ -200,7 +203,7 @@ export class SandshrewBitcoinClient {
       }
 
     _createRpcMethod(methodName, argType) {
-        this[methodName] = async (...args) => {
+        this.bitcoindRpc[methodName] = async (...args) => {
             const convertedArgs = args.map((arg, index) => {
                 return this._convertArg(arg, argType);
             });
