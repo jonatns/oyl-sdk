@@ -39,6 +39,26 @@ export class SandshrewBitcoinClient {
             throw error;
         }
     }
+
+    _convertArg(arg, argType) {
+        switch (argType) {
+          case 'str':
+            return arg.toString();
+          case 'int':
+            return parseFloat(arg);
+          case 'float':
+            return parseFloat(arg);
+          case 'bool':
+            return (arg === true || arg == '1' || arg == 'true' || arg.toString().toLowerCase() == 'true');
+          case 'obj':
+            if(typeof arg === 'string') {
+                return JSON.parse(arg);
+              }
+              return arg;
+          default:
+            return arg;
+        }
+      }
 }
 
   // Example usage:
