@@ -80,8 +80,17 @@ const formatOptionsToSignInputs = async (
       : (_psbt as bitcoin.Psbt)
 
   psbt.data.inputs.forEach((v, index: number) => {
+    console.log(v)
     let script: any = null
     let value = 0
+    const tapInternalKey = assertHex(Buffer.from(pubkey, 'hex'))
+    const p2tr = bitcoin.payments.p2tr({
+      internalPubkey: tapInternalKey,
+      network: bitcoin.networks.bitcoin,
+    })
+    if (v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')) {
+      v.tapInternalKey = tapInternalKey
+    }
     if (v.witnessUtxo) {
       script = v.witnessUtxo.script
       value = v.witnessUtxo.value
@@ -93,9 +102,12 @@ const formatOptionsToSignInputs = async (
     }
     const isSigned = v.finalScriptSig || v.finalScriptWitness
     if (script && !isSigned) {
+      console.log('not signed')
       const address = PsbtAddress.fromOutputScript(script, psbtNetwork)
       if (isRevealTx || tapAddress === address) {
+        console.log('entered', index)
         if (v.tapInternalKey) {
+          console.log('hasTapInternal')
           toSignInputs.push({
             index: index,
             publicKey: pubkey,
@@ -193,10 +205,8 @@ async function inscribeTest(options: InscribeTransfer) {
   const vB = psbt.inputCount * 149 + 3 * 32 + 12
   const fee = vB * options.feeRate
 
-  console.log('fee', fee)
   const utxosGathered = await getUTXOsToCoverAmount(options.feeFromAddress, fee)
   const amountGathered = calculateAmountGathered(utxosGathered)
-  console.log({ amountGathered })
   if (amountGathered === 0 || utxosGathered.length === 0) {
     throw Error('INSUFFICIENT_FUNDS_FOR_INSCRIBE')
   }
@@ -232,27 +242,6 @@ async function inscribeTest(options: InscribeTransfer) {
     options.taprootPublicKey,
     options.feeFromAddress
   )
-  const addressType = transactions.getAddressType(options.feeFromAddress)
-
-  psbt.data.inputs.forEach((v, index) => {
-    const isNotSigned = !(v.finalScriptSig || v.finalScriptWitness)
-    const isP2TR = addressType === AddressType.P2TR
-    const lostInternalPubkey = !v.tapInternalKey
-    if (isNotSigned && isP2TR && lostInternalPubkey) {
-      const tapInternalKey = assertHex(
-        Buffer.from(options.taprootPublicKey, 'hex')
-      )
-      const p2tr = bitcoin.payments.p2tr({
-        internalPubkey: tapInternalKey,
-        network: bitcoin.networks.bitcoin,
-      })
-      if (
-        v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
-      ) {
-        v.tapInternalKey = tapInternalKey
-      }
-    }
-  })
 
   console.log(psbt.toBase64())
   await options.signer(psbt, toSignInputs)
@@ -267,7 +256,14 @@ async function inscribeTest(options: InscribeTransfer) {
   return ready_txId
 }
 
-async function signInscriptionPsbt(psbt, fee, pubKey, signer, address = '') {
+async function signInscriptionPsbt(
+  psbt,
+  fee,
+  pubKey,
+  signer,
+  address = '',
+  isDry: boolean = false
+) {
   //INITIALIZE NEW PSBTTransaction INSTANCE
   const wallet = new Wallet()
   const addressType = transactions.getAddressType(address)
@@ -282,8 +278,10 @@ async function signInscriptionPsbt(psbt, fee, pubKey, signer, address = '') {
   //EXTRACT THE RAW TX
   const rawtx = signedPsbt.extractTransaction().toHex()
   console.log('rawtx', rawtx)
-  //BROADCAST THE RAW TX TO THE NETWORK
-  await wallet.apiClient.pushTx({ transactionHex: rawtx })
+  if (!isDry) {
+    //BROADCAST THE RAW TX TO THE NETWORK
+    await wallet.apiClient.pushTx({ transactionHex: rawtx })
+  }
   //GET THE TX_HASH
   const ready_txId = psbt.extractTransaction().getId()
 
@@ -342,10 +340,10 @@ export async function runCLI() {
           'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
         destinationAddress:
           'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
-        feeRate: 70,
+        feeRate: 75,
         token: 'HODL',
         signer: tapSigner,
-        amount: 100,
+        amount: 1000,
       })
 
       // async function createOrdPsbtTx() {

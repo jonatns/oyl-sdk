@@ -286,7 +286,6 @@ export const getUTXOsToCoverAmount = async (
 
     sum += currentUTXO.value
     result.push(currentUTXO)
-    console.log(sum)
     if (sum > amountNeeded) {
       console.log('AMOUNT RETRIEVED: ', sum)
       return result

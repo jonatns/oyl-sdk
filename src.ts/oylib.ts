@@ -681,7 +681,6 @@ export class Wallet {
         tmpSum += nonOrdUtxo.satoshis
       }
     }
-    console.log(tx.getTotalOutput(), tx.getTotalInput())
     if (nonOrdUtxos.length === 0 || tx.getTotalOutput() > tx.getTotalInput()) {
       throw new Error('Balance not enough')
     }
