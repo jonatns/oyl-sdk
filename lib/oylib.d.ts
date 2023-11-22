@@ -207,7 +207,7 @@ export declare class Wallet {
      * @param {any} params.signer - The bound signer method to sign the transaction.
      * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
      */
-    createPsbtTx({ publicKey, from, to, changeAddress, amount, fee, signer, }: {
+    createAndBroadcastPsbtTx({ publicKey, from, to, changeAddress, amount, fee, signer, }: {
         publicKey: string;
         from: string;
         to: string;

@@ -620,7 +620,7 @@ export class Wallet {
    * @param {any} params.signer - The bound signer method to sign the transaction.
    * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
    */
-  async createPsbtTx({
+  async createAndBroadcastPsbtTx({
     publicKey,
     from,
     to,
@@ -637,94 +637,129 @@ export class Wallet {
     fee: number
     signer: any
   }) {
-    const utxos = await this.getUtxosArtifacts({ address: from })
-    const feeRate = fee
-    const addressType = transactions.getAddressType(from)
-    if (addressType == null) throw Error('Invalid Address Type')
+    try {
+      const utxos = await this.getUtxosArtifacts({ address: from })
+      const feeRate = fee
+      const addressType = transactions.getAddressType(from)
+      if (addressType == null) new Error('Invalid Address Type')
 
-    const tx = new PSBTTransaction(
-      signer,
-      from,
-      publicKey,
-      addressType,
-      feeRate
-    )
+      console.log('CREATING PSBT TRANSACTION')
 
-    tx.addOutput(to, amount)
-    tx.setChangeAddress(changeAddress)
-    const outputAmount = tx.getTotalOutput()
-
-    const nonOrdUtxos = []
-    const ordUtxos = []
-    utxos.forEach((v) => {
-      if (v.inscriptions.length > 0) {
-        ordUtxos.push(v)
-      } else {
-        nonOrdUtxos.push(v)
-      }
-    })
-
-    let tmpSum = tx.getTotalInput()
-    for (let i = 0; i < nonOrdUtxos.length; i++) {
-      const nonOrdUtxo = nonOrdUtxos[i]
-      if (tmpSum < outputAmount) {
-        tx.addInput(nonOrdUtxo)
-        tmpSum += nonOrdUtxo.satoshis
-        continue
-      }
-
-      const vB = tx.getNumberOfInputs() * 149 + 3 * 32 + 12
-      const fee = vB * feeRate
-
-      if (tmpSum < outputAmount + fee) {
-        tx.addInput(nonOrdUtxo)
-        tmpSum += nonOrdUtxo.satoshis
-      }
-    }
-    if (nonOrdUtxos.length === 0 || tx.getTotalOutput() > tx.getTotalInput()) {
-      throw new Error('Balance not enough')
-    }
-
-    const totalUnspentAmount = tx.getUnspent()
-    if (totalUnspentAmount === 0) {
-      throw new Error('Balance not enough to pay network fee.')
-    }
-
-    // add dummy output
-    tx.addChangeOutput(1)
-    const estimatedNetworkFee = await tx.calNetworkFee()
-    if (totalUnspentAmount < estimatedNetworkFee) {
-      throw new Error(
-        `Not enough balance. Need ${satoshisToAmount(
-          estimatedNetworkFee
-        )} BTC as network fee, but only ${satoshisToAmount(
-          totalUnspentAmount
-        )} BTC is available.`
+      const tx = new PSBTTransaction(
+        signer,
+        from,
+        publicKey,
+        addressType,
+        feeRate
       )
-    }
 
-    const remainingBalance = totalUnspentAmount - estimatedNetworkFee
-    if (remainingBalance >= UTXO_DUST) {
-      // change dummy output to true output
-      tx.getChangeOutput().value = remainingBalance
-    } else {
-      // remove dummy output
-      tx.removeChangeOutput()
-    }
+      console.log('MADE PSBT TRANSACTION')
 
-    const psbt = await tx.createSignedPsbt()
-    tx.dumpTx(psbt)
+      tx.addOutput(to, amount)
+      tx.setChangeAddress(changeAddress)
+      const outputAmount = tx.getTotalOutput()
 
-    //@ts-ignore
-    psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
+      console.log('ADDED TO OUTPUT')
 
-    const rawtx = psbt.extractTransaction().toHex()
+      const nonOrdUtxos = []
+      const ordUtxos = []
+      utxos.forEach((v) => {
+        if (v.inscriptions.length > 0) {
+          ordUtxos.push(v)
+        } else {
+          nonOrdUtxos.push(v)
+        }
+      })
 
-    const result = await this.apiClient.pushTx({ transactionHex: rawtx })
+      console.log('SORTED UTXOS')
 
-    return {
-      txId: psbt.extractTransaction().getId(),
-      ...result,
+      let tmpSum = tx.getTotalInput()
+      for (let i = 0; i < nonOrdUtxos.length; i++) {
+        const nonOrdUtxo = nonOrdUtxos[i]
+        if (tmpSum < outputAmount) {
+          tx.addInput(nonOrdUtxo)
+          tmpSum += nonOrdUtxo.satoshis
+          continue
+        }
+
+        const vB = tx.getNumberOfInputs() * 149 + 3 * 32 + 12
+        const fee = vB * feeRate
+
+        if (tmpSum < outputAmount + fee) {
+          tx.addInput(nonOrdUtxo)
+          tmpSum += nonOrdUtxo.satoshis
+        }
+      }
+
+      console.log('ADDED NON UTXOS TO PSBT')
+
+      if (
+        nonOrdUtxos.length === 0 ||
+        tx.getTotalOutput() > tx.getTotalInput()
+      ) {
+        new Error('Balance not enough')
+      }
+
+      const totalUnspentAmount = tx.getUnspent()
+      if (totalUnspentAmount === 0) {
+        new Error('Balance not enough to pay network fee.')
+      }
+
+      console.log('DID SOME CHECKS')
+
+      // add dummy output
+      // what's this for?????
+      tx.addChangeOutput(1)
+      const estimatedNetworkFee = await tx.calNetworkFee()
+      if (totalUnspentAmount < estimatedNetworkFee) {
+        new Error(
+          `Not enough balance. Need ${satoshisToAmount(
+            estimatedNetworkFee
+          )} BTC as network fee, but only ${satoshisToAmount(
+            totalUnspentAmount
+          )} BTC is available.`
+        )
+      }
+
+      console.log('DID MORE CHECKS')
+
+      const remainingBalance = totalUnspentAmount - 20000
+
+      console.log({ remainingBalance })
+
+      if (remainingBalance >= UTXO_DUST) {
+        console.log('ADDING BACK CHANGE OUTPUT UTXOS')
+        // change dummy output to true output
+        tx.getChangeOutput().value = remainingBalance
+      } else {
+        console.log('REMOVING CHANGE OUTPUT')
+        // remove dummy output
+        tx.removeChangeOutput()
+      }
+
+      console.log('CREATING SIGNED PSBT')
+
+      const psbt = await tx.createSignedPsbt()
+
+      console.log('CREATED SIGNED PSBT')
+
+      console.log('INPUT AMOUNT', psbt.inputCount)
+
+      // await tx.dumpTx(psbt)
+      //@ts-ignore
+      psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
+      const rawtx = psbt.extractTransaction().toHex()
+      const result = await this.apiClient.pushTx({ transactionHex: rawtx })
+      console.log('SUPPOSED TX ID', psbt.extractTransaction().getId())
+      console.log(`finished createAndBroadcastTx`, result)
+      return {
+        txId: psbt.extractTransaction().getId(),
+        ...result,
+      }
+    } catch (e) {
+      console.log('ERROR')
+      console.error(e)
+      return e
     }
   }
 
