@@ -24,6 +24,7 @@
     "@sadoprotocol/ordit-sdk": "^2.2.4",
     "bcurl": "https://github.com/bcoin-org/bcurl.git#semver:^0.2.0",
     "bignumber.js": "^9.1.1",
+    "bitcoind-rpc": "^0.9.1",
     "bitcoinjs-lib": "^6.1.0",
     "bitcore-lib": "^10.0.5",
     "bitcore-mnemonic": "^10.0.5",
