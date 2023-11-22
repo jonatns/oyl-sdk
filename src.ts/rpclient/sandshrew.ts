@@ -4,7 +4,7 @@ import { IRpcMethods } from '../shared/interface';
 
 export class SandshrewBitcoinClient {
     public apiUrl: string
-    public bitcoindRpc: IRpcMethods
+    public bitcoindRpc: IRpcMethods = {}
 
     constructor(apiUrl) {
         this.apiUrl = apiUrl;
@@ -16,7 +16,7 @@ export class SandshrewBitcoinClient {
             jsonrpc: '2.0',
             method: method,
             params: params,
-            id: Date.now(),
+            id: 1,
         };
 
         const requestOptions = {
@@ -28,6 +28,8 @@ export class SandshrewBitcoinClient {
         };
 
         try {
+            console.log(requestOptions);
+            console.log(this.apiUrl)
             const response = await fetch(this.apiUrl, requestOptions);
             const responseData = await response.json();
 
@@ -208,7 +210,7 @@ export class SandshrewBitcoinClient {
                 return this._convertArg(arg, argType);
             });
 
-            return this._call(methodName, convertedArgs);
+            return this._call("btc_" + methodName, convertedArgs);
         };
     }
 

@@ -216,7 +216,7 @@ export interface IRpcMethods {
     getBalance?(arg1: string, arg2: number): Promise<any>;
     getBalances?(): Promise<any>;
     getBestBlockHash?(): Promise<any>;
-    getBlock?(arg1: string, arg2: number): Promise<any>;
+    getBlock?(arg1: string, arg2?: number): Promise<any>;
     getBlockchainInfo?(): Promise<any>;
     getBlockCount?(): Promise<any>;
     getBlockFilter?(arg: string): Promise<any>;
