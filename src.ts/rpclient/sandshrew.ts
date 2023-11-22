@@ -40,25 +40,35 @@ export class SandshrewBitcoinClient {
         }
     }
 
+    _createRpcMethod(methodName, argType) {
+        this[methodName] = async (...args) => {
+            const convertedArgs = args.map((arg, index) => {
+                return this._convertArg(arg, argType);
+            });
+
+            return this._call(methodName, convertedArgs);
+        };
+    }
+
     _convertArg(arg, argType) {
         switch (argType) {
-          case 'str':
-            return arg.toString();
-          case 'int':
-            return parseFloat(arg);
-          case 'float':
-            return parseFloat(arg);
-          case 'bool':
-            return (arg === true || arg == '1' || arg == 'true' || arg.toString().toLowerCase() == 'true');
-          case 'obj':
-            if(typeof arg === 'string') {
-                return JSON.parse(arg);
-              }
-              return arg;
-          default:
-            return arg;
+            case 'str':
+                return arg.toString();
+            case 'int':
+                return parseFloat(arg);
+            case 'float':
+                return parseFloat(arg);
+            case 'bool':
+                return (arg === true || arg == '1' || arg == 'true' || arg.toString().toLowerCase() == 'true');
+            case 'obj':
+                if (typeof arg === 'string') {
+                    return JSON.parse(arg);
+                }
+                return arg;
+            default:
+                return arg;
         }
-      }
+    }
 }
 
   // Example usage:
