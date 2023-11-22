@@ -1,6 +1,6 @@
 import { UTXO_DUST } from '../shared/constants'
 import * as bitcoin from 'bitcoinjs-lib'
-import { assertHex, utxoToInput, validator } from '../shared/utils'
+import { assertHex, ECPair, utxoToInput, validator } from '../shared/utils'
 import {
   AddressType,
   UnspentOutput,
@@ -15,13 +15,15 @@ export class PSBTTransaction {
   public outputs: TxOutput[] = []
   private changeOutputIndex = -1
   private signer: any
+  private segwitSigner: any
+  private segwitPubKey: any
   private address: string
   public changedAddress: string
   private network: bitcoin.Network = bitcoin.networks.bitcoin
   private feeRate: number
   private pubkey: string
   private addressType: AddressType
-  private enableRBF = true
+  private enableRBF = false
 
   /**
    * Creates an instance of PSBTTransaction.
@@ -32,15 +34,19 @@ export class PSBTTransaction {
    * @param feeRate - The fee rate in satoshis per byte.
    */
   constructor(
-    signer: any,
-    address: string,
-    pubkey: string,
-    addressType: AddressType,
-    feeRate?: number
+    signer,
+    address,
+    publicKey,
+    addressType,
+    feeRate,
+    segwitSigner?,
+    segwitPubKey?
   ) {
     this.signer = signer
+    this.segwitSigner = segwitSigner
+    this.segwitPubKey = segwitPubKey
     this.address = address
-    this.pubkey = pubkey
+    this.pubkey = publicKey
     this.addressType = addressType
     this.feeRate = feeRate || 5
   }
@@ -65,8 +71,16 @@ export class PSBTTransaction {
    * Adds an input to the transaction.
    * @param {UnspentOutput} utxo - The unspent transaction output to add as an input.
    */
-  addInput(utxo: UnspentOutput) {
+  addInput(utxo: UnspentOutput, isSegwit: boolean = false) {
+    if (isSegwit) {
+      this.inputs.push(utxoToInput(utxo, Buffer.from(this.segwitPubKey, 'hex')))
+      return
+    }
+
     this.inputs.push(utxoToInput(utxo, Buffer.from(this.pubkey, 'hex')))
+  }
+  getNumberOfInputs() {
+    return this.inputs.length
   }
 
   /**
@@ -213,7 +227,8 @@ export class PSBTTransaction {
       typeof _psbt === 'string'
         ? bitcoin.Psbt.fromHex(_psbt as string, { network: psbtNetwork })
         : (_psbt as bitcoin.Psbt)
-    psbt.data.inputs.forEach((v, index) => {
+
+    psbt.data.inputs.forEach((v, index: number) => {
       let script: any = null
       let value = 0
       if (v.witnessUtxo) {
@@ -229,9 +244,17 @@ export class PSBTTransaction {
       if (script && !isSigned) {
         const address = PsbtAddress.fromOutputScript(script, psbtNetwork)
         if (isRevealTx || (!isRevealTx && this.address === address)) {
+          if (v.tapInternalKey) {
+            toSignInputs.push({
+              index: index,
+              publicKey: this.pubkey,
+              sighashTypes: v.sighashType ? [v.sighashType] : undefined,
+            })
+          }
+        } else {
           toSignInputs.push({
-            index,
-            publicKey: this.pubkey,
+            index: index,
+            publicKey: this.segwitPubKey,
             sighashTypes: v.sighashType ? [v.sighashType] : undefined,
           })
         }
@@ -263,7 +286,7 @@ export class PSBTTransaction {
       psbt.addOutput(v)
     })
 
-    await this.signPsbt(psbt)
+    await this.signPsbt(psbt, true)
 
     return psbt
   }
@@ -293,22 +316,27 @@ export class PSBTTransaction {
       const lostInternalPubkey = !v.tapInternalKey
       if (isNotSigned && isP2TR && lostInternalPubkey) {
         const tapInternalKey = assertHex(Buffer.from(this.pubkey, 'hex'))
-        const { output } = bitcoin.payments.p2tr({
+        const p2tr = bitcoin.payments.p2tr({
           internalPubkey: tapInternalKey,
           network: psbtNetwork,
         })
-        if (v.witnessUtxo?.script.toString('hex') == output?.toString('hex')) {
+        if (
+          v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
+        ) {
           v.tapInternalKey = tapInternalKey
         }
       }
     })
+    await this.signer(psbt, [toSignInputs[0]])
+    await this.segwitSigner(psbt, [toSignInputs[1]])
 
-    psbt = await this.signer(psbt, toSignInputs)
     if (autoFinalized) {
       console.log('autoFinalized')
-      toSignInputs.forEach((v) => {
-        psbt.finalizeInput(v.index)
-      })
+      try {
+        psbt.finalizeAllInputs()
+      } catch (error) {
+        console.log(error, 'Was not finalized')
+      }
     }
 
     return psbt
@@ -397,7 +425,7 @@ ${this.outputs
   })
   .join('')}
 
-total: ${this.getTotalOutput() - feePaid} Sats
+total: ${this.getTotalOutput()} Sats
 =============================================================================================
     `)
   }

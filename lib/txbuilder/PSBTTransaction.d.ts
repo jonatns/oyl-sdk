@@ -1,10 +1,12 @@
 import * as bitcoin from 'bitcoinjs-lib';
-import { AddressType, UnspentOutput, TxOutput, ToSignInput } from '../shared/interface';
+import { UnspentOutput, TxOutput, ToSignInput } from '../shared/interface';
 export declare class PSBTTransaction {
     private inputs;
     outputs: TxOutput[];
     private changeOutputIndex;
     private signer;
+    private segwitSigner;
+    private segwitPubKey;
     private address;
     changedAddress: string;
     private network;
@@ -20,7 +22,7 @@ export declare class PSBTTransaction {
      * @param addressType - The type of address being used.
      * @param feeRate - The fee rate in satoshis per byte.
      */
-    constructor(signer: any, address: string, pubkey: string, addressType: AddressType, feeRate?: number);
+    constructor(signer: any, address: any, publicKey: any, addressType: any, feeRate: any, segwitSigner?: any, segwitPubKey?: any);
     /**
      * Sets whether to enable Replace-by-Fee for the transaction.
      * @param {boolean} enable - A boolean to enable or disable RBF.
@@ -35,7 +37,8 @@ export declare class PSBTTransaction {
      * Adds an input to the transaction.
      * @param {UnspentOutput} utxo - The unspent transaction output to add as an input.
      */
-    addInput(utxo: UnspentOutput): void;
+    addInput(utxo: UnspentOutput, isSegwit?: boolean): void;
+    getNumberOfInputs(): number;
     /**
      * Calculates the total value of all inputs in the transaction.
      * @returns {number} The total input value in satoshis.
