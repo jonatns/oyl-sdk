@@ -322,55 +322,55 @@ export async function runCLI() {
       return await loadRpc(options)
       break
     case 'test':
-      // const mnemonic =
-      //   'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
-      // const tapWallet = new Wallet()
-      // const tapPayload = await tapWallet.fromPhrase({
-      //   mnemonic: mnemonic.trim(),
-      //   hdPath: RequiredPath[3],
-      //   type: 'taproot',
-      // })
-      // const signer = tapPayload.keyring.keyring
-      // const tapSigner = signer.signTransaction.bind(signer)
+      const mnemonic =
+        'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
+      const tapWallet = new Wallet()
+      const tapPayload = await tapWallet.fromPhrase({
+        mnemonic: mnemonic.trim(),
+        hdPath: RequiredPath[3],
+        type: 'taproot',
+      })
+      const signer = tapPayload.keyring.keyring
+      const tapSigner = signer.signTransaction.bind(signer)
 
-      // return await inscribeTest({
-      //   feeFromAddress:
-      //     'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-      //   taprootPublicKey:
-      //     '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
-      //   changeAddress:
-      //     'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-      //   destinationAddress:
-      //     'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
-      //   feeRate: 70,
-      //   token: 'HODL',
-      //   signer: tapSigner,
-      //   amount: 100,
-      // })
+      return await inscribeTest({
+        feeFromAddress:
+          'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+        taprootPublicKey:
+          '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
+        changeAddress:
+          'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+        destinationAddress:
+          'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
+        feeRate: 70,
+        token: 'HODL',
+        signer: tapSigner,
+        amount: 100,
+      })
 
-      async function createOrdPsbtTx() {
-        const wallet = new Wallet()
-        const test0 = await wallet.createOrdPsbtTx({
-          changeAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-          fromAddress:
-            'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-          inscriptionId:
-            '275d099a2244bee278d451859a74918e7422d20627245c31c86e154a03f0ded7i0',
-          taprootPubKey:
-            '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
-          segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-          segwitPubKey:
-            '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
-          toAddress:
-            'bc1pkvt4pj7jgj02s95n6sn56fhgl7t7cfx5mj4dedsqyzast0whpchs7ujd7y',
-          txFee: 68,
-          mnemonic:
-            'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
-        })
-        console.log(test0)
-      }
-      const resp = await createOrdPsbtTx()
-      return resp
+      // async function createOrdPsbtTx() {
+      //   const wallet = new Wallet()
+      //   const test0 = await wallet.createOrdPsbtTx({
+      //     changeAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+      //     fromAddress:
+      //       'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+      //     inscriptionId:
+      //       '275d099a2244bee278d451859a74918e7422d20627245c31c86e154a03f0ded7i0',
+      //     taprootPubKey:
+      //       '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
+      //     segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+      //     segwitPubKey:
+      //       '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
+      //     toAddress:
+      //       'bc1pkvt4pj7jgj02s95n6sn56fhgl7t7cfx5mj4dedsqyzast0whpchs7ujd7y',
+      //     txFee: 68,
+      //     mnemonic:
+      //       'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
+      //   })
+      //   console.log(test0)
+      // }
+      // const resp = await createOrdPsbtTx()
+      // return resp
       break
     default:
       return await callAPI(yargs.argv._[0], options)
