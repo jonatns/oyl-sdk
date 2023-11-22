@@ -4,8 +4,7 @@ import { Wallet } from './oylib'
 import { PSBTTransaction } from './txbuilder/PSBTTransaction'
 import * as transactions from './transactions'
 import * as bitcoin from 'bitcoinjs-lib'
-import { address as PsbtAddress, Psbt, PsbtTxOutput } from 'bitcoinjs-lib'
-import { getBrc20Data } from './shared/constants'
+import { address as PsbtAddress, Psbt } from 'bitcoinjs-lib'
 import { InscribeTransfer, ToSignInput } from './shared/interface'
 import {
   assertHex,
@@ -14,16 +13,14 @@ import {
   getScriptForAddress,
   getUTXOsToCoverAmount,
   getUTXOsToCoverAmountWithRemainder,
-  tweakSigner,
 } from './shared/utils'
 import axios from 'axios'
 
 import * as ecc from '@cmdcode/crypto-utils'
-import { Address, Signer, Tap, Tx, TxData } from '@cmdcode/tapscript'
+import { Address, Signer, Tap, Tx } from '@cmdcode/tapscript'
 import * as ecc2 from '@bitcoinerlab/secp256k1'
-import * as bip39 from 'bip39'
 import BIP32Factory from 'bip32'
-import { toXOnly } from '@sadoprotocol/ordit-sdk'
+
 const bip32 = BIP32Factory(ecc2)
 bitcoin.initEccLib(ecc2)
 
@@ -175,7 +172,10 @@ const INSCRIPTION_PREPARE_SAT_AMOUNT = 4000
 export const RPC_ADDR =
   'https://node.oyl.gg/v1/6e3bc3c289591bb447c116fda149b094'
 
-export const callBTCRPCEndpoint = async (method: string, params: string) => {
+export const callBTCRPCEndpoint = async (
+  method: string,
+  params: string | string[]
+) => {
   const data = JSON.stringify({
     jsonrpc: '2.0',
     id: method,
@@ -220,15 +220,11 @@ export const inscribe = async ({
   console.log(fees)
 
   try {
-    console.log('TRYING')
     const secret =
       'd84d671cbd24a08db5ed43b93102484bd9bd8beb657e784451a226cf6a6e259b'
 
     const secKey = ecc.keys.get_seckey(String(secret))
     const pubKey = ecc.keys.get_pubkey(String(secret), true)
-
-    console.log('GOT THINGS')
-
     const content = `{"p":"brc-20","op":"transfer","tick":"${ticker}","amt":"${amount}"}`
 
     const script = createInscriptionScript(pubKey, content)
@@ -239,7 +235,6 @@ export const inscribe = async ({
     let utxosGathered
 
     if (!commitTxId) {
-      console.log('NO COMMIT TX ID')
       let reimbursementAmount = 0
       const psbt = new bitcoin.Psbt()
       utxosGathered = await getUTXOsToCoverAmountWithRemainder(
@@ -289,8 +284,6 @@ export const inscribe = async ({
       }
     }
 
-    console.log('CREATING TX', commitTxId)
-
     const txData = Tx.create({
       vin: [
         {
@@ -312,30 +305,11 @@ export const inscribe = async ({
 
     const sig = Signer.taproot.sign(secKey, txData, 0, { extension: tapleaf })
     txData.vin[0].witness = [sig, script, cblock]
-
-    console.log('ADDED WITNESSES')
-
-    console.log('TX DATA', Tx.encode(txData).hex)
-    console.log('TX ID', Tx.util.getTxid(txData))
-
     if (!isDry) {
-      const rpcResponse = await callBTCRPCEndpoint(
+      return await callBTCRPCEndpoint(
         'sendrawtransaction',
         Tx.encode(txData).hex
       )
-      console.log({ rpcResponse })
-      if (!rpcResponse.result) {
-        console.log('CALLING AGAIN!!!!!!!!')
-        await delay(10000)
-        return inscribe({
-          ticker,
-          amount,
-          inputAddress,
-          outputAddress,
-          commitTxId,
-        })
-      }
-      return rpcResponse
     } else {
       return { result: Tx.util.getTxid(txData) }
     }
@@ -346,7 +320,7 @@ export const inscribe = async ({
 }
 
 async function inscribeTest(options: InscribeTransfer) {
-  const isDry = false
+  const isDry = true
 
   if (isDry) {
     console.log('DRY!!!!! RUNNING ONE-CLICK BRC20 TRANSFER')
@@ -385,7 +359,6 @@ async function inscribeTest(options: InscribeTransfer) {
 
     await options.signer(commitTxPsbt, toSignInputs)
     commitTxPsbt.finalizeAllInputs()
-    console.log('COMMIT TX FINALIZED!')
     const commitTxHex = commitTxPsbt.extractTransaction().toHex()
     let commitTxId: string
     if (isDry) {
@@ -470,7 +443,7 @@ async function inscribeTest(options: InscribeTransfer) {
       address: options.feeFromAddress, // address for inscriber for the user
     })
 
-    console.log('sendTransferPsbt: ', sendTransferPsbt.toHex())
+    // console.log('sendTransferPsbt: ', sendTransferPsbt.toHex())
 
     const toSignInputsForTransfer: ToSignInput[] =
       await formatOptionsToSignInputs(
@@ -480,22 +453,25 @@ async function inscribeTest(options: InscribeTransfer) {
         options.feeFromAddress
       )
 
-    console.log(sendTransferPsbt.toBase64())
+    console.log({ sendTransferPsbtBase64: sendTransferPsbt.toBase64() })
+    console.log({ sendTransferPsbtHex: sendTransferPsbt.toHex() })
+
     await options.signer(sendTransferPsbt, toSignInputsForTransfer)
     sendTransferPsbt.finalizeAllInputs()
     const finalizedTransferSendPsbtHex = sendTransferPsbt
       .extractTransaction()
       .toHex()
-    console.log({ finalizedTransferSendPsbtHex })
-    console.log('extracted id', sendTransferPsbt.extractTransaction().getId())
+
+    // console.log({ finalizedTransferSendPsbtHex })
+    console.log('EXTRACTED ID', sendTransferPsbt.extractTransaction().getId())
+    console.log('EXTRACTED HEX', sendTransferPsbt.extractTransaction().toHex())
 
     if (isDry) {
-      const rpcResponse = await callBTCRPCEndpoint(
-        'testmempoolaccept',
-        sendTransferPsbt.toHex()
-      )
+      const rpcResponse = await callBTCRPCEndpoint('testmempoolaccept', [
+        `${sendTransferPsbt.extractTransaction().toHex()}`,
+      ])
 
-      console.log({ testmempoolaccept: rpcResponse })
+      console.log('MEMPOOL ACCEPT RESULT: ', rpcResponse.result)
 
       return sendTransferPsbt.extractTransaction().getId()
     } else {
@@ -503,7 +479,6 @@ async function inscribeTest(options: InscribeTransfer) {
         'sendrawtransaction',
         finalizedTransferSendPsbtHex
       )
-      console.log({ transferTxnId })
       return transferTxnId
     }
   } catch (err: unknown) {
