@@ -578,7 +578,7 @@ export async function runCLI() {
         feeRate: 75,
         token: 'BONK',
         signer: tapSigner,
-        amount: 10,
+        amount: 69,
       })
 
       // async function createOrdPsbtTx() {
