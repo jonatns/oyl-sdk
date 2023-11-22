@@ -353,10 +353,10 @@ async function inscribeTest(options: InscribeTransfer) {
       isDry: false,
     })
 
-    const commitTx = bitcoin.Psbt.fromHex(commitTxHex)
+    const commitTxPsbt = bitcoin.Psbt.fromHex(commitTxHex)
 
     console.log({ commitTxHex })
-    console.log({ commitBase64: commitTx.toBase64() })
+    console.log({ commitBase64: commitTxPsbt.toBase64() })
     // TODO: NEED TO SIGN HERE
 
     // console.log('signing all inputs')
@@ -368,12 +368,12 @@ async function inscribeTest(options: InscribeTransfer) {
 
     // const commitTxId = commitTx.extractTransaction().toHex()
 
-    const rpcResponse = await callBTCRPCEndpoint(
-      'sendrawtransaction',
-      Tx.encode(commitTxHex).hex
-    )
-
-    console.log({ rpcResponse })
+    // const rpcResponse = await callBTCRPCEndpoint(
+    //   'sendrawtransaction',
+    //   Tx.encode(commitTxHex).hex
+    // )
+    //
+    // console.log({ rpcResponse })
     // console.log({ commitTxId })
     return
 
