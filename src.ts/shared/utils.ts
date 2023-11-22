@@ -97,6 +97,10 @@ export function satoshisToAmount(val: number) {
   return num.dividedBy(100000000).toFixed(8)
 }
 
+export function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 export function amountToSatoshis(val: any) {
   const num = new BigNumber(val)
   return num.multipliedBy(100000000).toNumber()

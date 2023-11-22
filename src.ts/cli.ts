@@ -11,6 +11,7 @@ import { address as PsbtAddress } from 'bitcoinjs-lib'
 import {
   assertHex,
   calculateAmountGathered,
+  delay,
   getScriptForAddress,
   getUTXOsToCoverAmount,
 } from './shared/utils'
@@ -151,6 +152,8 @@ async function inscribeTest(options: InscribeTransfer) {
   })
   //GENERATE COMMIT PAYMENT REQUEST - THIS DUMPS AN ADDRESS FROM THE PUBKEY & TOTAL COST FOR INSCRIPTION
   const revealed = await transaction.generateCommit()
+  console.log(revealed.address)
+  console.log(revealed.revealFee)
   //SEND BITCOIN FROM REGULAR ADDRESS TO THE DUMPED ADDRESS
   const wallet = new Wallet()
   const depositRevealFee = await wallet.createPsbtTx({
@@ -170,6 +173,7 @@ async function inscribeTest(options: InscribeTransfer) {
   //ONCE THE TX IS CONFIRMED, CHECK IF ITS READY TO BE BUILT
   // const ready = await transaction.isReady()
   //IF READY, BUILD THE REVEAL TX
+  await delay(10000)
   await transaction.isReady({ skipStrictSatsCheck: true })
   await transaction.build()
   //YOU WILL GET THE PSBT HEX
