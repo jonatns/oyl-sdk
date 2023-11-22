@@ -236,11 +236,13 @@ export const inscribe = async ({
     const [tpubkey, cblock] = Tap.getPubKey(pubKey, { target: tapleaf })
     const address = Address.p2tr.fromPubKey(tpubkey)
 
+    let utxosGathered
+
     if (!commitTxId) {
       console.log('NO COMMIT TX ID')
       let reimbursementAmount = 0
       const psbt = new bitcoin.Psbt()
-      const utxosGathered = await getUTXOsToCoverAmountWithRemainder(
+      utxosGathered = await getUTXOsToCoverAmountWithRemainder(
         inputAddress,
         fees
       )
@@ -283,6 +285,7 @@ export const inscribe = async ({
       return {
         psbtHex: psbt.toHex(),
         psbtBase64: psbt.toBase64(),
+        utxosGathered,
       }
     }
 
@@ -313,6 +316,7 @@ export const inscribe = async ({
     console.log('ADDED WITNESSES')
 
     console.log('TX DATA', Tx.encode(txData).hex)
+    console.log('TX ID', Tx.util.getTxid(txData))
 
     if (!isDry) {
       const rpcResponse = await callBTCRPCEndpoint(
@@ -333,7 +337,7 @@ export const inscribe = async ({
       }
       return rpcResponse
     } else {
-      return { revealTxId: Tx.util.getTxid(txData) }
+      return { result: Tx.util.getTxid(txData) }
     }
   } catch (e: any) {
     // console.error(e);
@@ -342,15 +346,28 @@ export const inscribe = async ({
 }
 
 async function inscribeTest(options: InscribeTransfer) {
-  try {
-    const brc20TransferMeta = getBrc20Data({
-      tick: options.token,
-      amount: options.amount,
-    })
-    console.log({ brc20TransferMeta })
+  const isDry = false
 
-    // START CREATING TRANSFER INSCRIPTION
-    const { psbtHex: commitTxResponse } = await inscribe({
+  if (isDry) {
+    console.log('DRY!!!!! RUNNING ONE-CLICK BRC20 TRANSFER')
+  } else {
+    console.log('WET!!!!!!! 5')
+    await delay(1000)
+    console.log('WET!!!!!!! 4')
+    await delay(1000)
+    console.log('WET!!!!!!! 3')
+    await delay(1000)
+    console.log('WET!!!!!!! 2')
+    await delay(1000)
+    console.log('WET!!!!!!! 1')
+    await delay(1000)
+    console.log('LAUNCH!')
+    await delay(1000)
+  }
+
+  try {
+    // CREATE TRANSFER INSCRIPTION
+    const { psbtHex: commitTxResponse, utxosGathered } = await inscribe({
       ticker: options.token,
       amount: options.amount,
       inputAddress: options.feeFromAddress,
@@ -359,10 +376,6 @@ async function inscribeTest(options: InscribeTransfer) {
     })
 
     const commitTxPsbt = bitcoin.Psbt.fromHex(commitTxResponse)
-
-    console.log({ commitBase64: commitTxPsbt.toBase64() })
-    // TODO: NEED TO SIGN HERE
-
     const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs(
       commitTxPsbt,
       false,
@@ -372,20 +385,20 @@ async function inscribeTest(options: InscribeTransfer) {
 
     await options.signer(commitTxPsbt, toSignInputs)
     commitTxPsbt.finalizeAllInputs()
-
-    // console.log('signing all inputs')
-    // console.log(options.signer)
-    // console.log('input count', commitTx.inputCount)
-    // await commitTx.signAllInputsAsync(options.signer)
-    console.log('finalizing')
-
+    console.log('COMMIT TX FINALIZED!')
     const commitTxHex = commitTxPsbt.extractTransaction().toHex()
+    let commitTxId: string
+    if (isDry) {
+      commitTxId = commitTxPsbt.extractTransaction().getId()
+    } else {
+      const { result } = await callBTCRPCEndpoint(
+        'sendrawtransaction',
+        commitTxHex
+      )
+      commitTxId = result
+    }
 
-    const { result: commitTxId } = await callBTCRPCEndpoint(
-      'sendrawtransaction',
-      commitTxHex
-    )
-    console.log(commitTxId)
+    console.log({ commitTxId })
     console.log('waiting for 10 seconds')
     await delay(10000)
 
@@ -394,16 +407,16 @@ async function inscribeTest(options: InscribeTransfer) {
       amount: options.amount,
       inputAddress: options.feeFromAddress,
       outputAddress: options.feeFromAddress,
-      isDry: false,
+      isDry,
       commitTxId,
     })
-    console.log('result', revealTxId)
+    console.log({ revealTxId })
     console.log('waiting for 10 seconds')
     await delay(10000)
+    console.log(
+      `CREATING PSBT TO SEND ${options.amount} ${options.token} TO ${options.destinationAddress}`
+    )
 
-    // // FINISHED CREATING TRANSFER INSCRIPTION
-
-    // // START CREATING PSBT TO SEND TO RECIPIENT
     const sendTransferPsbt = new bitcoin.Psbt()
     let reimbursementAmount = 0
     const script = await getScriptForAddress(options.feeFromAddress)
@@ -424,19 +437,15 @@ async function inscribeTest(options: InscribeTransfer) {
 
     const vB = sendTransferPsbt.inputCount * 149 + 3 * 32 + 12
     const fee = vB * options.feeRate
-
     const utxosGatheredForFees = await getUTXOsToCoverAmount(
       options.feeFromAddress,
-      fee
+      fee,
+      [],
+      utxosGathered
     )
     const amountGathered = calculateAmountGathered(utxosGatheredForFees)
     if (amountGathered === 0 || utxosGatheredForFees.length === 0) {
       new Error('INSUFFICIENT_FUNDS_FOR_INSCRIBE')
-    }
-
-    reimbursementAmount = amountGathered - fee
-    if (reimbursementAmount < 0) {
-      new Error('FEES_LESS_THEN_GATHERED')
     }
 
     for (let utxo of utxosGatheredForFees) {
@@ -454,12 +463,14 @@ async function inscribeTest(options: InscribeTransfer) {
       })
     }
 
+    reimbursementAmount = amountGathered - fee
+
     sendTransferPsbt.addOutput({
       value: reimbursementAmount,
       address: options.feeFromAddress, // address for inscriber for the user
     })
 
-    console.log(sendTransferPsbt.toHex())
+    console.log('sendTransferPsbt: ', sendTransferPsbt.toHex())
 
     const toSignInputsForTransfer: ToSignInput[] =
       await formatOptionsToSignInputs(
@@ -472,15 +483,29 @@ async function inscribeTest(options: InscribeTransfer) {
     console.log(sendTransferPsbt.toBase64())
     await options.signer(sendTransferPsbt, toSignInputsForTransfer)
     sendTransferPsbt.finalizeAllInputs()
-    const rawTx = sendTransferPsbt.extractTransaction().toHex()
-    console.log({ rawTx })
+    const finalizedTransferSendPsbtHex = sendTransferPsbt
+      .extractTransaction()
+      .toHex()
+    console.log({ finalizedTransferSendPsbtHex })
+    console.log('extracted id', sendTransferPsbt.extractTransaction().getId())
 
-    const { result: transferTxnId } = await callBTCRPCEndpoint(
-      'sendrawtransaction',
-      rawTx
-    )
-    console.log(transferTxnId)
-    return sendTransferPsbt.extractTransaction().getId()
+    if (isDry) {
+      const rpcResponse = await callBTCRPCEndpoint(
+        'testmempoolaccept',
+        sendTransferPsbt.toHex()
+      )
+
+      console.log({ testmempoolaccept: rpcResponse })
+
+      return sendTransferPsbt.extractTransaction().getId()
+    } else {
+      const { result: transferTxnId } = await callBTCRPCEndpoint(
+        'sendrawtransaction',
+        finalizedTransferSendPsbtHex
+      )
+      console.log({ transferTxnId })
+      return transferTxnId
+    }
   } catch (err: unknown) {
     if (err instanceof Error) {
       console.error(err)
@@ -555,7 +580,8 @@ export async function runCLI() {
       break
     case 'test':
       const mnemonic =
-        'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
+        'speak sustain unfold umbrella lobster sword style kingdom notable agree supply come'
+      // 'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
       const tapWallet = new Wallet()
       const tapPayload = await tapWallet.fromPhrase({
         mnemonic: mnemonic.trim(),
@@ -567,13 +593,13 @@ export async function runCLI() {
 
       return await inscribeTest({
         feeFromAddress:
-          'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-        taprootPublicKey:
-          '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
-        changeAddress:
-          'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-        destinationAddress:
           'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
+        taprootPublicKey:
+          '02859513d2338a02f032e55c57c10f418f9b727f9e9f3dc8d8bf90238e61699018',
+        changeAddress:
+          'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
+        destinationAddress:
+          'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
         feeRate: 75,
         token: 'BONK',
         signer: tapSigner,

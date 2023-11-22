@@ -258,7 +258,8 @@ export const getInscriptionsByWalletBIS = async (
 export const getUTXOsToCoverAmount = async (
   address: string,
   amountNeeded: number,
-  inscriptionLocs?: string[]
+  inscriptionLocs?: string[],
+  usedUtxos?: IBlockchainInfoUTXO[]
 ) => {
   const unspentsOrderedByValue = await getUnspentsForAddressInOrderByValue(
     address
@@ -285,6 +286,19 @@ export const getUTXOsToCoverAmount = async (
         inscriptionLocs?.find((utxoLoc: any) => utxoLoc === utxoSatpoint)) ||
       currentUTXO.value <= 546
     ) {
+      continue
+    }
+
+    if (
+      (usedUtxos &&
+        usedUtxos?.find(
+          (utxoLoc: IBlockchainInfoUTXO) =>
+            utxo.tx_hash_big_endian === utxoLoc.tx_hash_big_endian &&
+            utxo.tx_output_n === utxoLoc.tx_output_n
+        )) ||
+      currentUTXO.value <= 546
+    ) {
+      console.log('SKIPPIN!!!!!!!')
       continue
     }
 
