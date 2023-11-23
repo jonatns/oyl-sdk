@@ -16,7 +16,7 @@ export async function loadRpc(options) {
  try {
   const blockInfo = await wallet.sandshrewBtcClient.bitcoindRpc.decodePSBT(process.env.PSBT_BASE64);
   const fees = await wallet.esploraRpc.getAddressUtxo(process.env.TAPROOT_ADDRESS);
-  console.log('Block Info:', blockInfo);
+  console.log('Block Info:', JSON.stringify(blockInfo));
 } catch (error) {
   console.error('Error:', error);
 }
@@ -28,7 +28,7 @@ const options = {
   pubKey: process.env.TAPROOT_PUBKEY,
   feeRate: parseFloat(process.env.FEE_RATE),
   psbtBase64: process.env.PSBT_BASE64,
-  price: 0.0005
+  price: 0.001
 }
 const intent = new BuildMarketplaceTransaction(options)
 const builder = await intent.psbtBuilder();
@@ -61,7 +61,7 @@ export async function swapFlow() {
     network: bitcoin.networks.bitcoin,
   })
 
-  //console.log(psbt)
+  
   const wallet = new Wallet()
   const payload = await wallet.fromPhrase({
     mnemonic: mnemonic.trim(),
@@ -76,17 +76,21 @@ export async function swapFlow() {
    if (addressType == null) throw Error('Invalid Address Type')
 
    const tx = new PSBTTransaction(signer, from, pubKey, addressType, feeRate)
-   const signedPsbt = await tx.signPsbt(psbt)
+   const signedPsbt = await tx.signPsbt(psbt, false)
+   signedPsbt.finalizeAllInputs()
+   console.log(signedPsbt.toBase64())
    //@ts-ignore
    psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
  
    //EXTRACT THE RAW TX
-   //const rawtx = signedPsbt.extractTransaction().toHex()
-   //console.log('rawtx', rawtx)
+   const rawtx = signedPsbt.extractTransaction().toHex()
+   console.log('rawtx', rawtx)
    //BROADCAST THE RAW TX TO THE NETWORK
-   //const result = await wallet.apiClient.pushTx({ transactionHex: rawtx })
+   const result = await wallet.apiClient.pushTx({ transactionHex: rawtx })
    //GET THE TX_HASH
-   //const ready_txId = psbt.extractTransaction().getId()
+   console.log(result)
+   const ready_txId = psbt.extractTransaction().getId()
+   console.log(ready_txId)
    //CONFIRM TRANSACTION IS CONFIRMED
 }
 
