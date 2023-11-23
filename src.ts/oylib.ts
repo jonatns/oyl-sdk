@@ -509,57 +509,22 @@ export class Wallet {
    * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
    */
   async createOrdPsbtTx({
+    publicKey,
     fromAddress,
     toAddress,
     changeAddress,
     txFee,
-    segwitAddress,
-    taprootPubKey,
-    segwitPubKey,
+    signer,
     inscriptionId,
-    mnemonic,
   }: {
+    publicKey: string
     fromAddress: string
     toAddress: string
     changeAddress: string
     txFee: number
-    segwitAddress: string
-    taprootPubKey: string
-    segwitPubKey: string
+    signer: any
     inscriptionId: string
-    mnemonic: string
   }) {
-    const segwitAddressType = transactions.getAddressType(segwitAddress)
-    const addressType = transactions.getAddressType(fromAddress)
-    if (addressType == null || segwitAddressType == null) {
-      throw Error('Unrecognized Address Type')
-    }
-    const wallet = new Wallet()
-    let payload: any
-    if (segwitAddressType === 2) {
-      payload = await wallet.fromPhrase({
-        mnemonic: mnemonic.trim(),
-        hdPath: RequiredPath[1],
-        type: 'nested-segwit',
-      })
-    }
-    if (segwitAddressType === 3) {
-      payload = await wallet.fromPhrase({
-        mnemonic: mnemonic.trim(),
-        hdPath: RequiredPath[2],
-        type: 'native-segwit',
-      })
-    }
-    const tapWallet = new Wallet()
-    const tapPayload = await tapWallet.fromPhrase({
-      mnemonic: mnemonic.trim(),
-      hdPath: RequiredPath[3],
-      type: 'taproot',
-    })
-    const segwitKeyring = payload.keyring.keyring
-    const tapKeyring = tapPayload.keyring.keyring
-    const segwitSigner = segwitKeyring.signTransaction.bind(segwitKeyring)
-    const signer = tapKeyring.signTransaction.bind(tapKeyring)
     const { data: collectibleData } = await this.apiClient.getCollectiblesById(
       inscriptionId
     )
@@ -576,28 +541,23 @@ export class Wallet {
     }
 
     const allUtxos = await this.getUtxosArtifacts({ address: fromAddress })
-    const segwitUtxos = await this.getUtxosArtifacts({ address: segwitAddress })
     const feeRate = txFee
+    const addressType = transactions.getAddressType(fromAddress)
+    if (addressType == null) throw Error('Unrecognized Address Type')
 
     const psbtTx = new PSBTTransaction(
       signer,
       fromAddress,
-      taprootPubKey,
+      publicKey,
       addressType,
-      feeRate,
-      segwitSigner,
-      segwitPubKey
+      feeRate
     )
-
     psbtTx.setChangeAddress(changeAddress)
     const finalizedPsbt = await buildOrdTx(
       psbtTx,
-      segwitUtxos,
       allUtxos,
-      segwitAddress,
       toAddress,
       metaOutputValue,
-      feeRate,
       inscriptionId
     )
 
@@ -612,7 +572,6 @@ export class Wallet {
       ...result,
     }
   }
-
   /**
    * Creates a Partially Signed Bitcoin Transaction (PSBT) to send regular satoshis, signs and broadcasts it.
    * @param {Object} params - The parameters for creating the PSBT.

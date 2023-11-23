@@ -176,18 +176,6 @@ async function createOrdPsbtTx() {
     activeIndexes: [0],
     customPath: 'unisat',
   })
-  const test0 = await wallet.createOrdPsbtTx({
-    changeAddress: '',
-    fromAddress: '',
-    inscriptionId: '',
-    taprootPubKey: '',
-    segwitAddress: '',
-    segwitPubKey: '',
-    toAddress: '',
-    txFee: 0,
-    mnemonic: '',
-  })
-  console.log(test0)
 }
 
 export async function runCLI() {
