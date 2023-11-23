@@ -20,7 +20,7 @@ export declare class BuildMarketplaceTransaction {
         price: number;
     });
     getUTXOsToCoverAmount(amountNeeded: number, inscriptionLocs?: string[]): Promise<IBlockchainInfoUTXO[]>;
-    psbtBuilder(): Promise<void>;
+    psbtBuilder(): Promise<string>;
     getAllUTXOsWorthASpecificValue(value: number): Promise<IBlockchainInfoUTXO[]>;
     calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]): number;
     getUnspentsWithConfirmationsForAddress(): Promise<IBlockchainInfoUTXO[]>;

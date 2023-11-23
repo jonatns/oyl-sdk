@@ -34,8 +34,12 @@ export class BuildMarketplaceTransaction {
         amountNeeded: number,
         inscriptionLocs?: string[]
     ) {
+        console.log("=========== Getting Unspents for address in order by value ========")
         const unspentsOrderedByValue = await this.getUnspentsForAddressInOrderByValue()
+        console.log("unspentsOrderedByValue" + unspentsOrderedByValue)
+        console.log("=========== Getting Collectibles for address " + this.walletAddress + "========")
         const retrievedIxs = await this.apiClient.getCollectiblesByAddress(this.walletAddress)
+        console.log("=========== Gotten Collectibles, splitting utxos ========")
         const bisInscriptionLocs = retrievedIxs.map(
             (utxo) => utxo.satpoint
         ) as string[]
@@ -48,7 +52,7 @@ export class BuildMarketplaceTransaction {
 
         let sum = 0
         const result: IBlockchainInfoUTXO[] = []
-
+        console.log("=========== Available inscription utxos: ", inscriptionLocs)
         for await (let utxo of unspentsOrderedByValue) {
             const currentUTXO = utxo
             const utxoSatpoint = getSatpointFromUtxo(currentUTXO)
@@ -71,6 +75,7 @@ export class BuildMarketplaceTransaction {
     }
 
     async psbtBuilder() {
+        console.log("=========== Decoding PSBT with bitcoinjs ========")
         const marketplacePsbt = bitcoin.Psbt.fromBase64(this.psbtBase64)
         const costPrice = this.orderPrice * 100000000
         const requiredSatoshis = (costPrice) + 30000 + 546 + 1200
@@ -86,12 +91,16 @@ export class BuildMarketplaceTransaction {
             throw Error("not enough padding utxos (600 sat) for marketplace buy")
         }
 
+        console.log("=========== Getting Maker's Address ========")
         await this.getMakersAddress()
+        console.log("=========== Makers Address: ", this.makersAddress)
         if (!this.makersAddress){
             throw Error("Could not resolve maker's address")
         }
 
+        console.log("=========== Creating Inputs ========")
         const swapPsbt = new bitcoin.Psbt()
+        console.log("=========== Adding dummy utxos ========")
         for (let i = 0; i < 2; i++) {
             swapPsbt.addInput({
               hash: allUtxosWorth600[i].tx_hash_big_endian,
@@ -103,23 +112,28 @@ export class BuildMarketplaceTransaction {
               tapInternalKey: assertHex(Buffer.from(this.pubKey, 'hex')),
             })
           }
-
-          const takerInput = marketplacePsbt.txInputs[2]
-          const takerInputData = marketplacePsbt.data.inputs[2]
+        
+          console.log("=========== Fetching Maker Input Data ========")
+          const makerInput = marketplacePsbt.txInputs[2]
+          const makerInputData = marketplacePsbt.data.inputs[2]
+          console.log("=========== Maker Input: ", makerInput)
+          console.log("=========== Maker Input Data: ", makerInputData)
           swapPsbt.addInput({
-            hash: takerInput.hash.toString('hex'),
+            hash: makerInput.hash.toString('hex'),
             index: 0,
             witnessUtxo: {
               value: 546,
-              script: takerInputData?.witnessUtxo?.script as Buffer,
+              script: makerInputData?.witnessUtxo?.script as Buffer,
             },
-            tapInternalKey: takerInputData.tapInternalKey,
-            tapKeySig: takerInputData.tapKeySig,
+            tapInternalKey: makerInputData.tapInternalKey,
+            tapKeySig: makerInputData.tapKeySig,
             sighashType:
               bitcoin.Transaction.SIGHASH_SINGLE |
               bitcoin.Transaction.SIGHASH_ANYONECANPAY,
           })
 
+          console.log("=========== Adding available non ordinal UTXOS as input ========")
+          console.log("=========== Retreived Utxos to add: ", retrievedUtxos)
           for (let i = 0; i < retrievedUtxos.length; i++) {
             swapPsbt.addInput({
               hash: retrievedUtxos[i].tx_hash_big_endian,
@@ -132,6 +146,7 @@ export class BuildMarketplaceTransaction {
             })
           }
 
+          console.log("=========== Done Inputs now adding outputs ============")
           swapPsbt.addOutput({
             address: this.walletAddress,
             value: 1200,
@@ -158,6 +173,8 @@ export class BuildMarketplaceTransaction {
             address: this.walletAddress,
             value: remainder,
           })
+          console.log("=========== Returning PSBT Hex Value to be signed by taker ============")
+          return swapPsbt.toHex()
     }
 
 

@@ -8,6 +8,7 @@ import { Inscriber } from '@sadoprotocol/ordit-sdk'
 import { BRC_20_TRANSFER_META } from './shared/constants'
 import { InscribeTransfer } from './shared/interface'
 import "dotenv/config";
+import { BuildMarketplaceTransaction } from './txbuilder/buildMarketplaceTransaction'
 
 
 export async function loadRpc(options) {
@@ -20,7 +21,21 @@ export async function loadRpc(options) {
   console.error('Error:', error);
 }
 }
- 
+
+export async function testMarketplaceBuy (){
+const options = {
+  address: process.env.TAPROOT_ADDRESS,
+  pubKey: process.env.TAPROOT_PUBKEY,
+  feeRate: parseFloat(process.env.FEE_RATE),
+  psbtBase64: process.env.PSBT_BASE64,
+  price: 0.0005
+}
+const intent = new BuildMarketplaceTransaction(options)
+const builder = await intent.psbtBuilder();
+console.log(builder)
+}
+
+
 export async function viewPsbt(){
   console.log(bitcoin.Psbt.fromBase64(process.env.PSBT_BASE64, {
     network: bitcoin.networks.bitcoin,
