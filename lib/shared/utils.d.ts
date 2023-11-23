@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import * as bitcoin from 'bitcoinjs-lib';
-import { UnspentOutput, TxInput, IBlockchainInfoUTXO } from '../shared/interface';
+import { UnspentOutput, TxInput } from '../shared/interface';
 export declare const ECPair: import("ecpair").ECPairAPI;
 export declare const assertHex: (pubKey: Buffer) => Buffer;
 export declare function tweakSigner(signer: bitcoin.Signer, opts?: any): bitcoin.Signer;
@@ -9,4 +9,4 @@ export declare function amountToSatoshis(val: any): number;
 export declare const validator: (pubkey: Buffer, msghash: Buffer, signature: Buffer) => boolean;
 export declare function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput;
 export declare const getWitnessDataChunk: (content: string, encodeType?: BufferEncoding) => Buffer[];
-export declare const getSatpointFromUtxo: (utxo: IBlockchainInfoUTXO) => string;
+export declare const getSatpointFromUtxo: (utxo: any) => string;

@@ -65,7 +65,9 @@ export class EsploraRpc {
     }
 
     async getAddressUtxo (address: string) {
-        return await this._call("esplora_address::utxo", [address])
+        const response = await this._call("esplora_address::utxo", [address])
+        console.log("=========== Gotten Utxos to from address: ", response)
+        return response;
     }
     async getFeeEstimates () {
         return await this._call("esplora_fee-estimates")

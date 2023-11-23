@@ -158,6 +158,6 @@ export const getWitnessDataChunk = function (
 }
 
 
-export const getSatpointFromUtxo = (utxo: IBlockchainInfoUTXO) => {
-  return `${utxo.tx_hash_big_endian}:${utxo.tx_output_n}:0`
+export const getSatpointFromUtxo = (utxo) => {
+  return `${utxo.txid}:${utxo.vout}:0`
 }

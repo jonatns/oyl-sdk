@@ -1,9 +1,10 @@
-import { IBlockchainInfoUTXO } from "../shared/interface";
 import { OylApiClient } from '../apiclient'
 import {SandshrewBitcoinClient }from '../rpclient/sandshrew'
 import { EsploraRpc } from "../rpclient/esplora";
 import { assertHex, getSatpointFromUtxo } from "../shared/utils";
+import * as transactions from '../transactions'
 import * as bitcoin from 'bitcoinjs-lib'
+import { AddressType } from '../shared/interface';
 
 
 export class BuildMarketplaceTransaction {
@@ -16,6 +17,7 @@ export class BuildMarketplaceTransaction {
     public orderPrice: number
     public sandshrewBtcClient: SandshrewBitcoinClient
     public makersAddress: string | null
+    public takerScript: string
 
 
     constructor({ address, pubKey, feeRate, psbtBase64, price }: { address: string, pubKey: string, feeRate: number, psbtBase64: string, price: number }) {
@@ -27,6 +29,18 @@ export class BuildMarketplaceTransaction {
         this.feeRate = feeRate
         this.psbtBase64 = psbtBase64
         this.orderPrice = price
+        const tapInternalKey = assertHex(Buffer.from(this.pubKey, 'hex'))
+        const p2tr = bitcoin.payments.p2tr({
+          internalPubkey: tapInternalKey,
+          network: bitcoin.networks.bitcoin,
+        })
+        const addressType = transactions.getAddressType(this.walletAddress)
+        if (addressType == AddressType.P2TR){
+         this.takerScript = p2tr.output?.toString('hex')
+        } else {
+            throw Error ("Can only get script for taproot addresses")
+        }
+
     }
 
 
@@ -36,9 +50,10 @@ export class BuildMarketplaceTransaction {
     ) {
         console.log("=========== Getting Unspents for address in order by value ========")
         const unspentsOrderedByValue = await this.getUnspentsForAddressInOrderByValue()
-        console.log("unspentsOrderedByValue" + unspentsOrderedByValue)
+        console.log("unspentsOrderedByValue:",  unspentsOrderedByValue)
         console.log("=========== Getting Collectibles for address " + this.walletAddress + "========")
-        const retrievedIxs = await this.apiClient.getCollectiblesByAddress(this.walletAddress)
+        const retrievedIxs = (await this.apiClient.getCollectiblesByAddress(this.walletAddress)).data
+        console.log("=========== Collectibles:",  retrievedIxs)
         console.log("=========== Gotten Collectibles, splitting utxos ========")
         const bisInscriptionLocs = retrievedIxs.map(
             (utxo) => utxo.satpoint
@@ -51,7 +66,7 @@ export class BuildMarketplaceTransaction {
         }
 
         let sum = 0
-        const result: IBlockchainInfoUTXO[] = []
+        const result: any = []
         console.log("=========== Available inscription utxos: ", inscriptionLocs)
         for await (let utxo of unspentsOrderedByValue) {
             const currentUTXO = utxo
@@ -71,7 +86,7 @@ export class BuildMarketplaceTransaction {
             }
         }
 
-        return [] as IBlockchainInfoUTXO[]
+        return []
     }
 
     async psbtBuilder() {
@@ -86,7 +101,9 @@ export class BuildMarketplaceTransaction {
             throw Error("Not enough funds to purchase this offer")
         }
 
+        console.log("=========== Getting UTXOS Worth 600 sats ========")
         const allUtxosWorth600 = await this.getAllUTXOsWorthASpecificValue(600)
+        console.log("=========== UTXOs worth 600 sats: ", allUtxosWorth600)
         if (allUtxosWorth600.length < 2) {
             throw Error("not enough padding utxos (600 sat) for marketplace buy")
         }
@@ -101,13 +118,14 @@ export class BuildMarketplaceTransaction {
         console.log("=========== Creating Inputs ========")
         const swapPsbt = new bitcoin.Psbt()
         console.log("=========== Adding dummy utxos ========")
+        
         for (let i = 0; i < 2; i++) {
             swapPsbt.addInput({
-              hash: allUtxosWorth600[i].tx_hash_big_endian,
-              index: allUtxosWorth600[i].tx_output_n,
+              hash: allUtxosWorth600[i].txid,
+              index: allUtxosWorth600[i].vout,
               witnessUtxo: {
                 value: allUtxosWorth600[i].value,
-                script: Buffer.from(allUtxosWorth600[i].script, 'hex'),
+                script: Buffer.from(this.takerScript, 'hex'),
               },
               tapInternalKey: assertHex(Buffer.from(this.pubKey, 'hex')),
             })
@@ -136,11 +154,11 @@ export class BuildMarketplaceTransaction {
           console.log("=========== Retreived Utxos to add: ", retrievedUtxos)
           for (let i = 0; i < retrievedUtxos.length; i++) {
             swapPsbt.addInput({
-              hash: retrievedUtxos[i].tx_hash_big_endian,
-              index: retrievedUtxos[i].tx_output_n,
+              hash: retrievedUtxos[i].txid,
+              index: retrievedUtxos[i].vout,
               witnessUtxo: {
                 value: retrievedUtxos[i].value,
-                script: Buffer.from(retrievedUtxos[0].script, 'hex'),
+                script: Buffer.from(this.takerScript, 'hex'),
               },
               tapInternalKey: assertHex(Buffer.from(this.pubKey, 'hex')),
             })
@@ -180,21 +198,23 @@ export class BuildMarketplaceTransaction {
 
     async getAllUTXOsWorthASpecificValue(value: number) {
         const unspents = await this.getUnspentsWithConfirmationsForAddress()
+        console.log("=========== Confirmed Utxos", unspents)
         return unspents.filter((utxo) => utxo.value === value)
     }
 
-    calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]) {
+    calculateAmountGathered(utxoArray: any) {
         return utxoArray?.reduce((prev, currentValue) => prev + currentValue.value, 0)
       }
 
     async getUnspentsWithConfirmationsForAddress(
     ) {
         try {
+            ("=========== Getting all confirmed utxos for " + this.walletAddress + " ============")
             return await this.esploraRpc.getAddressUtxo(this.walletAddress).then(
                 (unspents) =>
                     unspents?.filter(
-                        (utxo: IBlockchainInfoUTXO) => utxo.confirmations >= 0
-                    ) as IBlockchainInfoUTXO[]
+                        (utxo) => utxo.status.confirmed == true
+                    ) 
             )
         } catch (e: any) {
             throw new Error(e)
@@ -203,6 +223,7 @@ export class BuildMarketplaceTransaction {
 
     async getUnspentsForAddressInOrderByValue() {
         const unspents = await this.getUnspentsWithConfirmationsForAddress()
+        console.log("=========== Confirmed Utxos", unspents)
         return unspents.sort((a, b) => b.value - a.value)
     }
 

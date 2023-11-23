@@ -205,6 +205,9 @@ export async function runCLI() {
     case 'view':
       return await viewPsbt()
       break
+    case 'market':
+      return await testMarketplaceBuy()
+      break
     case 'swap':
       return await swapFlow()
       break
