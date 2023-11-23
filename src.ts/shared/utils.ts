@@ -2,7 +2,7 @@ import * as bitcoin from 'bitcoinjs-lib'
 import ECPairFactory from 'ecpair'
 import ecc from '@bitcoinerlab/secp256k1'
 bitcoin.initEccLib(ecc)
-import { AddressType, UnspentOutput, TxInput } from '../shared/interface'
+import { AddressType, UnspentOutput, TxInput, IBlockchainInfoUTXO } from '../shared/interface'
 import BigNumber from 'bignumber.js'
 import { maximumScriptBytes } from './constants'
 
@@ -155,4 +155,9 @@ export const getWitnessDataChunk = function (
   }
 
   return contentChunks
+}
+
+
+export const getSatpointFromUtxo = (utxo: IBlockchainInfoUTXO) => {
+  return `${utxo.tx_hash_big_endian}:${utxo.tx_output_n}:0`
 }

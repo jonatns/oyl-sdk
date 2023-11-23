@@ -70,19 +70,4 @@ export class EsploraRpc {
     async getFeeEstimates () {
         return await this._call("esplora_fee-estimates")
     }
-
-    async getUnspentsWithConfirmationsForAddress (
-        address: string
-      ) {
-        try {
-          return await this.getAddressUtxo(address).then(
-            (unspents) =>
-              unspents?.filter(
-                (utxo: IBlockchainInfoUTXO) => utxo.confirmations >= 0
-              ) as IBlockchainInfoUTXO[]
-          )
-        } catch (e: any) {
-          throw new Error(e)
-        }
-      }
 }

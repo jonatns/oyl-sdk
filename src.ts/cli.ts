@@ -15,12 +15,17 @@ export async function loadRpc(options) {
  try {
   const blockInfo = await wallet.sandshrewBtcClient.bitcoindRpc.decodePSBT(process.env.PSBT_BASE64);
   const fees = await wallet.esploraRpc.getAddressUtxo(process.env.TAPROOT_ADDRESS);
-  console.log('Block Info:', fees);
+  console.log('Block Info:', blockInfo);
 } catch (error) {
   console.error('Error:', error);
 }
 }
  
+export async function viewPsbt(){
+  console.log(bitcoin.Psbt.fromBase64(process.env.PSBT_BASE64, {
+    network: bitcoin.networks.bitcoin,
+  }).data.inputs)
+}
 
 export async function callAPI(command, data, options = {}) {
   const oylSdk = new Wallet()
@@ -181,6 +186,9 @@ export async function runCLI() {
       break
     case 'recover':
       return await createOrdPsbtTx()
+      break
+    case 'view':
+      return await viewPsbt()
       break
     case 'swap':
       return await swapFlow()
