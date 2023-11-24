@@ -27,21 +27,13 @@
     "axios": "^1.6.2",
     "bcurl": "https://github.com/bcoin-org/bcurl.git#semver:^0.2.0",
     "bignumber.js": "^9.1.1",
-<<<<<<< HEAD
     "bip32": "^4.0.0",
     "bip39": "^3.1.0",
-=======
-    "bitcoind-rpc": "^0.9.1",
->>>>>>> c71377ab87743e43987119a8b476a81dee162e22
     "bitcoinjs-lib": "^6.1.0",
     "bitcore-lib": "^10.0.5",
     "bitcore-mnemonic": "^10.0.5",
     "change-case": "^4.1.2",
-<<<<<<< HEAD
     "crypto": "^1.0.1",
-=======
-    "dotenv": "^16.3.1",
->>>>>>> c71377ab87743e43987119a8b476a81dee162e22
     "ecpair": "^2.1.0",
     "fs-extra": "^11.1.1",
     "node-fetch": "^2.7.0",
