@@ -598,12 +598,11 @@ export class Wallet {
     finalizedPsbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
 
     const rawtx = finalizedPsbt.extractTransaction().toHex()
-    // const result = await this.apiClient.pushTx({ transactionHex: rawtx })
+    const result = await this.apiClient.pushTx({ transactionHex: rawtx })
 
     return {
       txId: finalizedPsbt.extractTransaction().getId(),
-      rawtx: rawtx,
-      // ...result,
+      ...result,
     }
   }
 
