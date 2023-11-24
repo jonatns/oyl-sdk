@@ -4,6 +4,7 @@ import { Wallet } from './oylib'
 import { PSBTTransaction } from './txbuilder/PSBTTransaction'
 import * as transactions from './transactions'
 import * as bitcoin from 'bitcoinjs-lib'
+<<<<<<< HEAD
 import { address as PsbtAddress, Psbt } from 'bitcoinjs-lib'
 import { InscribeTransfer, ToSignInput } from './shared/interface'
 import {
@@ -23,17 +24,44 @@ import BIP32Factory from 'bip32'
 
 const bip32 = BIP32Factory(ecc2)
 bitcoin.initEccLib(ecc2)
+=======
+import { Inscriber } from '@sadoprotocol/ordit-sdk'
+import { BRC_20_TRANSFER_META } from './shared/constants'
+import { InscribeTransfer } from './shared/interface'
+import "dotenv/config";
+import { BuildMarketplaceTransaction } from './txbuilder/buildMarketplaceTransaction'
+
+>>>>>>> c71377ab87743e43987119a8b476a81dee162e22
 
 export async function loadRpc(options) {
-  const rpcOptions = {
-    host: options.host,
-    port: options.port,
-    network: options.network,
-    auth: options.apiKey,
-  }
-  const wallet = new Wallet()
-  const rpc = wallet.fromProvider(rpcOptions)
-  return rpc
+ const wallet = new Wallet()
+ try {
+  const blockInfo = await wallet.sandshrewBtcClient.bitcoindRpc.decodePSBT(process.env.PSBT_BASE64);
+  const fees = await wallet.esploraRpc.getAddressUtxo(process.env.TAPROOT_ADDRESS);
+  console.log('Block Info:', blockInfo);
+} catch (error) {
+  console.error('Error:', error);
+}
+}
+
+export async function testMarketplaceBuy (){
+const options = {
+  address: process.env.TAPROOT_ADDRESS,
+  pubKey: process.env.TAPROOT_PUBKEY,
+  feeRate: parseFloat(process.env.FEE_RATE),
+  psbtBase64: process.env.PSBT_BASE64,
+  price: 0.0005
+}
+const intent = new BuildMarketplaceTransaction(options)
+const builder = await intent.psbtBuilder();
+console.log(builder)
+}
+
+
+export async function viewPsbt(){
+  console.log(bitcoin.Psbt.fromBase64(process.env.PSBT_BASE64, {
+    network: bitcoin.networks.bitcoin,
+  }).data.inputs)
 }
 
 export async function callAPI(command, data, options = {}) {
@@ -45,33 +73,43 @@ export async function callAPI(command, data, options = {}) {
   return result
 }
 
-export async function swapFlow(options) {
-  const address = options.address
-  const feeRate = options.feeRate
-  const mnemonic = options.mnemonic
-  const pubKey = options.pubKey
+export async function swapFlow() {
+  const address = process.env.TAPROOT_ADDRESS
+   const feeRate = parseFloat(process.env.FEE_RATE)
+   const mnemonic = process.env.TAPROOT_MNEMONIC
+  const pubKey = process.env.TAPROOT_PUBKEY
 
-  const psbt = bitcoin.Psbt.fromHex(options.psbt, {
+  const psbt = bitcoin.Psbt.fromHex(process.env.PSBT_HEX, {
     network: bitcoin.networks.bitcoin,
   })
+
+  //console.log(psbt)
   const wallet = new Wallet()
   const payload = await wallet.fromPhrase({
     mnemonic: mnemonic.trim(),
-    hdPath: options.hdPath,
-    type: options.type,
+    hdPath: process.env.HD_PATH,
+    type: process.env.TYPE,
   })
 
-  const keyring = payload.keyring.keyring
-  const signer = keyring.signTransaction.bind(keyring)
-  const from = address
-  const addressType = transactions.getAddressType(from)
-  if (addressType == null) throw Error('Invalid Address Type')
+   const keyring = payload.keyring.keyring
+   const signer = keyring.signTransaction.bind(keyring)
+   const from = address
+   const addressType = transactions.getAddressType(from)
+   if (addressType == null) throw Error('Invalid Address Type')
 
-  const tx = new PSBTTransaction(signer, from, pubKey, addressType, feeRate)
-
-  const psbt_ = await tx.signPsbt(psbt)
-
-  return psbt_.toHex()
+   const tx = new PSBTTransaction(signer, from, pubKey, addressType, feeRate)
+   const signedPsbt = await tx.signPsbt(psbt)
+   //@ts-ignore
+   psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
+ 
+   //EXTRACT THE RAW TX
+   //const rawtx = signedPsbt.extractTransaction().toHex()
+   //console.log('rawtx', rawtx)
+   //BROADCAST THE RAW TX TO THE NETWORK
+   //const result = await wallet.apiClient.pushTx({ transactionHex: rawtx })
+   //GET THE TX_HASH
+   //const ready_txId = psbt.extractTransaction().getId()
+   //CONFIRM TRANSACTION IS CONFIRMED
 }
 
 const formatOptionsToSignInputs = async (
@@ -597,6 +635,15 @@ export async function runCLI() {
         console.log(test0)
       }
       await createOrdPsbtTx()
+      break
+    case 'view':
+      return await viewPsbt()
+      break
+    case 'market':
+      return await testMarketplaceBuy()
+      break
+    case 'swap':
+      return await swapFlow()
       break
     default:
       return await callAPI(yargs.argv._[0], options)

@@ -1,4 +1,7 @@
-export declare function loadRpc(options: any): Promise<{}>;
+import "dotenv/config";
+export declare function loadRpc(options: any): Promise<void>;
+export declare function testMarketplaceBuy(): Promise<void>;
+export declare function viewPsbt(): Promise<void>;
 export declare function callAPI(command: any, data: any, options?: {}): Promise<any>;
 export declare function swapFlow(options: any): Promise<string>;
 export declare const MEMPOOL_SPACE_API_V1_URL = "https://mempool.space/api/v1";

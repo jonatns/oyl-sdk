@@ -2,23 +2,13 @@ import * as bitcoin from 'bitcoinjs-lib'
 import ECPairFactory from 'ecpair'
 import ecc from '@bitcoinerlab/secp256k1'
 bitcoin.initEccLib(ecc)
-import { AddressType, UnspentOutput, TxInput } from '../shared/interface'
+import { AddressType, UnspentOutput, TxInput, IBlockchainInfoUTXO } from '../shared/interface'
 import BigNumber from 'bignumber.js'
 import { maximumScriptBytes } from './constants'
 import axios from 'axios'
 import { getUnspentOutputs, getAddressType } from '../transactions'
 import { Wallet } from '../oylib'
 
-export interface IBlockchainInfoUTXO {
-  tx_hash_big_endian: string
-  tx_hash: string
-  tx_output_n: number
-  script: string
-  value: number
-  value_hex: string
-  confirmations: number
-  tx_index: number
-}
 
 export interface IBISWalletIx {
   validity: any

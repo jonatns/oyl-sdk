@@ -7,6 +7,8 @@ import {
   satoshisToAmount,
 } from './shared/utils'
 import BcoinRpc from './rpclient'
+import {SandshrewBitcoinClient }from './rpclient/sandshrew'
+import { EsploraRpc } from './rpclient/esplora'
 import * as transactions from './transactions'
 import { publicKeyToAddress } from './wallet/accounts'
 import { accounts } from './wallet'
@@ -33,7 +35,8 @@ const RequiredPath = [
 export class Wallet {
   private mnemonic: String
   private wallet
-
+  public sandshrewBtcClient: SandshrewBitcoinClient
+  public esploraRpc: EsploraRpc
   public provider: Providers
   public rpcClient: BcoinRpc
   public apiClient: OylApiClient
@@ -44,6 +47,8 @@ export class Wallet {
    */
   constructor() {
     this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg' })
+    this.esploraRpc = new EsploraRpc("https://mainnet.sandshrew.io/v1/154f9aaa25a986241357836c37f8d71")
+    this.sandshrewBtcClient = new SandshrewBitcoinClient("https://sandshrew.io/v1/d6aebfed1769128379aca7d215f0b689");
     this.fromProvider()
     //create wallet should optionally take in a private key
     this.wallet = this.createWallet({})
