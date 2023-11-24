@@ -12,17 +12,15 @@ export declare class PSBTTransaction {
     private network;
     private feeRate;
     private pubkey;
-    private addressType;
     private enableRBF;
     /**
      * Creates an instance of PSBTTransaction.
      * @param signer - Signer method bound to the HdKeyring.
      * @param address - Address associated with the transaction.
      * @param pubkey - Public key for the transaction.
-     * @param addressType - The type of address being used.
      * @param feeRate - The fee rate in satoshis per byte.
      */
-    constructor(signer: any, address: any, publicKey: any, addressType: any, feeRate: any, segwitSigner?: any, segwitPubKey?: any);
+    constructor(signer: any, address: any, publicKey: any, feeRate: any, segwitSigner?: any, segwitPubKey?: any);
     /**
      * Sets whether to enable Replace-by-Fee for the transaction.
      * @param {boolean} enable - A boolean to enable or disable RBF.
@@ -115,6 +113,7 @@ export declare class PSBTTransaction {
      * @returns {Promise<ToSignInput[]>} A promise that resolves to an array of inputs to sign.
      */
     formatOptionsToSignInputs: (_psbt: string | bitcoin.Psbt, isRevealTx?: boolean) => Promise<ToSignInput[]>;
+    signInputs(psbt: bitcoin.Psbt, toSignInputs: ToSignInput[]): Promise<void>;
     /**
      * Creates a signed PSBT for the transaction.
      * @returns {Promise<bitcoin.Psbt>} A promise that resolves to the signed PSBT instance.
