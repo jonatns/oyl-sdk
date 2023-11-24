@@ -1,6 +1,11 @@
 import { PSBTTransaction, buildOrdTx } from './txbuilder'
 import { UTXO_DUST } from './shared/constants'
-import { amountToSatoshis, satoshisToAmount } from './shared/utils'
+import {
+  amountToSatoshis,
+  createSegwitSigner,
+  createTaprootSigner,
+  satoshisToAmount,
+} from './shared/utils'
 import BcoinRpc from './rpclient'
 import * as transactions from './transactions'
 import { publicKeyToAddress } from './wallet/accounts'
@@ -512,49 +517,30 @@ export class Wallet {
     taprootPubKey,
     segwitPubKey,
     inscriptionId,
+    payFeesWithSegwit,
     mnemonic,
   }: {
     fromAddress: string
     toAddress: string
     changeAddress: string
     txFee: number
-    segwitAddress: string
+    segwitAddress?: string
     taprootPubKey: string
-    segwitPubKey: string
+    segwitPubKey?: string
     inscriptionId: string
+    payFeesWithSegwit: boolean
     mnemonic: string
   }) {
-    const segwitAddressType = transactions.getAddressType(segwitAddress)
-    const addressType = transactions.getAddressType(fromAddress)
-    if (addressType == null || segwitAddressType == null) {
-      throw Error('Unrecognized Address Type')
-    }
-    const wallet = new Wallet()
-    let payload: any
-    if (segwitAddressType === 2) {
-      payload = await wallet.fromPhrase({
-        mnemonic: mnemonic.trim(),
-        hdPath: RequiredPath[1],
-        type: 'nested-segwit',
-      })
-    }
-    if (segwitAddressType === 3) {
-      payload = await wallet.fromPhrase({
-        mnemonic: mnemonic.trim(),
-        hdPath: RequiredPath[2],
-        type: 'native-segwit',
-      })
-    }
-    const tapWallet = new Wallet()
-    const tapPayload = await tapWallet.fromPhrase({
-      mnemonic: mnemonic.trim(),
-      hdPath: RequiredPath[3],
-      type: 'taproot',
+    const segwitSigner: any = await createSegwitSigner({
+      mnemonic: mnemonic,
+      segwitAddress: segwitAddress,
+      segwitPubKey: segwitPubKey,
     })
-    const segwitKeyring = payload.keyring.keyring
-    const tapKeyring = tapPayload.keyring.keyring
-    const segwitSigner = segwitKeyring.signTransaction.bind(segwitKeyring)
-    const signer = tapKeyring.signTransaction.bind(tapKeyring)
+    const taprootSigner: any = await createTaprootSigner({
+      mnemonic: mnemonic,
+      taprootAddress: fromAddress,
+    })
+
     const { data: collectibleData } = await this.apiClient.getCollectiblesById(
       inscriptionId
     )
@@ -571,30 +557,33 @@ export class Wallet {
     }
 
     const allUtxos = await this.getUtxosArtifacts({ address: fromAddress })
-    const segwitUtxos = await this.getUtxosArtifacts({ address: segwitAddress })
+    let segwitUtxos: any[] = undefined
+    if (segwitAddress) {
+      segwitUtxos = await this.getUtxosArtifacts({ address: segwitAddress })
+    }
     const feeRate = txFee
-
     const psbtTx = new PSBTTransaction(
-      signer,
+      taprootSigner,
       fromAddress,
       taprootPubKey,
-      addressType,
       feeRate,
       segwitSigner,
       segwitPubKey
     )
 
     psbtTx.setChangeAddress(changeAddress)
-    const finalizedPsbt = await buildOrdTx(
-      psbtTx,
-      segwitUtxos,
-      allUtxos,
-      segwitAddress,
-      toAddress,
-      metaOutputValue,
-      feeRate,
-      inscriptionId
-    )
+    const finalizedPsbt = await buildOrdTx({
+      psbtTx: psbtTx,
+      allUtxos: allUtxos,
+      segwitUtxos: segwitUtxos,
+      segwitAddress: segwitAddress,
+      toAddress: toAddress,
+      metaOutputValue: metaOutputValue,
+      feeRate: feeRate,
+      inscriptionId: inscriptionId,
+      payFeesWithSegwit: payFeesWithSegwit,
+      taprootAddress: fromAddress,
+    })
 
     //@ts-ignore
     finalizedPsbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
@@ -620,7 +609,7 @@ export class Wallet {
    * @param {any} params.signer - The bound signer method to sign the transaction.
    * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
    */
-  async createAndBroadcastPsbtTx({
+  async createPsbtTx({
     publicKey,
     from,
     to,
@@ -637,129 +626,94 @@ export class Wallet {
     fee: number
     signer: any
   }) {
-    try {
-      const utxos = await this.getUtxosArtifacts({ address: from })
-      const feeRate = fee
-      const addressType = transactions.getAddressType(from)
-      if (addressType == null) new Error('Invalid Address Type')
+    const utxos = await this.getUtxosArtifacts({ address: from })
+    const feeRate = fee
+    const addressType = transactions.getAddressType(from)
+    if (addressType == null) throw Error('Invalid Address Type')
 
-      console.log('CREATING PSBT TRANSACTION')
+    const tx = new PSBTTransaction(
+      signer,
+      from,
+      publicKey,
+      addressType,
+      feeRate
+    )
 
-      const tx = new PSBTTransaction(
-        signer,
-        from,
-        publicKey,
-        addressType,
-        feeRate
-      )
+    tx.addOutput(to, amount)
+    tx.setChangeAddress(changeAddress)
+    const outputAmount = tx.getTotalOutput()
 
-      console.log('MADE PSBT TRANSACTION')
-
-      tx.addOutput(to, amount)
-      tx.setChangeAddress(changeAddress)
-      const outputAmount = tx.getTotalOutput()
-
-      console.log('ADDED TO OUTPUT')
-
-      const nonOrdUtxos = []
-      const ordUtxos = []
-      utxos.forEach((v) => {
-        if (v.inscriptions.length > 0) {
-          ordUtxos.push(v)
-        } else {
-          nonOrdUtxos.push(v)
-        }
-      })
-
-      console.log('SORTED UTXOS')
-
-      let tmpSum = tx.getTotalInput()
-      for (let i = 0; i < nonOrdUtxos.length; i++) {
-        const nonOrdUtxo = nonOrdUtxos[i]
-        if (tmpSum < outputAmount) {
-          tx.addInput(nonOrdUtxo)
-          tmpSum += nonOrdUtxo.satoshis
-          continue
-        }
-
-        const vB = tx.getNumberOfInputs() * 149 + 3 * 32 + 12
-        const fee = vB * feeRate
-
-        if (tmpSum < outputAmount + fee) {
-          tx.addInput(nonOrdUtxo)
-          tmpSum += nonOrdUtxo.satoshis
-        }
-      }
-
-      console.log('ADDED NON UTXOS TO PSBT')
-
-      if (
-        nonOrdUtxos.length === 0 ||
-        tx.getTotalOutput() > tx.getTotalInput()
-      ) {
-        new Error('Balance not enough')
-      }
-
-      const totalUnspentAmount = tx.getUnspent()
-      if (totalUnspentAmount === 0) {
-        new Error('Balance not enough to pay network fee.')
-      }
-
-      console.log('DID SOME CHECKS')
-
-      // add dummy output
-      // what's this for?????
-      tx.addChangeOutput(1)
-      const estimatedNetworkFee = await tx.calNetworkFee()
-      if (totalUnspentAmount < estimatedNetworkFee) {
-        new Error(
-          `Not enough balance. Need ${satoshisToAmount(
-            estimatedNetworkFee
-          )} BTC as network fee, but only ${satoshisToAmount(
-            totalUnspentAmount
-          )} BTC is available.`
-        )
-      }
-
-      console.log('DID MORE CHECKS')
-
-      const remainingBalance = totalUnspentAmount - 20000
-
-      console.log({ remainingBalance })
-
-      if (remainingBalance >= UTXO_DUST) {
-        console.log('ADDING BACK CHANGE OUTPUT UTXOS')
-        // change dummy output to true output
-        tx.getChangeOutput().value = remainingBalance
+    const nonOrdUtxos = []
+    const ordUtxos = []
+    utxos.forEach((v) => {
+      if (v.inscriptions.length > 0) {
+        ordUtxos.push(v)
       } else {
-        console.log('REMOVING CHANGE OUTPUT')
-        // remove dummy output
-        tx.removeChangeOutput()
+        nonOrdUtxos.push(v)
+      }
+    })
+
+    let tmpSum = tx.getTotalInput()
+    for (let i = 0; i < nonOrdUtxos.length; i++) {
+      const nonOrdUtxo = nonOrdUtxos[i]
+      if (tmpSum < outputAmount) {
+        tx.addInput(nonOrdUtxo)
+        tmpSum += nonOrdUtxo.satoshis
+        continue
       }
 
-      console.log('CREATING SIGNED PSBT')
+      const vB = tx.getNumberOfInputs() * 149 + 3 * 32 + 12
+      const fee = vB * feeRate
 
-      const psbt = await tx.createSignedPsbt()
-
-      console.log('CREATED SIGNED PSBT')
-
-      console.log('INPUT AMOUNT', psbt.inputCount)
-
-      // await tx.dumpTx(psbt)
-      //@ts-ignore
-      psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
-      const rawtx = psbt.extractTransaction().toHex()
-      const result = await this.apiClient.pushTx({ transactionHex: rawtx })
-      console.log('SUPPOSED TX ID', psbt.extractTransaction().getId())
-      console.log(`finished createAndBroadcastTx`, result)
-      return {
-        txId: psbt.extractTransaction().getId(),
-        ...result,
+      if (tmpSum < outputAmount + fee) {
+        tx.addInput(nonOrdUtxo)
+        tmpSum += nonOrdUtxo.satoshis
       }
-    } catch (e) {
-      console.log('ERROR')
-      console.error(e)
-      return e
+    }
+    if (nonOrdUtxos.length === 0 || tx.getTotalOutput() > tx.getTotalInput()) {
+      throw new Error('Balance not enough')
+    }
+
+    const totalUnspentAmount = tx.getUnspent()
+    if (totalUnspentAmount === 0) {
+      throw new Error('Balance not enough to pay network fee.')
+    }
+
+    // add dummy output
+    tx.addChangeOutput(1)
+    const estimatedNetworkFee = await tx.calNetworkFee()
+    if (totalUnspentAmount < estimatedNetworkFee) {
+      throw new Error(
+        `Not enough balance. Need ${satoshisToAmount(
+          estimatedNetworkFee
+        )} BTC as network fee, but only ${satoshisToAmount(
+          totalUnspentAmount
+        )} BTC is available.`
+      )
+    }
+
+    const remainingBalance = totalUnspentAmount - estimatedNetworkFee
+    if (remainingBalance >= UTXO_DUST) {
+      // change dummy output to true output
+      tx.getChangeOutput().value = remainingBalance
+    } else {
+      // remove dummy output
+      tx.removeChangeOutput()
+    }
+
+    const psbt = await tx.createSignedPsbt()
+    tx.dumpTx(psbt)
+
+    //@ts-ignore
+    psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
+
+    const rawtx = psbt.extractTransaction().toHex()
+
+    const result = await this.apiClient.pushTx({ transactionHex: rawtx })
+
+    return {
+      txId: psbt.extractTransaction().getId(),
+      ...result,
     }
   }
 

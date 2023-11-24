@@ -6,7 +6,8 @@ import { AddressType, UnspentOutput, TxInput } from '../shared/interface'
 import BigNumber from 'bignumber.js'
 import { maximumScriptBytes } from './constants'
 import axios from 'axios'
-import { getUnspentOutputs } from '../transactions'
+import { getUnspentOutputs, getAddressType } from '../transactions'
+import { Wallet } from '../oylib'
 
 export interface IBlockchainInfoUTXO {
   tx_hash_big_endian: string
@@ -53,6 +54,13 @@ export interface IBISWalletIx {
   confirmations?: number
 }
 
+const RequiredPath = [
+  "m/44'/0'/0'/0", // P2PKH (Legacy)
+  "m/49'/0'/0'/0", // P2SH-P2WPKH (Nested SegWit)
+  "m/84'/0'/0'/0", // P2WPKH (SegWit)
+  "m/86'/0'/0'/0", // P2TR (Taproot)
+]
+
 export const ECPair = ECPairFactory(ecc)
 
 export const assertHex = (pubKey: Buffer) =>
@@ -97,10 +105,192 @@ export function satoshisToAmount(val: number) {
   return num.dividedBy(100000000).toFixed(8)
 }
 
+// export const inscribe = async ({
+//   ticker,
+//   amount,
+//   inputAddress,
+//   outputAddress,
+//   commitTxId,
+//   isDry,
+// }: {
+//   ticker: string
+//   amount: number
+//   inputAddress: string
+//   outputAddress: string
+//   commitTxId?: string
+//   isDry?: boolean
+// }) => {
+//   const { fastestFee } = await getRecommendedBTCFeesMempool()
+//   const inputs = 1
+//   const vB = inputs * 149 + 3 * 32 + 12
+//   const minerFee = vB * fastestFee
+//   const fees = minerFee + 4000
+//   console.log(fees)
+
+//   try {
+//     const secret =
+//       'd84d671cbd24a08db5ed43b93102484bd9bd8beb657e784451a226cf6a6e259b'
+
+//     const secKey = ecc.keys.get_seckey(String(secret))
+//     const pubKey = ecc.keys.get_pubkey(String(secret), true)
+//     const content = `{"p":"brc-20","op":"transfer","tick":"${ticker}","amt":"${amount}"}`
+
+//     const script = createInscriptionScript(pubKey, content)
+//     const tapleaf = Tap.encodeScript(script)
+//     const [tpubkey, cblock] = Tap.getPubKey(pubKey, { target: tapleaf })
+//     const address = Address.p2tr.fromPubKey(tpubkey)
+
+//     let utxosGathered
+
+//     if (!commitTxId) {
+//       let reimbursementAmount = 0
+//       const psbt = new bitcoin.Psbt()
+//       utxosGathered = await getUTXOsToCoverAmountWithRemainder(
+//         inputAddress,
+//         fees
+//       )
+//       const amountGathered = calculateAmountGathered(utxosGathered)
+//       console.log(amountGathered)
+//       if (amountGathered < fees) {
+//         console.log('WAHAHAHAHAH')
+//         return { error: 'insuffICIENT funds for inscribe' }
+//       }
+
+//       reimbursementAmount = amountGathered - fees
+
+//       for await (let utxo of utxosGathered) {
+//         const {
+//           tx_hash_big_endian,
+//           tx_output_n,
+//           value,
+//           script: outputScript,
+//         } = utxo
+
+//         psbt.addInput({
+//           hash: tx_hash_big_endian,
+//           index: tx_output_n,
+//           witnessUtxo: { value, script: Buffer.from(outputScript, 'hex') },
+//         })
+//       }
+
+//       psbt.addOutput({
+//         value: INSCRIPTION_PREPARE_SAT_AMOUNT,
+//         address: address, // address for inscriber for the user
+//       })
+
+//       if (reimbursementAmount > 546) {
+//         psbt.addOutput({
+//           value: reimbursementAmount,
+//           address: inputAddress,
+//         })
+//       }
+
+//       return {
+//         psbtHex: psbt.toHex(),
+//         psbtBase64: psbt.toBase64(),
+//         utxosGathered,
+//       }
+//     }
+
+//     const txData = Tx.create({
+//       vin: [
+//         {
+//           txid: commitTxId,
+//           vout: 0,
+//           prevout: {
+//             value: INSCRIPTION_PREPARE_SAT_AMOUNT,
+//             scriptPubKey: ['OP_1', tpubkey],
+//           },
+//         },
+//       ],
+//       vout: [
+//         {
+//           value: 546,
+//           scriptPubKey: Address.toScriptPubKey(outputAddress),
+//         },
+//       ],
+//     })
+
+//     const sig = Signer.taproot.sign(secKey, txData, 0, { extension: tapleaf })
+//     txData.vin[0].witness = [sig, script, cblock]
+//     if (!isDry) {
+//       return await callBTCRPCEndpoint(
+//         'sendrawtransaction',
+//         Tx.encode(txData).hex
+//       )
+//     } else {
+//       return { result: Tx.util.getTxid(txData) }
+//     }
+//   } catch (e: any) {
+//     // console.error(e);
+//     return { error: e.message }
+//   }
+// }
+
 export function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+export async function createSegwitSigner({
+  mnemonic,
+  segwitAddress,
+  segwitPubKey,
+}: {
+  mnemonic: string
+  segwitAddress: string
+  segwitPubKey: string
+}) {
+  if (segwitAddress && segwitPubKey) {
+    let payload: any
+    const wallet = new Wallet()
+    const segwitAddressType = getAddressType(segwitAddress)
+    if (segwitAddressType == null) {
+      throw Error('Unrecognized Address Type')
+    }
+    if (segwitAddressType === 2) {
+      payload = await wallet.fromPhrase({
+        mnemonic: mnemonic.trim(),
+        hdPath: RequiredPath[1],
+        type: 'nested-segwit',
+      })
+    }
+    if (segwitAddressType === 3) {
+      payload = await wallet.fromPhrase({
+        mnemonic: mnemonic.trim(),
+        hdPath: RequiredPath[2],
+        type: 'native-segwit',
+      })
+    }
+    const segwitKeyring = payload.keyring.keyring
+    const segwitSigner = segwitKeyring.signTransaction.bind(segwitKeyring)
+    return segwitSigner
+  }
+  return undefined
+}
+
+export async function createTaprootSigner({
+  mnemonic,
+  taprootAddress,
+}: {
+  mnemonic: string
+  taprootAddress: string
+}) {
+  const addressType = getAddressType(taprootAddress)
+  if (addressType == null) {
+    throw Error('Unrecognized Address Type')
+  }
+  const tapWallet = new Wallet()
+
+  const tapPayload = await tapWallet.fromPhrase({
+    mnemonic: mnemonic.trim(),
+    hdPath: RequiredPath[3],
+    type: 'taproot',
+  })
+
+  const tapKeyring = tapPayload.keyring.keyring
+  const taprootSigner = tapKeyring.signTransaction.bind(tapKeyring)
+  return taprootSigner
+}
 export function amountToSatoshis(val: any) {
   const num = new BigNumber(val)
   return num.multipliedBy(100000000).toNumber()

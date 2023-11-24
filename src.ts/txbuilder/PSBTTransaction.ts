@@ -22,7 +22,6 @@ export class PSBTTransaction {
   private network: bitcoin.Network = bitcoin.networks.bitcoin
   private feeRate: number
   private pubkey: string
-  private addressType: AddressType
   private enableRBF = false
 
   /**
@@ -30,14 +29,12 @@ export class PSBTTransaction {
    * @param signer - Signer method bound to the HdKeyring.
    * @param address - Address associated with the transaction.
    * @param pubkey - Public key for the transaction.
-   * @param addressType - The type of address being used.
    * @param feeRate - The fee rate in satoshis per byte.
    */
   constructor(
     signer,
     address,
     publicKey,
-    addressType,
     feeRate,
     segwitSigner?,
     segwitPubKey?
@@ -47,7 +44,6 @@ export class PSBTTransaction {
     this.segwitPubKey = segwitPubKey
     this.address = address
     this.pubkey = publicKey
-    this.addressType = addressType
     this.feeRate = feeRate || 5
   }
 
@@ -231,6 +227,8 @@ export class PSBTTransaction {
     psbt.data.inputs.forEach((v, index: number) => {
       let script: any = null
       let value = 0
+      const isSigned = v.finalScriptSig || v.finalScriptWitness
+      const lostInternalPubkey = !v.tapInternalKey
       if (v.witnessUtxo) {
         script = v.witnessUtxo.script
         value = v.witnessUtxo.value
@@ -240,7 +238,19 @@ export class PSBTTransaction {
         script = output.script
         value = output.value
       }
-      const isSigned = v.finalScriptSig || v.finalScriptWitness
+      if (!isSigned && lostInternalPubkey) {
+        const tapInternalKey = assertHex(Buffer.from(this.pubkey, 'hex'))
+        const p2tr = bitcoin.payments.p2tr({
+          internalPubkey: tapInternalKey,
+          network: psbtNetwork,
+        })
+        if (
+          v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
+        ) {
+          v.tapInternalKey = tapInternalKey
+        }
+      }
+
       if (script && !isSigned) {
         const address = PsbtAddress.fromOutputScript(script, psbtNetwork)
         if (isRevealTx || (!isRevealTx && this.address === address)) {
@@ -262,6 +272,25 @@ export class PSBTTransaction {
     })
 
     return toSignInputs
+  }
+
+  async signInputs(psbt: bitcoin.Psbt, toSignInputs: ToSignInput[]) {
+    const taprootInputs: ToSignInput[] = []
+    const segwitInputs: ToSignInput[] = []
+    toSignInputs.forEach(({ index, publicKey }) => {
+      if (publicKey === this.pubkey) {
+        taprootInputs.push(toSignInputs[index])
+      }
+      if (this.segwitPubKey && this.segwitSigner) {
+        if (publicKey === this.segwitPubKey) {
+          segwitInputs.push(toSignInputs[index])
+        }
+      }
+    })
+    await this.signer(psbt, taprootInputs)
+    if (this.segwitSigner && segwitInputs.length > 0) {
+      await this.segwitSigner(psbt, segwitInputs)
+    }
   }
 
   /**
@@ -303,34 +332,13 @@ export class PSBTTransaction {
     autoFinalized = true,
     isRevealTx: boolean = false
   ) {
-    const psbtNetwork = bitcoin.networks.bitcoin
-
     const toSignInputs: ToSignInput[] = await this.formatOptionsToSignInputs(
       psbt,
       isRevealTx
     )
 
-    psbt.data.inputs.forEach((v, index) => {
-      const isNotSigned = !(v.finalScriptSig || v.finalScriptWitness)
-      const isP2TR = this.addressType === AddressType.P2TR
-      const lostInternalPubkey = !v.tapInternalKey
-      if (isNotSigned && isP2TR && lostInternalPubkey) {
-        const tapInternalKey = assertHex(Buffer.from(this.pubkey, 'hex'))
-        const p2tr = bitcoin.payments.p2tr({
-          internalPubkey: tapInternalKey,
-          network: psbtNetwork,
-        })
-        if (
-          v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
-        ) {
-          v.tapInternalKey = tapInternalKey
-        }
-      }
-    })
-    await this.signer(psbt, toSignInputs)
-    if (this.segwitSigner) {
-      await this.segwitSigner(psbt, [toSignInputs[1]])
-    }
+    await this.signInputs(psbt, toSignInputs)
+
     if (autoFinalized) {
       console.log('autoFinalized')
       try {
