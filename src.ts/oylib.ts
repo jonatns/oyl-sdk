@@ -7,7 +7,7 @@ import {
   satoshisToAmount,
 } from './shared/utils'
 import BcoinRpc from './rpclient'
-import {SandshrewBitcoinClient }from './rpclient/sandshrew'
+import { SandshrewBitcoinClient } from './rpclient/sandshrew'
 import { EsploraRpc } from './rpclient/esplora'
 import * as transactions from './transactions'
 import { publicKeyToAddress } from './wallet/accounts'
@@ -47,8 +47,12 @@ export class Wallet {
    */
   constructor() {
     this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg' })
-    this.esploraRpc = new EsploraRpc("https://mainnet.sandshrew.io/v1/154f9aaa25a986241357836c37f8d71")
-    this.sandshrewBtcClient = new SandshrewBitcoinClient("https://sandshrew.io/v1/d6aebfed1769128379aca7d215f0b689");
+    this.esploraRpc = new EsploraRpc(
+      'https://mainnet.sandshrew.io/v1/154f9aaa25a986241357836c37f8d71'
+    )
+    this.sandshrewBtcClient = new SandshrewBitcoinClient(
+      'https://sandshrew.io/v1/d6aebfed1769128379aca7d215f0b689'
+    )
     this.fromProvider()
     //create wallet should optionally take in a private key
     this.wallet = this.createWallet({})
@@ -594,11 +598,12 @@ export class Wallet {
     finalizedPsbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
 
     const rawtx = finalizedPsbt.extractTransaction().toHex()
-    const result = await this.apiClient.pushTx({ transactionHex: rawtx })
+    // const result = await this.apiClient.pushTx({ transactionHex: rawtx })
 
     return {
       txId: finalizedPsbt.extractTransaction().getId(),
-      ...result,
+      rawtx: rawtx,
+      // ...result,
     }
   }
 

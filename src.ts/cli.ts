@@ -4,7 +4,6 @@ import { Wallet } from './oylib'
 import { PSBTTransaction } from './txbuilder/PSBTTransaction'
 import * as transactions from './transactions'
 import * as bitcoin from 'bitcoinjs-lib'
-<<<<<<< HEAD
 import { address as PsbtAddress, Psbt } from 'bitcoinjs-lib'
 import { InscribeTransfer, ToSignInput } from './shared/interface'
 import {
@@ -21,47 +20,45 @@ import * as ecc from '@cmdcode/crypto-utils'
 import { Address, Signer, Tap, Tx } from '@cmdcode/tapscript'
 import * as ecc2 from '@bitcoinerlab/secp256k1'
 import BIP32Factory from 'bip32'
+import { BuildMarketplaceTransaction } from './txbuilder/buildMarketplaceTransaction'
 
 const bip32 = BIP32Factory(ecc2)
 bitcoin.initEccLib(ecc2)
-=======
-import { Inscriber } from '@sadoprotocol/ordit-sdk'
-import { BRC_20_TRANSFER_META } from './shared/constants'
-import { InscribeTransfer } from './shared/interface'
-import "dotenv/config";
-import { BuildMarketplaceTransaction } from './txbuilder/buildMarketplaceTransaction'
-
->>>>>>> c71377ab87743e43987119a8b476a81dee162e22
 
 export async function loadRpc(options) {
- const wallet = new Wallet()
- try {
-  const blockInfo = await wallet.sandshrewBtcClient.bitcoindRpc.decodePSBT(process.env.PSBT_BASE64);
-  const fees = await wallet.esploraRpc.getAddressUtxo(process.env.TAPROOT_ADDRESS);
-  console.log('Block Info:', blockInfo);
-} catch (error) {
-  console.error('Error:', error);
-}
-}
-
-export async function testMarketplaceBuy (){
-const options = {
-  address: process.env.TAPROOT_ADDRESS,
-  pubKey: process.env.TAPROOT_PUBKEY,
-  feeRate: parseFloat(process.env.FEE_RATE),
-  psbtBase64: process.env.PSBT_BASE64,
-  price: 0.0005
-}
-const intent = new BuildMarketplaceTransaction(options)
-const builder = await intent.psbtBuilder();
-console.log(builder)
+  const wallet = new Wallet()
+  try {
+    const blockInfo = await wallet.sandshrewBtcClient.bitcoindRpc.decodePSBT(
+      process.env.PSBT_BASE64
+    )
+    const fees = await wallet.esploraRpc.getAddressUtxo(
+      process.env.TAPROOT_ADDRESS
+    )
+    console.log('Block Info:', blockInfo)
+  } catch (error) {
+    console.error('Error:', error)
+  }
 }
 
+export async function testMarketplaceBuy() {
+  const options = {
+    address: process.env.TAPROOT_ADDRESS,
+    pubKey: process.env.TAPROOT_PUBKEY,
+    feeRate: parseFloat(process.env.FEE_RATE),
+    psbtBase64: process.env.PSBT_BASE64,
+    price: 0.0005,
+  }
+  const intent = new BuildMarketplaceTransaction(options)
+  const builder = await intent.psbtBuilder()
+  console.log(builder)
+}
 
-export async function viewPsbt(){
-  console.log(bitcoin.Psbt.fromBase64(process.env.PSBT_BASE64, {
-    network: bitcoin.networks.bitcoin,
-  }).data.inputs)
+export async function viewPsbt() {
+  console.log(
+    bitcoin.Psbt.fromBase64(process.env.PSBT_BASE64, {
+      network: bitcoin.networks.bitcoin,
+    }).data.inputs
+  )
 }
 
 export async function callAPI(command, data, options = {}) {
@@ -75,8 +72,8 @@ export async function callAPI(command, data, options = {}) {
 
 export async function swapFlow() {
   const address = process.env.TAPROOT_ADDRESS
-   const feeRate = parseFloat(process.env.FEE_RATE)
-   const mnemonic = process.env.TAPROOT_MNEMONIC
+  const feeRate = parseFloat(process.env.FEE_RATE)
+  const mnemonic = process.env.TAPROOT_MNEMONIC
   const pubKey = process.env.TAPROOT_PUBKEY
 
   const psbt = bitcoin.Psbt.fromHex(process.env.PSBT_HEX, {
@@ -91,25 +88,25 @@ export async function swapFlow() {
     type: process.env.TYPE,
   })
 
-   const keyring = payload.keyring.keyring
-   const signer = keyring.signTransaction.bind(keyring)
-   const from = address
-   const addressType = transactions.getAddressType(from)
-   if (addressType == null) throw Error('Invalid Address Type')
+  const keyring = payload.keyring.keyring
+  const signer = keyring.signTransaction.bind(keyring)
+  const from = address
+  const addressType = transactions.getAddressType(from)
+  if (addressType == null) throw Error('Invalid Address Type')
 
-   const tx = new PSBTTransaction(signer, from, pubKey, addressType, feeRate)
-   const signedPsbt = await tx.signPsbt(psbt)
-   //@ts-ignore
-   psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
- 
-   //EXTRACT THE RAW TX
-   //const rawtx = signedPsbt.extractTransaction().toHex()
-   //console.log('rawtx', rawtx)
-   //BROADCAST THE RAW TX TO THE NETWORK
-   //const result = await wallet.apiClient.pushTx({ transactionHex: rawtx })
-   //GET THE TX_HASH
-   //const ready_txId = psbt.extractTransaction().getId()
-   //CONFIRM TRANSACTION IS CONFIRMED
+  const tx = new PSBTTransaction(signer, from, pubKey, addressType, feeRate)
+  const signedPsbt = await tx.signPsbt(psbt)
+  //@ts-ignore
+  psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
+
+  //EXTRACT THE RAW TX
+  //const rawtx = signedPsbt.extractTransaction().toHex()
+  //console.log('rawtx', rawtx)
+  //BROADCAST THE RAW TX TO THE NETWORK
+  //const result = await wallet.apiClient.pushTx({ transactionHex: rawtx })
+  //GET THE TX_HASH
+  //const ready_txId = psbt.extractTransaction().getId()
+  //CONFIRM TRANSACTION IS CONFIRMED
 }
 
 const formatOptionsToSignInputs = async (
@@ -619,7 +616,7 @@ export async function runCLI() {
           fromAddress:
             'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
           inscriptionId:
-            '275d099a2244bee278d451859a74918e7422d20627245c31c86e154a03f0ded7i0',
+            '68069fc341a462cd9a01ef4808b0bda0db7c0c6ea5dfffdc35b8992450cecb5bi0',
           taprootPubKey:
             '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
           segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',

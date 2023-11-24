@@ -1,16 +1,6 @@
 /// <reference types="node" />
 import * as bitcoin from 'bitcoinjs-lib';
-import { UnspentOutput, TxInput } from '../shared/interface';
-export interface IBlockchainInfoUTXO {
-    tx_hash_big_endian: string;
-    tx_hash: string;
-    tx_output_n: number;
-    script: string;
-    value: number;
-    value_hex: string;
-    confirmations: number;
-    tx_index: number;
-}
+import { UnspentOutput, TxInput, IBlockchainInfoUTXO } from '../shared/interface';
 export interface IBISWalletIx {
     validity: any;
     isBrc: boolean;
@@ -61,7 +51,6 @@ export declare function amountToSatoshis(val: any): number;
 export declare const validator: (pubkey: Buffer, msghash: Buffer, signature: Buffer) => boolean;
 export declare function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput;
 export declare const getWitnessDataChunk: (content: string, encodeType?: BufferEncoding) => Buffer[];
-<<<<<<< HEAD
 export declare const getUnspentsWithConfirmationsForAddress: (address: string) => Promise<IBlockchainInfoUTXO[]>;
 export declare const getUTXOWorthGreatestValueForAddress: (address: string) => Promise<IBlockchainInfoUTXO>;
 export declare const getSatpointFromUtxo: (utxo: IBlockchainInfoUTXO) => string;
@@ -73,6 +62,3 @@ export declare const getTheOtherUTXOsToCoverAmount: (address: string, amountNeed
 export declare const getUTXOByAddressTxIDAndVOut: (address: string, txId: string, vOut: number) => Promise<IBlockchainInfoUTXO>;
 export declare function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]): number;
 export declare const getScriptForAddress: (address: string) => Promise<any>;
-=======
-export declare const getSatpointFromUtxo: (utxo: any) => string;
->>>>>>> c71377ab87743e43987119a8b476a81dee162e22
