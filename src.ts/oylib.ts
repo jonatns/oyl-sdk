@@ -1,6 +1,11 @@
 import { PSBTTransaction, buildOrdTx } from './txbuilder'
 import { UTXO_DUST } from './shared/constants'
-import { amountToSatoshis, satoshisToAmount } from './shared/utils'
+import {
+  amountToSatoshis,
+  createSegwitSigner,
+  createTaprootSigner,
+  satoshisToAmount,
+} from './shared/utils'
 import BcoinRpc from './rpclient'
 import {SandshrewBitcoinClient }from './rpclient/sandshrew'
 import { EsploraRpc } from './rpclient/esplora'
@@ -517,49 +522,30 @@ export class Wallet {
     taprootPubKey,
     segwitPubKey,
     inscriptionId,
+    payFeesWithSegwit,
     mnemonic,
   }: {
     fromAddress: string
     toAddress: string
     changeAddress: string
     txFee: number
-    segwitAddress: string
+    segwitAddress?: string
     taprootPubKey: string
-    segwitPubKey: string
+    segwitPubKey?: string
     inscriptionId: string
+    payFeesWithSegwit: boolean
     mnemonic: string
   }) {
-    const segwitAddressType = transactions.getAddressType(segwitAddress)
-    const addressType = transactions.getAddressType(fromAddress)
-    if (addressType == null || segwitAddressType == null) {
-      throw Error('Unrecognized Address Type')
-    }
-    const wallet = new Wallet()
-    let payload: any
-    if (segwitAddressType === 2) {
-      payload = await wallet.fromPhrase({
-        mnemonic: mnemonic.trim(),
-        hdPath: RequiredPath[1],
-        type: 'nested-segwit',
-      })
-    }
-    if (segwitAddressType === 3) {
-      payload = await wallet.fromPhrase({
-        mnemonic: mnemonic.trim(),
-        hdPath: RequiredPath[2],
-        type: 'native-segwit',
-      })
-    }
-    const tapWallet = new Wallet()
-    const tapPayload = await tapWallet.fromPhrase({
-      mnemonic: mnemonic.trim(),
-      hdPath: RequiredPath[3],
-      type: 'taproot',
+    const segwitSigner: any = await createSegwitSigner({
+      mnemonic: mnemonic,
+      segwitAddress: segwitAddress,
+      segwitPubKey: segwitPubKey,
     })
-    const segwitKeyring = payload.keyring.keyring
-    const tapKeyring = tapPayload.keyring.keyring
-    const segwitSigner = segwitKeyring.signTransaction.bind(segwitKeyring)
-    const signer = tapKeyring.signTransaction.bind(tapKeyring)
+    const taprootSigner: any = await createTaprootSigner({
+      mnemonic: mnemonic,
+      taprootAddress: fromAddress,
+    })
+
     const { data: collectibleData } = await this.apiClient.getCollectiblesById(
       inscriptionId
     )
@@ -576,30 +562,33 @@ export class Wallet {
     }
 
     const allUtxos = await this.getUtxosArtifacts({ address: fromAddress })
-    const segwitUtxos = await this.getUtxosArtifacts({ address: segwitAddress })
+    let segwitUtxos: any[] = undefined
+    if (segwitAddress) {
+      segwitUtxos = await this.getUtxosArtifacts({ address: segwitAddress })
+    }
     const feeRate = txFee
-
     const psbtTx = new PSBTTransaction(
-      signer,
+      taprootSigner,
       fromAddress,
       taprootPubKey,
-      addressType,
       feeRate,
       segwitSigner,
       segwitPubKey
     )
 
     psbtTx.setChangeAddress(changeAddress)
-    const finalizedPsbt = await buildOrdTx(
-      psbtTx,
-      segwitUtxos,
-      allUtxos,
-      segwitAddress,
-      toAddress,
-      metaOutputValue,
-      feeRate,
-      inscriptionId
-    )
+    const finalizedPsbt = await buildOrdTx({
+      psbtTx: psbtTx,
+      allUtxos: allUtxos,
+      segwitUtxos: segwitUtxos,
+      segwitAddress: segwitAddress,
+      toAddress: toAddress,
+      metaOutputValue: metaOutputValue,
+      feeRate: feeRate,
+      inscriptionId: inscriptionId,
+      payFeesWithSegwit: payFeesWithSegwit,
+      taprootAddress: fromAddress,
+    })
 
     //@ts-ignore
     finalizedPsbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
@@ -638,7 +627,7 @@ export class Wallet {
     from: string
     to: string
     changeAddress: string
-    amount: string
+    amount: number
     fee: number
     signer: any
   }) {
@@ -655,7 +644,7 @@ export class Wallet {
       feeRate
     )
 
-    tx.addOutput(to, amountToSatoshis(amount))
+    tx.addOutput(to, amount)
     tx.setChangeAddress(changeAddress)
     const outputAmount = tx.getTotalOutput()
 
@@ -678,16 +667,15 @@ export class Wallet {
         continue
       }
 
-      const fee = await tx.calNetworkFee()
+      const vB = tx.getNumberOfInputs() * 149 + 3 * 32 + 12
+      const fee = vB * feeRate
+
       if (tmpSum < outputAmount + fee) {
         tx.addInput(nonOrdUtxo)
         tmpSum += nonOrdUtxo.satoshis
-      } else {
-        break
       }
     }
-
-    if (nonOrdUtxos.length === 0) {
+    if (nonOrdUtxos.length === 0 || tx.getTotalOutput() > tx.getTotalInput()) {
       throw new Error('Balance not enough')
     }
 
@@ -698,7 +686,6 @@ export class Wallet {
 
     // add dummy output
     tx.addChangeOutput(1)
-
     const estimatedNetworkFee = await tx.calNetworkFee()
     if (totalUnspentAmount < estimatedNetworkFee) {
       throw new Error(
@@ -877,7 +864,7 @@ export class Wallet {
     return data
   }
 
-  async signPsbt(psbtHex, fee, pubKey, signer, address){
+  async signPsbt(psbtHex, fee, pubKey, signer, address) {
     const addressType = transactions.getAddressType(address)
     if (addressType == null) throw Error('Invalid Address Type')
     const tx = new PSBTTransaction(signer, address, pubKey, addressType, fee)
@@ -909,5 +896,4 @@ export class Wallet {
 
     return ready_txId
   }
-
 }

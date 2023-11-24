@@ -1,15 +1,28 @@
 import { PSBTTransaction } from './PSBTTransaction'
 
-export async function buildOrdTx(
-  psbtTx: PSBTTransaction,
-  segwitUtxos: any[],
-  allUtxos: any[],
-  segwitAddress: string,
-  toAddress: string,
-  metaOutputValue: any,
-  feeRate: number,
+export async function buildOrdTx({
+  psbtTx,
+  allUtxos,
+  toAddress,
+  metaOutputValue,
+  feeRate,
+  inscriptionId,
+  taprootAddress,
+  payFeesWithSegwit,
+  segwitAddress,
+  segwitUtxos,
+}: {
+  psbtTx: PSBTTransaction
+  allUtxos: any[]
+  toAddress: string
+  metaOutputValue: any
+  feeRate: number
   inscriptionId: string
-) {
+  taprootAddress: string
+  payFeesWithSegwit: boolean
+  segwitAddress?: string
+  segwitUtxos?: any[]
+}) {
   const { metaUtxos, nonMetaUtxos } = allUtxos.reduce(
     (acc, utxo) => {
       utxo.inscriptions.length
@@ -20,6 +33,83 @@ export async function buildOrdTx(
     { metaUtxos: [], nonMetaUtxos: [] }
   )
 
+  await addInscriptionUtxo({
+    metaUtxos: metaUtxos,
+    inscriptionId: inscriptionId,
+    toAddress: toAddress,
+    psbtTx: psbtTx,
+  })
+
+  psbtTx.outputs[0].value = metaOutputValue
+
+  await getUtxosForFees({
+    payFeesWithSegwit: payFeesWithSegwit,
+    psbtTx: psbtTx,
+    feeRate: feeRate,
+    taprootUtxos: nonMetaUtxos,
+    taprootAddress: taprootAddress,
+    segwitUtxos: segwitUtxos,
+    segwitAddress: segwitAddress,
+  })
+
+  const remainingUnspent = psbtTx.getUnspent()
+  if (remainingUnspent <= 0) {
+    throw new Error('Not enough balance for the fee')
+  }
+
+  const psbt = await psbtTx.createSignedPsbt()
+
+  psbtTx.dumpTx(psbt)
+
+  return psbt
+}
+
+const getUtxosForFees = async ({
+  payFeesWithSegwit,
+  psbtTx,
+  feeRate,
+  taprootUtxos,
+  taprootAddress,
+  segwitUtxos,
+  segwitAddress,
+}: {
+  payFeesWithSegwit: boolean
+  psbtTx: PSBTTransaction
+  feeRate: number
+  taprootUtxos: any[]
+  taprootAddress: string
+  segwitUtxos?: any[]
+  segwitAddress?: string
+}) => {
+  if (payFeesWithSegwit && segwitUtxos) {
+    await addSegwitFeeUtxo({
+      segwitUtxos: segwitUtxos,
+      feeRate: feeRate,
+      psbtTx: psbtTx,
+      segwitAddress: segwitAddress,
+    })
+    return
+  }
+  await addTaprootFeeUtxo({
+    taprootUtxos: taprootUtxos,
+    feeRate: feeRate,
+    psbtTx: psbtTx,
+    taprootAddress: taprootAddress,
+  })
+  return
+}
+
+const addSegwitFeeUtxo = async ({
+  segwitUtxos,
+  feeRate,
+  psbtTx,
+  segwitAddress,
+}: {
+  segwitUtxos: any[]
+  feeRate: number
+  psbtTx: PSBTTransaction
+  segwitAddress: string
+}) => {
   const { nonMetaSegwitUtxos } = segwitUtxos.reduce(
     (acc, utxo) => {
       utxo.inscriptions.length > 0
@@ -29,6 +119,71 @@ export async function buildOrdTx(
     },
     { metaUtxos: [], nonMetaSegwitUtxos: [] }
   )
+
+  nonMetaSegwitUtxos.sort((a, b) => a.satoshis - b.satoshis)
+  const vB = psbtTx.getNumberOfInputs() * 149 + 3 * 32 + 12
+  const fee = vB * feeRate
+  const feeUtxo = nonMetaSegwitUtxos.find((utxo) => {
+    return utxo.satoshis - fee > 0 ? utxo : undefined
+  })
+
+  if (!feeUtxo) {
+    throw new Error('No available UTXOs')
+  }
+
+  psbtTx.addInput(feeUtxo, true)
+  psbtTx.addOutput(segwitAddress, feeUtxo.satoshis - fee)
+  return
+}
+
+const addTaprootFeeUtxo = async ({
+  taprootUtxos,
+  feeRate,
+  psbtTx,
+  taprootAddress,
+}: {
+  taprootUtxos: any[]
+  feeRate: number
+  psbtTx: PSBTTransaction
+  taprootAddress: string
+}) => {
+  const { nonMetaTaprootUtxos } = taprootUtxos.reduce(
+    (acc, utxo) => {
+      utxo.inscriptions.length > 0
+        ? acc.metaUtxos.push(utxo)
+        : acc.nonMetaTaprootUtxos.push(utxo)
+      return acc
+    },
+    { metaUtxos: [], nonMetaTaprootUtxos: [] }
+  )
+
+  nonMetaTaprootUtxos.sort((a, b) => a.satoshis - b.satoshis)
+  const vB = psbtTx.getNumberOfInputs() * 149 + 3 * 32 + 12
+  const fee = vB * feeRate
+  const feeUtxo = nonMetaTaprootUtxos.find((utxo) => {
+    return utxo.satoshis - fee > 0 ? utxo : undefined
+  })
+
+  if (!feeUtxo) {
+    throw new Error('No available UTXOs')
+  }
+
+  psbtTx.addInput(feeUtxo, false)
+  psbtTx.addOutput(taprootAddress, feeUtxo.satoshis - fee)
+  return
+}
+
+const addInscriptionUtxo = async ({
+  metaUtxos,
+  inscriptionId,
+  toAddress,
+  psbtTx,
+}: {
+  metaUtxos: any[]
+  inscriptionId: string
+  toAddress: string
+  psbtTx: PSBTTransaction
+}) => {
   const matchedUtxo = metaUtxos.find((utxo) => {
     return utxo.inscriptions.some(
       (inscription) => inscription.id === inscriptionId
@@ -42,30 +197,6 @@ export async function buildOrdTx(
     )
   }
   psbtTx.addInput(matchedUtxo)
-  nonMetaSegwitUtxos.sort((a, b) => a.satoshis - b.satoshis)
-  const vB = psbtTx.getNumberOfInputs() * 149 + 3 * 32 + 12
-  const fee = vB * feeRate
-  const feeUtxo = nonMetaSegwitUtxos.find((utxo) => {
-    return utxo.satoshis - fee > 0 ? utxo : undefined
-  })
-
-  if (!feeUtxo) {
-    throw new Error('No available UTXOs')
-  }
-
-  psbtTx.addInput(feeUtxo, true)
   psbtTx.addOutput(toAddress, matchedUtxo.satoshis)
-  psbtTx.addOutput(segwitAddress, feeUtxo.satoshis - fee)
-  psbtTx.outputs[0].value = metaOutputValue
-
-  const remainingUnspent = psbtTx.getUnspent()
-  if (remainingUnspent <= 0) {
-    throw new Error('Not enough balance for the fee')
-  }
-
-  const psbt = await psbtTx.createSignedPsbt()
-
-  psbtTx.dumpTx(psbt)
-
-  return psbt
+  return
 }

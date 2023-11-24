@@ -25,5 +25,5 @@ reset:
 	$(Q)echo "--- reset"
 
 retest: reset
-	$(Q)oyl-cli recover
+	$(Q)oyl-cli test
 	$(Q)echo "--- test complete"
