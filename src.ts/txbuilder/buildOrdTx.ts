@@ -1,3 +1,4 @@
+import * as bitcoin from 'bitcoinjs-lib'
 import { PSBTTransaction } from './PSBTTransaction'
 
 export async function buildOrdTx({
@@ -12,12 +13,12 @@ export async function buildOrdTx({
   segwitAddress,
   segwitUtxos,
 }: {
-  psbtTx: PSBTTransaction
+  psbtTx: PSBTTransaction | bitcoin.Psbt | any
   allUtxos: any[]
   toAddress: string
-  metaOutputValue: any
+  metaOutputValue?: any
   feeRate: number
-  inscriptionId: string
+  inscriptionId?: string
   taprootAddress: string
   payFeesWithSegwit: boolean
   segwitAddress?: string
@@ -64,7 +65,7 @@ export async function buildOrdTx({
   return psbt
 }
 
-const getUtxosForFees = async ({
+export const getUtxosForFees = async ({
   payFeesWithSegwit,
   psbtTx,
   feeRate,
@@ -74,7 +75,7 @@ const getUtxosForFees = async ({
   segwitAddress,
 }: {
   payFeesWithSegwit: boolean
-  psbtTx: PSBTTransaction
+  psbtTx: PSBTTransaction | bitcoin.Psbt
   feeRate: number
   taprootUtxos: any[]
   taprootAddress: string
@@ -107,7 +108,7 @@ const addSegwitFeeUtxo = async ({
 }: {
   segwitUtxos: any[]
   feeRate: number
-  psbtTx: PSBTTransaction
+  psbtTx: PSBTTransaction | bitcoin.Psbt | any
   segwitAddress: string
 }) => {
   const { nonMetaSegwitUtxos } = segwitUtxos.reduce(
@@ -144,7 +145,7 @@ const addTaprootFeeUtxo = async ({
 }: {
   taprootUtxos: any[]
   feeRate: number
-  psbtTx: PSBTTransaction
+  psbtTx: PSBTTransaction | bitcoin.Psbt | any
   taprootAddress: string
 }) => {
   const { nonMetaTaprootUtxos } = taprootUtxos.reduce(
@@ -168,7 +169,7 @@ const addTaprootFeeUtxo = async ({
     throw new Error('No available UTXOs')
   }
 
-  psbtTx.addInput(feeUtxo, false)
+  psbtTx.addInput(feeUtxo)
   psbtTx.addOutput(taprootAddress, feeUtxo.satoshis - fee)
   return
 }
@@ -182,7 +183,7 @@ const addInscriptionUtxo = async ({
   metaUtxos: any[]
   inscriptionId: string
   toAddress: string
-  psbtTx: PSBTTransaction
+  psbtTx: PSBTTransaction | bitcoin.Psbt | any
 }) => {
   const matchedUtxo = metaUtxos.find((utxo) => {
     return utxo.inscriptions.some(
@@ -200,3 +201,20 @@ const addInscriptionUtxo = async ({
   psbtTx.addOutput(toAddress, matchedUtxo.satoshis)
   return
 }
+
+/// Use as ref for getting all needed utxos to cover
+
+// for await (let utxo of utxosGathered) {
+//   const {
+//     tx_hash_big_endian,
+//     tx_output_n,
+//     value,
+//     script: outputScript,
+//   } = utxo
+
+//   psbt.addInput({
+//     hash: tx_hash_big_endian,
+//     index: tx_output_n,
+//     witnessUtxo: { value, script: Buffer.from(outputScript, 'hex') },
+//   })
+// }
