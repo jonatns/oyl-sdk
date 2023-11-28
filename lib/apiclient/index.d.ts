@@ -88,11 +88,25 @@ export declare class OylApiClient {
      */
     getMempoolInfo(): Promise<any>;
     /**
-     * Get ticker offers.
+     * Get Unisat ticker offers.
      * @param _ticker - The ticker to query.
      */
-    getTickerOffers({ _ticker }: {
+    getUnisatTickerOffers({ _ticker }: {
         _ticker: string;
+    }): Promise<any>;
+    /**
+     * Get Okx ticker offers.
+     * @param _ticker - The ticker to query.
+     */
+    getOkxTickerOffers({ _ticker }: {
+        _ticker: string;
+    }): Promise<any>;
+    /**
+   * Get Okx offer psbt.
+   * @param offerId - The offer Id to query.
+   */
+    getOkxOfferPsbt({ offerId }: {
+        offerId: number;
     }): Promise<any>;
     /**
      * Initialize a swap bid.

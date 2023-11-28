@@ -731,17 +731,6 @@ export class Wallet {
   }
 
   /**
-   * Fetches offers associated with a specific BRC20 ticker.
-   * @param {Object} params - The parameters containing the ticker information.
-   * @param {string} params.ticker - The ticker symbol to retrieve offers for.
-   * @returns {Promise<any>} A promise that resolves to an array of offers.
-   */
-  async getBrcOffers({ ticker }) {
-    const offers = await this.apiClient.getTickerOffers({ _ticker: ticker })
-    return offers
-  }
-
-  /**
    * Initiates and completes a swap on the blockchain resource (BRC) marketplace.
    * @param {SwapBrc} bid - The bid details for the swap.
    * @returns {Promise<string>} A promise that resolves to the transaction ID of the submitted bid.
