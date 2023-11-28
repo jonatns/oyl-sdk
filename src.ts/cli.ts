@@ -2,6 +2,7 @@ import yargs from 'yargs'
 import { camelCase } from 'change-case'
 import { Wallet } from './oylib'
 import { PSBTTransaction } from './txbuilder/PSBTTransaction'
+import { Aggregator } from './PSBTAggregator'
 import * as transactions from './transactions'
 import * as bitcoin from 'bitcoinjs-lib'
 import { Inscriber } from '@sadoprotocol/ordit-sdk'
@@ -33,6 +34,11 @@ const options = {
 const intent = new BuildMarketplaceTransaction(options)
 const builder = await intent.psbtBuilder();
 console.log(builder)
+}
+
+export async function testAggregator() {
+  const aggregator = new Aggregator();
+  console.log(await aggregator._fetchAllOffers("ordi"));
 }
 
 
@@ -202,6 +208,9 @@ export async function runCLI() {
       break
     case 'swap':
       return await swapFlow()
+      break
+    case 'aggregate':
+      return await testAggregator();
       break
     default:
       return await callAPI(yargs.argv._[0], options)

@@ -91,15 +91,15 @@ export declare class OylApiClient {
      * Get Unisat ticker offers.
      * @param _ticker - The ticker to query.
      */
-    getUnisatTickerOffers({ _ticker }: {
-        _ticker: string;
+    getUnisatTickerOffers({ ticker }: {
+        ticker: string;
     }): Promise<any>;
     /**
      * Get Okx ticker offers.
      * @param _ticker - The ticker to query.
      */
-    getOkxTickerOffers({ _ticker }: {
-        _ticker: string;
+    getOkxTickerOffers({ ticker }: {
+        ticker: string;
     }): Promise<any>;
     /**
    * Get Okx offer psbt.

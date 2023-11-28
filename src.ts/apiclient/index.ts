@@ -161,10 +161,11 @@ export class OylApiClient {
    * Get Unisat ticker offers.
    * @param _ticker - The ticker to query.
    */
-  async getUnisatTickerOffers({ _ticker }: { _ticker: string }): Promise<any> {
+  async getUnisatTickerOffers({ ticker }: { ticker: string }): Promise<any> {
     const response = await this._call('/get-token-unisat-offers', 'post', {
-      ticker: _ticker,
+      ticker: ticker,
     })
+    if (response.error) throw Error (response.error)
     return response.data.list
   }
 
@@ -172,11 +173,12 @@ export class OylApiClient {
    * Get Okx ticker offers.
    * @param _ticker - The ticker to query.
    */
-  async getOkxTickerOffers({ _ticker }: { _ticker: string }): Promise<any> {
+  async getOkxTickerOffers({ ticker }: { ticker: string }): Promise<any> {
     const response = await this._call('/get-token-okx-offers', 'post', {
-      ticker: _ticker,
+      ticker: ticker,
     })
-    return response
+    if (response.error) throw Error (response.error)
+    return response.data.items
   }
 
     /**

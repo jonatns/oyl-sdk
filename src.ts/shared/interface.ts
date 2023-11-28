@@ -122,6 +122,15 @@ export enum AddressType {
   P2WPKH,
 }
 
+export interface MarketplaceOffer {
+  ticker: string;
+  offerId: string;
+  amount: string;
+  address: string;
+  marketplace: "okx" | "unisat";
+  unitPrice: number;
+  totalPrice: number;
+}
 export interface ProviderOptions {
   network: String
   host: String
