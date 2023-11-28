@@ -489,21 +489,22 @@ export const formatOptionsToSignInputs = async ({
   isRevealTx,
   pubkey,
   segwitPubkey,
+  segwitAddress,
+  taprootAddress,
 }: {
-  _psbt: string | bitcoin.Psbt
+  _psbt: bitcoin.Psbt
   isRevealTx: boolean
   pubkey: string
   segwitPubkey: string
+  segwitAddress: string
+  taprootAddress: string
 }) => {
   let toSignInputs: ToSignInput[] = []
   const psbtNetwork = bitcoin.networks.bitcoin
 
-  const psbt =
-    typeof _psbt === 'string'
-      ? bitcoin.Psbt.fromHex(_psbt as string, { network: psbtNetwork })
-      : (_psbt as bitcoin.Psbt)
-
-  psbt.data.inputs.forEach((v, index: number) => {
+  let index = 0
+  for await (const v of _psbt.data.inputs) {
+    console.log(v)
     let script: any = null
     let value = 0
     const isSigned = v.finalScriptSig || v.finalScriptWitness
@@ -513,26 +514,23 @@ export const formatOptionsToSignInputs = async ({
       value = v.witnessUtxo.value
     } else if (v.nonWitnessUtxo) {
       const tx = bitcoin.Transaction.fromBuffer(v.nonWitnessUtxo)
-      const output = tx.outs[psbt.txInputs[index].index]
+      const output = tx.outs[_psbt.txInputs[index].index]
       script = output.script
       value = output.value
     }
     if (!isSigned && lostInternalPubkey) {
-      const tapInternalKey = assertHex(Buffer.from(pubkey, 'hex'))
-      const p2tr = bitcoin.payments.p2tr({
-        internalPubkey: tapInternalKey,
-        network: psbtNetwork,
-      })
-      if (
-        v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
-      ) {
-        v.tapInternalKey = tapInternalKey
-      }
-    }
-
-    if (script && !isSigned) {
       const address = PsbtAddress.fromOutputScript(script, psbtNetwork)
-      if (isRevealTx || (!isRevealTx && address === address)) {
+      if (isRevealTx || (!isRevealTx && taprootAddress === address)) {
+        const tapInternalKey = assertHex(Buffer.from(pubkey, 'hex'))
+        const p2tr = bitcoin.payments.p2tr({
+          internalPubkey: tapInternalKey,
+          network: psbtNetwork,
+        })
+        if (
+          v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
+        ) {
+          v.tapInternalKey = tapInternalKey
+        }
         if (v.tapInternalKey) {
           toSignInputs.push({
             index: index,
@@ -540,15 +538,18 @@ export const formatOptionsToSignInputs = async ({
             sighashTypes: v.sighashType ? [v.sighashType] : undefined,
           })
         }
-      } else {
-        toSignInputs.push({
-          index: index,
-          publicKey: segwitPubkey,
-          sighashTypes: v.sighashType ? [v.sighashType] : undefined,
-        })
       }
     }
-  })
+    if (script && !isSigned && segwitAddress) {
+      toSignInputs.push({
+        index: index,
+        publicKey: segwitPubkey,
+        sighashTypes: v.sighashType ? [v.sighashType] : undefined,
+      })
+    }
+
+    index++
+  }
 
   return toSignInputs
 }
@@ -633,7 +634,7 @@ export const inscribe = async ({
       })
     }
 
-    const inputs = psbt.inputCount
+    const inputs = 1
     const commitVb = calculateTaprootTxSize(inputs, 0, 2)
     const revealVb = calculateTaprootTxSize(inputs, 0, 1)
     const commitSatsNeeded = Math.floor((commitVb + 10) * fastestFee)
@@ -652,6 +653,7 @@ export const inscribe = async ({
       segwitAddress: segwitAddress,
       feeRate: fastestFee,
       taprootAddress: inputAddress,
+      segwitPubKey: segwitPublicKey,
     })
 
     const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
@@ -659,7 +661,11 @@ export const inscribe = async ({
       isRevealTx: false,
       pubkey: taprootPublicKey,
       segwitPubkey: segwitPublicKey,
+      segwitAddress: segwitAddress,
+      taprootAddress: inputAddress,
     })
+
+    console.log(toSignInputs)
 
     const taprootSigner = await createTaprootSigner({
       mnemonic: mnemonic,
@@ -672,7 +678,7 @@ export const inscribe = async ({
       segwitPubKey: segwitPublicKey,
     })
 
-    await signInputs(
+    const signedPsbt = await signInputs(
       psbt,
       toSignInputs,
       taprootPublicKey,
@@ -681,9 +687,9 @@ export const inscribe = async ({
       taprootSigner
     )
 
-    psbt.finalizeAllInputs()
+    signedPsbt.finalizeAllInputs()
 
-    const commitHex = psbt.extractTransaction().toHex()
+    const commitHex = signedPsbt.extractTransaction().toHex()
     console.log('commit hex', commitHex)
 
     const commitTxPsbt: bitcoin.Psbt = bitcoin.Psbt.fromHex(commitHex)
@@ -914,4 +920,30 @@ export function calculateTaprootTxSize(
 
   // Total transaction size
   return baseTxSize + totalInputSize + totalOutputSize
+}
+
+export function createP2PKHRedeemScript(publicKeyHex) {
+  const publicKeyBuffer = Buffer.from(publicKeyHex, 'hex')
+  const publicKeyHash = bitcoin.crypto.hash160(publicKeyBuffer)
+
+  return bitcoin.script.compile([
+    bitcoin.opcodes.OP_DUP,
+    bitcoin.opcodes.OP_HASH160,
+    publicKeyHash,
+    bitcoin.opcodes.OP_EQUALVERIFY,
+    bitcoin.opcodes.OP_CHECKSIG,
+  ])
+}
+
+export function createP2SHP2PKHRedeemScript(publicKeyHex) {
+  const publicKeyBuffer = Buffer.from(publicKeyHex, 'hex')
+  const publicKeyHash = bitcoin.crypto.hash160(publicKeyBuffer)
+
+  return bitcoin.script.compile([
+    bitcoin.opcodes.OP_DUP,
+    bitcoin.opcodes.OP_HASH160,
+    Buffer.from(publicKeyHash),
+    bitcoin.opcodes.OP_EQUALVERIFY,
+    bitcoin.opcodes.OP_CHECKSIG,
+  ])
 }

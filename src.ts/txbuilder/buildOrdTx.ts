@@ -1,5 +1,10 @@
 import * as bitcoin from 'bitcoinjs-lib'
 import { PSBTTransaction } from './PSBTTransaction'
+import {
+  createP2PKHRedeemScript,
+  createP2SHP2PKHRedeemScript,
+} from '../shared/utils'
+import { getAddressType } from '../transactions'
 
 export async function buildOrdTx({
   psbtTx,
@@ -12,6 +17,7 @@ export async function buildOrdTx({
   payFeesWithSegwit,
   segwitAddress,
   segwitUtxos,
+  segwitPubKey,
 }: {
   psbtTx: PSBTTransaction | bitcoin.Psbt | any
   allUtxos: any[]
@@ -23,6 +29,7 @@ export async function buildOrdTx({
   payFeesWithSegwit: boolean
   segwitAddress?: string
   segwitUtxos?: any[]
+  segwitPubKey?: string
 }) {
   const { metaUtxos, nonMetaUtxos } = allUtxos.reduce(
     (acc, utxo) => {
@@ -51,6 +58,7 @@ export async function buildOrdTx({
     taprootAddress: taprootAddress,
     segwitUtxos: segwitUtxos,
     segwitAddress: segwitAddress,
+    segwitPubKey: segwitPubKey,
   })
 
   const remainingUnspent = psbtTx.getUnspent()
@@ -73,6 +81,7 @@ export const getUtxosForFees = async ({
   taprootAddress,
   segwitUtxos,
   segwitAddress,
+  segwitPubKey,
 }: {
   payFeesWithSegwit: boolean
   psbtTx: PSBTTransaction | bitcoin.Psbt
@@ -81,6 +90,7 @@ export const getUtxosForFees = async ({
   taprootAddress: string
   segwitUtxos?: any[]
   segwitAddress?: string
+  segwitPubKey?: string
 }) => {
   if (payFeesWithSegwit && segwitUtxos) {
     await addSegwitFeeUtxo({
@@ -88,15 +98,16 @@ export const getUtxosForFees = async ({
       feeRate: feeRate,
       psbtTx: psbtTx,
       segwitAddress: segwitAddress,
+      segwitPubKey: segwitPubKey,
     })
-    return
+  } else {
+    await addTaprootFeeUtxo({
+      taprootUtxos: taprootUtxos,
+      feeRate: feeRate,
+      psbtTx: psbtTx,
+      taprootAddress: taprootAddress,
+    })
   }
-  await addTaprootFeeUtxo({
-    taprootUtxos: taprootUtxos,
-    feeRate: feeRate,
-    psbtTx: psbtTx,
-    taprootAddress: taprootAddress,
-  })
   return
 }
 
@@ -105,12 +116,16 @@ const addSegwitFeeUtxo = async ({
   feeRate,
   psbtTx,
   segwitAddress,
+  segwitPubKey,
 }: {
   segwitUtxos: any[]
   feeRate: number
-  psbtTx: PSBTTransaction | bitcoin.Psbt | any
+  psbtTx: PSBTTransaction | bitcoin.Psbt
   segwitAddress: string
+  segwitPubKey: string
 }) => {
+  const isBitcoinJSLib = psbtTx instanceof bitcoin.Psbt
+
   const { nonMetaSegwitUtxos } = segwitUtxos.reduce(
     (acc, utxo) => {
       utxo.inscriptions.length > 0
@@ -122,8 +137,18 @@ const addSegwitFeeUtxo = async ({
   )
 
   nonMetaSegwitUtxos.sort((a, b) => a.satoshis - b.satoshis)
-  const vB = psbtTx.getNumberOfInputs() * 149 + 3 * 32 + 12
+
+  const inputCount = isBitcoinJSLib
+    ? psbtTx.txInputs.length === 0
+      ? 1
+      : psbtTx.txInputs.length
+    : psbtTx.getNumberOfInputs() === 0
+    ? 1
+    : psbtTx.getNumberOfInputs()
+
+  const vB = inputCount * 1 * 149 + 3 * 32 + 12
   const fee = vB * feeRate
+
   const feeUtxo = nonMetaSegwitUtxos.find((utxo) => {
     return utxo.satoshis - fee > 0 ? utxo : undefined
   })
@@ -131,9 +156,52 @@ const addSegwitFeeUtxo = async ({
   if (!feeUtxo) {
     throw new Error('No available UTXOs')
   }
+  const addressType = getAddressType(segwitAddress)
+  let redeemScript
 
-  psbtTx.addInput(feeUtxo, true)
-  psbtTx.addOutput(segwitAddress, feeUtxo.satoshis - fee)
+  if (addressType === 1) {
+    const p2shObj = bitcoin.payments.p2sh({
+      redeem: bitcoin.payments.p2sh({
+        pubkey: Buffer.from(segwitPubKey, 'hex'),
+        network: bitcoin.networks.bitcoin,
+      }),
+    })
+
+    redeemScript = p2shObj.redeem.output
+  }
+  if (addressType === 2) {
+    console.log('entered', addressType)
+    try {
+      const p2wshObj = bitcoin.payments.p2wsh({
+        redeem: bitcoin.payments.p2ms({
+          m: 1,
+          pubkey: Buffer.from(segwitPubKey, 'hex'),
+          network: bitcoin.networks.bitcoin,
+        }),
+      })
+      redeemScript = p2wshObj.redeem.output
+
+      console.log(p2wshObj)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  if (isBitcoinJSLib) {
+    psbtTx.addInput({
+      hash: feeUtxo.txId,
+      index: 0,
+      witnessUtxo: {
+        value: feeUtxo.satoshis,
+        script: Buffer.from(feeUtxo.scriptPk, 'hex'),
+      },
+      witnessScript: redeemScript,
+    })
+    psbtTx.addOutput({ address: segwitAddress, value: feeUtxo.satoshis - fee })
+  } else {
+    psbtTx.addInput(feeUtxo, true)
+    psbtTx.addOutput(segwitAddress, feeUtxo.satoshis - fee)
+  }
   return
 }
 

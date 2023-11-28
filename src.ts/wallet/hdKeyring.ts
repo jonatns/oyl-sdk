@@ -268,6 +268,7 @@ export class HdKeyring extends EventEmitter {
     opts?: any
   ) {
     inputs.forEach(({ index, publicKey, sighashTypes }) => {
+      console.log(inputs)
       const keyPair = this._getPrivateKeyFor(publicKey)
       const input = psbt.data.inputs[index]
       if (isTaprootInput(input)) {
@@ -285,8 +286,12 @@ export class HdKeyring extends EventEmitter {
         psbt.signInput(index, signer, sighashTypes)
         console.log('used signer')
       } else {
-        console.log('used keypair')
-        psbt.signInput(index, keyPair, sighashTypes)
+        try {
+          console.log('used keypair')
+          psbt.signInput(index, keyPair, sighashTypes)
+        } catch (error) {
+          console.log(error)
+        }
       }
     })
     return psbt

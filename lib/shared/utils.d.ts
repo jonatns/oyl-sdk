@@ -62,11 +62,13 @@ export declare const getTheOtherUTXOsToCoverAmount: (address: string, amountNeed
 export declare const getUTXOByAddressTxIDAndVOut: (address: string, txId: string, vOut: number) => Promise<IBlockchainInfoUTXO>;
 export declare function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]): number;
 export declare const getScriptForAddress: (address: string) => Promise<any>;
-export declare const formatOptionsToSignInputs: ({ _psbt, isRevealTx, pubkey, segwitPubkey, }: {
-    _psbt: string | bitcoin.Psbt;
+export declare const formatOptionsToSignInputs: ({ _psbt, isRevealTx, pubkey, segwitPubkey, segwitAddress, taprootAddress, }: {
+    _psbt: bitcoin.Psbt;
     isRevealTx: boolean;
     pubkey: string;
     segwitPubkey: string;
+    segwitAddress: string;
+    taprootAddress: string;
 }) => Promise<ToSignInput[]>;
 export declare const signInputs: (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], taprootPubkey: string, segwitPubKey: string, segwitSigner: any, taprootSigner: any) => Promise<bitcoin.Psbt>;
 export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, }: {
@@ -87,3 +89,5 @@ export declare const callBTCRPCEndpoint: (method: string, params: string | strin
 export declare function waitForTransaction(txId: string): Promise<boolean>;
 export declare function getOutputValueByVOutIndex(commitTxId: string, vOut: number): Promise<number | null>;
 export declare function calculateTaprootTxSize(taprootInputCount: number, nonTaprootInputCount: number, outputCount: number): number;
+export declare function createP2PKHRedeemScript(publicKeyHex: any): Buffer;
+export declare function createP2SHP2PKHRedeemScript(publicKeyHex: any): Buffer;

@@ -4,20 +4,10 @@ import { Wallet } from './oylib'
 import { PSBTTransaction } from './txbuilder/PSBTTransaction'
 import * as transactions from './transactions'
 import * as bitcoin from 'bitcoinjs-lib'
-import { address as PsbtAddress, Psbt } from 'bitcoinjs-lib'
-import { InscribeTransfer, ToSignInput } from './shared/interface'
-import {
-  assertHex,
-  calculateAmountGathered,
-  delay,
-  getScriptForAddress,
-  getUTXOsToCoverAmount,
-  getUTXOsToCoverAmountWithRemainder,
-} from './shared/utils'
+import { address as PsbtAddress } from 'bitcoinjs-lib'
+import { ToSignInput } from './shared/interface'
+import { assertHex } from './shared/utils'
 import axios from 'axios'
-
-import * as ecc from '@cmdcode/crypto-utils'
-import { Address, Signer, Tap, Tx } from '@cmdcode/tapscript'
 import * as ecc2 from '@bitcoinerlab/secp256k1'
 import BIP32Factory from 'bip32'
 import { BuildMarketplaceTransaction } from './txbuilder/buildMarketplaceTransaction'
@@ -172,18 +162,6 @@ const formatOptionsToSignInputs = async (
 
 export const MEMPOOL_SPACE_API_V1_URL = 'https://mempool.space/api/v1'
 
-const getRecommendedBTCFeesMempool = async () => {
-  const gen_res = await axios
-    .get(`${MEMPOOL_SPACE_API_V1_URL}/fees/recommended`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    .then((res) => res.data)
-
-  return await gen_res
-}
-
 export const createInscriptionScript = (pubKey: any, content: any) => {
   const mimeType = 'text/plain;charset=utf-8'
   const textEncoder = new TextEncoder()
@@ -230,37 +208,6 @@ export const callBTCRPCEndpoint = async (
       console.error(e.response)
       throw e
     })
-}
-
-async function signAndBroadcastInscriptionPsbt(
-  psbt: Psbt,
-  fee: number,
-  pubKey: string,
-  signer,
-  address = '',
-  isDry: boolean = false
-): Promise<string | Error | unknown> {
-  try {
-    const wallet = new Wallet()
-    const addressType = transactions.getAddressType(address)
-    if (addressType == null) new Error('Invalid Address Type')
-    const tx = new PSBTTransaction(signer, address, pubKey, addressType, fee)
-    const signedPsbt = await tx.signPsbt(psbt, true, true)
-    //@ts-ignore
-    psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
-    const rawtx = signedPsbt.extractTransaction().toHex()
-    console.log('signAndBroadcastInscriptionPsbt() rawTx:', rawtx)
-    if (!isDry) {
-      await wallet.apiClient.pushTx({ transactionHex: rawtx })
-    }
-
-    return psbt.extractTransaction().getId()
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      return Error(`Things exploded (${err.message})`)
-    }
-    return err
-  }
 }
 
 // async function createOrdPsbtTx() {
@@ -334,7 +281,7 @@ export async function runCLI() {
     //     toAddress:
     //       'bc1pkvt4pj7jgj02s95n6sn56fhgl7t7cfx5mj4dedsqyzast0whpchs7ujd7y',
     //     txFee: 68,
-    //     payFeesWithSegwit: false,
+    //     payFeesWithSegwit: true,
     //     mnemonic:
     //       'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
     //   })

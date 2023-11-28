@@ -1,6 +1,6 @@
 import * as bitcoin from 'bitcoinjs-lib';
 import { PSBTTransaction } from './PSBTTransaction';
-export declare function buildOrdTx({ psbtTx, allUtxos, toAddress, metaOutputValue, feeRate, inscriptionId, taprootAddress, payFeesWithSegwit, segwitAddress, segwitUtxos, }: {
+export declare function buildOrdTx({ psbtTx, allUtxos, toAddress, metaOutputValue, feeRate, inscriptionId, taprootAddress, payFeesWithSegwit, segwitAddress, segwitUtxos, segwitPubKey, }: {
     psbtTx: PSBTTransaction | bitcoin.Psbt | any;
     allUtxos: any[];
     toAddress: string;
@@ -11,8 +11,9 @@ export declare function buildOrdTx({ psbtTx, allUtxos, toAddress, metaOutputValu
     payFeesWithSegwit: boolean;
     segwitAddress?: string;
     segwitUtxos?: any[];
+    segwitPubKey?: string;
 }): Promise<any>;
-export declare const getUtxosForFees: ({ payFeesWithSegwit, psbtTx, feeRate, taprootUtxos, taprootAddress, segwitUtxos, segwitAddress, }: {
+export declare const getUtxosForFees: ({ payFeesWithSegwit, psbtTx, feeRate, taprootUtxos, taprootAddress, segwitUtxos, segwitAddress, segwitPubKey, }: {
     payFeesWithSegwit: boolean;
     psbtTx: PSBTTransaction | bitcoin.Psbt;
     feeRate: number;
@@ -20,4 +21,5 @@ export declare const getUtxosForFees: ({ payFeesWithSegwit, psbtTx, feeRate, tap
     taprootAddress: string;
     segwitUtxos?: any[];
     segwitAddress?: string;
+    segwitPubKey?: string;
 }) => Promise<void>;
