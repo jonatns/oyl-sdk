@@ -1,8 +1,10 @@
+import { OylApiClient } from "../apiclient"
+
 export class Aggregator {
-    public apiClients
+    public apiClient
 
     constructor(apiClients) {
-        this.apiClients = apiClients;
+        this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg' })
     }
 
     /**

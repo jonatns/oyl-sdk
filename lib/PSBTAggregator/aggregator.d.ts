@@ -1,5 +1,5 @@
 export declare class Aggregator {
-    apiClients: any;
+    apiClient: any;
     constructor(apiClients: any);
     /**
      * Fetches offers from all APIs and aggregates them.
