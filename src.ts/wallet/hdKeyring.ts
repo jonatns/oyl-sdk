@@ -290,12 +290,6 @@ export class HdKeyring extends EventEmitter {
         console.log('used signer')
       } else {
         try {
-          console.log({ publicKey })
-          const address = getAddressesFromPublicKey(publicKey, 'mainnet')
-          console.log({ address })
-
-          console.log(index)
-
           psbt.signInput(index, keyPair, sighashTypes)
         } catch (error) {
           console.log(error)
