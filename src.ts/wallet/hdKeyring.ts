@@ -3,7 +3,7 @@ import { ECPairInterface } from 'ecpair'
 import bitcore from 'bitcore-lib'
 import { isTaprootInput } from 'bitcoinjs-lib/src/psbt/bip371'
 import { EventEmitter } from 'events'
-import { tweakSigner, ECPair, createP2PKHRedeemScript } from '../shared/utils'
+import { tweakSigner, ECPair } from '../shared/utils'
 import Mnemonic from 'bitcore-mnemonic'
 import { getAddressesFromPublicKey } from '@sadoprotocol/ordit-sdk'
 
@@ -273,11 +273,6 @@ export class HdKeyring extends EventEmitter {
       const keyPair = this._getPrivateKeyFor(publicKey)
       const input = psbt.data.inputs[index]
       const inputTx = psbt.txInputs[index]
-
-      const getTxIdFromHash = Buffer.from(inputTx.hash)
-        .reverse()
-        .toString('hex')
-      console.log({ getTxIdFromHash })
 
       if (isTaprootInput(input)) {
         const tweakedSigner = tweakSigner(keyPair, {
