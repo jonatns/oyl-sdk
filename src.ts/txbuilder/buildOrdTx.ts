@@ -277,33 +277,3 @@ const addInscriptionUtxo = async ({
   psbtTx.addOutput(toAddress, matchedUtxo.satoshis)
   return
 }
-
-/// Use as ref for getting all needed utxos to cover
-
-// for await (let utxo of utxosGathered) {
-//   const {
-//     tx_hash_big_endian,
-//     tx_output_n,
-//     value,
-//     script: outputScript,
-//   } = utxo
-
-//   psbt.addInput({
-//     hash: tx_hash_big_endian,
-//     index: tx_output_n,
-//     witnessUtxo: { value, script: Buffer.from(outputScript, 'hex') },
-//   })
-// }
-
-// function createP2PKHRedeemScript(publicKeyHex) {
-//   const publicKeyBuffer = Buffer.from(publicKeyHex, 'hex')
-//   const publicKeyHash = bitcoin.crypto.hash160(publicKeyBuffer)
-//
-//   return bitcoin.script.compile([
-//     bitcoin.opcodes.OP_DUP,
-//     bitcoin.opcodes.OP_HASH160,
-//     publicKeyHash,
-//     bitcoin.opcodes.OP_EQUALVERIFY,
-//     bitcoin.opcodes.OP_CHECKSIG,
-//   ])
-// }
