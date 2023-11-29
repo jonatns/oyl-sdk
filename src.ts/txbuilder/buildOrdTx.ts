@@ -115,7 +115,15 @@ const addSegwitFeeUtxo = async ({
   segwitAddress,
   segwitPubKey,
 }: {
-  segwitUtxos: any[]
+  segwitUtxos: {
+    txId: string
+    outputIndex: number
+    satoshis: number
+    scriptPk: string
+    addressType: number
+    address: string
+    inscriptions: any[]
+  }[]
   feeRate: number
   psbtTx: PSBTTransaction | bitcoin.Psbt
   segwitAddress: string
