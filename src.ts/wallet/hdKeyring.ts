@@ -269,10 +269,8 @@ export class HdKeyring extends EventEmitter {
     opts?: any
   ) {
     inputs.forEach(({ index, publicKey, sighashTypes }) => {
-      console.log(inputs)
       const keyPair = this._getPrivateKeyFor(publicKey)
       const input = psbt.data.inputs[index]
-      const inputTx = psbt.txInputs[index]
 
       if (isTaprootInput(input)) {
         const tweakedSigner = tweakSigner(keyPair, {
