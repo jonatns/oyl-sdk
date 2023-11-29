@@ -191,7 +191,7 @@ const addSegwitFeeUtxo = async ({
     if (isBitcoinJSLib) {
       psbtTx.addInput({
         hash: feeUtxo.txId,
-        index: 1,
+        index: feeUtxo.outputIndex,
         witnessUtxo: {
           value: feeUtxo.satoshis,
           script: Buffer.from(feeUtxo.scriptPk, 'hex'),
