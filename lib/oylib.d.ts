@@ -1,7 +1,7 @@
 import BcoinRpc from './rpclient';
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
-import { SwapBrc, ProviderOptions, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
+import { SwapBrc, ProviderOptions, Providers, RecoverAccountOptions, TickerDetails, InscribeTransfer } from './shared/interface';
 import { OylApiClient } from './apiclient';
 export declare class Wallet {
     private mnemonic;
@@ -200,8 +200,8 @@ export declare class Wallet {
         payFeesWithSegwit: boolean;
         mnemonic: string;
     }): Promise<{
-        txId: string;
-        rawtx: string;
+        txId: any;
+        rawtx: any;
     }>;
     /**
      * Creates a Partially Signed Bitcoin Transaction (PSBT) to send regular satoshis, signs and broadcasts it.
@@ -301,4 +301,5 @@ export declare class Wallet {
     getCollectibleById(inscriptionId: string): Promise<any>;
     signPsbt(psbtHex: any, fee: any, pubKey: any, signer: any, address: any): Promise<string>;
     signInscriptionPsbt(psbt: any, fee: any, pubKey: any, signer: any, address?: string): Promise<any>;
+    sendBRC20(options: InscribeTransfer): Promise<unknown>;
 }

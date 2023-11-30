@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import * as bitcoin from 'bitcoinjs-lib';
-import { UnspentOutput, TxInput, IBlockchainInfoUTXO } from '../shared/interface';
+import { UnspentOutput, TxInput, IBlockchainInfoUTXO, ToSignInput } from '../shared/interface';
 export interface IBISWalletIx {
     validity: any;
     isBrc: boolean;
@@ -62,3 +62,31 @@ export declare const getTheOtherUTXOsToCoverAmount: (address: string, amountNeed
 export declare const getUTXOByAddressTxIDAndVOut: (address: string, txId: string, vOut: number) => Promise<IBlockchainInfoUTXO>;
 export declare function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]): number;
 export declare const getScriptForAddress: (address: string) => Promise<any>;
+export declare const formatOptionsToSignInputs: ({ _psbt, isRevealTx, pubkey, segwitPubkey, segwitAddress, taprootAddress, }: {
+    _psbt: bitcoin.Psbt;
+    isRevealTx: boolean;
+    pubkey: string;
+    segwitPubkey: string;
+    segwitAddress: string;
+    taprootAddress: string;
+}) => Promise<ToSignInput[]>;
+export declare const signInputs: (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], taprootPubkey: string, segwitPubKey: string, segwitSigner: any, taprootSigner: any) => Promise<bitcoin.Psbt>;
+export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, }: {
+    ticker: string;
+    amount: number;
+    inputAddress: string;
+    outputAddress: string;
+    mnemonic: string;
+    taprootPublicKey: string;
+    segwitPublicKey: string;
+    segwitAddress: string;
+    isDry?: boolean;
+}) => Promise<any>;
+export declare const MEMPOOL_SPACE_API_V1_URL = "https://mempool.space/api/v1";
+export declare const createInscriptionScript: (pubKey: any, content: any) => any[];
+export declare const RPC_ADDR = "https://node.oyl.gg/v1/6e3bc3c289591bb447c116fda149b094";
+export declare const callBTCRPCEndpoint: (method: string, params: string | string[]) => Promise<any>;
+export declare function waitForTransaction(txId: string): Promise<boolean>;
+export declare function getOutputValueByVOutIndex(commitTxId: string, vOut: number): Promise<number | null>;
+export declare function calculateTaprootTxSize(taprootInputCount: number, nonTaprootInputCount: number, outputCount: number): number;
+export declare function getRawTxnHashFromTxnId(txnId: string): Promise<any>;

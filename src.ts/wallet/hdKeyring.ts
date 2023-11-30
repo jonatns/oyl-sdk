@@ -5,6 +5,7 @@ import { isTaprootInput } from 'bitcoinjs-lib/src/psbt/bip371'
 import { EventEmitter } from 'events'
 import { tweakSigner, ECPair } from '../shared/utils'
 import Mnemonic from 'bitcore-mnemonic'
+import { getAddressesFromPublicKey } from '@sadoprotocol/ordit-sdk'
 
 const hdPathString = "m/86'/0'/0'/0"
 
@@ -270,6 +271,7 @@ export class HdKeyring extends EventEmitter {
     inputs.forEach(({ index, publicKey, sighashTypes }) => {
       const keyPair = this._getPrivateKeyFor(publicKey)
       const input = psbt.data.inputs[index]
+
       if (isTaprootInput(input)) {
         const tweakedSigner = tweakSigner(keyPair, {
           network: bitcoin.networks['bitcoin'],
@@ -285,8 +287,11 @@ export class HdKeyring extends EventEmitter {
         psbt.signInput(index, signer, sighashTypes)
         console.log('used signer')
       } else {
-        console.log('used keypair')
-        psbt.signInput(index, keyPair, sighashTypes)
+        try {
+          psbt.signInput(index, keyPair, sighashTypes)
+        } catch (error) {
+          console.log(error)
+        }
       }
     })
     return psbt

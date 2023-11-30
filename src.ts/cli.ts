@@ -4,20 +4,10 @@ import { Wallet } from './oylib'
 import { PSBTTransaction } from './txbuilder/PSBTTransaction'
 import * as transactions from './transactions'
 import * as bitcoin from 'bitcoinjs-lib'
-import { address as PsbtAddress, Psbt } from 'bitcoinjs-lib'
-import { InscribeTransfer, ToSignInput } from './shared/interface'
-import {
-  assertHex,
-  calculateAmountGathered,
-  delay,
-  getScriptForAddress,
-  getUTXOsToCoverAmount,
-  getUTXOsToCoverAmountWithRemainder,
-} from './shared/utils'
+import { address as PsbtAddress } from 'bitcoinjs-lib'
+import { ToSignInput } from './shared/interface'
+import { assertHex } from './shared/utils'
 import axios from 'axios'
-
-import * as ecc from '@cmdcode/crypto-utils'
-import { Address, Signer, Tap, Tx } from '@cmdcode/tapscript'
 import * as ecc2 from '@bitcoinerlab/secp256k1'
 import BIP32Factory from 'bip32'
 import { BuildMarketplaceTransaction } from './txbuilder/buildMarketplaceTransaction'
@@ -172,18 +162,6 @@ const formatOptionsToSignInputs = async (
 
 export const MEMPOOL_SPACE_API_V1_URL = 'https://mempool.space/api/v1'
 
-const getRecommendedBTCFeesMempool = async () => {
-  const gen_res = await axios
-    .get(`${MEMPOOL_SPACE_API_V1_URL}/fees/recommended`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    .then((res) => res.data)
-
-  return await gen_res
-}
-
 export const createInscriptionScript = (pubKey: any, content: any) => {
   const mimeType = 'text/plain;charset=utf-8'
   const textEncoder = new TextEncoder()
@@ -232,325 +210,6 @@ export const callBTCRPCEndpoint = async (
     })
 }
 
-export const inscribe = async ({
-  ticker,
-  amount,
-  inputAddress,
-  outputAddress,
-  commitTxId,
-  isDry,
-}: {
-  ticker: string
-  amount: number
-  inputAddress: string
-  outputAddress: string
-  commitTxId?: string
-  isDry?: boolean
-}) => {
-  const { fastestFee } = await getRecommendedBTCFeesMempool()
-  const inputs = 1
-  const vB = inputs * 149 + 3 * 32 + 12
-  const minerFee = vB * fastestFee
-  const fees = minerFee + 4000
-  console.log(fees)
-
-  try {
-    const secret =
-      'd84d671cbd24a08db5ed43b93102484bd9bd8beb657e784451a226cf6a6e259b'
-
-    const secKey = ecc.keys.get_seckey(String(secret))
-    const pubKey = ecc.keys.get_pubkey(String(secret), true)
-    const content = `{"p":"brc-20","op":"transfer","tick":"${ticker}","amt":"${amount}"}`
-
-    const script = createInscriptionScript(pubKey, content)
-    const tapleaf = Tap.encodeScript(script)
-    const [tpubkey, cblock] = Tap.getPubKey(pubKey, { target: tapleaf })
-    const address = Address.p2tr.fromPubKey(tpubkey)
-
-    let utxosGathered
-
-    if (!commitTxId) {
-      let reimbursementAmount = 0
-      const psbt = new bitcoin.Psbt()
-      utxosGathered = await getUTXOsToCoverAmountWithRemainder(
-        inputAddress,
-        fees
-      )
-      const amountGathered = calculateAmountGathered(utxosGathered)
-      console.log(amountGathered)
-      if (amountGathered < fees) {
-        console.log('WAHAHAHAHAH')
-        return { error: 'insuffICIENT funds for inscribe' }
-      }
-
-      reimbursementAmount = amountGathered - fees
-
-      for await (let utxo of utxosGathered) {
-        const {
-          tx_hash_big_endian,
-          tx_output_n,
-          value,
-          script: outputScript,
-        } = utxo
-
-        psbt.addInput({
-          hash: tx_hash_big_endian,
-          index: tx_output_n,
-          witnessUtxo: { value, script: Buffer.from(outputScript, 'hex') },
-        })
-      }
-
-      psbt.addOutput({
-        value: INSCRIPTION_PREPARE_SAT_AMOUNT,
-        address: address, // address for inscriber for the user
-      })
-
-      if (reimbursementAmount > 546) {
-        psbt.addOutput({
-          value: reimbursementAmount,
-          address: inputAddress,
-        })
-      }
-
-      return {
-        psbtHex: psbt.toHex(),
-        psbtBase64: psbt.toBase64(),
-        utxosGathered,
-      }
-    }
-
-    const txData = Tx.create({
-      vin: [
-        {
-          txid: commitTxId,
-          vout: 0,
-          prevout: {
-            value: INSCRIPTION_PREPARE_SAT_AMOUNT,
-            scriptPubKey: ['OP_1', tpubkey],
-          },
-        },
-      ],
-      vout: [
-        {
-          value: 546,
-          scriptPubKey: Address.toScriptPubKey(outputAddress),
-        },
-      ],
-    })
-
-    const sig = Signer.taproot.sign(secKey, txData, 0, { extension: tapleaf })
-    txData.vin[0].witness = [sig, script, cblock]
-    if (!isDry) {
-      return await callBTCRPCEndpoint(
-        'sendrawtransaction',
-        Tx.encode(txData).hex
-      )
-    } else {
-      return { result: Tx.util.getTxid(txData) }
-    }
-  } catch (e: any) {
-    // console.error(e);
-    return { error: e.message }
-  }
-}
-
-async function inscribeTest(options: InscribeTransfer) {
-  const isDry = true
-
-  if (isDry) {
-    console.log('DRY!!!!! RUNNING ONE-CLICK BRC20 TRANSFER')
-  } else {
-    console.log('WET!!!!!!! 5')
-    await delay(1000)
-    console.log('WET!!!!!!! 4')
-    await delay(1000)
-    console.log('WET!!!!!!! 3')
-    await delay(1000)
-    console.log('WET!!!!!!! 2')
-    await delay(1000)
-    console.log('WET!!!!!!! 1')
-    await delay(1000)
-    console.log('LAUNCH!')
-    await delay(1000)
-  }
-
-  try {
-    // CREATE TRANSFER INSCRIPTION
-    const { psbtHex: commitTxResponse, utxosGathered } = await inscribe({
-      ticker: options.token,
-      amount: options.amount,
-      inputAddress: options.feeFromAddress,
-      outputAddress: options.feeFromAddress,
-      isDry: false,
-    })
-
-    const commitTxPsbt = bitcoin.Psbt.fromHex(commitTxResponse)
-    const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs(
-      commitTxPsbt,
-      false,
-      options.taprootPublicKey,
-      options.feeFromAddress
-    )
-
-    await options.signer(commitTxPsbt, toSignInputs)
-    commitTxPsbt.finalizeAllInputs()
-    const commitTxHex = commitTxPsbt.extractTransaction().toHex()
-    let commitTxId: string
-    if (isDry) {
-      commitTxId = commitTxPsbt.extractTransaction().getId()
-    } else {
-      const { result } = await callBTCRPCEndpoint(
-        'sendrawtransaction',
-        commitTxHex
-      )
-      commitTxId = result
-    }
-
-    console.log({ commitTxId })
-    console.log('waiting for 10 seconds')
-    await delay(10000)
-
-    const { result: revealTxId } = await inscribe({
-      ticker: options.token,
-      amount: options.amount,
-      inputAddress: options.feeFromAddress,
-      outputAddress: options.feeFromAddress,
-      isDry,
-      commitTxId,
-    })
-    console.log({ revealTxId })
-    console.log('waiting for 10 seconds')
-    await delay(10000)
-    console.log(
-      `CREATING PSBT TO SEND ${options.amount} ${options.token} TO ${options.destinationAddress}`
-    )
-
-    const sendTransferPsbt = new bitcoin.Psbt()
-    let reimbursementAmount = 0
-    const script = await getScriptForAddress(options.feeFromAddress)
-
-    sendTransferPsbt.addInput({
-      hash: revealTxId as string,
-      index: 0,
-      witnessUtxo: {
-        value: 546,
-        script: Buffer.from(script, 'hex'),
-      },
-    })
-
-    sendTransferPsbt.addOutput({
-      value: 546,
-      address: options.destinationAddress,
-    })
-
-    const vB = sendTransferPsbt.inputCount * 149 + 3 * 32 + 12
-    const fee = vB * options.feeRate
-    const utxosGatheredForFees = await getUTXOsToCoverAmount(
-      options.feeFromAddress,
-      fee,
-      [],
-      utxosGathered
-    )
-    const amountGathered = calculateAmountGathered(utxosGatheredForFees)
-    if (amountGathered === 0 || utxosGatheredForFees.length === 0) {
-      new Error('INSUFFICIENT_FUNDS_FOR_INSCRIBE')
-    }
-
-    sendTransferPsbt.addInput({
-      hash: commitTxId,
-      index: 1,
-      witnessUtxo: {
-        value: commitTxPsbt.txOutputs[1].value,
-        script: Buffer.from(script, 'hex'),
-      },
-    })
-
-    reimbursementAmount = commitTxPsbt.txOutputs[1].value - fee
-
-    sendTransferPsbt.addOutput({
-      value: reimbursementAmount,
-      address: options.feeFromAddress, // address for inscriber for the user
-    })
-
-    // console.log('sendTransferPsbt: ', sendTransferPsbt.toHex())
-
-    const toSignInputsForTransfer: ToSignInput[] =
-      await formatOptionsToSignInputs(
-        sendTransferPsbt,
-        false,
-        options.taprootPublicKey,
-        options.feeFromAddress
-      )
-
-    console.log({ sendTransferPsbtBase64: sendTransferPsbt.toBase64() })
-    console.log({ sendTransferPsbtHex: sendTransferPsbt.toHex() })
-
-    await options.signer(sendTransferPsbt, toSignInputsForTransfer)
-    sendTransferPsbt.finalizeAllInputs()
-    const finalizedTransferSendPsbtHex = sendTransferPsbt
-      .extractTransaction()
-      .toHex()
-
-    // console.log({ finalizedTransferSendPsbtHex })
-    console.log('EXTRACTED ID', sendTransferPsbt.extractTransaction().getId())
-    console.log('EXTRACTED HEX', sendTransferPsbt.extractTransaction().toHex())
-
-    if (isDry) {
-      const rpcResponse = await callBTCRPCEndpoint('testmempoolaccept', [
-        `${sendTransferPsbt.extractTransaction().toHex()}`,
-      ])
-
-      console.log('MEMPOOL ACCEPT RESULT: ', rpcResponse.result)
-
-      return sendTransferPsbt.extractTransaction().getId()
-    } else {
-      const { result: transferTxnId } = await callBTCRPCEndpoint(
-        'sendrawtransaction',
-        finalizedTransferSendPsbtHex
-      )
-      return transferTxnId
-    }
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      console.error(err)
-      return Error(`Things exploded (${err.message})`)
-    }
-    console.error(err)
-    return err
-  }
-}
-
-async function signAndBroadcastInscriptionPsbt(
-  psbt: Psbt,
-  fee: number,
-  pubKey: string,
-  signer,
-  address = '',
-  isDry: boolean = false
-): Promise<string | Error | unknown> {
-  try {
-    const wallet = new Wallet()
-    const addressType = transactions.getAddressType(address)
-    if (addressType == null) new Error('Invalid Address Type')
-    const tx = new PSBTTransaction(signer, address, pubKey, addressType, fee)
-    const signedPsbt = await tx.signPsbt(psbt, true, true)
-    //@ts-ignore
-    psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
-    const rawtx = signedPsbt.extractTransaction().toHex()
-    console.log('signAndBroadcastInscriptionPsbt() rawTx:', rawtx)
-    if (!isDry) {
-      await wallet.apiClient.pushTx({ transactionHex: rawtx })
-    }
-
-    return psbt.extractTransaction().getId()
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      return Error(`Things exploded (${err.message})`)
-    }
-    return err
-  }
-}
-
 // async function createOrdPsbtTx() {
 //   const wallet = new Wallet()
 //   const test0 = await wallet.createOrdPsbtTx({
@@ -583,56 +242,53 @@ export async function runCLI() {
       return await loadRpc(options)
       break
     case 'test':
-      // const mnemonic =
-      //   'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
-      // // 'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
-      // const tapWallet = new Wallet()
-      // const tapPayload = await tapWallet.fromPhrase({
-      //   mnemonic: mnemonic.trim(),
-      //   hdPath: RequiredPath[3],
-      //   type: 'taproot',
-      // })
-      // const signer = tapPayload.keyring.keyring
-      // const tapSigner = signer.signTransaction.bind(signer)
-      // return await inscribeTest({
-      //   feeFromAddress:
-      //     'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-      //   taprootPublicKey:
-      //     '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
-      //   changeAddress:
-      //     'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-      //   destinationAddress:
-      //     'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
-      //   feeRate: 75,
-      //   token: 'BONK',
-      //   signer: tapSigner,
-      //   amount: 40,
-      // })
+      const mnemonic =
+        'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
+      // 'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
+      const tapWallet = new Wallet()
+      return await tapWallet.sendBRC20({
+        feeFromAddress:
+          'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+        taprootPublicKey:
+          '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
+        changeAddress:
+          'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+        destinationAddress:
+          'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
+        feeRate: 75,
+        token: 'BONK',
+        segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+        segwitPubkey:
+          '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
+        mnemonic: mnemonic,
+        amount: 40,
+        payFeesWithSegwit: true,
+      })
 
-      async function createOrdPsbtTx() {
-        const wallet = new Wallet()
-        const test0 = await wallet.createOrdPsbtTx({
-          changeAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-          fromAddress:
-            'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-          inscriptionId:
-            '68069fc341a462cd9a01ef4808b0bda0db7c0c6ea5dfffdc35b8992450cecb5bi0',
-          taprootPubKey:
-            '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
-          segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-          segwitPubKey:
-            '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
-          toAddress:
-            'bc1pkvt4pj7jgj02s95n6sn56fhgl7t7cfx5mj4dedsqyzast0whpchs7ujd7y',
-          txFee: 68,
-          payFeesWithSegwit: true,
-          mnemonic:
-            'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
-        })
-        console.log(test0)
-      }
-      await createOrdPsbtTx()
-      break
+    // async function createOrdPsbtTx() {
+    //   const wallet = new Wallet()
+    //   const test0 = await wallet.createOrdPsbtTx({
+    //     changeAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+    //     fromAddress:
+    //       'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+    //     inscriptionId:
+    //       '68069fc341a462cd9a01ef4808b0bda0db7c0c6ea5dfffdc35b8992450cecb5bi0',
+    //     taprootPubKey:
+    //       '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
+    //     segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+    //     segwitPubKey:
+    //       '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
+    //     toAddress:
+    //       'bc1pkvt4pj7jgj02s95n6sn56fhgl7t7cfx5mj4dedsqyzast0whpchs7ujd7y',
+    //     txFee: 68,
+    //     payFeesWithSegwit: true,
+    //     mnemonic:
+    //       'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
+    //   })
+    //   console.log(test0)
+    // }
+    // await createOrdPsbtTx()
+    // break
     case 'view':
       return await viewPsbt()
       break

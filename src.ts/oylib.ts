@@ -2,9 +2,15 @@ import { PSBTTransaction, buildOrdTx } from './txbuilder'
 import { UTXO_DUST } from './shared/constants'
 import {
   amountToSatoshis,
+  calculateAmountGathered,
   createSegwitSigner,
   createTaprootSigner,
+  delay,
+  formatOptionsToSignInputs,
+  getScriptForAddress,
+  getUTXOsToCoverAmount,
   satoshisToAmount,
+  signInputs,
 } from './shared/utils'
 import BcoinRpc from './rpclient'
 import { SandshrewBitcoinClient } from './rpclient/sandshrew'
@@ -21,9 +27,13 @@ import {
   Providers,
   RecoverAccountOptions,
   TickerDetails,
+  InscribeTransfer,
+  ToSignInput,
 } from './shared/interface'
 import { OylApiClient } from './apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
+import { callBTCRPCEndpoint } from './cli'
+import { inscribe } from './shared/utils'
 
 const RequiredPath = [
   "m/44'/0'/0'/0", // P2PKH (Legacy)
@@ -566,7 +576,7 @@ export class Wallet {
     }
 
     const allUtxos = await this.getUtxosArtifacts({ address: fromAddress })
-    let segwitUtxos: any[] = undefined
+    let segwitUtxos: any[] | undefined
     if (segwitAddress) {
       segwitUtxos = await this.getUtxosArtifacts({ address: segwitAddress })
     }
@@ -598,11 +608,12 @@ export class Wallet {
     finalizedPsbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
 
     const rawtx = finalizedPsbt.extractTransaction().toHex()
-    const result = await this.apiClient.pushTx({ transactionHex: rawtx })
+    // const result = await this.apiClient.pushTx({ transactionHex: rawtx })
 
     return {
       txId: finalizedPsbt.extractTransaction().getId(),
-      ...result,
+      rawtx: rawtx,
+      // ...result,
     }
   }
 
@@ -899,5 +910,48 @@ export class Wallet {
     //CONFIRM TRANSACTION IS CONFIRMED
 
     return ready_txId
+  }
+
+  async sendBRC20(options: InscribeTransfer) {
+    const isDry = true
+
+    if (isDry) {
+      console.log('DRY!!!!! RUNNING ONE-CLICK BRC20 TRANSFER')
+    } else {
+      console.log('WET!!!!!!! 5')
+      await delay(1000)
+      console.log('WET!!!!!!! 4')
+      await delay(1000)
+      console.log('WET!!!!!!! 3')
+      await delay(1000)
+      console.log('WET!!!!!!! 2')
+      await delay(1000)
+      console.log('WET!!!!!!! 1')
+      await delay(1000)
+      console.log('LAUNCH!')
+      await delay(1000)
+    }
+
+    try {
+      // CREATE TRANSFER INSCRIPTION
+      await inscribe({
+        ticker: options.token,
+        amount: options.amount,
+        inputAddress: options.feeFromAddress,
+        outputAddress: options.feeFromAddress,
+        mnemonic: options.mnemonic,
+        taprootPublicKey: options.taprootPublicKey,
+        segwitPublicKey: options.segwitPubkey,
+        segwitAddress: options.segwitAddress,
+        isDry: true,
+      })
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error(err)
+        return Error(`Things exploded (${err.message})`)
+      }
+      console.error(err)
+      return err
+    }
   }
 }
