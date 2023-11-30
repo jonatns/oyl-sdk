@@ -1,6 +1,6 @@
 import * as bitcoin from 'bitcoinjs-lib'
 import { PSBTTransaction } from './PSBTTransaction'
-import { createP2PKHRedeemScript } from '../shared/utils'
+import { getRawTxnHashFromTxnId } from '../shared/utils'
 import { getAddressType } from '../transactions'
 
 export async function buildOrdTx({
@@ -176,7 +176,6 @@ const addSegwitFeeUtxo = async ({
       redeemScript = p2shObj.redeem.output
     }
     if (addressType === 2) {
-      console.log('entered', addressType)
       try {
         const p2wpkh = bitcoin.payments.p2wpkh({
           pubkey: Buffer.from(segwitPubKey, 'hex'),
@@ -189,8 +188,6 @@ const addSegwitFeeUtxo = async ({
         })
 
         redeemScript = p2sh.redeem.output
-
-        console.log({ redeemScript })
       } catch (error) {
         console.log(error)
       }
@@ -229,9 +226,10 @@ const addTaprootFeeUtxo = async ({
 }: {
   taprootUtxos: any[]
   feeRate: number
-  psbtTx: PSBTTransaction | bitcoin.Psbt | any
+  psbtTx: PSBTTransaction | bitcoin.Psbt
   taprootAddress: string
 }) => {
+  const isBitcoinJSLib = psbtTx instanceof bitcoin.Psbt
   const { nonMetaTaprootUtxos } = taprootUtxos.reduce(
     (acc, utxo) => {
       utxo.inscriptions.length > 0
@@ -243,7 +241,16 @@ const addTaprootFeeUtxo = async ({
   )
 
   nonMetaTaprootUtxos.sort((a, b) => a.satoshis - b.satoshis)
-  const vB = psbtTx.getNumberOfInputs() * 149 + 3 * 32 + 12
+
+  const inputCount = isBitcoinJSLib
+    ? psbtTx.txInputs.length === 0
+      ? 1
+      : psbtTx.txInputs.length
+    : psbtTx.getNumberOfInputs() === 0
+    ? 1
+    : psbtTx.getNumberOfInputs()
+
+  const vB = inputCount * 149 + 3 * 32 + 12
   const fee = vB * feeRate
   const feeUtxo = nonMetaTaprootUtxos.find((utxo) => {
     return utxo.satoshis - fee > 0 ? utxo : undefined
@@ -252,9 +259,21 @@ const addTaprootFeeUtxo = async ({
   if (!feeUtxo) {
     throw new Error('No available UTXOs')
   }
-
-  psbtTx.addInput(feeUtxo)
-  psbtTx.addOutput(taprootAddress, feeUtxo.satoshis - fee)
+  const feeUtxoRawTxn = await getRawTxnHashFromTxnId(feeUtxo.txId)
+  if (isBitcoinJSLib) {
+    psbtTx.addInput({
+      hash: feeUtxo.txId,
+      index: feeUtxo.outputIndex,
+      nonWitnessUtxo: Buffer.from(feeUtxoRawTxn.result, 'hex'),
+    })
+    psbtTx.addOutput({
+      address: taprootAddress,
+      value: feeUtxo.satoshis - fee,
+    })
+  } else {
+    psbtTx.addInput(feeUtxo)
+    psbtTx.addOutput(taprootAddress, feeUtxo.satoshis - fee)
+  }
   return
 }
 

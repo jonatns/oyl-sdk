@@ -646,7 +646,7 @@ export const inscribe = async ({
     })
 
     await getUtxosForFees({
-      payFeesWithSegwit: !!segwitAddress,
+      payFeesWithSegwit: false,
       psbtTx: psbt,
       taprootUtxos: taprootUtxos,
       segwitUtxos: segwitUtxos,
@@ -919,28 +919,19 @@ export function calculateTaprootTxSize(
   return baseTxSize + totalInputSize + totalOutputSize
 }
 
-export function createP2PKHRedeemScript(publicKeyHex) {
-  const publicKeyBuffer = Buffer.from(publicKeyHex, 'hex')
-  const publicKeyHash = bitcoin.crypto.hash160(publicKeyBuffer)
+export async function getRawTxnHashFromTxnId(txnId: string) {
+  const res = await axios.post(
+    'https://mainnet.sandshrew.io/v1/6e3bc3c289591bb447c116fda149b094',
+    {
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'btc_getrawtransaction',
+      params: [txnId],
+    },
+    {
+      headers: { 'Content-Type': 'application/json' },
+    }
+  )
 
-  return bitcoin.script.compile([
-    bitcoin.opcodes.OP_DUP,
-    bitcoin.opcodes.OP_HASH160,
-    publicKeyHash,
-    bitcoin.opcodes.OP_EQUALVERIFY,
-    bitcoin.opcodes.OP_CHECKSIG,
-  ])
-}
-
-export function createP2SHP2PKHRedeemScript(publicKeyHex) {
-  const publicKeyBuffer = Buffer.from(publicKeyHex, 'hex')
-  const publicKeyHash = bitcoin.crypto.hash160(publicKeyBuffer)
-
-  return bitcoin.script.compile([
-    bitcoin.opcodes.OP_DUP,
-    bitcoin.opcodes.OP_HASH160,
-    Buffer.from(publicKeyHash),
-    bitcoin.opcodes.OP_EQUALVERIFY,
-    bitcoin.opcodes.OP_CHECKSIG,
-  ])
+  return res.data
 }
