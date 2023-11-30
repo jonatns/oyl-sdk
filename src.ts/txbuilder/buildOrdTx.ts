@@ -264,7 +264,10 @@ const addTaprootFeeUtxo = async ({
     psbtTx.addInput({
       hash: feeUtxo.txId,
       index: feeUtxo.outputIndex,
-      nonWitnessUtxo: Buffer.from(feeUtxoRawTxn.result, 'hex'),
+      witnessUtxo: {
+        value: feeUtxo.satoshis,
+        script: Buffer.from(feeUtxo.scriptPk, 'hex'),
+      },
     })
     psbtTx.addOutput({
       address: taprootAddress,

@@ -18,6 +18,7 @@ import { address as PsbtAddress } from 'bitcoinjs-lib'
 import { Tap, Address, Tx, Signer } from '@cmdcode/tapscript'
 import * as ecc2 from '@cmdcode/crypto-utils'
 import { getUtxosForFees } from '../txbuilder/buildOrdTx'
+import { isTaprootInput } from 'bitcoinjs-lib/src/psbt/bip371'
 
 export interface IBISWalletIx {
   validity: any
@@ -504,7 +505,6 @@ export const formatOptionsToSignInputs = async ({
 
   let index = 0
   for await (const v of _psbt.data.inputs) {
-    console.log(v)
     let script: any = null
     let value = 0
     const isSigned = v.finalScriptSig || v.finalScriptWitness
@@ -529,6 +529,7 @@ export const formatOptionsToSignInputs = async ({
         if (
           v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
         ) {
+          console.log('here')
           v.tapInternalKey = tapInternalKey
         }
         if (v.tapInternalKey) {
@@ -540,7 +541,7 @@ export const formatOptionsToSignInputs = async ({
         }
       }
     }
-    if (script && !isSigned && segwitAddress) {
+    if (script && !isSigned && !isTaprootInput(v)) {
       toSignInputs.push({
         index: index,
         publicKey: segwitPubkey,
@@ -687,10 +688,11 @@ export const inscribe = async ({
 
     signedPsbt.finalizeAllInputs()
 
-    const commitHex = signedPsbt.toHex()
-    console.log('commit hex', commitHex)
+    const commitPsbtHash = signedPsbt.toHex()
+    const commitTxnHex = signedPsbt.extractTransaction().toHex()
+    console.log('commit hex', commitTxnHex)
 
-    const commitTxPsbt: bitcoin.Psbt = bitcoin.Psbt.fromHex(commitHex)
+    const commitTxPsbt: bitcoin.Psbt = bitcoin.Psbt.fromHex(commitPsbtHash)
 
     const commitTxHex = commitTxPsbt.extractTransaction().toHex()
     let commitTxId: string
