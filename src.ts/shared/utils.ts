@@ -665,8 +665,6 @@ export const inscribe = async ({
       taprootAddress: inputAddress,
     })
 
-    console.log(toSignInputs)
-
     const taprootSigner = await createTaprootSigner({
       mnemonic: mnemonic,
       taprootAddress: inputAddress,
@@ -689,7 +687,7 @@ export const inscribe = async ({
 
     signedPsbt.finalizeAllInputs()
 
-    const commitHex = signedPsbt.extractTransaction().toHex()
+    const commitHex = signedPsbt.toHex()
     console.log('commit hex', commitHex)
 
     const commitTxPsbt: bitcoin.Psbt = bitcoin.Psbt.fromHex(commitHex)
@@ -748,7 +746,6 @@ export const inscribe = async ({
       return { result: Tx.util.getTxid(txData) }
     }
   } catch (e: any) {
-    // console.error(e);
     return { error: e.message }
   }
 }
