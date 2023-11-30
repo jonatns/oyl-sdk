@@ -89,5 +89,4 @@ export declare const callBTCRPCEndpoint: (method: string, params: string | strin
 export declare function waitForTransaction(txId: string): Promise<boolean>;
 export declare function getOutputValueByVOutIndex(commitTxId: string, vOut: number): Promise<number | null>;
 export declare function calculateTaprootTxSize(taprootInputCount: number, nonTaprootInputCount: number, outputCount: number): number;
-export declare function createP2PKHRedeemScript(publicKeyHex: any): Buffer;
-export declare function createP2SHP2PKHRedeemScript(publicKeyHex: any): Buffer;
+export declare function getRawTxnHashFromTxnId(txnId: string): Promise<any>;

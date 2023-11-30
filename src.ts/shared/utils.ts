@@ -18,6 +18,7 @@ import { address as PsbtAddress } from 'bitcoinjs-lib'
 import { Tap, Address, Tx, Signer } from '@cmdcode/tapscript'
 import * as ecc2 from '@cmdcode/crypto-utils'
 import { getUtxosForFees } from '../txbuilder/buildOrdTx'
+import { isTaprootInput } from 'bitcoinjs-lib/src/psbt/bip371'
 
 export interface IBISWalletIx {
   validity: any
@@ -504,7 +505,6 @@ export const formatOptionsToSignInputs = async ({
 
   let index = 0
   for await (const v of _psbt.data.inputs) {
-    console.log(v)
     let script: any = null
     let value = 0
     const isSigned = v.finalScriptSig || v.finalScriptWitness
@@ -529,6 +529,7 @@ export const formatOptionsToSignInputs = async ({
         if (
           v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
         ) {
+          console.log('here')
           v.tapInternalKey = tapInternalKey
         }
         if (v.tapInternalKey) {
@@ -540,7 +541,7 @@ export const formatOptionsToSignInputs = async ({
         }
       }
     }
-    if (script && !isSigned && segwitAddress) {
+    if (script && !isSigned && !isTaprootInput(v)) {
       toSignInputs.push({
         index: index,
         publicKey: segwitPubkey,
@@ -646,7 +647,7 @@ export const inscribe = async ({
     })
 
     await getUtxosForFees({
-      payFeesWithSegwit: !!segwitAddress,
+      payFeesWithSegwit: false,
       psbtTx: psbt,
       taprootUtxos: taprootUtxos,
       segwitUtxos: segwitUtxos,
@@ -664,8 +665,6 @@ export const inscribe = async ({
       segwitAddress: segwitAddress,
       taprootAddress: inputAddress,
     })
-
-    console.log(toSignInputs)
 
     const taprootSigner = await createTaprootSigner({
       mnemonic: mnemonic,
@@ -689,10 +688,11 @@ export const inscribe = async ({
 
     signedPsbt.finalizeAllInputs()
 
-    const commitHex = signedPsbt.extractTransaction().toHex()
-    console.log('commit hex', commitHex)
+    const commitPsbtHash = signedPsbt.toHex()
+    const commitTxnHex = signedPsbt.extractTransaction().toHex()
+    console.log('commit hex', commitTxnHex)
 
-    const commitTxPsbt: bitcoin.Psbt = bitcoin.Psbt.fromHex(commitHex)
+    const commitTxPsbt: bitcoin.Psbt = bitcoin.Psbt.fromHex(commitPsbtHash)
 
     const commitTxHex = commitTxPsbt.extractTransaction().toHex()
     let commitTxId: string
@@ -748,7 +748,6 @@ export const inscribe = async ({
       return { result: Tx.util.getTxid(txData) }
     }
   } catch (e: any) {
-    // console.error(e);
     return { error: e.message }
   }
 }
@@ -922,28 +921,19 @@ export function calculateTaprootTxSize(
   return baseTxSize + totalInputSize + totalOutputSize
 }
 
-export function createP2PKHRedeemScript(publicKeyHex) {
-  const publicKeyBuffer = Buffer.from(publicKeyHex, 'hex')
-  const publicKeyHash = bitcoin.crypto.hash160(publicKeyBuffer)
+export async function getRawTxnHashFromTxnId(txnId: string) {
+  const res = await axios.post(
+    'https://mainnet.sandshrew.io/v1/6e3bc3c289591bb447c116fda149b094',
+    {
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'btc_getrawtransaction',
+      params: [txnId],
+    },
+    {
+      headers: { 'Content-Type': 'application/json' },
+    }
+  )
 
-  return bitcoin.script.compile([
-    bitcoin.opcodes.OP_DUP,
-    bitcoin.opcodes.OP_HASH160,
-    publicKeyHash,
-    bitcoin.opcodes.OP_EQUALVERIFY,
-    bitcoin.opcodes.OP_CHECKSIG,
-  ])
-}
-
-export function createP2SHP2PKHRedeemScript(publicKeyHex) {
-  const publicKeyBuffer = Buffer.from(publicKeyHex, 'hex')
-  const publicKeyHash = bitcoin.crypto.hash160(publicKeyBuffer)
-
-  return bitcoin.script.compile([
-    bitcoin.opcodes.OP_DUP,
-    bitcoin.opcodes.OP_HASH160,
-    Buffer.from(publicKeyHash),
-    bitcoin.opcodes.OP_EQUALVERIFY,
-    bitcoin.opcodes.OP_CHECKSIG,
-  ])
+  return res.data
 }
