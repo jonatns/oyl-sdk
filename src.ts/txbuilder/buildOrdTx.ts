@@ -259,7 +259,6 @@ const addTaprootFeeUtxo = async ({
   if (!feeUtxo) {
     throw new Error('No available UTXOs')
   }
-  const feeUtxoRawTxn = await getRawTxnHashFromTxnId(feeUtxo.txId)
   if (isBitcoinJSLib) {
     psbtTx.addInput({
       hash: feeUtxo.txId,
