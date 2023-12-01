@@ -1,3 +1,5 @@
+import { payments } from "bitcoinjs-lib"
+
 export interface InscriptionResponse {
   address: string
   inscriptions?: string
@@ -5,6 +7,8 @@ export interface InscriptionResponse {
   transaction: string
   value: string
 }
+
+export type Network = "mainnet" | "testnet" | "regtest"
 
 export type WitnessScriptOptions = {
   pubKeyHex: string
@@ -130,7 +134,9 @@ export interface MarketplaceOffer {
   marketplace: "okx" | "unisat";
   unitPrice: number;
   totalPrice: number;
+  psbt: string
 }
+
 export interface ProviderOptions {
   network: String
   host: String
@@ -198,6 +204,27 @@ export interface SignedBid {
   psbtBid: String
   auctionId: String
   bidId: String
+}
+
+export const addressTypeToName = {
+  p2pkh: "legacy",
+  p2sh: "nested-segwit",
+  p2wpkh: "segwit",
+  p2tr: "taproot"
+} as const
+
+export const addressNameToType = {
+  legacy: "p2pkh",
+  segwit: "p2wpkh",
+  "nested-segwit": "p2sh",
+  taproot: "p2tr"
+} as const
+
+export type AddressTypes = keyof typeof addressTypeToName
+
+export interface BitcoinPaymentType {
+  type: AddressTypes
+  payload: false | payments.Payment
 }
 
 export interface SwapBrc {
