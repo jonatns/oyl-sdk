@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { payments } from "bitcoinjs-lib";
+import { payments, Psbt } from "bitcoinjs-lib";
 export interface InscriptionResponse {
     address: string;
     inscriptions?: string;
@@ -152,6 +152,12 @@ export interface oylAccounts {
     initializedFrom: string;
     mnemonic: string;
 }
+export interface FeeEstimatorOptions {
+    feeRate: number;
+    network: Network;
+    psbt?: Psbt;
+    witness?: Buffer[];
+}
 export interface IBlockchainInfoUTXO {
     tx_hash_big_endian: string;
     tx_hash: string;
@@ -197,6 +203,7 @@ export declare const addressNameToType: {
     readonly taproot: "p2tr";
 };
 export type AddressTypes = keyof typeof addressTypeToName;
+export type AddressFormats = (typeof addressTypeToName)[AddressTypes];
 export interface BitcoinPaymentType {
     type: AddressTypes;
     payload: false | payments.Payment;

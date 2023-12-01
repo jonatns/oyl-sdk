@@ -1,4 +1,4 @@
-import { payments } from "bitcoinjs-lib"
+import { payments, Psbt } from "bitcoinjs-lib"
 
 export interface InscriptionResponse {
   address: string
@@ -170,6 +170,13 @@ export interface oylAccounts {
   mnemonic: string
 }
 
+export interface FeeEstimatorOptions {
+  feeRate: number
+  network: Network
+  psbt?: Psbt
+  witness?: Buffer[]
+}
+
 export interface IBlockchainInfoUTXO {
   tx_hash_big_endian: string
   tx_hash: string
@@ -221,6 +228,8 @@ export const addressNameToType = {
 } as const
 
 export type AddressTypes = keyof typeof addressTypeToName
+
+export type AddressFormats = (typeof addressTypeToName)[AddressTypes]
 
 export interface BitcoinPaymentType {
   type: AddressTypes
