@@ -108,23 +108,25 @@ export declare class PSBTTransaction {
     removeRecentOutputs(count: number): void;
     /**
      * Formats the inputs for signing based on the given PSBT and whether it is a reveal transaction.
-     * @param {string | bitcoin.Psbt} _psbt |  - The PSBT in hex string format or Psbt instance.
+     * @param { bitcoin.Psbt} psbt |  - The PSBT in hex string format or Psbt instance.
      * @returns {Promise<ToSignInput[]>} A promise that resolves to an array of inputs to sign.
      */
-    formatOptionsToSignInputs: (_psbt: string | bitcoin.Psbt) => Promise<ToSignInput[]>;
+    formatOptionsToSignInputs: (psbt: bitcoin.Psbt) => Promise<{
+        psbt: bitcoin.Psbt;
+        toSignInputs: ToSignInput[];
+    }>;
     signInputs(psbt: bitcoin.Psbt, toSignInputs: ToSignInput[]): Promise<void>;
     /**
      * Creates a signed PSBT for the transaction.
-     * @returns {Promise<bitcoin.Psbt>} A promise that resolves to the signed and finalized PSBT instance.
+     * @returns {Promise<bitcoin.Psbt>} A promise that resolves to the signed PSBT instance.
      */
     createSignedPsbt(): Promise<bitcoin.Psbt>;
     /**
      * Signs the provided PSBT with the available keys.
      * @param {bitcoin.Psbt} psbt - The PSBT to sign.
-     * @param {boolean} autoFinalized - Whether to automatically finalize the inputs after signing.
-     * @returns {Promise<bitcoin.Psbt>} A promise that resolves to the signed (and possibly finalized) PSBT.
+     * @returns {Promise<bitcoin.Psbt>} A promise that resolves to the signed PSBT.
      */
-    signPsbt(psbt: bitcoin.Psbt, autoFinalized?: boolean): Promise<bitcoin.Psbt>;
+    signPsbt(psbt: bitcoin.Psbt): Promise<bitcoin.Psbt>;
     /**
      * Generates the raw transaction hex and calculates the fee.
      * @param {boolean} autoAdjust - Whether to automatically adjust output values for the fee.

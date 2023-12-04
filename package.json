@@ -6,6 +6,7 @@
   "repository": "https://github.com/oyl-wallet/oyl-sdk",
   "scripts": {
     "build": "tsc",
+    "dev": "tsc -w",
     "prettier": "prettier --write ./src.ts/**/*.ts",
     "postinstall": "node scripts/fix-modules.js"
   },

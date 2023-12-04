@@ -1,16 +1,11 @@
-import { PSBTTransaction, buildOrdTx } from './txbuilder'
+import { buildOrdTx, PSBTTransaction } from './txbuilder'
 import { UTXO_DUST } from './shared/constants'
 import {
-  amountToSatoshis,
-  calculateAmountGathered,
+  callBTCRPCEndpoint,
   createSegwitSigner,
   createTaprootSigner,
   delay,
-  formatOptionsToSignInputs,
-  getScriptForAddress,
-  getUTXOsToCoverAmount,
-  satoshisToAmount,
-  signInputs,
+  inscribe,
 } from './shared/utils'
 import BcoinRpc from './rpclient'
 import { SandshrewBitcoinClient } from './rpclient/sandshrew'
@@ -22,18 +17,15 @@ import { AccountManager } from './wallet/accountsManager'
 
 import {
   AddressType,
-  SwapBrc,
+  InscribeTransfer,
   ProviderOptions,
   Providers,
   RecoverAccountOptions,
+  SwapBrc,
   TickerDetails,
-  InscribeTransfer,
-  ToSignInput,
 } from './shared/interface'
 import { OylApiClient } from './apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
-import { callBTCRPCEndpoint } from './cli'
-import { inscribe } from './shared/utils'
 
 const RequiredPath = [
   "m/44'/0'/0'/0", // P2PKH (Legacy)
@@ -701,30 +693,24 @@ export class Wallet {
         new Error('Balance not enough to pay network fee.')
       }
 
-      // add dummy output
-      tx.addChangeOutput(1)
-      const estimatedNetworkFee = await tx.calNetworkFee()
-      if (totalUnspentAmount < estimatedNetworkFee) {
-        new Error(
-          `Not enough balance. Need ${satoshisToAmount(
-            estimatedNetworkFee
-          )} BTC as network fee, but only ${satoshisToAmount(
-            totalUnspentAmount
-          )} BTC is available.`
-        )
-      }
+      // const estimatedNetworkFee = await tx.calNetworkFee()
+      // if (totalUnspentAmount < estimatedNetworkFee) {
+      //   new Error(
+      //     `Not enough balance. Need ${satoshisToAmount(
+      //       estimatedNetworkFee
+      //     )} BTC as network fee, but only ${satoshisToAmount(
+      //       totalUnspentAmount
+      //     )} BTC is available.`
+      //   )
+      // }
 
-      const remainingBalance = totalUnspentAmount - estimatedNetworkFee
+      const remainingBalance = totalUnspentAmount
       if (remainingBalance >= UTXO_DUST) {
-        // change dummy output to true output
-        tx.getChangeOutput().value = remainingBalance
-      } else {
-        // remove dummy output
-        tx.removeChangeOutput()
+        tx.addOutput(from, remainingBalance)
       }
 
       const psbt = await tx.createSignedPsbt()
-      // await tx.dumpTx(psbt)
+      psbt.finalizeAllInputs()
 
       //@ts-ignore
       psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
@@ -848,7 +834,9 @@ export class Wallet {
 
     const tx = new PSBTTransaction(signer, from, pubKey, addressType, feeRate)
 
-    const psbt_ = await tx.signPsbt(psbt, false)
+    const psbt_ = await tx.signPsbt(psbt)
+
+    psbt_.finalizeAllInputs()
 
     return psbt_.toHex()
   }
@@ -883,13 +871,65 @@ export class Wallet {
     return data
   }
 
-  async signPsbt(psbtHex, fee, pubKey, signer, address) {
-    const addressType = transactions.getAddressType(address)
-    if (addressType == null) throw Error('Invalid Address Type')
-    const tx = new PSBTTransaction(signer, address, pubKey, addressType, fee)
-    const signedPsbt = await tx.signPsbt(psbtHex)
-    const rawtx = signedPsbt.extractTransaction().toHex()
-    return rawtx
+  async signPsbt(
+    psbtHex: string,
+    fee: any,
+    pubKey: any,
+    signer: any,
+    address: string
+  ) {
+    try {
+      const addressType = transactions.getAddressType(address)
+      if (addressType == null) throw Error('Invalid Address Type')
+      const tx = new PSBTTransaction(signer, address, pubKey, addressType, fee)
+      const psbt = bitcoin.Psbt.fromHex(psbtHex)
+      const signedPsbt = await tx.signPsbt(psbt)
+      const signedPsbtBase64 = signedPsbt.toBase64()
+      const signedPsbtHex = signedPsbt.toHex()
+      return {
+        signedPsbtHex: signedPsbtHex,
+        signedPsbtBase64: signedPsbtBase64,
+      }
+    } catch (e) {
+      console.log(e)
+    }
+  }
+
+  async finalizePsbtBase64(psbtBase64) {
+    try {
+      const { hex: finalizedPsbtHex } = await this.sandshrewBtcClient._call(
+        'btc_finalizepsbt',
+        [`${psbtBase64}`]
+      )
+
+      return finalizedPsbtHex
+    } catch (e) {
+      console.log(e)
+      return ''
+    }
+  }
+  async sendPsbt(txData: string, isDry?: boolean) {
+    try {
+      if (isDry) {
+        const response = await this.sandshrewBtcClient._call(
+          'btc_testmempoolaccept',
+          [`${txData}`]
+        )
+        console.log({ response })
+      } else {
+        const { hex: txHex } = await this.sandshrewBtcClient._call(
+          'btc_sendrawtransaction',
+          [`${txData}`]
+        )
+      }
+
+      return {
+        signedPsbtHex: '',
+        signedPsbtBase64: '',
+      }
+    } catch (e) {
+      console.log(e)
+    }
   }
 
   async signInscriptionPsbt(psbt, fee, pubKey, signer, address = '') {
@@ -900,7 +940,8 @@ export class Wallet {
     const tx = new PSBTTransaction(signer, address, pubKey, addressType, fee)
 
     //SIGN AND FINALIZE THE PSBT
-    const signedPsbt = await tx.signPsbt(psbt, true)
+    const signedPsbt = await tx.signPsbt(psbt)
+    signedPsbt.finalizeAllInputs()
     //@ts-ignore
     psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
 

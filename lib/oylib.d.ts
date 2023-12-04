@@ -1,7 +1,7 @@
 import BcoinRpc from './rpclient';
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
-import { SwapBrc, ProviderOptions, Providers, RecoverAccountOptions, TickerDetails, InscribeTransfer } from './shared/interface';
+import { InscribeTransfer, ProviderOptions, Providers, RecoverAccountOptions, SwapBrc, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
 export declare class Wallet {
     private mnemonic;
@@ -301,7 +301,15 @@ export declare class Wallet {
      * @returns {Promise<any>} A promise that resolves to the collectible data.
      */
     getCollectibleById(inscriptionId: string): Promise<any>;
-    signPsbt(psbtHex: any, fee: any, pubKey: any, signer: any, address: any): Promise<string>;
+    signPsbt(psbtHex: string, fee: any, pubKey: any, signer: any, address: string): Promise<{
+        signedPsbtHex: string;
+        signedPsbtBase64: string;
+    }>;
+    finalizePsbtBase64(psbtBase64: any): Promise<any>;
+    sendPsbt(txData: string, isDry?: boolean): Promise<{
+        signedPsbtHex: string;
+        signedPsbtBase64: string;
+    }>;
     signInscriptionPsbt(psbt: any, fee: any, pubKey: any, signer: any, address?: string): Promise<any>;
     sendBRC20(options: InscribeTransfer): Promise<unknown>;
 }

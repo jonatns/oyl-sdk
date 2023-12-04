@@ -208,17 +208,12 @@ export class PSBTTransaction {
 
   /**
    * Formats the inputs for signing based on the given PSBT and whether it is a reveal transaction.
-   * @param {string | bitcoin.Psbt} _psbt |  - The PSBT in hex string format or Psbt instance.
+   * @param { bitcoin.Psbt} psbt |  - The PSBT in hex string format or Psbt instance.
    * @returns {Promise<ToSignInput[]>} A promise that resolves to an array of inputs to sign.
    */
-  formatOptionsToSignInputs = async (_psbt: string | bitcoin.Psbt) => {
+  formatOptionsToSignInputs = async (psbt: bitcoin.Psbt) => {
     let toSignInputs: ToSignInput[] = []
     const psbtNetwork = bitcoin.networks.bitcoin
-
-    const psbt =
-      typeof _psbt === 'string'
-        ? bitcoin.Psbt.fromHex(_psbt as string, { network: psbtNetwork })
-        : (_psbt as bitcoin.Psbt)
 
     psbt.data.inputs.forEach((v, index: number) => {
       let script: any = null
@@ -257,35 +252,43 @@ export class PSBTTransaction {
       })
     })
 
-    return toSignInputs
+    return { psbt, toSignInputs }
   }
 
   async signInputs(psbt: bitcoin.Psbt, toSignInputs: ToSignInput[]) {
-    const taprootInputs: ToSignInput[] = []
-    const segwitInputs: ToSignInput[] = []
-    toSignInputs.forEach(({ index, publicKey }) => {
-      if (publicKey.slice(0, 2) === '02') {
-        taprootInputs.push(toSignInputs[index])
-      }
-      if (publicKey.slice(0, 2) === '03') {
-        segwitInputs.push(toSignInputs[index])
-      }
-    })
+    try {
+      console.log('SIGN INPUTS STARTIN')
+      const taprootInputs: ToSignInput[] = []
+      const segwitInputs: ToSignInput[] = []
+      toSignInputs.forEach(({ index, publicKey }) => {
+        if (publicKey.slice(0, 2) === '02') {
+          taprootInputs.push(toSignInputs[index])
+        }
+        if (publicKey.slice(0, 2) === '03') {
+          segwitInputs.push(toSignInputs[index])
+        }
+      })
 
-    if (segwitInputs.length > 0) {
-      console.log('SEGWIT SIGNER!')
-      await this.signer(psbt, segwitInputs)
-    } else if (taprootInputs.length > 0) {
-      console.log('TAPROOT SIGNER!')
-      await this.signer(psbt, taprootInputs)
-    } else {
-      console.error('NO INPUTS!')
+      console.log('taprootInputs', taprootInputs)
+
+      if (segwitInputs.length > 0) {
+        console.log('SEGWIT SIGNER!')
+        await this.signer(psbt, segwitInputs)
+      } else if (taprootInputs.length > 0) {
+        console.log('TAPROOT SIGNER!!!!')
+        await this.signer(psbt, taprootInputs)
+      } else {
+        console.error('NO INPUTS!')
+      }
+      console.log('PAST SIGNING IN signInputs()')
+    } catch (e) {
+      console.error(e)
     }
   }
 
   /**
    * Creates a signed PSBT for the transaction.
-   * @returns {Promise<bitcoin.Psbt>} A promise that resolves to the signed and finalized PSBT instance.
+   * @returns {Promise<bitcoin.Psbt>} A promise that resolves to the signed PSBT instance.
    */
   async createSignedPsbt() {
     const psbt = new bitcoin.Psbt({ network: this.network })
@@ -305,7 +308,7 @@ export class PSBTTransaction {
       psbt.addOutput(v)
     })
 
-    await this.signPsbt(psbt, true)
+    await this.signPsbt(psbt)
 
     return psbt
   }
@@ -313,26 +316,22 @@ export class PSBTTransaction {
   /**
    * Signs the provided PSBT with the available keys.
    * @param {bitcoin.Psbt} psbt - The PSBT to sign.
-   * @param {boolean} autoFinalized - Whether to automatically finalize the inputs after signing.
-   * @returns {Promise<bitcoin.Psbt>} A promise that resolves to the signed (and possibly finalized) PSBT.
+   * @returns {Promise<bitcoin.Psbt>} A promise that resolves to the signed PSBT.
    */
-  async signPsbt(psbt: bitcoin.Psbt, autoFinalized = true) {
-    const toSignInputs: ToSignInput[] = await this.formatOptionsToSignInputs(
-      psbt
-    )
 
-    await this.signInputs(psbt, toSignInputs)
+  async signPsbt(psbt: bitcoin.Psbt) {
+    try {
+      const {
+        psbt: formattedPsbt,
+        toSignInputs,
+      }: { psbt: bitcoin.Psbt; toSignInputs: ToSignInput[] } =
+        await this.formatOptionsToSignInputs(psbt)
+      await this.signInputs(formattedPsbt, toSignInputs)
 
-    if (autoFinalized) {
-      console.log('autoFinalized')
-      try {
-        psbt.finalizeAllInputs()
-      } catch (error) {
-        console.log(error, 'Was not finalized')
-      }
+      return formattedPsbt
+    } catch (e) {
+      console.log(e)
     }
-
-    return psbt
   }
 
   /**
