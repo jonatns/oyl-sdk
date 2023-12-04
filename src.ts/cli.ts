@@ -13,12 +13,8 @@ import {
 } from './shared/utils'
 import axios from 'axios'
 import * as ecc2 from '@bitcoinerlab/secp256k1'
-import BIP32Factory from 'bip32'
 import { BuildMarketplaceTransaction } from './txbuilder/buildMarketplaceTransaction'
-import { tap } from 'node:test/reporters'
-import * as wasi from 'wasi'
 
-const bip32 = BIP32Factory(ecc2)
 bitcoin.initEccLib(ecc2)
 
 export async function loadRpc(options) {
