@@ -257,7 +257,6 @@ export class PSBTTransaction {
 
   async signInputs(psbt: bitcoin.Psbt, toSignInputs: ToSignInput[]) {
     try {
-      console.log('SIGN INPUTS STARTIN')
       const taprootInputs: ToSignInput[] = []
       const segwitInputs: ToSignInput[] = []
       toSignInputs.forEach(({ index, publicKey }) => {
@@ -269,18 +268,13 @@ export class PSBTTransaction {
         }
       })
 
-      console.log('taprootInputs', taprootInputs)
-
       if (segwitInputs.length > 0) {
-        console.log('SEGWIT SIGNER!')
         await this.signer(psbt, segwitInputs)
       } else if (taprootInputs.length > 0) {
-        console.log('TAPROOT SIGNER!!!!')
         await this.signer(psbt, taprootInputs)
       } else {
         console.error('NO INPUTS!')
       }
-      console.log('PAST SIGNING IN signInputs()')
     } catch (e) {
       console.error(e)
     }

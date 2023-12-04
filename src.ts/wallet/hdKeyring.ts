@@ -285,7 +285,6 @@ export class HdKeyring extends EventEmitter {
             : keyPair
 
         psbt.signInput(index, signer, sighashTypes)
-        console.log('used signer')
       } else {
         try {
           psbt.signInput(index, keyPair, sighashTypes)
