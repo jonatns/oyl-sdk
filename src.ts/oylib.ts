@@ -908,8 +908,8 @@ export class Oyl {
         segwitAddress: options.segwitAddress,
         isDry: true,
         payFeesWithSegwit: options.payFeesWithSegwit,
-        segwitHdPathWithIndex: "m/49'/0'/0'/0",
-        taprootHdPathWithIndex: "m/84'/0'/0'/0/0",
+        segwitHdPathWithIndex: options.segwitHdPath,
+        taprootHdPathWithIndex: options.taprootHdPath,
       })
     } catch (err: unknown) {
       if (err instanceof Error) {

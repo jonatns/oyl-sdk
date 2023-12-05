@@ -217,6 +217,8 @@ export async function runCLI() {
         mnemonic: mnemonic,
         amount: 40,
         payFeesWithSegwit: true,
+        segwitHdPath: NESTED_SEGWIT_HD_PATH,
+        taprootHdPath: TAPROOT_HD_PATH,
       })
 
     // async function createOrdPsbtTx() {

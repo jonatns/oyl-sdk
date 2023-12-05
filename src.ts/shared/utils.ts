@@ -202,7 +202,6 @@ export const validator = (
 
 export function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput {
   let data
-  console.log(utxo)
   switch (utxo.addressType) {
     case AddressType.P2TR:
       data = {
@@ -540,6 +539,7 @@ export const formatOptionsToSignInputs = async ({
       }
       if (!isSigned && lostInternalPubkey) {
         const address = PsbtAddress.fromOutputScript(script, psbtNetwork)
+
         if (taprootAddress === address) {
           const tapInternalKey = assertHex(Buffer.from(pubkey, 'hex'))
           const p2tr = bitcoin.payments.p2tr({
@@ -600,7 +600,6 @@ export const signInputs = async (
       }
     })
     if (taprootInputs.length > 0) {
-      console.log(taprootInputs)
       await taprootSigner(psbt, taprootInputs)
     }
     if (segwitSigner && segwitInputs.length > 0) {
@@ -715,7 +714,6 @@ export const inscribe = async ({
       segwitSigner,
       taprootSigner
     )
-    console.log('here2')
 
     signedPsbt.finalizeAllInputs()
 
@@ -798,9 +796,6 @@ const getRecommendedBTCFeesMempool = async () => {
       }
     )
     .then((res) => res.data)
-
-  console.log((await gen_res).result['1'])
-
   return (await gen_res).result['1']
 }
 
