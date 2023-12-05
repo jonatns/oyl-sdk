@@ -1,5 +1,14 @@
 import * as bitcoin from 'bitcoinjs-lib';
 import { PSBTTransaction } from './PSBTTransaction';
+export type Utxo = {
+    txId: string;
+    outputIndex: number;
+    satoshis: number;
+    scriptPk: string;
+    addressType: number;
+    address: string;
+    inscriptions: any[];
+};
 export declare function buildOrdTx({ psbtTx, allUtxos, toAddress, metaOutputValue, feeRate, inscriptionId, taprootAddress, payFeesWithSegwit, segwitAddress, segwitUtxos, segwitPubKey, }: {
     psbtTx: PSBTTransaction | bitcoin.Psbt | any;
     allUtxos: any[];
@@ -17,9 +26,9 @@ export declare const getUtxosForFees: ({ payFeesWithSegwit, psbtTx, feeRate, tap
     payFeesWithSegwit: boolean;
     psbtTx: PSBTTransaction | bitcoin.Psbt;
     feeRate: number;
-    taprootUtxos: any[];
+    taprootUtxos: Utxo[];
     taprootAddress: string;
-    segwitUtxos?: any[];
+    segwitUtxos?: Utxo[];
     segwitAddress?: string;
     segwitPubKey?: string;
 }) => Promise<void>;

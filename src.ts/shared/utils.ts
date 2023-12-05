@@ -13,7 +13,7 @@ import BigNumber from 'bignumber.js'
 import { maximumScriptBytes } from './constants'
 import axios from 'axios'
 import { getUnspentOutputs, getAddressType } from '../transactions'
-import { Wallet } from '../oylib'
+import { Oyl } from '../oylib'
 import { address as PsbtAddress } from 'bitcoinjs-lib'
 import { Tap, Address, Tx, Signer } from '@cmdcode/tapscript'
 import * as ecc2 from '@cmdcode/crypto-utils'
@@ -112,33 +112,24 @@ export function delay(ms: number) {
 export async function createSegwitSigner({
   mnemonic,
   segwitAddress,
-  segwitPubKey,
+  hdPathWithIndex,
 }: {
   mnemonic: string
   segwitAddress: string
-  segwitPubKey: string
+  hdPathWithIndex: string
 }) {
-  if (segwitAddress && segwitPubKey) {
+  if (segwitAddress) {
     let payload: any
-    const wallet = new Wallet()
+    const wallet = new Oyl()
     const segwitAddressType = getAddressType(segwitAddress)
     if (segwitAddressType == null) {
       throw Error('Unrecognized Address Type')
     }
-    if (segwitAddressType === 2) {
-      payload = await wallet.fromPhrase({
-        mnemonic: mnemonic.trim(),
-        hdPath: RequiredPath[1],
-        type: 'nested-segwit',
-      })
-    }
-    if (segwitAddressType === 3) {
-      payload = await wallet.fromPhrase({
-        mnemonic: mnemonic.trim(),
-        hdPath: RequiredPath[2],
-        type: 'native-segwit',
-      })
-    }
+    payload = await wallet.fromPhrase({
+      mnemonic: mnemonic.trim(),
+      hdPath: hdPathWithIndex,
+      addrType: segwitAddressType,
+    })
     const segwitKeyring = payload.keyring.keyring
     const segwitSigner = segwitKeyring.signTransaction.bind(segwitKeyring)
     return segwitSigner
@@ -149,26 +140,55 @@ export async function createSegwitSigner({
 export async function createTaprootSigner({
   mnemonic,
   taprootAddress,
+  hdPathWithIndex,
 }: {
   mnemonic: string
   taprootAddress: string
+  hdPathWithIndex: string
 }) {
   const addressType = getAddressType(taprootAddress)
   if (addressType == null) {
     throw Error('Unrecognized Address Type')
   }
-  const tapWallet = new Wallet()
+  const tapWallet = new Oyl()
 
   const tapPayload = await tapWallet.fromPhrase({
     mnemonic: mnemonic.trim(),
-    hdPath: RequiredPath[3],
-    type: 'taproot',
+    hdPath: hdPathWithIndex,
+    addrType: addressType,
   })
 
   const tapKeyring = tapPayload.keyring.keyring
   const taprootSigner = tapKeyring.signTransaction.bind(tapKeyring)
   return taprootSigner
 }
+
+export async function createSigner({
+  mnemonic,
+  fromAddress,
+  hdPathWithIndex,
+}: {
+  mnemonic: string
+  fromAddress: string
+  hdPathWithIndex: string
+}) {
+  const addressType = getAddressType(fromAddress)
+  if (addressType == null) {
+    throw Error('Unrecognized Address Type')
+  }
+  const tapWallet = new Oyl()
+
+  const tapPayload = await tapWallet.fromPhrase({
+    mnemonic: mnemonic.trim(),
+    hdPath: hdPathWithIndex,
+    addrType: addressType,
+  })
+
+  const tapKeyring = tapPayload.keyring.keyring
+  const taprootSigner = tapKeyring.signTransaction.bind(tapKeyring)
+  return taprootSigner
+}
+
 export function amountToSatoshis(val: any) {
   const num = new BigNumber(val)
   return num.multipliedBy(100000000).toNumber()
@@ -502,57 +522,60 @@ export const formatOptionsToSignInputs = async ({
 }) => {
   let toSignInputs: ToSignInput[] = []
   const psbtNetwork = bitcoin.networks.bitcoin
-
-  let index = 0
-  for await (const v of _psbt.data.inputs) {
-    let script: any = null
-    let value = 0
-    const isSigned = v.finalScriptSig || v.finalScriptWitness
-    const lostInternalPubkey = !v.tapInternalKey
-    if (v.witnessUtxo) {
-      script = v.witnessUtxo.script
-      value = v.witnessUtxo.value
-    } else if (v.nonWitnessUtxo) {
-      const tx = bitcoin.Transaction.fromBuffer(v.nonWitnessUtxo)
-      const output = tx.outs[_psbt.txInputs[index].index]
-      script = output.script
-      value = output.value
-    }
-    if (!isSigned && lostInternalPubkey) {
-      const address = PsbtAddress.fromOutputScript(script, psbtNetwork)
-      if (isRevealTx || (!isRevealTx && taprootAddress === address)) {
-        const tapInternalKey = assertHex(Buffer.from(pubkey, 'hex'))
-        const p2tr = bitcoin.payments.p2tr({
-          internalPubkey: tapInternalKey,
-          network: psbtNetwork,
-        })
-        if (
-          v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
-        ) {
-          console.log('here')
-          v.tapInternalKey = tapInternalKey
-        }
-        if (v.tapInternalKey) {
-          toSignInputs.push({
-            index: index,
-            publicKey: pubkey,
-            sighashTypes: v.sighashType ? [v.sighashType] : undefined,
+  try {
+    let index = 0
+    for await (const v of _psbt.data.inputs) {
+      let script: any = null
+      let value = 0
+      const isSigned = v.finalScriptSig || v.finalScriptWitness
+      const lostInternalPubkey = !v.tapInternalKey
+      if (v.witnessUtxo) {
+        script = v.witnessUtxo.script
+        value = v.witnessUtxo.value
+      } else if (v.nonWitnessUtxo) {
+        const tx = bitcoin.Transaction.fromBuffer(v.nonWitnessUtxo)
+        const output = tx.outs[_psbt.txInputs[index].index]
+        script = output.script
+        value = output.value
+      }
+      if (!isSigned && lostInternalPubkey) {
+        const address = PsbtAddress.fromOutputScript(script, psbtNetwork)
+        if (taprootAddress === address) {
+          const tapInternalKey = assertHex(Buffer.from(pubkey, 'hex'))
+          const p2tr = bitcoin.payments.p2tr({
+            internalPubkey: tapInternalKey,
+            network: psbtNetwork,
           })
+          if (
+            v.witnessUtxo?.script.toString('hex') ==
+            p2tr.output?.toString('hex')
+          ) {
+            v.tapInternalKey = tapInternalKey
+          }
+          if (v.tapInternalKey) {
+            toSignInputs.push({
+              index: index,
+              publicKey: pubkey,
+              sighashTypes: v.sighashType ? [v.sighashType] : undefined,
+            })
+          }
         }
       }
-    }
-    if (script && !isSigned && !isTaprootInput(v)) {
-      toSignInputs.push({
-        index: index,
-        publicKey: segwitPubkey,
-        sighashTypes: v.sighashType ? [v.sighashType] : undefined,
-      })
+      if (script && !isSigned && !isTaprootInput(v)) {
+        toSignInputs.push({
+          index: index,
+          publicKey: segwitPubkey,
+          sighashTypes: v.sighashType ? [v.sighashType] : undefined,
+        })
+      }
+
+      index++
     }
 
-    index++
+    return toSignInputs
+  } catch (error) {
+    console.log(error)
   }
-
-  return toSignInputs
 }
 
 export const signInputs = async (
@@ -563,23 +586,30 @@ export const signInputs = async (
   segwitSigner: any,
   taprootSigner: any
 ) => {
-  const taprootInputs: ToSignInput[] = []
-  const segwitInputs: ToSignInput[] = []
-  toSignInputs.forEach(({ index, publicKey }) => {
-    if (publicKey === taprootPubkey) {
-      taprootInputs.push(toSignInputs[index])
-    }
-    if (segwitPubKey && segwitSigner) {
-      if (publicKey === segwitPubKey) {
-        segwitInputs.push(toSignInputs[index])
+  try {
+    const taprootInputs: ToSignInput[] = []
+    const segwitInputs: ToSignInput[] = []
+    toSignInputs.forEach(({ index, publicKey }) => {
+      if (publicKey === taprootPubkey) {
+        taprootInputs.push(toSignInputs[index])
       }
+      if (segwitPubKey && segwitSigner) {
+        if (publicKey === segwitPubKey) {
+          segwitInputs.push(toSignInputs[index])
+        }
+      }
+    })
+    if (taprootInputs.length > 0) {
+      console.log(taprootInputs)
+      await taprootSigner(psbt, taprootInputs)
     }
-  })
-  await taprootSigner(psbt, taprootInputs)
-  if (segwitSigner && segwitInputs.length > 0) {
-    await segwitSigner(psbt, segwitInputs)
+    if (segwitSigner && segwitInputs.length > 0) {
+      await segwitSigner(psbt, segwitInputs)
+    }
+    return psbt
+  } catch (error) {
+    console.log(error)
   }
-  return psbt
 }
 
 export const inscribe = async ({
@@ -592,6 +622,9 @@ export const inscribe = async ({
   segwitPublicKey,
   segwitAddress,
   isDry,
+  segwitHdPathWithIndex,
+  taprootHdPathWithIndex,
+  payFeesWithSegwit,
 }: {
   ticker: string
   amount: number
@@ -602,13 +635,11 @@ export const inscribe = async ({
   segwitPublicKey: string
   segwitAddress: string
   isDry?: boolean
+  segwitHdPathWithIndex?: string
+  taprootHdPathWithIndex?: string
+  payFeesWithSegwit: boolean
 }) => {
-  const { fastestFee } = await getRecommendedBTCFeesMempool()
-  const inputs = 1
-  const vB = inputs * 149 + 3 * 32 + 12
-  const minerFee = vB * fastestFee
-  const fees = minerFee + 4000
-
+  const fastestFee = await getRecommendedBTCFeesMempool()
   try {
     const secret =
       'd84d671cbd24a08db5ed43b93102484bd9bd8beb657e784451a226cf6a6e259b'
@@ -622,7 +653,7 @@ export const inscribe = async ({
     const [tpubkey, cblock] = Tap.getPubKey(pubKey, { target: tapleaf })
     const inscriberAddress = Address.p2tr.fromPubKey(tpubkey)
 
-    const wallet = new Wallet()
+    const wallet = new Oyl()
     const psbt = new bitcoin.Psbt()
 
     const taprootUtxos = await wallet.getUtxosArtifacts({
@@ -636,9 +667,7 @@ export const inscribe = async ({
     }
 
     const inputs = 1
-    const commitVb = calculateTaprootTxSize(inputs, 0, 2)
     const revealVb = calculateTaprootTxSize(inputs, 0, 1)
-    const commitSatsNeeded = Math.floor((commitVb + 10) * fastestFee)
     const revealSatsNeeded = Math.floor((revealVb + 10) * fastestFee)
 
     psbt.addOutput({
@@ -647,7 +676,7 @@ export const inscribe = async ({
     })
 
     await getUtxosForFees({
-      payFeesWithSegwit: false,
+      payFeesWithSegwit: payFeesWithSegwit,
       psbtTx: psbt,
       taprootUtxos: taprootUtxos,
       segwitUtxos: segwitUtxos,
@@ -669,12 +698,13 @@ export const inscribe = async ({
     const taprootSigner = await createTaprootSigner({
       mnemonic: mnemonic,
       taprootAddress: inputAddress,
+      hdPathWithIndex: taprootHdPathWithIndex,
     })
 
     const segwitSigner = await createSegwitSigner({
       mnemonic: mnemonic,
       segwitAddress: segwitAddress,
-      segwitPubKey: segwitPublicKey,
+      hdPathWithIndex: segwitHdPathWithIndex,
     })
 
     const signedPsbt = await signInputs(
@@ -685,6 +715,7 @@ export const inscribe = async ({
       segwitSigner,
       taprootSigner
     )
+    console.log('here2')
 
     signedPsbt.finalizeAllInputs()
 
@@ -752,18 +783,25 @@ export const inscribe = async ({
   }
 }
 
-export const MEMPOOL_SPACE_API_V1_URL = 'https://mempool.space/api/v1'
-
 const getRecommendedBTCFeesMempool = async () => {
   const gen_res = await axios
-    .get(`${MEMPOOL_SPACE_API_V1_URL}/fees/recommended`, {
-      headers: {
-        'Content-Type': 'application/json',
+    .post(
+      'https://mainnet.sandshrew.io/v1/6e3bc3c289591bb447c116fda149b094',
+      {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'esplora_fee-estimates',
+        params: [],
       },
-    })
+      {
+        headers: { 'Content-Type': 'application/json' },
+      }
+    )
     .then((res) => res.data)
 
-  return await gen_res
+  console.log((await gen_res).result['1'])
+
+  return (await gen_res).result['1']
 }
 
 export const createInscriptionScript = (pubKey: any, content: any) => {

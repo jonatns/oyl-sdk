@@ -3,6 +3,7 @@ import { UTXO_DUST } from './shared/constants'
 import {
   callBTCRPCEndpoint,
   createSegwitSigner,
+  createSigner,
   createTaprootSigner,
   delay,
   inscribe,
@@ -34,7 +35,7 @@ const RequiredPath = [
   "m/86'/0'/0'/0", // P2TR (Taproot)
 ]
 
-export class Wallet {
+export class Oyl {
   private mnemonic: String
   private wallet
   public sandshrewBtcClient: SandshrewBitcoinClient
@@ -161,28 +162,12 @@ export class Wallet {
    * @returns {Promise<any>} A promise that resolves to the wallet data including keyring and assets.
    * @throws {Error} Throws an error if initialization fails.
    */
-  async fromPhrase({ mnemonic, type = 'taproot', hdPath = RequiredPath[3] }) {
+  async fromPhrase({
+    mnemonic,
+    addrType = AddressType.P2TR,
+    hdPath = RequiredPath[3],
+  }) {
     try {
-      let addrType
-
-      switch (type) {
-        case 'taproot':
-          addrType = AddressType.P2TR
-          break
-        case 'native-segwit':
-          addrType = AddressType.P2WPKH
-          break
-        case 'nested-segwit':
-          addrType = AddressType.P2SH_P2WPKH
-          break
-        case 'legacy':
-          addrType = AddressType.P2PKH
-          break
-        default:
-          addrType = AddressType.P2TR
-          break
-      }
-
       const wallet = await accounts.importMnemonic(mnemonic, hdPath, addrType)
       this.wallet = wallet
       const meta = await this.getUtxosArtifacts({ address: wallet['address'] })
@@ -257,7 +242,7 @@ export class Wallet {
   }
 
   /**
-   * Creates a new wallet with an optional specific derivation type.
+   * Creates a new Oyl with an optional specific derivation type.
    * @param {object} param0 - Object containing the type of derivation.
    * @param {string} [param0.type] - Optional type of derivation path.
    * @returns {{keyring: HdKeyring, address: string}} The newly created wallet object.
@@ -530,6 +515,8 @@ export class Wallet {
     inscriptionId,
     payFeesWithSegwit,
     mnemonic,
+    segwitHdPathWithIndex,
+    taprootHdPathWithIndex,
   }: {
     fromAddress: string
     toAddress: string
@@ -541,15 +528,18 @@ export class Wallet {
     inscriptionId: string
     payFeesWithSegwit: boolean
     mnemonic: string
+    segwitHdPathWithIndex?: string
+    taprootHdPathWithIndex?: string
   }) {
     const segwitSigner: any = await createSegwitSigner({
       mnemonic: mnemonic,
       segwitAddress: segwitAddress,
-      segwitPubKey: segwitPubKey,
+      hdPathWithIndex: segwitHdPathWithIndex,
     })
     const taprootSigner: any = await createTaprootSigner({
       mnemonic: mnemonic,
       taprootAddress: fromAddress,
+      hdPathWithIndex: taprootHdPathWithIndex,
     })
 
     const { data: collectibleData } = await this.apiClient.getCollectiblesById(
@@ -625,27 +615,45 @@ export class Wallet {
     from,
     amount,
     feeRate,
-    signer,
     publicKey,
+    mnemonic,
+    segwitAddress,
+    segwitPubkey,
+    segwitHdPathWithIndex,
+    taprootHdPathWithIndex,
   }: {
     to: string
     from: string
     amount: number
     feeRate: number
-    signer: any
     publicKey: string
+    mnemonic: string
+    segwitAddress?: string
+    segwitPubkey?: string
+    segwitHdPathWithIndex: string
+    taprootHdPathWithIndex: string
   }) {
     try {
       const utxos = await this.getUtxosArtifacts({ address: from })
-      const addressType = transactions.getAddressType(from)
-      if (addressType == null) throw Error('Invalid Address Type')
+
+      const segwitSigner: any = await createSegwitSigner({
+        mnemonic: mnemonic,
+        segwitAddress: segwitAddress,
+        hdPathWithIndex: segwitHdPathWithIndex,
+      })
+      const taprootSigner: any = await createTaprootSigner({
+        mnemonic: mnemonic,
+        taprootAddress: from,
+        hdPathWithIndex: taprootHdPathWithIndex,
+      })
 
       const tx = new PSBTTransaction(
-        signer,
+        taprootSigner,
         from,
         publicKey,
-        addressType,
-        feeRate
+        feeRate,
+        segwitSigner,
+        segwitPubkey
       )
 
       tx.addOutput(to, amount)
@@ -692,17 +700,6 @@ export class Wallet {
       if (totalUnspentAmount === 0) {
         new Error('Balance not enough to pay network fee.')
       }
-
-      // const estimatedNetworkFee = await tx.calNetworkFee()
-      // if (totalUnspentAmount < estimatedNetworkFee) {
-      //   new Error(
-      //     `Not enough balance. Need ${satoshisToAmount(
-      //       estimatedNetworkFee
-      //     )} BTC as network fee, but only ${satoshisToAmount(
-      //       totalUnspentAmount
-      //     )} BTC is available.`
-      //   )
-      // }
 
       const remainingBalance = totalUnspentAmount
       if (remainingBalance >= UTXO_DUST) {
@@ -772,73 +769,6 @@ export class Wallet {
   async getBrcOffers({ ticker }) {
     const offers = await this.apiClient.getTickerOffers({ _ticker: ticker })
     return offers
-  }
-
-  /**
-   * Initiates and completes a swap on the blockchain resource (BRC) marketplace.
-   * @param {SwapBrc} bid - The bid details for the swap.
-   * @returns {Promise<string>} A promise that resolves to the transaction ID of the submitted bid.
-   */
-  async swapBrc(bid: SwapBrc) {
-    const psbt = await this.apiClient.initSwapBid({
-      address: bid.address,
-      auctionId: bid.auctionId,
-      bidPrice: bid.bidPrice,
-      pubKey: bid.pubKey,
-    })
-    if (psbt.error) return psbt
-    const unsignedPsbt = psbt.psbtBid
-    const feeRate = psbt.feeRate
-
-    const swapOptions = bid
-    swapOptions['psbt'] = unsignedPsbt
-    swapOptions['feeRate'] = feeRate
-
-    const signedPsbt = await this.swapFlow(swapOptions)
-
-    const txId = await this.apiClient.submitSignedBid({
-      psbtBid: signedPsbt,
-      auctionId: bid.auctionId,
-      bidId: psbt.bidId,
-    })
-
-    return txId
-  }
-
-  /**
-   * Handles the swapping flow logic, including transaction signing.
-   * @param {Object} options - The parameters and options for the swap.
-   * @returns {Promise<string>} A promise that resolves to the hexadecimal string of the signed PSBT.
-   */
-  async swapFlow(options) {
-    const address = options.address
-    const feeRate = options.feeRate
-    const mnemonic = options.mnemonic
-    const pubKey = options.pubKey
-
-    const psbt = bitcoin.Psbt.fromHex(options.psbt, {
-      network: bitcoin.networks.bitcoin,
-    })
-    const wallet = new Wallet()
-    const payload = await wallet.fromPhrase({
-      mnemonic: mnemonic.trim(),
-      hdPath: options.hdPath,
-      type: options.type,
-    })
-
-    const keyring = payload.keyring.keyring
-    const signer = keyring.signTransaction.bind(keyring)
-    const from = address
-    const addressType = transactions.getAddressType(from)
-    if (addressType == null) throw Error('Invalid Address Type')
-
-    const tx = new PSBTTransaction(signer, from, pubKey, addressType, feeRate)
-
-    const psbt_ = await tx.signPsbt(psbt)
-
-    psbt_.finalizeAllInputs()
-
-    return psbt_.toHex()
   }
 
   /**
@@ -934,7 +864,7 @@ export class Wallet {
 
   async signInscriptionPsbt(psbt, fee, pubKey, signer, address = '') {
     //INITIALIZE NEW PSBTTransaction INSTANCE
-    const wallet = new Wallet()
+    const wallet = new Oyl()
     const addressType = transactions.getAddressType(address)
     if (addressType == null) throw Error('Invalid Address Type')
     const tx = new PSBTTransaction(signer, address, pubKey, addressType, fee)
@@ -989,6 +919,9 @@ export class Wallet {
         segwitPublicKey: options.segwitPubkey,
         segwitAddress: options.segwitAddress,
         isDry: true,
+        payFeesWithSegwit: options.payFeesWithSegwit,
+        segwitHdPathWithIndex: "m/49'/0'/0'/0",
+        taprootHdPathWithIndex: "m/84'/0'/0'/0/0",
       })
     } catch (err: unknown) {
       if (err instanceof Error) {

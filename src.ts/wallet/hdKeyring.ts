@@ -247,6 +247,7 @@ export class HdKeyring extends EventEmitter {
    * @private
    */
   private _getWalletForAccount(publicKey: string) {
+    console.log(this.wallets)
     let wallet = this.wallets.find(
       (wallet) => wallet.publicKey.toString('hex') == publicKey
     )
@@ -269,6 +270,7 @@ export class HdKeyring extends EventEmitter {
     opts?: any
   ) {
     inputs.forEach(({ index, publicKey, sighashTypes }) => {
+      console.log(publicKey)
       const keyPair = this._getPrivateKeyFor(publicKey)
       const input = psbt.data.inputs[index]
 

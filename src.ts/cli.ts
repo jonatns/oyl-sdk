@@ -1,6 +1,6 @@
 import yargs from 'yargs'
 import { camelCase } from 'change-case'
-import { Wallet } from './oylib'
+import { Oyl } from './oylib'
 import { PSBTTransaction } from './txbuilder/PSBTTransaction'
 import * as transactions from './transactions'
 import * as bitcoin from 'bitcoinjs-lib'
@@ -18,7 +18,7 @@ import { BuildMarketplaceTransaction } from './txbuilder/buildMarketplaceTransac
 bitcoin.initEccLib(ecc2)
 
 export async function loadRpc(options) {
-  const wallet = new Wallet()
+  const wallet = new Oyl()
   try {
     const blockInfo = await wallet.sandshrewBtcClient.bitcoindRpc.decodePSBT(
       process.env.PSBT_BASE64
@@ -54,112 +54,12 @@ export async function viewPsbt() {
 }
 
 export async function callAPI(command, data, options = {}) {
-  const oylSdk = new Wallet()
+  const oylSdk = new Oyl()
   const camelCommand = camelCase(command)
   if (!oylSdk[camelCommand]) throw Error('command not foud: ' + camelCommand)
   const result = await oylSdk[camelCommand](data)
   console.log(JSON.stringify(result, null, 2))
   return result
-}
-
-export async function swapFlow() {
-  const address = process.env.TAPROOT_ADDRESS
-  const feeRate = parseFloat(process.env.FEE_RATE)
-  const mnemonic = process.env.TAPROOT_MNEMONIC
-  const pubKey = process.env.TAPROOT_PUBKEY
-
-  const psbt = bitcoin.Psbt.fromHex(process.env.PSBT_HEX, {
-    network: bitcoin.networks.bitcoin,
-  })
-
-  //console.log(psbt)
-  const wallet = new Wallet()
-  const payload = await wallet.fromPhrase({
-    mnemonic: mnemonic.trim(),
-    hdPath: process.env.HD_PATH,
-    type: process.env.TYPE,
-  })
-
-  const keyring = payload.keyring.keyring
-  const signer = keyring.signTransaction.bind(keyring)
-  const from = address
-  const addressType = transactions.getAddressType(from)
-  if (addressType == null) throw Error('Invalid Address Type')
-
-  const tx = new PSBTTransaction(signer, from, pubKey, addressType, feeRate)
-  const signedPsbt = await tx.signPsbt(psbt)
-  //@ts-ignore
-  psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
-
-  //EXTRACT THE RAW TX
-  //const rawtx = signedPsbt.extractTransaction().toHex()
-  //console.log('rawtx', rawtx)
-  //BROADCAST THE RAW TX TO THE NETWORK
-  //const result = await wallet.apiClient.pushTx({ transactionHex: rawtx })
-  //GET THE TX_HASH
-  //const ready_txId = psbt.extractTransaction().getId()
-  //CONFIRM TRANSACTION IS CONFIRMED
-}
-
-const formatOptionsToSignInputs = async (
-  _psbt: string | bitcoin.Psbt,
-  isRevealTx: boolean = false,
-  pubkey: string,
-  tapAddress: string
-) => {
-  let toSignInputs: ToSignInput[] = []
-  const psbtNetwork = bitcoin.networks.bitcoin
-
-  const psbt =
-    typeof _psbt === 'string'
-      ? bitcoin.Psbt.fromHex(_psbt as string, { network: psbtNetwork })
-      : (_psbt as bitcoin.Psbt)
-
-  psbt.data.inputs.forEach((v, index: number) => {
-    let script: any = null
-    let value = 0
-    const tapInternalKey = assertHex(Buffer.from(pubkey, 'hex'))
-    const p2tr = bitcoin.payments.p2tr({
-      internalPubkey: tapInternalKey,
-      network: bitcoin.networks.bitcoin,
-    })
-    if (v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')) {
-      v.tapInternalKey = tapInternalKey
-    }
-    if (v.witnessUtxo) {
-      script = v.witnessUtxo.script
-      value = v.witnessUtxo.value
-    } else if (v.nonWitnessUtxo) {
-      const tx = bitcoin.Transaction.fromBuffer(v.nonWitnessUtxo)
-      const output = tx.outs[psbt.txInputs[index].index]
-      script = output.script
-      value = output.value
-    }
-    const isSigned = v.finalScriptSig || v.finalScriptWitness
-    if (script && !isSigned) {
-      console.log('not signed')
-      const address = PsbtAddress.fromOutputScript(script, psbtNetwork)
-      if (isRevealTx || tapAddress === address) {
-        console.log('entered', index)
-        if (v.tapInternalKey) {
-          toSignInputs.push({
-            index: index,
-            publicKey: pubkey,
-            sighashTypes: v.sighashType ? [v.sighashType] : undefined,
-          })
-        }
-      }
-      // else {
-      //   toSignInputs.push({
-      //     index: index,
-      //     publicKey: this.segwitPubKey,
-      //     sighashTypes: v.sighashType ? [v.sighashType] : undefined,
-      //   })
-      // }
-    }
-  })
-
-  return toSignInputs
 }
 
 export const MEMPOOL_SPACE_API_V1_URL = 'https://mempool.space/api/v1'
@@ -213,7 +113,7 @@ export const callBTCRPCEndpoint = async (
 }
 
 // async function createOrdPsbtTx() {
-//   const wallet = new Wallet()
+//   const wallet = new Oyl()
 //   const test0 = await wallet.createOrdPsbtTx({
 //     changeAddress: '',
 //     fromAddress: '',
@@ -237,7 +137,7 @@ export async function runCLI() {
   ]
   const [command] = yargs.argv._
   const options = Object.assign({}, yargs.argv)
-  const tapWallet = new Wallet()
+  const tapWallet = new Oyl()
 
   const mnemonic =
     'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
@@ -246,42 +146,42 @@ export async function runCLI() {
     mnemonic: mnemonic,
     taprootAddress:
       'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+    hdPathWithIndex: "m/86'/0'/0'/0/0",
   })
-
   const segwitSigner = await createSegwitSigner({
     mnemonic: mnemonic,
     segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-    segwitPubKey:
-      '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
+    hdPathWithIndex: "m/49'/0'/0'/0/0",
   })
 
+  // segwitPubKey: '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
   delete options._
   switch (command) {
     case 'load':
       return await loadRpc(options)
       break
     case 'send':
-      const taprootResponse = await tapWallet.createBtcTx({
-        to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
-        from: 'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-        amount: 4000,
-        feeRate: 62,
-        signer: taprootSigner,
-        publicKey:
-          '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
-      })
-      console.log({ taprootResponse })
+      // const taprootResponse = await tapWallet.createBtcTx({
+      //   mnemonic: 'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
+      //   to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
+      //   from: 'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+      //   amount: 4000,
+      //   feeRate: 62,
+      //   publicKey:
+      //     '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
+      // })
+      // console.log({ taprootResponse })
 
-      const segwitResponse = await tapWallet.createBtcTx({
-        to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
-        from: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-        amount: 4000,
-        feeRate: 62,
-        signer: segwitSigner,
-        publicKey:
-          '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
-      })
-      console.log({ segwitResponse })
+      // const segwitResponse = await tapWallet.createBtcTx({
+      //   mnemonic: ''
+      //   to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
+      //   from: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+      //   amount: 4000,
+      //   feeRate: 62,
+      //   publicKey:
+      //     '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
+      // })
+      // console.log({ segwitResponse })
 
       return
     case 'test':
@@ -307,7 +207,7 @@ export async function runCLI() {
       })
 
     // async function createOrdPsbtTx() {
-    //   const wallet = new Wallet()
+    //   const wallet = new Oyl()
     //   const test0 = await wallet.createOrdPsbtTx({
     //     changeAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
     //     fromAddress:
@@ -335,9 +235,6 @@ export async function runCLI() {
       break
     case 'market':
       return await testMarketplaceBuy()
-      break
-    case 'swap':
-      return await swapFlow()
       break
     default:
       return await callAPI(yargs.argv._[0], options)
