@@ -208,23 +208,16 @@ export class PSBTTransaction {
 
   /**
    * Formats the inputs for signing based on the given PSBT and whether it is a reveal transaction.
-   * @param {string | bitcoin.Psbt} _psbt |  - The PSBT in hex string format or Psbt instance.
-   * @param {boolean} isRevealTx - Indicates whether the transaction is a reveal transaction.
+   * @param { bitcoin.Psbt} psbt |  - The PSBT in hex string format or Psbt instance.
    * @returns {Promise<ToSignInput[]>} A promise that resolves to an array of inputs to sign.
    */
-  formatOptionsToSignInputs = async (
-    _psbt: string | bitcoin.Psbt,
-    isRevealTx: boolean = false
-  ) => {
+  formatOptionsToSignInputs = async (psbt: bitcoin.Psbt) => {
     let toSignInputs: ToSignInput[] = []
     const psbtNetwork = bitcoin.networks.bitcoin
 
-    const psbt =
-      typeof _psbt === 'string'
-        ? bitcoin.Psbt.fromHex(_psbt as string, { network: psbtNetwork })
-        : (_psbt as bitcoin.Psbt)
-
     psbt.data.inputs.forEach((v, index: number) => {
+      console.log({ v })
+      console.log({ inputScript: v })
       let script: any = null
       let value = 0
       const isSigned = v.finalScriptSig || v.finalScriptWitness
@@ -238,58 +231,55 @@ export class PSBTTransaction {
         script = output.script
         value = output.value
       }
+
       if (!isSigned && lostInternalPubkey) {
         const tapInternalKey = assertHex(Buffer.from(this.pubkey, 'hex'))
         const p2tr = bitcoin.payments.p2tr({
           internalPubkey: tapInternalKey,
           network: psbtNetwork,
         })
-        if (
+
+        const isSameScript =
           v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
-        ) {
+
+        if (isSameScript) {
           v.tapInternalKey = tapInternalKey
         }
       }
 
-      if (script && !isSigned) {
-        const address = PsbtAddress.fromOutputScript(script, psbtNetwork)
-        if (isRevealTx || (!isRevealTx && this.address === address)) {
-          if (v.tapInternalKey) {
-            toSignInputs.push({
-              index: index,
-              publicKey: this.pubkey,
-              sighashTypes: v.sighashType ? [v.sighashType] : undefined,
-            })
-          }
-        } else {
-          toSignInputs.push({
-            index: index,
-            publicKey: this.segwitPubKey,
-            sighashTypes: v.sighashType ? [v.sighashType] : undefined,
-          })
-        }
-      }
+      toSignInputs.push({
+        index: index,
+        publicKey: this.pubkey,
+        sighashTypes: v.sighashType ? [v.sighashType] : undefined,
+      })
     })
 
-    return toSignInputs
+    return { psbt, toSignInputs }
   }
 
   async signInputs(psbt: bitcoin.Psbt, toSignInputs: ToSignInput[]) {
-    const taprootInputs: ToSignInput[] = []
-    const segwitInputs: ToSignInput[] = []
-    toSignInputs.forEach(({ index, publicKey }) => {
-      if (publicKey === this.pubkey) {
-        taprootInputs.push(toSignInputs[index])
-      }
-      if (this.segwitPubKey && this.segwitSigner) {
-        if (publicKey === this.segwitPubKey) {
+    try {
+      const taprootInputs: ToSignInput[] = []
+      const segwitInputs: ToSignInput[] = []
+      toSignInputs.forEach(({ index, publicKey }) => {
+        console.log({ publicKey })
+        if (publicKey.slice(0, 2) === '02') {
+          taprootInputs.push(toSignInputs[index])
+        }
+        if (publicKey.slice(0, 2) === '03') {
           segwitInputs.push(toSignInputs[index])
         }
+      })
+
+      if (segwitInputs.length > 0) {
+        await this.signer(psbt, segwitInputs)
+      } else if (taprootInputs.length > 0) {
+        await this.signer(psbt, taprootInputs)
+      } else {
+        console.error('NO INPUTS!')
       }
-    })
-    await this.signer(psbt, taprootInputs)
-    if (this.segwitSigner && segwitInputs.length > 0) {
-      await this.segwitSigner(psbt, segwitInputs)
+    } catch (e) {
+      console.error(e)
     }
   }
 
@@ -315,7 +305,7 @@ export class PSBTTransaction {
       psbt.addOutput(v)
     })
 
-    await this.signPsbt(psbt, true)
+    await this.signPsbt(psbt)
 
     return psbt
   }
@@ -323,32 +313,22 @@ export class PSBTTransaction {
   /**
    * Signs the provided PSBT with the available keys.
    * @param {bitcoin.Psbt} psbt - The PSBT to sign.
-   * @param {boolean} autoFinalized - Whether to automatically finalize the inputs after signing.
-   * @param {boolean} isRevealTx - Indicates whether the transaction is a reveal transaction.
-   * @returns {Promise<bitcoin.Psbt>} A promise that resolves to the signed (and possibly finalized) PSBT.
+   * @returns {Promise<bitcoin.Psbt>} A promise that resolves to the signed PSBT.
    */
-  async signPsbt(
-    psbt: bitcoin.Psbt,
-    autoFinalized = true,
-    isRevealTx: boolean = false
-  ) {
-    const toSignInputs: ToSignInput[] = await this.formatOptionsToSignInputs(
-      psbt,
-      isRevealTx
-    )
 
-    await this.signInputs(psbt, toSignInputs)
+  async signPsbt(psbt: bitcoin.Psbt) {
+    try {
+      const {
+        psbt: formattedPsbt,
+        toSignInputs,
+      }: { psbt: bitcoin.Psbt; toSignInputs: ToSignInput[] } =
+        await this.formatOptionsToSignInputs(psbt)
+      await this.signInputs(formattedPsbt, toSignInputs)
 
-    if (autoFinalized) {
-      console.log('autoFinalized')
-      try {
-        psbt.finalizeAllInputs()
-      } catch (error) {
-        console.log(error, 'Was not finalized')
-      }
+      return formattedPsbt
+    } catch (e) {
+      console.log(e)
     }
-
-    return psbt
   }
 
   /**

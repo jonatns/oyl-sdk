@@ -38,14 +38,20 @@ export declare const assertHex: (pubKey: Buffer) => Buffer;
 export declare function tweakSigner(signer: bitcoin.Signer, opts?: any): bitcoin.Signer;
 export declare function satoshisToAmount(val: number): string;
 export declare function delay(ms: number): Promise<unknown>;
-export declare function createSegwitSigner({ mnemonic, segwitAddress, segwitPubKey, }: {
+export declare function createSegwitSigner({ mnemonic, segwitAddress, hdPathWithIndex, }: {
     mnemonic: string;
     segwitAddress: string;
-    segwitPubKey: string;
+    hdPathWithIndex: string;
 }): Promise<any>;
-export declare function createTaprootSigner({ mnemonic, taprootAddress, }: {
+export declare function createTaprootSigner({ mnemonic, taprootAddress, hdPathWithIndex, }: {
     mnemonic: string;
     taprootAddress: string;
+    hdPathWithIndex: string;
+}): Promise<any>;
+export declare function createSigner({ mnemonic, fromAddress, hdPathWithIndex, }: {
+    mnemonic: string;
+    fromAddress: string;
+    hdPathWithIndex: string;
 }): Promise<any>;
 export declare function amountToSatoshis(val: any): number;
 export declare const validator: (pubkey: Buffer, msghash: Buffer, signature: Buffer) => boolean;
@@ -71,7 +77,7 @@ export declare const formatOptionsToSignInputs: ({ _psbt, isRevealTx, pubkey, se
     taprootAddress: string;
 }) => Promise<ToSignInput[]>;
 export declare const signInputs: (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], taprootPubkey: string, segwitPubKey: string, segwitSigner: any, taprootSigner: any) => Promise<bitcoin.Psbt>;
-export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, }: {
+export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, }: {
     ticker: string;
     amount: number;
     inputAddress: string;
@@ -81,8 +87,10 @@ export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, m
     segwitPublicKey: string;
     segwitAddress: string;
     isDry?: boolean;
+    segwitHdPathWithIndex?: string;
+    taprootHdPathWithIndex?: string;
+    payFeesWithSegwit: boolean;
 }) => Promise<any>;
-export declare const MEMPOOL_SPACE_API_V1_URL = "https://mempool.space/api/v1";
 export declare const createInscriptionScript: (pubKey: any, content: any) => any[];
 export declare const RPC_ADDR = "https://node.oyl.gg/v1/6e3bc3c289591bb447c116fda149b094";
 export declare const callBTCRPCEndpoint: (method: string, params: string | string[]) => Promise<any>;

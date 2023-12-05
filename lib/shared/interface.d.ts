@@ -163,6 +163,8 @@ export interface InscribeTransfer {
     mnemonic: string;
     amount: number;
     postage?: number;
+    segwitHdPath?: string;
+    taprootHdPath: string;
 }
 export interface SwapBrcBid {
     address: String;
