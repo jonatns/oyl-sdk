@@ -247,7 +247,6 @@ export class HdKeyring extends EventEmitter {
    * @private
    */
   private _getWalletForAccount(publicKey: string) {
-    console.log(this.wallets)
     let wallet = this.wallets.find(
       (wallet) => wallet.publicKey.toString('hex') == publicKey
     )

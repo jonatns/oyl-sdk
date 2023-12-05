@@ -1,9 +1,7 @@
 import { buildOrdTx, PSBTTransaction } from './txbuilder'
 import { UTXO_DUST } from './shared/constants'
 import {
-  callBTCRPCEndpoint,
   createSegwitSigner,
-  createSigner,
   createTaprootSigner,
   delay,
   inscribe,
@@ -22,17 +20,21 @@ import {
   ProviderOptions,
   Providers,
   RecoverAccountOptions,
-  SwapBrc,
   TickerDetails,
 } from './shared/interface'
 import { OylApiClient } from './apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
 
+export const NESTED_SEGWIT_HD_PATH = "m/49'/0'/0'/0"
+export const TAPROOT_HD_PATH = "m/86'/0'/0'/0"
+export const SEGWIT_HD_PATH = "m/84'/0'/0'/0"
+export const LEGACY_HD_PATH = "m/44'/0'/0'/0"
+
 const RequiredPath = [
-  "m/44'/0'/0'/0", // P2PKH (Legacy)
-  "m/49'/0'/0'/0", // P2SH-P2WPKH (Nested SegWit)
-  "m/84'/0'/0'/0", // P2WPKH (SegWit)
-  "m/86'/0'/0'/0", // P2TR (Taproot)
+  LEGACY_HD_PATH,
+  NESTED_SEGWIT_HD_PATH,
+  SEGWIT_HD_PATH,
+  TAPROOT_HD_PATH,
 ]
 
 export class Oyl {
@@ -636,6 +638,8 @@ export class Oyl {
     try {
       const utxos = await this.getUtxosArtifacts({ address: from })
 
+      console.log({ utxos })
+
       const segwitSigner: any = await createSegwitSigner({
         mnemonic: mnemonic,
         segwitAddress: segwitAddress,
@@ -889,23 +893,7 @@ export class Oyl {
 
   async sendBRC20(options: InscribeTransfer) {
     const isDry = true
-
-    if (isDry) {
-      console.log('DRY!!!!! RUNNING ONE-CLICK BRC20 TRANSFER')
-    } else {
-      console.log('WET!!!!!!! 5')
-      await delay(1000)
-      console.log('WET!!!!!!! 4')
-      await delay(1000)
-      console.log('WET!!!!!!! 3')
-      await delay(1000)
-      console.log('WET!!!!!!! 2')
-      await delay(1000)
-      console.log('WET!!!!!!! 1')
-      await delay(1000)
-      console.log('LAUNCH!')
-      await delay(1000)
-    }
+    await isDryDisclaimer(isDry)
 
     try {
       // CREATE TRANSFER INSCRIPTION
@@ -931,5 +919,24 @@ export class Oyl {
       console.error(err)
       return err
     }
+  }
+}
+
+const isDryDisclaimer = async (isDry: boolean) => {
+  if (isDry) {
+    console.log('DRY!!!!! RUNNING ONE-CLICK BRC20 TRANSFER')
+  } else {
+    console.log('WET!!!!!!! 5')
+    await delay(1000)
+    console.log('WET!!!!!!! 4')
+    await delay(1000)
+    console.log('WET!!!!!!! 3')
+    await delay(1000)
+    console.log('WET!!!!!!! 2')
+    await delay(1000)
+    console.log('WET!!!!!!! 1')
+    await delay(1000)
+    console.log('LAUNCH!')
+    await delay(1000)
   }
 }

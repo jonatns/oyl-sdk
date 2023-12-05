@@ -1,6 +1,6 @@
 import yargs from 'yargs'
 import { camelCase } from 'change-case'
-import { Oyl } from './oylib'
+import { NESTED_SEGWIT_HD_PATH, Oyl, TAPROOT_HD_PATH } from './oylib'
 import { PSBTTransaction } from './txbuilder/PSBTTransaction'
 import * as transactions from './transactions'
 import * as bitcoin from 'bitcoinjs-lib'
@@ -129,30 +129,39 @@ export const callBTCRPCEndpoint = async (
 // }
 
 export async function runCLI() {
-  const RequiredPath = [
-    "m/44'/0'/0'/0", // P2PKH (Legacy)
-    "m/49'/0'/0'/0", // P2SH-P2WPKH (Nested SegWit)
-    "m/84'/0'/0'/0", // P2WPKH (SegWit)
-    "m/86'/0'/0'/0", // P2TR (Taproot)
-  ]
   const [command] = yargs.argv._
   const options = Object.assign({}, yargs.argv)
   const tapWallet = new Oyl()
-
   const mnemonic =
     'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
-
+  const taprootAddress =
+    'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm'
+  const segwitAddress = '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic'
+  const taprootHdPathWithIndex = TAPROOT_HD_PATH
+  const segwitHdPathWithIndex = NESTED_SEGWIT_HD_PATH
+  const taprootPubkey =
+    '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be'
+  const segwitPubkey =
+    '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b'
   const taprootSigner = await createTaprootSigner({
-    mnemonic: mnemonic,
-    taprootAddress:
-      'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-    hdPathWithIndex: "m/86'/0'/0'/0/0",
+    mnemonic,
+    taprootAddress,
+    hdPathWithIndex: taprootHdPathWithIndex,
   })
   const segwitSigner = await createSegwitSigner({
-    mnemonic: mnemonic,
-    segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-    hdPathWithIndex: "m/49'/0'/0'/0/0",
+    mnemonic,
+    segwitAddress,
+    hdPathWithIndex: segwitHdPathWithIndex,
   })
+
+  // const getAddress
+
+  const psbtsForTaprootAddressEndingDTM = {
+    psbtHex:
+      '70736274ff0100890200000001578ad7f2a593f9447a8ef0f790a9b1abfc81a6b2796920db573595a6c24c747a0100000000ffffffff02f420000000000000225120a8304c4cab8e15810e0a7d58741b3dcb3520339af31ecf3b264a1f5267cf1cc301100000000000002251200d89d702fafc100ab8eae890cbaf40b3547d6f1429564cf5d5f8d517f4caa390000000000001012b235e0000000000002251200d89d702fafc100ab8eae890cbaf40b3547d6f1429564cf5d5f8d517f4caa390000000',
+    psbtBase64:
+      'cHNidP8BAIkCAAAAAVeK1/Klk/lEeo7w95Cpsav8gaayeWkg21c1labCTHR6AQAAAAD/////AvQgAAAAAAAAIlEgqDBMTKuOFYEOCn1YdBs9yzUgM5rzHs87JkofUmfPHMMBEAAAAAAAACJRIA2J1wL6/BAKuOrokMuvQLNUfW8UKVZM9dX41Rf0yqOQAAAAAAABASsjXgAAAAAAACJRIA2J1wL6/BAKuOrokMuvQLNUfW8UKVZM9dX41Rf0yqOQAAAA',
+  }
 
   // segwitPubKey: '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
   delete options._
@@ -161,32 +170,36 @@ export async function runCLI() {
       return await loadRpc(options)
       break
     case 'send':
-      // const taprootResponse = await tapWallet.createBtcTx({
-      //   mnemonic: 'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
-      //   to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
-      //   from: 'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-      //   amount: 4000,
-      //   feeRate: 62,
-      //   publicKey:
-      //     '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
-      // })
-      // console.log({ taprootResponse })
+      const taprootResponse = await tapWallet.createBtcTx({
+        to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
+        from: 'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+        amount: 4000,
+        feeRate: 62,
+        mnemonic,
+        publicKey: taprootPubkey,
+        segwitAddress,
+        segwitHdPathWithIndex,
+        segwitPubkey: '',
+        taprootHdPathWithIndex,
+      })
+      console.log({ taprootResponse })
 
-      // const segwitResponse = await tapWallet.createBtcTx({
-      //   mnemonic: ''
-      //   to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
-      //   from: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-      //   amount: 4000,
-      //   feeRate: 62,
-      //   publicKey:
-      //     '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
-      // })
-      // console.log({ segwitResponse })
+      const segwitResponse = await tapWallet.createBtcTx({
+        to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
+        from: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+        amount: 4000,
+        feeRate: 62,
+        publicKey: taprootPubkey,
+        mnemonic,
+        segwitAddress,
+        segwitHdPathWithIndex,
+        segwitPubkey,
+        taprootHdPathWithIndex,
+      })
+      console.log({ segwitResponse })
 
       return
     case 'test':
-      // 'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
-
       return await tapWallet.sendBRC20({
         feeFromAddress:
           'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
