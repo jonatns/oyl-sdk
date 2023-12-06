@@ -2,7 +2,7 @@ import * as bitcoin from 'bitcoinjs-lib'
 import ECPairFactory from 'ecpair'
 import ecc from '@bitcoinerlab/secp256k1'
 bitcoin.initEccLib(ecc)
-import { AddressType, UnspentOutput, TxInput, IBlockchainInfoUTXO } from '../shared/interface'
+import { AddressType, UnspentOutput, TxInput, IBlockchainInfoUTXO, Network, BitcoinPaymentType } from '../shared/interface'
 import BigNumber from 'bignumber.js'
 import { maximumScriptBytes } from './constants'
 
@@ -16,6 +16,24 @@ function tapTweakHash(pubKey: Buffer, h: Buffer | undefined): Buffer {
     'TapTweak',
     Buffer.concat(h ? [pubKey, h] : [pubKey])
   )
+}
+
+export function getNetwork(value: Network) {
+  if (value === "mainnet") {
+    return bitcoin.networks["bitcoin"]
+  }
+
+  return bitcoin.networks[value]
+}
+
+export function checkPaymentType(payment: bitcoin.PaymentCreator, network: Network) {
+  return (script: Buffer) => {
+    try {
+      return payment({ output: script, network: getNetwork(network) })
+    } catch (error) {
+      return false
+    }
+  }
 }
 
 export function tweakSigner(
@@ -160,4 +178,40 @@ export const getWitnessDataChunk = function (
 
 export const getSatpointFromUtxo = (utxo) => {
   return `${utxo.txid}:${utxo.vout}:0`
+}
+
+export const isP2PKH = (script: Buffer, network: Network): BitcoinPaymentType => {
+  const p2pkh = checkPaymentType(bitcoin.payments.p2pkh, network)(script)
+  return {
+    type: "p2pkh",
+    payload: p2pkh
+  }
+}
+export const isP2WPKH = (script: Buffer, network: Network): BitcoinPaymentType => {
+  const p2wpkh = checkPaymentType(bitcoin.payments.p2wpkh, network)(script)
+  return {
+    type: "p2wpkh",
+    payload: p2wpkh
+  }
+}
+export const isP2WSHScript = (script: Buffer, network: Network): BitcoinPaymentType => {
+  const p2wsh = checkPaymentType(bitcoin.payments.p2wsh, network)(script)
+  return {
+    type: "p2sh",
+    payload: p2wsh
+  }
+}
+export const isP2SHScript = (script: Buffer, network: Network): BitcoinPaymentType => {
+  const p2sh = checkPaymentType(bitcoin.payments.p2sh, network)(script)
+  return {
+    type: "p2sh",
+    payload: p2sh
+  }
+}
+export const isP2TR = (script: Buffer, network: Network): BitcoinPaymentType => {
+  const p2tr = checkPaymentType(bitcoin.payments.p2tr, network)(script)
+  return {
+    type: "p2tr",
+    payload: p2tr
+  }
 }
