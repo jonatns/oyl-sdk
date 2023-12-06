@@ -892,8 +892,7 @@ export class Oyl {
   }
 
   async sendBRC20(options: InscribeTransfer) {
-    const isDry = true
-    await isDryDisclaimer(isDry)
+    await isDryDisclaimer(options.isDry)
 
     try {
       // CREATE TRANSFER INSCRIPTION
@@ -906,7 +905,7 @@ export class Oyl {
         taprootPublicKey: options.taprootPublicKey,
         segwitPublicKey: options.segwitPubkey,
         segwitAddress: options.segwitAddress,
-        isDry: true,
+        isDry: options.isDry,
         payFeesWithSegwit: options.payFeesWithSegwit,
         segwitHdPathWithIndex: options.segwitHdPath,
         taprootHdPathWithIndex: options.taprootHdPath,

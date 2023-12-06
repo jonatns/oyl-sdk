@@ -262,11 +262,10 @@ export class PSBTTransaction {
       const taprootInputs: ToSignInput[] = []
       const segwitInputs: ToSignInput[] = []
       toSignInputs.forEach(({ index, publicKey }) => {
-        console.log({ publicKey })
-        if (publicKey.slice(0, 2) === '02') {
+        if (publicKey === this.pubkey) {
           taprootInputs.push(toSignInputs[index])
         }
-        if (publicKey.slice(0, 2) === '03') {
+        if (publicKey === this.segwitPubKey) {
           segwitInputs.push(toSignInputs[index])
         }
       })
