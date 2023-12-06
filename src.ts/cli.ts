@@ -38,7 +38,18 @@ console.log(builder)
 
 export async function testAggregator() {
   const aggregator = new Aggregator();
-  console.log(await aggregator._fetchAllOffers("ordi"));
+  const aggregated = await aggregator.fetchAndAggregateOffers("ordi", 20, 110000);
+
+  const formatOffers = offers => offers.map(offer => ({
+    amount: offer.amount,
+    unitPrice: offer.unitPrice,
+    nftId: offer.offerId,
+    marketplace: offer.marketplace
+  }));
+
+  console.log("Aggregated Offers");
+  console.log("Best Price Offers:", formatOffers(aggregated.bestPrice.offers));
+  console.log("Closest Match Offers:", formatOffers(aggregated.closestMatch.offers));
 }
 
 
