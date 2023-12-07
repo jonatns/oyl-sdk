@@ -300,7 +300,7 @@ const addTaprootFeeUtxo = async ({
   return
 }
 
-const addInscriptionUtxo = async ({
+export const addInscriptionUtxo = async ({
   metaUtxos,
   inscriptionId,
   toAddress,
@@ -309,7 +309,7 @@ const addInscriptionUtxo = async ({
   metaUtxos: any[]
   inscriptionId: string
   toAddress: string
-  psbtTx: PSBTTransaction | bitcoin.Psbt | any
+  psbtTx: bitcoin.Psbt | any
 }) => {
   const matchedUtxo = metaUtxos.find((utxo) => {
     return utxo.inscriptions.some(
@@ -324,8 +324,18 @@ const addInscriptionUtxo = async ({
     )
   }
 
-  psbtTx.addInput(matchedUtxo)
-  psbtTx.addOutput(toAddress, matchedUtxo.satoshis)
+  psbtTx.addInput({
+    hash: matchedUtxo.txId,
+    index: matchedUtxo.outputIndex,
+    witnessUtxo: {
+      value: matchedUtxo.satoshis,
+      script: Buffer.from(matchedUtxo.scriptPk, 'hex'),
+    },
+  })
+  psbtTx.addOutput({
+    address: toAddress,
+    value: Math.floor(matchedUtxo.satoshis),
+  })
   return
 }
 

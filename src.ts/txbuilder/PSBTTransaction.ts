@@ -216,8 +216,6 @@ export class PSBTTransaction {
     const psbtNetwork = bitcoin.networks.bitcoin
 
     psbt.data.inputs.forEach((v, index: number) => {
-      console.log({ v })
-      console.log({ inputScript: v })
       let script: any = null
       let value = 0
       const isSigned = v.finalScriptSig || v.finalScriptWitness
@@ -271,7 +269,7 @@ export class PSBTTransaction {
       })
 
       if (segwitInputs.length > 0) {
-        await this.signer(psbt, segwitInputs)
+        await this.segwitSigner(psbt, segwitInputs)
       } else if (taprootInputs.length > 0) {
         await this.signer(psbt, taprootInputs)
       } else {

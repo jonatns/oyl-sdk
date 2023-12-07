@@ -5,6 +5,7 @@ import {
   createTaprootSigner,
   delay,
   inscribe,
+  sendCollectible,
 } from './shared/utils'
 import BcoinRpc from './rpclient'
 import { SandshrewBitcoinClient } from './rpclient/sandshrew'
@@ -909,6 +910,7 @@ export class Oyl {
         payFeesWithSegwit: options.payFeesWithSegwit,
         segwitHdPathWithIndex: options.segwitHdPath,
         taprootHdPathWithIndex: options.taprootHdPath,
+        feeRate: options.feeRate,
       })
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -917,6 +919,28 @@ export class Oyl {
       }
       console.error(err)
       return err
+    }
+  }
+
+  async sendOrdCollectible(options: InscribeTransfer) {
+    await isDryDisclaimer(options.isDry)
+    try {
+      await sendCollectible({
+        inscriptionId: options.inscriptionId,
+        inputAddress: options.feeFromAddress,
+        outputAddress: options.destinationAddress,
+        mnemonic: options.mnemonic,
+        taprootPublicKey: options.taprootPublicKey,
+        segwitPublicKey: options.segwitPubkey,
+        segwitAddress: options.segwitAddress,
+        isDry: options.isDry,
+        payFeesWithSegwit: options.payFeesWithSegwit,
+        segwitHdPathWithIndex: options.segwitHdPath,
+        taprootHdPathWithIndex: options.taprootHdPath,
+        feeRate: options.feeRate,
+      })
+    } catch (error) {
+      console.log(error)
     }
   }
 }

@@ -47,22 +47,28 @@ export async function testMarketplaceBuy() {
 }
 
 export async function testAggregator() {
-  const aggregator = new Aggregator();
-  const aggregated = await aggregator.fetchAndAggregateOffers("ordi", 20, 110000);
+  const aggregator = new Aggregator()
+  const aggregated = await aggregator.fetchAndAggregateOffers(
+    'ordi',
+    20,
+    110000
+  )
 
-  const formatOffers = offers => offers.map(offer => ({
-    amount: offer.amount,
-    unitPrice: offer.unitPrice,
-    nftId: offer.offerId,
-    marketplace: offer.marketplace
-  }));
+  const formatOffers = (offers) =>
+    offers.map((offer) => ({
+      amount: offer.amount,
+      unitPrice: offer.unitPrice,
+      nftId: offer.offerId,
+      marketplace: offer.marketplace,
+    }))
 
-  console.log("Aggregated Offers");
-  console.log("Best Price Offers:", formatOffers(aggregated.bestPrice.offers));
-  console.log("Closest Match Offers:", formatOffers(aggregated.closestMatch.offers));
+  console.log('Aggregated Offers')
+  console.log('Best Price Offers:', formatOffers(aggregated.bestPrice.offers))
+  console.log(
+    'Closest Match Offers:',
+    formatOffers(aggregated.closestMatch.offers)
+  )
 }
-
-
 
 export async function viewPsbt() {
   console.log(
@@ -220,6 +226,7 @@ export async function runCLI() {
       return
     case 'test':
       return await tapWallet.sendBRC20({
+        isDry: true,
         feeFromAddress:
           'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
         taprootPublicKey:
@@ -228,7 +235,7 @@ export async function runCLI() {
           'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
         destinationAddress:
           'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
-        feeRate: 75,
+        feeRate: 10,
         token: 'BONK',
         segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
         segwitPubkey:
@@ -239,31 +246,30 @@ export async function runCLI() {
         segwitHdPath: NESTED_SEGWIT_HD_PATH,
         taprootHdPath: TAPROOT_HD_PATH,
       })
-
-    // async function createOrdPsbtTx() {
-    //   const wallet = new Oyl()
-    //   const test0 = await wallet.createOrdPsbtTx({
-    //     changeAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-    //     fromAddress:
-    //       'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-    //     inscriptionId:
-    //       '68069fc341a462cd9a01ef4808b0bda0db7c0c6ea5dfffdc35b8992450cecb5bi0',
-    //     taprootPubKey:
-    //       '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
-    //     segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-    //     segwitPubKey:
-    //       '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
-    //     toAddress:
-    //       'bc1pkvt4pj7jgj02s95n6sn56fhgl7t7cfx5mj4dedsqyzast0whpchs7ujd7y',
-    //     txFee: 68,
-    //     payFeesWithSegwit: true,
-    //     mnemonic:
-    //       'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
-    //   })
-    //   console.log(test0)
-    // }
-    // await createOrdPsbtTx()
-    // break
+      break
+    case 'send-collectible':
+      return await tapWallet.sendOrdCollectible({
+        isDry: true,
+        changeAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+        feeFromAddress:
+          'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+        inscriptionId:
+          '68069fc341a462cd9a01ef4808b0bda0db7c0c6ea5dfffdc35b8992450cecb5bi0',
+        taprootPublicKey:
+          '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
+        segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+        segwitPubkey:
+          '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
+        destinationAddress:
+          'bc1pkvt4pj7jgj02s95n6sn56fhgl7t7cfx5mj4dedsqyzast0whpchs7ujd7y',
+        feeRate: 10,
+        payFeesWithSegwit: false,
+        mnemonic:
+          'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
+        segwitHdPath: NESTED_SEGWIT_HD_PATH,
+        taprootHdPath: TAPROOT_HD_PATH,
+      })
+      break
     case 'view':
       return await viewPsbt()
       break
@@ -271,7 +277,7 @@ export async function runCLI() {
       return await testMarketplaceBuy()
       break
     case 'aggregate':
-      return await testAggregator();
+      return await testAggregator()
       break
     default:
       return await callAPI(yargs.argv._[0], options)
