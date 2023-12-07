@@ -580,6 +580,7 @@ export class Oyl {
       allUtxos: allUtxos,
       segwitUtxos: segwitUtxos,
       segwitAddress: segwitAddress,
+      segwitPubKey: segwitPubKey,
       toAddress: toAddress,
       metaOutputValue: metaOutputValue,
       feeRate: feeRate,

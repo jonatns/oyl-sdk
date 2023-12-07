@@ -5,7 +5,6 @@ import { isTaprootInput } from 'bitcoinjs-lib/src/psbt/bip371'
 import { EventEmitter } from 'events'
 import { tweakSigner, ECPair } from '../shared/utils'
 import Mnemonic from 'bitcore-mnemonic'
-import { getAddressesFromPublicKey } from '@sadoprotocol/ordit-sdk'
 
 const hdPathString = "m/86'/0'/0'/0"
 
