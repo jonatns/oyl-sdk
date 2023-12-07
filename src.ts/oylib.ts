@@ -520,6 +520,7 @@ export class Oyl {
     segwitHdPathWithIndex,
     taprootHdPathWithIndex,
   }: {
+    publicKey: string
     fromAddress: string
     toAddress: string
     changeAddress: string
@@ -573,7 +574,6 @@ export class Oyl {
       segwitSigner,
       segwitPubKey
     )
-
     psbtTx.setChangeAddress(changeAddress)
     const finalizedPsbt = await buildOrdTx({
       psbtTx: psbtTx,
@@ -600,7 +600,6 @@ export class Oyl {
       // ...result,
     }
   }
-
   /**
    * Creates a Partially Signed Bitcoin Transaction (PSBT) to send regular satoshis, signs and broadcasts it.
    * @param {Object} params - The parameters for creating the PSBT.
@@ -771,7 +770,7 @@ export class Oyl {
    * @returns {Promise<any>} A promise that resolves to an array of offers.
    */
   async getBrcOffers({ ticker }) {
-    const offers = await this.apiClient.getTickerOffers({ _ticker: ticker })
+    const offers = await this.apiClient.getOkxTickerOffers({ ticker: ticker })
     return offers
   }
 

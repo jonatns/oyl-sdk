@@ -2,6 +2,7 @@ import yargs from 'yargs'
 import { camelCase } from 'change-case'
 import { NESTED_SEGWIT_HD_PATH, Oyl, TAPROOT_HD_PATH } from './oylib'
 import { PSBTTransaction } from './txbuilder/PSBTTransaction'
+import { Aggregator } from './PSBTAggregator'
 import * as transactions from './transactions'
 import * as bitcoin from 'bitcoinjs-lib'
 import { address as PsbtAddress } from 'bitcoinjs-lib'
@@ -26,7 +27,7 @@ export async function loadRpc(options) {
     const fees = await wallet.esploraRpc.getAddressUtxo(
       process.env.TAPROOT_ADDRESS
     )
-    console.log('Block Info:', blockInfo)
+    console.log('Block Info:', JSON.stringify(blockInfo))
   } catch (error) {
     console.error('Error:', error)
   }
@@ -38,12 +39,30 @@ export async function testMarketplaceBuy() {
     pubKey: process.env.TAPROOT_PUBKEY,
     feeRate: parseFloat(process.env.FEE_RATE),
     psbtBase64: process.env.PSBT_BASE64,
-    price: 0.0005,
+    price: 0.001,
   }
   const intent = new BuildMarketplaceTransaction(options)
   const builder = await intent.psbtBuilder()
   console.log(builder)
 }
+
+export async function testAggregator() {
+  const aggregator = new Aggregator();
+  const aggregated = await aggregator.fetchAndAggregateOffers("ordi", 20, 110000);
+
+  const formatOffers = offers => offers.map(offer => ({
+    amount: offer.amount,
+    unitPrice: offer.unitPrice,
+    nftId: offer.offerId,
+    marketplace: offer.marketplace
+  }));
+
+  console.log("Aggregated Offers");
+  console.log("Best Price Offers:", formatOffers(aggregated.bestPrice.offers));
+  console.log("Closest Match Offers:", formatOffers(aggregated.closestMatch.offers));
+}
+
+
 
 export async function viewPsbt() {
   console.log(
@@ -250,6 +269,9 @@ export async function runCLI() {
       break
     case 'market':
       return await testMarketplaceBuy()
+      break
+    case 'aggregate':
+      return await testAggregator();
       break
     default:
       return await callAPI(yargs.argv._[0], options)

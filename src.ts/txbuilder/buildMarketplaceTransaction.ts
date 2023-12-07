@@ -133,14 +133,15 @@ export class BuildMarketplaceTransaction {
         
           console.log("=========== Fetching Maker Input Data ========")
           const makerInput = marketplacePsbt.txInputs[2]
+          const decoded = await this.sandshrewBtcClient.bitcoindRpc.decodePSBT(this.psbtBase64);
           const makerInputData = marketplacePsbt.data.inputs[2]
           console.log("=========== Maker Input: ", makerInput)
           console.log("=========== Maker Input Data: ", makerInputData)
           swapPsbt.addInput({
-            hash: makerInput.hash.toString('hex'),
+            hash: decoded.tx.vin[2].txid,
             index: 0,
             witnessUtxo: {
-              value: 546,
+              value: makerInputData?.witnessUtxo?.value,
               script: makerInputData?.witnessUtxo?.script as Buffer,
             },
             tapInternalKey: makerInputData.tapInternalKey,
@@ -230,6 +231,7 @@ export class BuildMarketplaceTransaction {
     async getMakersAddress () {
         const swapTx = await this.sandshrewBtcClient.bitcoindRpc.decodePSBT(this.psbtBase64);
         const outputs = swapTx.tx.vout
+        console.log(outputs)
         for (var i = 0; i < outputs.length; i++){
             if (outputs[i].value == this.orderPrice) {
                 this.makersAddress = outputs[i].scriptPubKey.address

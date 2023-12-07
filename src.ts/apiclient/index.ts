@@ -158,15 +158,39 @@ export class OylApiClient {
   }
 
   /**
-   * Get ticker offers.
+   * Get Unisat ticker offers.
    * @param _ticker - The ticker to query.
    */
-  async getTickerOffers({ _ticker }: { _ticker: string }): Promise<any> {
-    const response = await this._call('/get-token-offers', 'post', {
-      ticker: _ticker,
+  async getUnisatTickerOffers({ ticker }: { ticker: string }): Promise<any> {
+    const response = await this._call('/get-token-unisat-offers', 'post', {
+      ticker: ticker,
     })
+    if (response.error) throw Error (response.error)
     return response.data.list
   }
+
+  /**
+   * Get Okx ticker offers.
+   * @param _ticker - The ticker to query.
+   */
+  async getOkxTickerOffers({ ticker }: { ticker: string }): Promise<any> {
+    const response = await this._call('/get-token-okx-offers', 'post', {
+      ticker: ticker,
+    })
+    if (response.error) throw Error (response.error)
+    return response.data.items
+  }
+
+    /**
+   * Get Okx offer psbt.
+   * @param offerId - The offer Id to query.
+   */
+    async getOkxOfferPsbt({ offerId }: { offerId: number }): Promise<any> {
+      const response = await this._call('/get-token-okx-offers', 'post', {
+        offerId: offerId,
+      })
+      return response
+    }
 
   /**
    * Initialize a swap bid.

@@ -323,6 +323,7 @@ const addInscriptionUtxo = async ({
         : 'Inscription not detected.'
     )
   }
+
   psbtTx.addInput(matchedUtxo)
   psbtTx.addOutput(toAddress, matchedUtxo.satoshis)
   return

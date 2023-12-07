@@ -1,4 +1,5 @@
 /// <reference types="node" />
+import { payments, Psbt } from "bitcoinjs-lib";
 export interface InscriptionResponse {
     address: string;
     inscriptions?: string;
@@ -6,6 +7,7 @@ export interface InscriptionResponse {
     transaction: string;
     value: string;
 }
+export type Network = "mainnet" | "testnet" | "regtest";
 export type WitnessScriptOptions = {
     pubKeyHex: string;
     mediaContent: string;
@@ -111,6 +113,16 @@ export declare enum AddressType {
     P2SH_P2WPKH = 2,
     P2WPKH = 3
 }
+export interface MarketplaceOffer {
+    ticker: string;
+    offerId: string;
+    amount: string;
+    address: string;
+    marketplace: "okx" | "unisat";
+    unitPrice: number;
+    totalPrice: number;
+    psbt: string;
+}
 export interface ProviderOptions {
     network: String;
     host: String;
@@ -140,6 +152,12 @@ export interface oylAccounts {
     initializedFrom: string;
     mnemonic: string;
 }
+export interface FeeEstimatorOptions {
+    feeRate: number;
+    network: Network;
+    psbt?: Psbt;
+    witness?: Buffer[];
+}
 export interface IBlockchainInfoUTXO {
     tx_hash_big_endian: string;
     tx_hash: string;
@@ -165,6 +183,7 @@ export interface InscribeTransfer {
     postage?: number;
     segwitHdPath?: string;
     taprootHdPath: string;
+    isDry?: boolean;
 }
 export interface SwapBrcBid {
     address: String;
@@ -176,6 +195,24 @@ export interface SignedBid {
     psbtBid: String;
     auctionId: String;
     bidId: String;
+}
+export declare const addressTypeToName: {
+    readonly p2pkh: "legacy";
+    readonly p2sh: "nested-segwit";
+    readonly p2wpkh: "segwit";
+    readonly p2tr: "taproot";
+};
+export declare const addressNameToType: {
+    readonly legacy: "p2pkh";
+    readonly segwit: "p2wpkh";
+    readonly "nested-segwit": "p2sh";
+    readonly taproot: "p2tr";
+};
+export type AddressTypes = keyof typeof addressTypeToName;
+export type AddressFormats = (typeof addressTypeToName)[AddressTypes];
+export interface BitcoinPaymentType {
+    type: AddressTypes;
+    payload: false | payments.Payment;
 }
 export interface SwapBrc {
     address: String;

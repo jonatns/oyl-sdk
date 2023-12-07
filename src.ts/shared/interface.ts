@@ -1,3 +1,5 @@
+import { payments, Psbt } from "bitcoinjs-lib"
+
 export interface InscriptionResponse {
   address: string
   inscriptions?: string
@@ -5,6 +7,8 @@ export interface InscriptionResponse {
   transaction: string
   value: string
 }
+
+export type Network = "mainnet" | "testnet" | "regtest"
 
 export type WitnessScriptOptions = {
   pubKeyHex: string
@@ -122,6 +126,17 @@ export enum AddressType {
   P2WPKH,
 }
 
+export interface MarketplaceOffer {
+  ticker: string;
+  offerId: string;
+  amount: string;
+  address: string;
+  marketplace: "okx" | "unisat";
+  unitPrice: number;
+  totalPrice: number;
+  psbt: string
+}
+
 export interface ProviderOptions {
   network: String
   host: String
@@ -155,6 +170,13 @@ export interface oylAccounts {
   mnemonic: string
 }
 
+export interface FeeEstimatorOptions {
+  feeRate: number
+  network: Network
+  psbt?: Psbt
+  witness?: Buffer[]
+}
+
 export interface IBlockchainInfoUTXO {
   tx_hash_big_endian: string
   tx_hash: string
@@ -181,7 +203,7 @@ export interface InscribeTransfer {
   postage?: number
   segwitHdPath?: string
   taprootHdPath: string
-  isDry?: boolean = false
+  isDry?: boolean
 }
 
 export interface SwapBrcBid {
@@ -195,6 +217,29 @@ export interface SignedBid {
   psbtBid: String
   auctionId: String
   bidId: String
+}
+
+export const addressTypeToName = {
+  p2pkh: "legacy",
+  p2sh: "nested-segwit",
+  p2wpkh: "segwit",
+  p2tr: "taproot"
+} as const
+
+export const addressNameToType = {
+  legacy: "p2pkh",
+  segwit: "p2wpkh",
+  "nested-segwit": "p2sh",
+  taproot: "p2tr"
+} as const
+
+export type AddressTypes = keyof typeof addressTypeToName
+
+export type AddressFormats = (typeof addressTypeToName)[AddressTypes]
+
+export interface BitcoinPaymentType {
+  type: AddressTypes
+  payload: false | payments.Payment
 }
 
 export interface SwapBrc {
