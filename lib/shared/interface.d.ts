@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { payments, Psbt } from "bitcoinjs-lib";
+import { payments, Psbt } from 'bitcoinjs-lib';
 export interface InscriptionResponse {
     address: string;
     inscriptions?: string;
@@ -7,7 +7,7 @@ export interface InscriptionResponse {
     transaction: string;
     value: string;
 }
-export type Network = "mainnet" | "testnet" | "regtest";
+export type Network = 'mainnet' | 'testnet' | 'regtest';
 export type WitnessScriptOptions = {
     pubKeyHex: string;
     mediaContent: string;
@@ -118,7 +118,7 @@ export interface MarketplaceOffer {
     offerId: string;
     amount: string;
     address: string;
-    marketplace: "okx" | "unisat";
+    marketplace: 'okx' | 'unisat';
     unitPrice: number;
     totalPrice: number;
     psbt: string;
@@ -177,13 +177,14 @@ export interface InscribeTransfer {
     segwitAddress?: string;
     payFeesWithSegwit: boolean;
     feeRate: number;
-    token: string;
+    token?: string;
     mnemonic: string;
-    amount: number;
+    amount?: number;
     postage?: number;
     segwitHdPath?: string;
     taprootHdPath: string;
     isDry?: boolean;
+    inscriptionId?: string;
 }
 export interface SwapBrcBid {
     address: String;
@@ -205,7 +206,7 @@ export declare const addressTypeToName: {
 export declare const addressNameToType: {
     readonly legacy: "p2pkh";
     readonly segwit: "p2wpkh";
-    readonly "nested-segwit": "p2sh";
+    readonly 'nested-segwit': "p2sh";
     readonly taproot: "p2tr";
 };
 export type AddressTypes = keyof typeof addressTypeToName;

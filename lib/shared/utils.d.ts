@@ -79,7 +79,7 @@ export declare const formatOptionsToSignInputs: ({ _psbt, isRevealTx, pubkey, se
     taprootAddress: string;
 }) => Promise<ToSignInput[]>;
 export declare const signInputs: (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], taprootPubkey: string, segwitPubKey: string, segwitSigner: any, taprootSigner: any) => Promise<bitcoin.Psbt>;
-export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, }: {
+export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, feeRate, }: {
     ticker: string;
     amount: number;
     inputAddress: string;
@@ -89,6 +89,7 @@ export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, m
     segwitPublicKey: string;
     segwitAddress: string;
     isDry?: boolean;
+    feeRate: number;
     segwitHdPathWithIndex?: string;
     taprootHdPathWithIndex?: string;
     payFeesWithSegwit: boolean;
@@ -105,3 +106,19 @@ export declare const isP2WPKH: (script: Buffer, network: Network) => BitcoinPaym
 export declare const isP2WSHScript: (script: Buffer, network: Network) => BitcoinPaymentType;
 export declare const isP2SHScript: (script: Buffer, network: Network) => BitcoinPaymentType;
 export declare const isP2TR: (script: Buffer, network: Network) => BitcoinPaymentType;
+export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, feeRate, }: {
+    inscriptionId: string;
+    inputAddress: string;
+    outputAddress: string;
+    mnemonic: string;
+    taprootPublicKey: string;
+    segwitPublicKey: string;
+    segwitAddress: string;
+    isDry?: boolean;
+    feeRate: number;
+    segwitHdPathWithIndex?: string;
+    taprootHdPathWithIndex?: string;
+    payFeesWithSegwit: boolean;
+}) => Promise<{
+    error: any;
+}>;
