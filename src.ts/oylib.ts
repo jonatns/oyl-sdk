@@ -507,12 +507,13 @@ export class Oyl {
    * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
    */
   async createOrdPsbtTx({
-    publicKey,
     fromAddress,
     toAddress,
     changeAddress,
     txFee,
-    signer,
+    segwitAddress,
+    taprootPubKey,
+    segwitPubKey,
     inscriptionId,
     payFeesWithSegwit,
     mnemonic,
@@ -769,7 +770,7 @@ export class Oyl {
    * @returns {Promise<any>} A promise that resolves to an array of offers.
    */
   async getBrcOffers({ ticker }) {
-    const offers = await this.apiClient.getTickerOffers({ _ticker: ticker })
+    const offers = await this.apiClient.getOkxTickerOffers({ ticker: ticker })
     return offers
   }
 

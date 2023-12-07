@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import * as bitcoin from 'bitcoinjs-lib';
-import { UnspentOutput, TxInput, IBlockchainInfoUTXO, ToSignInput } from '../shared/interface';
+import { UnspentOutput, TxInput, IBlockchainInfoUTXO, Network, BitcoinPaymentType, ToSignInput } from '../shared/interface';
 export interface IBISWalletIx {
     validity: any;
     isBrc: boolean;
@@ -100,3 +100,8 @@ export declare function waitForTransaction(txId: string): Promise<boolean>;
 export declare function getOutputValueByVOutIndex(commitTxId: string, vOut: number): Promise<number | null>;
 export declare function calculateTaprootTxSize(taprootInputCount: number, nonTaprootInputCount: number, outputCount: number): number;
 export declare function getRawTxnHashFromTxnId(txnId: string): Promise<any>;
+export declare const isP2PKH: (script: Buffer, network: Network) => BitcoinPaymentType;
+export declare const isP2WPKH: (script: Buffer, network: Network) => BitcoinPaymentType;
+export declare const isP2WSHScript: (script: Buffer, network: Network) => BitcoinPaymentType;
+export declare const isP2SHScript: (script: Buffer, network: Network) => BitcoinPaymentType;
+export declare const isP2TR: (script: Buffer, network: Network) => BitcoinPaymentType;

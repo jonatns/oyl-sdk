@@ -203,7 +203,7 @@ export interface InscribeTransfer {
   postage?: number
   segwitHdPath?: string
   taprootHdPath: string
-  isDry?: boolean = false
+  isDry?: boolean
 }
 
 export interface SwapBrcBid {

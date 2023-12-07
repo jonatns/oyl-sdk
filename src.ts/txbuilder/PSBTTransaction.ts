@@ -1,6 +1,6 @@
 import { UTXO_DUST } from '../shared/constants'
 import * as bitcoin from 'bitcoinjs-lib'
-import { assertHex, utxoToInput, validator } from '../shared/utils'
+import { assertHex, ECPair, utxoToInput, validator } from '../shared/utils'
 import {
   AddressType,
   UnspentOutput,
@@ -15,6 +15,8 @@ export class PSBTTransaction {
   public outputs: TxOutput[] = []
   private changeOutputIndex = -1
   private signer: any
+  private segwitSigner: any
+  private segwitPubKey: any
   private address: string
   public changedAddress: string
   private network: bitcoin.Network = bitcoin.networks.bitcoin
@@ -38,35 +40,79 @@ export class PSBTTransaction {
     segwitPubKey?
   ) {
     this.signer = signer
+    this.segwitSigner = segwitSigner
+    this.segwitPubKey = segwitPubKey
     this.address = address
     this.pubkey = publicKey
     this.feeRate = feeRate || 5
   }
 
+  /**
+   * Sets whether to enable Replace-by-Fee for the transaction.
+   * @param {boolean} enable - A boolean to enable or disable RBF.
+   */
   setEnableRBF(enable: boolean) {
     this.enableRBF = enable
   }
 
+  /**
+   * Sets the change address for the transaction.
+   * @param {string} address - The address to receive the change.
+   */
   setChangeAddress(address: string) {
     this.changedAddress = address
   }
 
-  addInput(utxo: UnspentOutput) {
+  /**
+   * Adds an input to the transaction.
+   * @param {UnspentOutput} utxo - The unspent transaction output to add as an input.
+   */
+  addInput(utxo: UnspentOutput, isSegwit: boolean = false) {
+    if (isSegwit) {
+      this.inputs.push(utxoToInput(utxo, Buffer.from(this.segwitPubKey, 'hex')))
+      return
+    }
+
     this.inputs.push(utxoToInput(utxo, Buffer.from(this.pubkey, 'hex')))
   }
+  getNumberOfInputs() {
+    return this.inputs.length
+  }
 
+  /**
+   * Calculates the total value of all inputs in the transaction.
+   * @returns {number} The total input value in satoshis.
+   */
   getTotalInput() {
     return this.inputs.reduce((pre, cur) => pre + cur.data.witnessUtxo.value, 0)
   }
 
+  /**
+   * Gets the total output value of the transaction.
+   * This method sums up the value of all outputs in the transaction.
+   * @returns {number} The total output value in satoshis.
+   */
   getTotalOutput() {
     return this.outputs.reduce((pre, cur) => pre + cur.value, 0)
   }
 
+  /**
+   * Gets the unspent amount in the transaction.
+   * This method calculates the unspent amount by subtracting the total output
+   * value from the total input value.
+   * @returns {number} The unspent amount in satoshis.
+   */
   getUnspent() {
     return this.getTotalInput() - this.getTotalOutput()
   }
 
+  /**
+   * Checks if the transaction fee is sufficient.
+   * This method creates a signed PSBT and checks if the actual fee rate of the PSBT
+   * meets or exceeds the set fee rate for the transaction.
+   * @returns {Promise<boolean>} A promise that resolves to true if the fee is sufficient,
+   *                             otherwise false.
+   */
   async isEnoughFee() {
     const psbt1 = await this.createSignedPsbt()
     if (psbt1.getFeeRate() >= this.feeRate) {
@@ -76,6 +122,12 @@ export class PSBTTransaction {
     }
   }
 
+  /**
+   * Calculates the network fee for the transaction.
+   * This method creates a signed PSBT and calculates the fee based on the size of
+   * the transaction and the set fee rate.
+   * @returns {Promise<number>} A promise that resolves to the calculated network fee in satoshis.
+   */
   async calNetworkFee() {
     const psbt = await this.createSignedPsbt()
     let txSize = psbt.extractTransaction(true).toBuffer().length
@@ -88,6 +140,11 @@ export class PSBTTransaction {
     return fee
   }
 
+  /**
+   * Adds an output to the transaction.
+   * @param {string} address - The address to send the output to.
+   * @param {number}  value - The amount in satoshis to send.
+   */
   addOutput(address: string, value: number) {
     this.outputs.push({
       address,
@@ -95,10 +152,19 @@ export class PSBTTransaction {
     })
   }
 
+  /**
+   * Retrieves an output from the transaction by index.
+   * @param {number} index - The index of the output to retrieve.
+   * @returns {TxOutput | undefined} The output at the specified index, or undefined if not found.
+   */
   getOutput(index: number) {
     return this.outputs[index]
   }
 
+  /**
+   * Adds a change output to the transaction.
+   * @param {number} value - The value in satoshis for the change output.
+   */
   addChangeOutput(value: number) {
     this.outputs.push({
       address: this.changedAddress,
@@ -107,20 +173,35 @@ export class PSBTTransaction {
     this.changeOutputIndex = this.outputs.length - 1
   }
 
+  /**
+   * Retrieves the change output from the transaction.
+   * @returns {TxOutput | undefined}The change output, or undefined if there is no change output.
+   */
   getChangeOutput() {
     return this.outputs[this.changeOutputIndex]
   }
 
+  /**
+   * Calculates the change amount of the transaction.
+   * @returns {number} The value of the change output in satoshis, or 0 if there is no change output.
+   */
   getChangeAmount() {
     const output = this.getChangeOutput()
     return output ? output.value : 0
   }
 
+  /**
+   * Removes the change output from the transaction.
+   */
   removeChangeOutput() {
     this.outputs.splice(this.changeOutputIndex, 1)
     this.changeOutputIndex = -1
   }
 
+  /**
+   * Removes the specified number of most recently added outputs.
+   * @param {number} count - The number of outputs to remove from the end of the outputs array.
+   */
   removeRecentOutputs(count: number) {
     this.outputs.splice(-count)
   }
@@ -201,6 +282,10 @@ export class PSBTTransaction {
     }
   }
 
+  /**
+   * Creates a signed PSBT for the transaction.
+   * @returns {Promise<bitcoin.Psbt>} A promise that resolves to the signed PSBT instance.
+   */
   async createSignedPsbt() {
     const psbt = new bitcoin.Psbt({ network: this.network })
 
@@ -245,6 +330,13 @@ export class PSBTTransaction {
     }
   }
 
+  /**
+   * Generates the raw transaction hex and calculates the fee.
+   * @param {boolean} autoAdjust - Whether to automatically adjust output values for the fee.
+   * @returns {Promise<{ fee: number, rawtx: string, toSatoshis: number, estimateFee: number }>} A promise that resolves to an object containing the fee,
+   *                                                                                                   raw transaction hex, total output value in satoshis,
+   *                                                                                                   and the estimated fee.
+   */
   async generate(autoAdjust: boolean) {
     // Try to estimate fee
     const unspent = this.getUnspent()
@@ -280,6 +372,10 @@ export class PSBTTransaction {
     }
   }
 
+  /**
+   * Dumps the transaction details to the console. Used for debugging.
+   * @param psbt - The PSBT object to be dumped.
+   */
   async dumpTx(psbt) {
     const tx = psbt.extractTransaction()
     const size = tx.toBuffer().length
@@ -297,27 +393,27 @@ Summary
 ----------------------------------------------------------------------------------------------
 Inputs
 ${this.inputs
-        .map((input, index) => {
-          const str = `
+  .map((input, index) => {
+    const str = `
 =>${index} ${input.data.witnessUtxo.value} Sats
         lock-size: ${input.data.witnessUtxo.script.length}
         via ${input.data.hash} [${input.data.index}]
 `
-          return str
-        })
-        .join('')}
+    return str
+  })
+  .join('')}
 total: ${this.getTotalInput()} Sats
 ----------------------------------------------------------------------------------------------
 Outputs
 ${this.outputs
-        .map((output, index) => {
-          const str = `
+  .map((output, index) => {
+    const str = `
 =>${index} ${output.address} ${output.value} Sats`
-          return str
-        })
-        .join('')}
+    return str
+  })
+  .join('')}
 
-total: ${this.getTotalOutput() - feePaid} Sats
+total: ${this.getTotalOutput()} Sats
 =============================================================================================
     `)
   }

@@ -193,6 +193,7 @@ export declare class Oyl {
      * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
      */
     createOrdPsbtTx({ fromAddress, toAddress, changeAddress, txFee, segwitAddress, taprootPubKey, segwitPubKey, inscriptionId, payFeesWithSegwit, mnemonic, segwitHdPathWithIndex, taprootHdPathWithIndex, }: {
+        publicKey: string;
         fromAddress: string;
         toAddress: string;
         changeAddress: string;

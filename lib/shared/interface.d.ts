@@ -183,6 +183,7 @@ export interface InscribeTransfer {
     postage?: number;
     segwitHdPath?: string;
     taprootHdPath: string;
+    isDry?: boolean;
 }
 export interface SwapBrcBid {
     address: String;
