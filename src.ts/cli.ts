@@ -1,39 +1,49 @@
 import yargs from 'yargs'
 import { camelCase } from 'change-case'
-import { Wallet } from './oylib'
+import { NESTED_SEGWIT_HD_PATH, Oyl, TAPROOT_HD_PATH } from './oylib'
 import { PSBTTransaction } from './txbuilder/PSBTTransaction'
 import { Aggregator } from './PSBTAggregator'
 import * as transactions from './transactions'
 import * as bitcoin from 'bitcoinjs-lib'
-import { Inscriber } from '@sadoprotocol/ordit-sdk'
-import { BRC_20_TRANSFER_META } from './shared/constants'
-import { InscribeTransfer } from './shared/interface'
-import "dotenv/config";
+import { address as PsbtAddress } from 'bitcoinjs-lib'
+import { ToSignInput } from './shared/interface'
+import {
+  assertHex,
+  createSegwitSigner,
+  createTaprootSigner,
+} from './shared/utils'
+import axios from 'axios'
+import * as ecc2 from '@bitcoinerlab/secp256k1'
 import { BuildMarketplaceTransaction } from './txbuilder/buildMarketplaceTransaction'
 
+bitcoin.initEccLib(ecc2)
 
 export async function loadRpc(options) {
- const wallet = new Wallet()
- try {
-  const blockInfo = await wallet.sandshrewBtcClient.bitcoindRpc.decodePSBT(process.env.PSBT_BASE64);
-  const fees = await wallet.esploraRpc.getAddressUtxo(process.env.TAPROOT_ADDRESS);
-  console.log('Block Info:', JSON.stringify(blockInfo));
-} catch (error) {
-  console.error('Error:', error);
-}
+  const wallet = new Oyl()
+  try {
+    const blockInfo = await wallet.sandshrewBtcClient.bitcoindRpc.decodePSBT(
+      process.env.PSBT_BASE64
+    )
+    const fees = await wallet.esploraRpc.getAddressUtxo(
+      process.env.TAPROOT_ADDRESS
+    )
+    console.log('Block Info:', JSON.stringify(blockInfo))
+  } catch (error) {
+    console.error('Error:', error)
+  }
 }
 
-export async function testMarketplaceBuy (){
-const options = {
-  address: process.env.TAPROOT_ADDRESS,
-  pubKey: process.env.TAPROOT_PUBKEY,
-  feeRate: parseFloat(process.env.FEE_RATE),
-  psbtBase64: process.env.PSBT_BASE64,
-  price: 0.001
-}
-const intent = new BuildMarketplaceTransaction(options)
-const builder = await intent.psbtBuilder();
-console.log(builder)
+export async function testMarketplaceBuy() {
+  const options = {
+    address: process.env.TAPROOT_ADDRESS,
+    pubKey: process.env.TAPROOT_PUBKEY,
+    feeRate: parseFloat(process.env.FEE_RATE),
+    psbtBase64: process.env.PSBT_BASE64,
+    price: 0.001,
+  }
+  const intent = new BuildMarketplaceTransaction(options)
+  const builder = await intent.psbtBuilder()
+  console.log(builder)
 }
 
 export async function testAggregator() {
@@ -53,14 +63,17 @@ export async function testAggregator() {
 }
 
 
-export async function viewPsbt(){
-  console.log(bitcoin.Psbt.fromBase64(process.env.PSBT_BASE64, {
-    network: bitcoin.networks.bitcoin,
-  }).data.inputs)
+
+export async function viewPsbt() {
+  console.log(
+    bitcoin.Psbt.fromBase64(process.env.PSBT_BASE64, {
+      network: bitcoin.networks.bitcoin,
+    }).data.inputs
+  )
 }
 
 export async function callAPI(command, data, options = {}) {
-  const oylSdk = new Wallet()
+  const oylSdk = new Oyl()
   const camelCommand = camelCase(command)
   if (!oylSdk[camelCommand]) throw Error('command not foud: ' + camelCommand)
   const result = await oylSdk[camelCommand](data)
@@ -68,157 +81,194 @@ export async function callAPI(command, data, options = {}) {
   return result
 }
 
-export async function swapFlow() {
-  const address = process.env.TAPROOT_ADDRESS
-   const feeRate = parseFloat(process.env.FEE_RATE)
-   const mnemonic = process.env.TAPROOT_MNEMONIC
-  const pubKey = process.env.TAPROOT_PUBKEY
+export const MEMPOOL_SPACE_API_V1_URL = 'https://mempool.space/api/v1'
 
-  const psbt = bitcoin.Psbt.fromHex(process.env.PSBT_HEX, {
-    network: bitcoin.networks.bitcoin,
-  })
-
-  
-  const wallet = new Wallet()
-  const payload = await wallet.fromPhrase({
-    mnemonic: mnemonic.trim(),
-    hdPath: process.env.HD_PATH,
-    type: process.env.TYPE,
-  })
-
-   const keyring = payload.keyring.keyring
-   const signer = keyring.signTransaction.bind(keyring)
-   const from = address
-   const addressType = transactions.getAddressType(from)
-   if (addressType == null) throw Error('Invalid Address Type')
-
-   const tx = new PSBTTransaction(signer, from, pubKey, addressType, feeRate)
-   const signedPsbt = await tx.signPsbt(psbt, false)
-   signedPsbt.finalizeAllInputs()
-   console.log(signedPsbt.toBase64())
-   //@ts-ignore
-   psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
- 
-   //EXTRACT THE RAW TX
-   const rawtx = signedPsbt.extractTransaction().toHex()
-   console.log('rawtx', rawtx)
-   //BROADCAST THE RAW TX TO THE NETWORK
-   const result = await wallet.apiClient.pushTx({ transactionHex: rawtx })
-   //GET THE TX_HASH
-   console.log(result)
-   const ready_txId = psbt.extractTransaction().getId()
-   console.log(ready_txId)
-   //CONFIRM TRANSACTION IS CONFIRMED
+export const createInscriptionScript = (pubKey: any, content: any) => {
+  const mimeType = 'text/plain;charset=utf-8'
+  const textEncoder = new TextEncoder()
+  const marker = textEncoder.encode('ord')
+  return [
+    pubKey,
+    'OP_CHECKSIG',
+    'OP_0',
+    'OP_IF',
+    marker,
+    '01',
+    textEncoder.encode(mimeType),
+    'OP_0',
+    textEncoder.encode(content),
+    'OP_ENDIF',
+  ]
 }
 
-async function inscribeTest(options: InscribeTransfer) {
-  //WORKFLOW TO INSCRIBE
-  //GET & PASS PUBLIC KEY, ADDRESS SENDING FROM, ADDRESS INSCRIPTIOM WILL END UP IN, AND CHANGE ADDRESS
-  //PASS THE MEDIA CONTENT (e.g: 'Hello World'), MEDIA TYPE (e.g 'text/plain'), AND META (which will be encoded )
-  //PASS feerate and postage (default 1500)
-  //Initialize the Inscriber class with these values
-  const transaction = new Inscriber({
-    network: 'mainnet',
-    address: options.feeFromAddress,
-    publicKey: options.taprootPublicKey,
-    changeAddress: options.feeFromAddress,
-    destinationAddress: options.destinationAddress,
-    mediaContent: BRC_20_TRANSFER_META.mediaContent,
-    mediaType: BRC_20_TRANSFER_META.mediaType,
-    feeRate: options.feeRate,
-    meta: BRC_20_TRANSFER_META.meta,
-    postage: options?.postage || 1500, // base value of the inscription in sats
+const INSCRIPTION_PREPARE_SAT_AMOUNT = 4000
+
+export const RPC_ADDR =
+  'https://node.oyl.gg/v1/6e3bc3c289591bb447c116fda149b094'
+
+export const callBTCRPCEndpoint = async (
+  method: string,
+  params: string | string[]
+) => {
+  const data = JSON.stringify({
+    jsonrpc: '2.0',
+    id: method,
+    method: method,
+    params: [params],
   })
-  //GENERATE COMMIT PAYMENT REQUEST - THIS DUMPS AN ADDRESS FROM THE PUBKEY & TOTAL COST FOR INSCRIPTION
-  const revealed = await transaction.generateCommit()
-  //SEND BITCOIN FROM REGULAR ADDRESS TO THE DUMPED ADDRESS
-  const wallet = new Wallet()
-  const depositRevealFee = await wallet.createPsbtTx({
-    publicKey: options.taprootPublicKey,
-    from: options.feeFromAddress,
-    to: revealed.address,
-    changeAddress: options.feeFromAddress,
-    amount: (revealed.revealFee / 100000000).toString(),
-    fee: options.feeRate,
-    signer: options.signer,
-  })
-  console.log('deposit reveal fee', depositRevealFee)
-  //COLLECT_TX_HASH
-  const tx_hash = depositRevealFee.txId
-  //WAIT FOR TRANSACTION TO BE CONFIRMED BEFORE PROCEEDING
-  //ONCE THE TX IS CONFIRMED, CHECK IF ITS READY TO BE BUILT
-  const ready = await transaction.isReady()
-  if (ready) {
-    //IF READY, BUILD THE REVEAL TX
-    await transaction.build()
-    //YOU WILL GET THE PSBT HEX
-    const psbtHex = transaction.toHex()
-    console.log('transaction: ', psbtHex)
-    //PREPARE THE PSBT FOR SIGNING
-    const vPsbt = bitcoin.Psbt.fromHex(psbtHex, {
-      network: bitcoin.networks.bitcoin,
+
+  // @ts-ignore
+  return await axios
+    .post(RPC_ADDR, data, {
+      headers: {
+        'content-type': 'application/json',
+      },
     })
-    //SIGN THE PSBT
-    await signInscriptionPsbt(
-      vPsbt,
-      options.feeRate,
-      options.taprootPublicKey,
-      options.signer
-    )
-  }
+    .then((res) => res.data)
+    .catch((e) => {
+      console.error(e.response)
+      throw e
+    })
 }
 
-async function signInscriptionPsbt(psbt, fee, pubKey, signer, address = '') {
-  //INITIALIZE NEW PSBTTransaction INSTANCE
-  const wallet = new Wallet()
-  const addressType = transactions.getAddressType(address)
-  if (addressType == null) throw Error('Invalid Address Type')
-  const tx = new PSBTTransaction(signer, address, pubKey, addressType, fee)
-
-  //SIGN AND FINALIZE THE PSBT
-  const signedPsbt = await tx.signPsbt(psbt, true, true)
-  //@ts-ignore
-  psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
-
-  //EXTRACT THE RAW TX
-  const rawtx = signedPsbt.extractTransaction().toHex()
-  console.log('rawtx', rawtx)
-  //BROADCAST THE RAW TX TO THE NETWORK
-  const result = await wallet.apiClient.pushTx({ transactionHex: rawtx })
-  //GET THE TX_HASH
-  const ready_txId = psbt.extractTransaction().getId()
-  //CONFIRM TRANSACTION IS CONFIRMED
-}
-
-async function createOrdPsbtTx() {
-  const wallet = new Wallet()
-  const tx = await wallet.addAccountToWallet({
-    mnemonic: process.env.TAPROOT_MNEMONIC,
-    activeIndexes: [0],
-    customPath: 'unisat',
-  })
-}
+// async function createOrdPsbtTx() {
+//   const wallet = new Oyl()
+//   const test0 = await wallet.createOrdPsbtTx({
+//     changeAddress: '',
+//     fromAddress: '',
+//     inscriptionId: '',
+//     taprootPubKey: '',
+//     segwitAddress: '',
+//     segwitPubKey: '',
+//     toAddress: '',
+//     txFee: 0,
+//     mnemonic: '',
+//   })
+//   console.log(test0)
+// }
 
 export async function runCLI() {
   const [command] = yargs.argv._
   const options = Object.assign({}, yargs.argv)
+  const tapWallet = new Oyl()
+  const mnemonic =
+    'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
+  const taprootAddress =
+    'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm'
+  const segwitAddress = '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic'
+  const taprootHdPathWithIndex = TAPROOT_HD_PATH
+  const segwitHdPathWithIndex = NESTED_SEGWIT_HD_PATH
+  const taprootPubkey =
+    '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be'
+  const segwitPubkey =
+    '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b'
+  const taprootSigner = await createTaprootSigner({
+    mnemonic,
+    taprootAddress,
+    hdPathWithIndex: taprootHdPathWithIndex,
+  })
+  const segwitSigner = await createSegwitSigner({
+    mnemonic,
+    segwitAddress,
+    hdPathWithIndex: segwitHdPathWithIndex,
+  })
 
+  // const getAddress
+
+  const psbtsForTaprootAddressEndingDTM = {
+    psbtHex:
+      '70736274ff0100890200000001578ad7f2a593f9447a8ef0f790a9b1abfc81a6b2796920db573595a6c24c747a0100000000ffffffff02f420000000000000225120a8304c4cab8e15810e0a7d58741b3dcb3520339af31ecf3b264a1f5267cf1cc301100000000000002251200d89d702fafc100ab8eae890cbaf40b3547d6f1429564cf5d5f8d517f4caa390000000000001012b235e0000000000002251200d89d702fafc100ab8eae890cbaf40b3547d6f1429564cf5d5f8d517f4caa390000000',
+    psbtBase64:
+      'cHNidP8BAIkCAAAAAVeK1/Klk/lEeo7w95Cpsav8gaayeWkg21c1labCTHR6AQAAAAD/////AvQgAAAAAAAAIlEgqDBMTKuOFYEOCn1YdBs9yzUgM5rzHs87JkofUmfPHMMBEAAAAAAAACJRIA2J1wL6/BAKuOrokMuvQLNUfW8UKVZM9dX41Rf0yqOQAAAAAAABASsjXgAAAAAAACJRIA2J1wL6/BAKuOrokMuvQLNUfW8UKVZM9dX41Rf0yqOQAAAA',
+  }
+
+  // segwitPubKey: '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
   delete options._
   switch (command) {
     case 'load':
       return await loadRpc(options)
       break
-    case 'recover':
-      return await createOrdPsbtTx()
-      break
+    case 'send':
+      const taprootResponse = await tapWallet.createBtcTx({
+        to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
+        from: 'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+        amount: 4000,
+        feeRate: 62,
+        mnemonic,
+        publicKey: taprootPubkey,
+        segwitAddress,
+        segwitHdPathWithIndex,
+        segwitPubkey: '',
+        taprootHdPathWithIndex,
+      })
+      console.log({ taprootResponse })
+
+      const segwitResponse = await tapWallet.createBtcTx({
+        to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
+        from: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+        amount: 4000,
+        feeRate: 62,
+        publicKey: taprootPubkey,
+        mnemonic,
+        segwitAddress,
+        segwitHdPathWithIndex,
+        segwitPubkey,
+        taprootHdPathWithIndex,
+      })
+      console.log({ segwitResponse })
+
+      return
+    case 'test':
+      return await tapWallet.sendBRC20({
+        feeFromAddress:
+          'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+        taprootPublicKey:
+          '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
+        changeAddress:
+          'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+        destinationAddress:
+          'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
+        feeRate: 75,
+        token: 'BONK',
+        segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+        segwitPubkey:
+          '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
+        mnemonic: mnemonic,
+        amount: 40,
+        payFeesWithSegwit: true,
+        segwitHdPath: NESTED_SEGWIT_HD_PATH,
+        taprootHdPath: TAPROOT_HD_PATH,
+      })
+
+    // async function createOrdPsbtTx() {
+    //   const wallet = new Oyl()
+    //   const test0 = await wallet.createOrdPsbtTx({
+    //     changeAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+    //     fromAddress:
+    //       'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+    //     inscriptionId:
+    //       '68069fc341a462cd9a01ef4808b0bda0db7c0c6ea5dfffdc35b8992450cecb5bi0',
+    //     taprootPubKey:
+    //       '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
+    //     segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+    //     segwitPubKey:
+    //       '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
+    //     toAddress:
+    //       'bc1pkvt4pj7jgj02s95n6sn56fhgl7t7cfx5mj4dedsqyzast0whpchs7ujd7y',
+    //     txFee: 68,
+    //     payFeesWithSegwit: true,
+    //     mnemonic:
+    //       'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
+    //   })
+    //   console.log(test0)
+    // }
+    // await createOrdPsbtTx()
+    // break
     case 'view':
       return await viewPsbt()
       break
     case 'market':
       return await testMarketplaceBuy()
-      break
-    case 'swap':
-      return await swapFlow()
       break
     case 'aggregate':
       return await testAggregator();

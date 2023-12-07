@@ -1,9 +1,13 @@
 import BcoinRpc from './rpclient';
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
-import { SwapBrc, ProviderOptions, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
+import { AddressType, InscribeTransfer, ProviderOptions, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
-export declare class Wallet {
+export declare const NESTED_SEGWIT_HD_PATH = "m/49'/0'/0'/0";
+export declare const TAPROOT_HD_PATH = "m/86'/0'/0'/0";
+export declare const SEGWIT_HD_PATH = "m/84'/0'/0'/0";
+export declare const LEGACY_HD_PATH = "m/44'/0'/0'/0";
+export declare class Oyl {
     private mnemonic;
     private wallet;
     sandshrewBtcClient: SandshrewBitcoinClient;
@@ -21,7 +25,7 @@ export declare class Wallet {
      * @param {BcoinRpc} provider - The blockchain RPC client to connect to.
      * @returns {Wallet} - The connected wallet instance.
      */
-    static connect(provider: BcoinRpc): Wallet;
+    static connect(provider: BcoinRpc): Oyl;
     /**
      * Configures the wallet class with a provider from the given options.
      * @param {ProviderOptions} [options] - The options to configure the provider.
@@ -60,9 +64,9 @@ export declare class Wallet {
      * @returns {Promise<any>} A promise that resolves to the wallet data including keyring and assets.
      * @throws {Error} Throws an error if initialization fails.
      */
-    fromPhrase({ mnemonic, type, hdPath }: {
+    fromPhrase({ mnemonic, addrType, hdPath, }: {
         mnemonic: any;
-        type?: string;
+        addrType?: AddressType;
         hdPath?: string;
     }): Promise<any>;
     /**
@@ -96,7 +100,7 @@ export declare class Wallet {
         publicKey: any;
     }): Promise<string>;
     /**
-     * Creates a new wallet with an optional specific derivation type.
+     * Creates a new Oyl with an optional specific derivation type.
      * @param {object} param0 - Object containing the type of derivation.
      * @param {string} [param0.type] - Optional type of derivation path.
      * @returns {{keyring: HdKeyring, address: string}} The newly created wallet object.
@@ -188,36 +192,50 @@ export declare class Wallet {
      * @param {string} params.inscriptionId - The ID of the inscription to include in the transaction.
      * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
      */
-    createOrdPsbtTx({ publicKey, fromAddress, toAddress, changeAddress, txFee, signer, inscriptionId, }: {
-        publicKey: string;
+    createOrdPsbtTx({ fromAddress, toAddress, changeAddress, txFee, segwitAddress, taprootPubKey, segwitPubKey, inscriptionId, payFeesWithSegwit, mnemonic, segwitHdPathWithIndex, taprootHdPathWithIndex, }: {
         fromAddress: string;
         toAddress: string;
         changeAddress: string;
         txFee: number;
-        signer: any;
+        segwitAddress?: string;
+        taprootPubKey: string;
+        segwitPubKey?: string;
         inscriptionId: string;
-    }): Promise<any>;
+        payFeesWithSegwit: boolean;
+        mnemonic: string;
+        segwitHdPathWithIndex?: string;
+        taprootHdPathWithIndex?: string;
+    }): Promise<{
+        txId: any;
+        rawtx: any;
+    }>;
     /**
      * Creates a Partially Signed Bitcoin Transaction (PSBT) to send regular satoshis, signs and broadcasts it.
      * @param {Object} params - The parameters for creating the PSBT.
-     * @param {string} params.publicKey - The public key associated with the transaction.
-     * @param {string} params.from - The sending address.
      * @param {string} params.to - The receiving address.
-     * @param {string} params.changeAddress - The change address.
+     * @param {string} params.from - The sending address.
      * @param {string} params.amount - The amount to send.
-     * @param {number} params.fee - The transaction fee rate.
+     * @param {number} params.feeRate - The transaction fee rate.
      * @param {any} params.signer - The bound signer method to sign the transaction.
+     * @param {string} params.publicKey - The public key associated with the transaction.
      * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
      */
-    createPsbtTx({ publicKey, from, to, changeAddress, amount, fee, signer, }: {
-        publicKey: string;
-        from: string;
+    createBtcTx({ to, from, amount, feeRate, publicKey, mnemonic, segwitAddress, segwitPubkey, segwitHdPathWithIndex, taprootHdPathWithIndex, }: {
         to: string;
-        changeAddress: string;
-        amount: string;
-        fee: number;
-        signer: any;
-    }): Promise<any>;
+        from: string;
+        amount: number;
+        feeRate: number;
+        publicKey: string;
+        mnemonic: string;
+        segwitAddress?: string;
+        segwitPubkey?: string;
+        segwitHdPathWithIndex: string;
+        taprootHdPathWithIndex: string;
+    }): Promise<{
+        txId: string;
+        rawTx: string;
+        rawTxBase64: string;
+    }>;
     /**
      * Retrieves information about a SegWit address.
      * @param {Object} params - The parameters containing the address information.
@@ -249,17 +267,14 @@ export declare class Wallet {
         summary: any[];
     }>;
     /**
-     * Initiates and completes a swap on the blockchain resource (BRC) marketplace.
-     * @param {SwapBrc} bid - The bid details for the swap.
-     * @returns {Promise<string>} A promise that resolves to the transaction ID of the submitted bid.
+     * Fetches offers associated with a specific BRC20 ticker.
+     * @param {Object} params - The parameters containing the ticker information.
+     * @param {string} params.ticker - The ticker symbol to retrieve offers for.
+     * @returns {Promise<any>} A promise that resolves to an array of offers.
      */
-    swapBrc(bid: SwapBrc): Promise<any>;
-    /**
-     * Handles the swapping flow logic, including transaction signing.
-     * @param {Object} options - The parameters and options for the swap.
-     * @returns {Promise<string>} A promise that resolves to the hexadecimal string of the signed PSBT.
-     */
-    swapFlow(options: any): Promise<string>;
+    getBrcOffers({ ticker }: {
+        ticker: any;
+    }): Promise<any>;
     /**
      * Lists BRC20 tokens associated with an address.
      * @param {Object} params - The parameters containing the address information.
@@ -284,6 +299,15 @@ export declare class Wallet {
      * @returns {Promise<any>} A promise that resolves to the collectible data.
      */
     getCollectibleById(inscriptionId: string): Promise<any>;
-    signPsbt(psbtHex: any, fee: any, pubKey: any, signer: any, address: any): Promise<string>;
+    signPsbt(psbtHex: string, fee: any, pubKey: any, signer: any, address: string): Promise<{
+        signedPsbtHex: string;
+        signedPsbtBase64: string;
+    }>;
+    finalizePsbtBase64(psbtBase64: any): Promise<any>;
+    sendPsbt(txData: string, isDry?: boolean): Promise<{
+        signedPsbtHex: string;
+        signedPsbtBase64: string;
+    }>;
     signInscriptionPsbt(psbt: any, fee: any, pubKey: any, signer: any, address?: string): Promise<any>;
+    sendBRC20(options: InscribeTransfer): Promise<unknown>;
 }

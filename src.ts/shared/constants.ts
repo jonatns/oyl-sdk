@@ -4,18 +4,13 @@ export const maximumScriptBytes = 520
 
 export const MAXIMUM_FEE = 5000000
 
-export const BRC_20_TRANSFER_META = {
-  mediaContent: 'Hello World',
+export const getBrc20Data = ({
+  amount,
+  tick,
+}: {
+  amount: number | string
+  tick: string
+}) => ({
+  mediaContent: `{"p":"brc-20","op":"transfer","tick":"${tick}","amt":"${amount}"}`,
   mediaType: 'text/plain',
-  meta: {
-    // Flexible object: Record<string, any>
-    title: 'Example title',
-    desc: 'Lorem ipsum',
-    slug: 'cool-digital-artifact',
-    creator: {
-      name: 'Your Name',
-      email: 'artist@example.org',
-      address: 'bc1p2hq8sx32n8993teqgcgrndw4qege6shjkcewgwpudqkqelgmw4ksmv4hud',
-    },
-  },
-}
+})

@@ -24,6 +24,10 @@ reset:
 	$(Q)yarn build
 	$(Q)echo "--- reset"
 
-retest: reset
-	$(Q)oyl-cli recover
+sendBtc: reset
+	$(Q)oyl-cli send
+	$(Q)echo "--- test complete"
+
+sendBRC20: reset
+	$(Q)oyl-cli test
 	$(Q)echo "--- test complete"
