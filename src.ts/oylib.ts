@@ -639,8 +639,6 @@ export class Oyl {
     try {
       const utxos = await this.getUtxosArtifacts({ address: from })
 
-      console.log({ utxosGatheredForBtcSend: utxos })
-
       const segwitSigner: any = await createSegwitSigner({
         mnemonic: mnemonic,
         segwitAddress: segwitAddress,

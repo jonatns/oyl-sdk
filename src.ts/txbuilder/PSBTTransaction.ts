@@ -260,6 +260,8 @@ export class PSBTTransaction {
             publicKey: this.segwitPubKey,
             sighashTypes: v.sighashType ? [v.sighashType] : undefined,
           })
+        } else {
+          console.log("YO DON'T HAVE THE KEY!")
         }
       }
     })
