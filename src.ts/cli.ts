@@ -204,7 +204,7 @@ export async function runCLI() {
         publicKey: taprootPubkey,
         segwitAddress,
         segwitHdPathWithIndex,
-        segwitPubkey: '',
+        segwitPubkey,
         taprootHdPathWithIndex,
       })
       console.log({ taprootResponse })
