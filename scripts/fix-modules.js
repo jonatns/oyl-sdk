@@ -1,4 +1,6 @@
-const { readFileSync, writeFileSync } = require('fs')
+const fs = require('fs');
+const { readFileSync, writeFileSync } = fs;
+
 
 const fixWindowError = () => {
   const file = './node_modules/bitcore-lib/lib/crypto/random.js'
@@ -50,7 +52,8 @@ const run = async () => {
   try {
     fixWindowError()
     fixBufferError()
-  } catch {
+  } catch (e) {
+    console.error(e);
     success = false
   } finally {
     console.log('Fix modules result:', success ? 'success' : 'failed')

@@ -37,6 +37,7 @@
     "crypto": "^1.0.1",
     "ecpair": "^2.1.0",
     "fs-extra": "^11.1.1",
+    "nice-repl": "^0.1.2",
     "node-fetch": "^2.7.0",
     "npm": "^9.6.7",
     "prettier": "^2.8.8",
