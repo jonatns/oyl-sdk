@@ -335,9 +335,6 @@ export class PSBTTransaction {
         toSignInputs,
       }: { psbt: bitcoin.Psbt; toSignInputs: ToSignInput[] } =
         await this.formatOptionsToSignInputs(psbt)
-
-      console.log({ toSignInputs })
-
       await this.signInputs(formattedPsbt, toSignInputs)
 
       return formattedPsbt
