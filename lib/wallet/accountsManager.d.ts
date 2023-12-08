@@ -1,4 +1,30 @@
-import { oylAccounts } from '../shared/interface';
+import { AddressType, oylAccounts } from '../shared/interface';
+export declare const customPaths: {
+    oyl: {
+        taprootPath: string;
+        initializedFrom: string;
+        segwitPath: string;
+        segwitAddressType: AddressType;
+    };
+    xverse: {
+        taprootPath: string;
+        initializedFrom: string;
+        segwitPath: string;
+        segwitAddressType: AddressType;
+    };
+    leather: {
+        taprootPath: string;
+        segwitPath: string;
+        initializedFrom: string;
+        segwitAddressType: AddressType;
+    };
+    unisat: {
+        taprootPath: string;
+        segwitPath: string;
+        initializedFrom: string;
+        segwitAddressType: AddressType;
+    };
+};
 export declare class AccountManager {
     private mnemonic;
     private taprootKeyring;

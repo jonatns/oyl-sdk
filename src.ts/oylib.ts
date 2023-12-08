@@ -926,7 +926,7 @@ export class Oyl {
     await isDryDisclaimer(options.isDry)
     const hdPaths = customPaths[options.segwitHdPath]
     try {
-      await sendCollectible({
+      return await sendCollectible({
         inscriptionId: options.inscriptionId,
         inputAddress: options.feeFromAddress,
         outputAddress: options.destinationAddress,

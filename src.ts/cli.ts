@@ -266,7 +266,7 @@ export async function runCLI() {
         payFeesWithSegwit: true,
         mnemonic:
           'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
-        segwitHdPath: NESTED_SEGWIT_HD_PATH,
+        segwitHdPath: 'xverse',
         taprootHdPath: TAPROOT_HD_PATH,
       })
       break
