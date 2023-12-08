@@ -940,7 +940,7 @@ export class Oyl {
 
 const isDryDisclaimer = async (isDry: boolean) => {
   if (isDry) {
-    console.log('DRY!!!!! RUNNING ONE-CLICK BRC20 TRANSFER')
+    console.log('DRY!!!!! RUNNING METHOD IN DRY MODE')
   } else {
     console.log('WET!!!!!!! 5')
     await delay(1000)
