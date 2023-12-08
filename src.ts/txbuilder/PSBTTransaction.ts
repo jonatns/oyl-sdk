@@ -237,8 +237,9 @@ export class PSBTTransaction {
           network: psbtNetwork,
         })
 
-        const pubkey = Buffer.from(this.segwitPubKey, 'hex')
-        const p2wpkh = bitcoin.payments.p2wpkh({ pubkey })
+        const p2wpkh = bitcoin.payments.p2wpkh({
+          pubkey: Buffer.from(this.segwitPubKey, 'hex'),
+        })
         const p2sh = bitcoin.payments.p2sh({ redeem: p2wpkh })
 
         const isSameTapScript =
