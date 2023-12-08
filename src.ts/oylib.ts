@@ -679,12 +679,10 @@ export class Oyl {
 
       const vB = tx.getNumberOfInputs() * 149 + 3 * 32 + 12
       const fee = vB * feeRate
-      console.log('amount required: ', outputAmount + fee)
 
       for (let i = 0; i < nonOrdUtxos.length; i++) {
         const nonOrdUtxo = nonOrdUtxos[i]
         if (tmpSum < outputAmount + fee) {
-          console.log('adding inputs')
           tx.addInput(nonOrdUtxo)
           tmpSum += nonOrdUtxo.satoshis
         }
