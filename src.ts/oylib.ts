@@ -1,6 +1,7 @@
 import { buildOrdTx, PSBTTransaction } from './txbuilder'
 import { UTXO_DUST } from './shared/constants'
 import {
+  callBTCRPCEndpoint,
   createSegwitSigner,
   createTaprootSigner,
   delay,
@@ -710,15 +711,24 @@ export class Oyl {
       //@ts-ignore
       psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
       const txId = psbt.extractTransaction().getId()
-      const rawTx = psbt.toHex()
-      const rawTxBase64 = psbt.toBase64()
+      const txHex = psbt.extractTransaction().toHex()
+      const rawPsbtBase64 = psbt.toBase64()
+
+      const testTxAccept = await callBTCRPCEndpoint('bcli_testmempoolaccept', [
+        `${txHex}`,
+      ])
+
+      if (testTxAccept.result[0]['reject-reason']) {
+        throw new Error(testTxAccept.result[0]['reject-reason'])
+      }
+
       return {
         txId,
-        rawTx,
-        rawTxBase64,
+        txHex,
+        rawPsbtBase64,
       }
     } catch (error) {
-      console.error(error)
+      console.error('ERROR: ', error)
     }
   }
 

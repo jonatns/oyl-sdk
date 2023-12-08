@@ -234,8 +234,8 @@ export declare class Oyl {
         taprootHdPathWithIndex: string;
     }): Promise<{
         txId: string;
-        rawTx: string;
-        rawTxBase64: string;
+        txHex: string;
+        rawPsbtBase64: string;
     }>;
     /**
      * Retrieves information about a SegWit address.
