@@ -11,6 +11,8 @@ endif
 all: $(DEFAULT)
 help:
 	$(Q)echo "make clean             - Deletes binaries and documentation."
+	$(Q)echo "make install             - Installs dependencies."
+	$(Q)echo "make reset             - Cleans out lib and rebuilds."
 clean:
 	$(Q)rm -rf lib
 	$(Q)echo "--- Deleted UI build artifacts"
