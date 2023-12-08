@@ -728,7 +728,7 @@ export class Oyl {
         rawPsbtBase64,
       }
     } catch (error) {
-      console.error('ERROR: ', error)
+      console.error(error)
     }
   }
 

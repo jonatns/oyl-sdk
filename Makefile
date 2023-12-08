@@ -25,13 +25,13 @@ reset:
 	$(Q)rm -rf lib
 	$(Q)yarn build
 	$(Q)echo "--- reset"
-
 sendBtc: reset
 	$(Q)oyl-cli send
 	$(Q)echo "--- test complete"
-
 sendBRC20: reset
 	$(Q)oyl-cli test
 	$(Q)echo "--- test complete"
 sendCollectible: reset
 	$(Q)oyl-cli send-collectible
+testAll: sendBRC20 sendCollectible sendBtc
+	$(Q)echo "--- test all complete"
