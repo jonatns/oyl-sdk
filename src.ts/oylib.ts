@@ -676,18 +676,15 @@ export class Oyl {
       })
 
       let tmpSum = tx.getTotalInput()
+
+      const vB = tx.getNumberOfInputs() * 149 + 3 * 32 + 12
+      const fee = vB * feeRate
+      console.log('amount required: ', outputAmount + fee)
+
       for (let i = 0; i < nonOrdUtxos.length; i++) {
         const nonOrdUtxo = nonOrdUtxos[i]
-        if (tmpSum < outputAmount) {
-          tx.addInput(nonOrdUtxo)
-          tmpSum += nonOrdUtxo.satoshis
-          continue
-        }
-
-        const vB = tx.getNumberOfInputs() * 149 + 3 * 32 + 12
-        const fee = vB * feeRate
-
         if (tmpSum < outputAmount + fee) {
+          console.log('adding inputs')
           tx.addInput(nonOrdUtxo)
           tmpSum += nonOrdUtxo.satoshis
         }
@@ -705,7 +702,7 @@ export class Oyl {
         new Error('Balance not enough to pay network fee.')
       }
 
-      const remainingBalance = totalUnspentAmount
+      const remainingBalance = totalUnspentAmount - fee
       if (remainingBalance >= UTXO_DUST) {
         tx.addOutput(from, remainingBalance)
       }
