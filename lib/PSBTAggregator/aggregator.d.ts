@@ -6,7 +6,7 @@ export declare class Aggregator {
     /**
      * Fetches offers from all APIs and aggregates them.
      */
-    fetchAndAggregateOffers(ticker: any, limitOrderAmount: any, ordiMarketPrice: any): Promise<{
+    fetchAndAggregateOffers(ticker: any, limitOrderAmount: any, marketPrice: any): Promise<{
         bestPrice: {
             averagePrice: number;
             totalPrice: any;
