@@ -242,10 +242,10 @@ export class PSBTTransaction {
         })
         const p2sh = bitcoin.payments.p2sh({ redeem: p2wpkh })
 
-        const isSameTapScript =
-          v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
+        const scriptPubkeyHash = v.witnessUtxo?.script.toString('hex')
+        const isSameTapScript = scriptPubkeyHash == p2tr.output?.toString('hex')
         const isSameSegwitScript =
-          v.witnessUtxo.script.toString('hex') == p2sh.output?.toString('hex')
+          scriptPubkeyHash == p2sh.output?.toString('hex')
 
         if (isSameTapScript) {
           v.tapInternalKey = tapInternalKey
