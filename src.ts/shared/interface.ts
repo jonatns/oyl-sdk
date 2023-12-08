@@ -193,7 +193,7 @@ export interface InscribeTransfer {
   taprootPublicKey: string
   changeAddress: string
   destinationAddress: string
-  segwitPubkey?: string
+  segwitPubKey?: string
   segwitAddress?: string
   payFeesWithSegwit: boolean
   feeRate: number

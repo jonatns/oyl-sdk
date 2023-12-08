@@ -13,7 +13,7 @@ import { EsploraRpc } from './rpclient/esplora'
 import * as transactions from './transactions'
 import { publicKeyToAddress } from './wallet/accounts'
 import { accounts } from './wallet'
-import { AccountManager } from './wallet/accountsManager'
+import { AccountManager, customPaths } from './wallet/accountsManager'
 
 import {
   AddressType,
@@ -894,7 +894,7 @@ export class Oyl {
 
   async sendBRC20(options: InscribeTransfer) {
     await isDryDisclaimer(options.isDry)
-
+    const hdPaths = customPaths[options.segwitHdPath]
     try {
       // CREATE TRANSFER INSCRIPTION
       await inscribe({
@@ -904,12 +904,12 @@ export class Oyl {
         outputAddress: options.feeFromAddress,
         mnemonic: options.mnemonic,
         taprootPublicKey: options.taprootPublicKey,
-        segwitPublicKey: options.segwitPubkey,
+        segwitPublicKey: options.segwitPubKey,
         segwitAddress: options.segwitAddress,
         isDry: options.isDry,
         payFeesWithSegwit: options.payFeesWithSegwit,
-        segwitHdPathWithIndex: options.segwitHdPath,
-        taprootHdPathWithIndex: options.taprootHdPath,
+        segwitHdPathWithIndex: hdPaths['segwitPath'],
+        taprootHdPathWithIndex: hdPaths['taprootPath'],
         feeRate: options.feeRate,
       })
     } catch (err: unknown) {
@@ -924,6 +924,7 @@ export class Oyl {
 
   async sendOrdCollectible(options: InscribeTransfer) {
     await isDryDisclaimer(options.isDry)
+    const hdPaths = customPaths[options.segwitHdPath]
     try {
       await sendCollectible({
         inscriptionId: options.inscriptionId,
@@ -931,12 +932,12 @@ export class Oyl {
         outputAddress: options.destinationAddress,
         mnemonic: options.mnemonic,
         taprootPublicKey: options.taprootPublicKey,
-        segwitPublicKey: options.segwitPubkey,
+        segwitPublicKey: options.segwitPubKey,
         segwitAddress: options.segwitAddress,
         isDry: options.isDry,
         payFeesWithSegwit: options.payFeesWithSegwit,
-        segwitHdPathWithIndex: options.segwitHdPath,
-        taprootHdPathWithIndex: options.taprootHdPath,
+        segwitHdPathWithIndex: hdPaths['segwitPath'],
+        taprootHdPathWithIndex: hdPaths['taprootPath'],
         feeRate: options.feeRate,
       })
     } catch (error) {
