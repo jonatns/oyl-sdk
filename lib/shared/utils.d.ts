@@ -119,6 +119,6 @@ export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddr
     segwitHdPathWithIndex?: string;
     taprootHdPathWithIndex?: string;
     payFeesWithSegwit: boolean;
-}) => Promise<{
+}) => Promise<string | {
     error: any;
 }>;

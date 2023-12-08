@@ -1160,10 +1160,12 @@ export const sendCollectible = async ({
     if (isDry) {
       console.log('txn', txnId)
       console.log('txnHash', txnHash)
+      return txnId
     } else {
       const { result } = await callBTCRPCEndpoint('sendrawtransaction', txnHash)
       txnId = result
       console.log(txnId)
+      return txnId
     }
   } catch (e: any) {
     return { error: e.message }
