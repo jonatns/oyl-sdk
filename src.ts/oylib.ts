@@ -644,7 +644,6 @@ export class Oyl {
         segwitAddress: segwitAddress,
         hdPathWithIndex: segwitHdPathWithIndex,
       })
-
       const taprootSigner: any = await createTaprootSigner({
         mnemonic: mnemonic,
         taprootAddress: from,
