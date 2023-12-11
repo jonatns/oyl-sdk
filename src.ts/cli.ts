@@ -231,8 +231,6 @@ export async function runCLI() {
           'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
         taprootPublicKey:
           '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
-        changeAddress:
-          'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
         destinationAddress:
           'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
         feeRate: 10,
@@ -242,15 +240,14 @@ export async function runCLI() {
           '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
         mnemonic: mnemonic,
         amount: 40,
-        payFeesWithSegwit: true,
-        segwitHdPath: NESTED_SEGWIT_HD_PATH,
+        payFeesWithSegwit: false,
+        segwitHdPath: 'xverse',
         taprootHdPath: TAPROOT_HD_PATH,
       })
       break
     case 'send-collectible':
       return await tapWallet.sendOrdCollectible({
         isDry: true,
-        changeAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
         fromAddress:
           'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
         inscriptionId:
@@ -263,7 +260,7 @@ export async function runCLI() {
         destinationAddress:
           'bc1pkvt4pj7jgj02s95n6sn56fhgl7t7cfx5mj4dedsqyzast0whpchs7ujd7y',
         feeRate: 10,
-        payFeesWithSegwit: true,
+        payFeesWithSegwit: false,
         mnemonic:
           'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
         segwitHdPath: 'xverse',

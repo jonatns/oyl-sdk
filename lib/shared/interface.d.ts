@@ -169,9 +169,8 @@ export interface IBlockchainInfoUTXO {
     tx_index: number;
 }
 export interface InscribeTransfer {
-    feeFromAddress: string;
+    fromAddress: string;
     taprootPublicKey: string;
-    changeAddress: string;
     destinationAddress: string;
     segwitPubKey?: string;
     segwitAddress?: string;
