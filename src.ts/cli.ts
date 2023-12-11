@@ -227,7 +227,7 @@ export async function runCLI() {
     case 'test':
       return await tapWallet.sendBRC20({
         isDry: true,
-        feeFromAddress:
+        fromAddress:
           'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
         taprootPublicKey:
           '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
@@ -251,7 +251,7 @@ export async function runCLI() {
       return await tapWallet.sendOrdCollectible({
         isDry: true,
         changeAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-        feeFromAddress:
+        fromAddress:
           'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
         inscriptionId:
           '68069fc341a462cd9a01ef4808b0bda0db7c0c6ea5dfffdc35b8992450cecb5bi0',

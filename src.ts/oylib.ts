@@ -900,8 +900,8 @@ export class Oyl {
       await inscribe({
         ticker: options.token,
         amount: options.amount,
-        inputAddress: options.feeFromAddress,
-        outputAddress: options.feeFromAddress,
+        inputAddress: options.fromAddress,
+        outputAddress: options.destinationAddress,
         mnemonic: options.mnemonic,
         taprootPublicKey: options.taprootPublicKey,
         segwitPublicKey: options.segwitPubKey,
@@ -928,7 +928,7 @@ export class Oyl {
     try {
       return await sendCollectible({
         inscriptionId: options.inscriptionId,
-        inputAddress: options.feeFromAddress,
+        inputAddress: options.fromAddress,
         outputAddress: options.destinationAddress,
         mnemonic: options.mnemonic,
         taprootPublicKey: options.taprootPublicKey,
