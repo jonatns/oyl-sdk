@@ -897,7 +897,7 @@ export class Oyl {
     const hdPaths = customPaths[options.segwitHdPath]
     try {
       // CREATE TRANSFER INSCRIPTION
-      await inscribe({
+      return await inscribe({
         ticker: options.token,
         amount: options.amount,
         inputAddress: options.fromAddress,

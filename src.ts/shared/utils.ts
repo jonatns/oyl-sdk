@@ -798,14 +798,14 @@ export const inscribe = async ({
         Tx.encode(txData).hex
       )
     } else {
-      console.log({ result: Tx.util.getTxid(txData) })
+      console.log({ result: Tx.util.getTxid(txData) }, Tx.encode(txData).hex)
       return { result: Tx.util.getTxid(txData) }
     }
   } catch (e: any) {
     return { error: e.message }
   }
 }
-
+// Add option for testnet
 const getRecommendedBTCFeesMempool = async () => {
   const gen_res = await axios
     .post(
@@ -1074,7 +1074,7 @@ export const sendCollectible = async ({
   taprootHdPathWithIndex?: string
   payFeesWithSegwit: boolean
 }) => {
-  // const fastestFee = await getRecommendedBTCFeesMempool()
+  //const fastestFee = await getRecommendedBTCFeesMempool()
   try {
     const wallet = new Oyl()
     const psbt = new bitcoin.Psbt()
@@ -1105,7 +1105,7 @@ export const sendCollectible = async ({
     await insertCollectibleUtxo({
       taprootUtxos: taprootUtxos,
       inscriptionId: inscriptionId,
-      toAddress: inputAddress,
+      toAddress: outputAddress,
       psbt: psbt,
     })
 

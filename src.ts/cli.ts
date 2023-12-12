@@ -240,7 +240,7 @@ export async function runCLI() {
           '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
         mnemonic: mnemonic,
         amount: 40,
-        payFeesWithSegwit: false,
+        payFeesWithSegwit: true,
         segwitHdPath: 'xverse',
         taprootHdPath: TAPROOT_HD_PATH,
       })
