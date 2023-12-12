@@ -5,7 +5,7 @@ import Mnemonic from 'bitcore-mnemonic'
 
 const genMnemonic = new Mnemonic(Mnemonic.Words.ENGLISH).toString()
 
-const customPaths = {
+export const customPaths = {
   oyl: {
     taprootPath: "m/86'/0'/0'/0",
     initializedFrom: 'oyl',

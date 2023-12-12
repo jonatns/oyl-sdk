@@ -12,9 +12,9 @@ export class Aggregator {
     /**
      * Fetches offers from all APIs and aggregates them.
      */
-    async fetchAndAggregateOffers(ticker, limitOrderAmount, ordiMarketPrice) {
+    async fetchAndAggregateOffers(ticker, limitOrderAmount, marketPrice) {
         const offers = await this._fetchAllOffers(ticker);
-        return this.findBestAndClosestMatches(offers, limitOrderAmount, ordiMarketPrice);
+        return this.findBestAndClosestMatches(offers, limitOrderAmount, marketPrice);
     }
 
     /**

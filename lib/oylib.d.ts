@@ -310,6 +310,8 @@ export declare class Oyl {
         signedPsbtBase64: string;
     }>;
     signInscriptionPsbt(psbt: any, fee: any, pubKey: any, signer: any, address?: string): Promise<any>;
-    sendBRC20(options: InscribeTransfer): Promise<unknown>;
-    sendOrdCollectible(options: InscribeTransfer): Promise<void>;
+    sendBRC20(options: InscribeTransfer): Promise<any>;
+    sendOrdCollectible(options: InscribeTransfer): Promise<string | {
+        error: any;
+    }>;
 }
