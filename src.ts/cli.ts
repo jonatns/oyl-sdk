@@ -204,10 +204,13 @@ export async function runCLI() {
         publicKey: taprootPubkey,
         segwitAddress,
         segwitHdPathWithIndex,
-        segwitPubkey: '',
+        segwitPubkey,
         taprootHdPathWithIndex,
       })
-      console.log({ taprootResponse })
+
+      if (taprootResponse) {
+        console.log({ taprootResponse })
+      }
 
       const segwitResponse = await tapWallet.createBtcTx({
         to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
@@ -221,7 +224,10 @@ export async function runCLI() {
         segwitPubkey,
         taprootHdPathWithIndex,
       })
-      console.log({ segwitResponse })
+
+      if (segwitResponse) {
+        console.log({ segwitResponse })
+      }
 
       return
     case 'test':

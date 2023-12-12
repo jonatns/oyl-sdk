@@ -219,7 +219,7 @@ export class PSBTTransaction {
       let script: any = null
       let value = 0
       const isSigned = v.finalScriptSig || v.finalScriptWitness
-      const lostInternalPubkey = !v.tapInternalKey
+      const lostInternalPubkey = !v.tapInternalKey || !v.redeemScript
       if (v.witnessUtxo) {
         script = v.witnessUtxo.script
         value = v.witnessUtxo.value
@@ -237,19 +237,34 @@ export class PSBTTransaction {
           network: psbtNetwork,
         })
 
-        const isSameScript =
-          v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
+        const p2wpkh = bitcoin.payments.p2wpkh({
+          pubkey: Buffer.from(this.segwitPubKey, 'hex'),
+        })
+        const p2sh = bitcoin.payments.p2sh({ redeem: p2wpkh })
 
-        if (isSameScript) {
+        const scriptPubkeyHash = v.witnessUtxo?.script.toString('hex')
+        const isSameTapScript = scriptPubkeyHash == p2tr.output?.toString('hex')
+        const isSameSegwitScript =
+          scriptPubkeyHash == p2sh.output?.toString('hex')
+
+        if (isSameTapScript) {
           v.tapInternalKey = tapInternalKey
+          toSignInputs.push({
+            index: index,
+            publicKey: this.pubkey,
+            sighashTypes: v.sighashType ? [v.sighashType] : undefined,
+          })
+        } else if (isSameSegwitScript) {
+          v.redeemScript = p2sh.redeem.output
+          toSignInputs.push({
+            index: index,
+            publicKey: this.segwitPubKey,
+            sighashTypes: v.sighashType ? [v.sighashType] : undefined,
+          })
+        } else {
+          console.log("YO DON'T HAVE THE KEY!")
         }
       }
-
-      toSignInputs.push({
-        index: index,
-        publicKey: this.pubkey,
-        sighashTypes: v.sighashType ? [v.sighashType] : undefined,
-      })
     })
 
     return { psbt, toSignInputs }

@@ -1,6 +1,7 @@
 import { buildOrdTx, PSBTTransaction } from './txbuilder'
 import { UTXO_DUST } from './shared/constants'
 import {
+  callBTCRPCEndpoint,
   createSegwitSigner,
   createTaprootSigner,
   delay,
@@ -639,8 +640,6 @@ export class Oyl {
     try {
       const utxos = await this.getUtxosArtifacts({ address: from })
 
-      console.log({ utxos })
-
       const segwitSigner: any = await createSegwitSigner({
         mnemonic: mnemonic,
         segwitAddress: segwitAddress,
@@ -677,17 +676,12 @@ export class Oyl {
       })
 
       let tmpSum = tx.getTotalInput()
+
+      const vB = tx.getNumberOfInputs() * 149 + 3 * 32 + 12
+      const fee = vB * feeRate
+
       for (let i = 0; i < nonOrdUtxos.length; i++) {
         const nonOrdUtxo = nonOrdUtxos[i]
-        if (tmpSum < outputAmount) {
-          tx.addInput(nonOrdUtxo)
-          tmpSum += nonOrdUtxo.satoshis
-          continue
-        }
-
-        const vB = tx.getNumberOfInputs() * 149 + 3 * 32 + 12
-        const fee = vB * feeRate
-
         if (tmpSum < outputAmount + fee) {
           tx.addInput(nonOrdUtxo)
           tmpSum += nonOrdUtxo.satoshis
@@ -706,7 +700,7 @@ export class Oyl {
         new Error('Balance not enough to pay network fee.')
       }
 
-      const remainingBalance = totalUnspentAmount
+      const remainingBalance = totalUnspentAmount - fee
       if (remainingBalance >= UTXO_DUST) {
         tx.addOutput(from, remainingBalance)
       }
@@ -717,12 +711,21 @@ export class Oyl {
       //@ts-ignore
       psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
       const txId = psbt.extractTransaction().getId()
-      const rawTx = psbt.toHex()
-      const rawTxBase64 = psbt.toBase64()
+      const txHex = psbt.extractTransaction().toHex()
+      const rawPsbtBase64 = psbt.toBase64()
+
+      const testTxAccept = await callBTCRPCEndpoint('bcli_testmempoolaccept', [
+        `${txHex}`,
+      ])
+
+      if (testTxAccept.result[0]['reject-reason']) {
+        throw new Error(testTxAccept.result[0]['reject-reason'])
+      }
+
       return {
         txId,
-        rawTx,
-        rawTxBase64,
+        txHex,
+        rawPsbtBase64,
       }
     } catch (error) {
       console.error(error)
@@ -948,7 +951,7 @@ export class Oyl {
 
 const isDryDisclaimer = async (isDry: boolean) => {
   if (isDry) {
-    console.log('DRY!!!!! RUNNING ONE-CLICK BRC20 TRANSFER')
+    console.log('DRY!!!!! RUNNING METHOD IN DRY MODE')
   } else {
     console.log('WET!!!!!!! 5')
     await delay(1000)
