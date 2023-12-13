@@ -1287,7 +1287,7 @@ const addBTCUtxo = async ({
   const utxosTosend = findUtxosForFees(utxos, amount)
 
   if (!utxosTosend) {
-    throw new Error('No available UTXOs')
+    throw new Error('insufficient.balance')
   }
 
   const addressType = getAddressType(fromAddress)

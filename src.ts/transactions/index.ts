@@ -86,6 +86,7 @@ export const getMetaUtxos = async (
       outputIndex: utxo.tx_output_n,
       satoshis: utxo.value,
       scriptPk: utxo.script,
+      confirmations: utxo.confirmations,
       addressType: getAddressType(address),
       address: address,
       inscriptions: [],

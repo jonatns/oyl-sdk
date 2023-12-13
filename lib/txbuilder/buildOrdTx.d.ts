@@ -8,6 +8,7 @@ export type Utxo = {
     addressType: number;
     address: string;
     inscriptions: any[];
+    confirmations: number;
 };
 export declare function buildOrdTx({ psbtTx, allUtxos, toAddress, metaOutputValue, feeRate, inscriptionId, taprootAddress, payFeesWithSegwit, segwitAddress, segwitUtxos, segwitPubKey, }: {
     psbtTx: PSBTTransaction | bitcoin.Psbt | any;
