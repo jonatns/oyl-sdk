@@ -1340,7 +1340,7 @@ const addBTCUtxo = async ({
   return utxosTosend.selectedUtxos
 }
 
-export const sendBtc = async ({
+export const createBtcTx = async ({
   inputAddress,
   outputAddress,
   mnemonic,
@@ -1441,22 +1441,9 @@ export const sendBtc = async ({
 
     signedPsbt.finalizeAllInputs()
 
-    const txnHash = signedPsbt.extractTransaction().toHex()
-    let txnId = signedPsbt.extractTransaction().getId()
-
-    const testTxAccept = await callBTCRPCEndpoint('bcli_testmempoolaccept', [
-      `${txnHash}`,
-    ])
-
-    if (testTxAccept.result[0]['reject-reason']) {
-      console.log(txnId)
-      console.log(txnHash)
-      throw new Error(testTxAccept.result[0]['reject-reason'])
-    }
-
     return {
-      txnId,
-      txnHash,
+      txId: signedPsbt.extractTransaction().getId(),
+      txHex: signedPsbt.extractTransaction().toHex(),
     }
   } catch (error) {
     console.error(error)

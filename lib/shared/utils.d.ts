@@ -122,7 +122,7 @@ export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddr
 }) => Promise<string | {
     error: any;
 }>;
-export declare const sendBtc: ({ inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, feeRate, amount, }: {
+export declare const createBtcTx: ({ inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, feeRate, amount, }: {
     inputAddress: string;
     outputAddress: string;
     mnemonic: string;
@@ -136,6 +136,6 @@ export declare const sendBtc: ({ inputAddress, outputAddress, mnemonic, taprootP
     payFeesWithSegwit: boolean;
     amount: number;
 }) => Promise<{
-    txnId: string;
-    txnHash: string;
+    txId: string;
+    txHex: string;
 }>;
