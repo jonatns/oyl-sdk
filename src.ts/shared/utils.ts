@@ -1239,7 +1239,8 @@ const insertBtcUtxo = async ({
     } else {
       nonMetaUtxos = segwitUtxos
     }
-    return await addBTCUtxo({
+
+    return addBTCUtxo({
       utxos: nonMetaUtxos,
       toAddress: toAddress,
       psbtTx: psbt,
@@ -1249,6 +1250,7 @@ const insertBtcUtxo = async ({
     })
   } catch (error) {
     console.log(error)
+    throw error
   }
 }
 
@@ -1447,5 +1449,6 @@ export const createBtcTx = async ({
     }
   } catch (error) {
     console.error(error)
+    throw error
   }
 }

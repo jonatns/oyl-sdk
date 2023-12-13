@@ -662,7 +662,7 @@ export class Oyl {
       throw new Error(result['reject-reason'])
     }
 
-    // TODO: Broadcast TX
+    await this.sandshrewBtcClient._call('btc_sendrawtransaction', [rawTx])
 
     return { txId }
   }
