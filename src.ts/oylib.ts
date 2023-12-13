@@ -653,16 +653,14 @@ export class Oyl {
       segwitHdPathWithIndex: segwitHdPathWithIndex,
     })
 
-    const [result] = await this.sandshrewBtcClient._call(
-      'btc_testmempoolaccept',
-      [[rawTx]]
-    )
+    const [result] =
+      await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([rawTx])
 
     if (!result.allowed) {
       throw new Error(result['reject-reason'])
     }
 
-    await this.sandshrewBtcClient._call('btc_sendrawtransaction', [rawTx])
+    await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(rawTx)
 
     return { txId }
   }
