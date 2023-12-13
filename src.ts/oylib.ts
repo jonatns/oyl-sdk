@@ -1,5 +1,5 @@
 import { buildOrdTx, PSBTTransaction } from './txbuilder'
-import { UTXO_DUST } from './shared/constants'
+import { defaultNetworkOptions, UTXO_DUST } from './shared/constants'
 import {
   callBTCRPCEndpoint,
   createSegwitSigner,
@@ -19,6 +19,7 @@ import { AccountManager, customPaths } from './wallet/accountsManager'
 import {
   AddressType,
   InscribeTransfer,
+  NetworkOptions,
   ProviderOptions,
   Providers,
   RecoverAccountOptions,
@@ -26,6 +27,7 @@ import {
 } from './shared/interface'
 import { OylApiClient } from './apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
+import { Provider } from './rpclient/provider'
 
 export const NESTED_SEGWIT_HD_PATH = "m/49'/0'/0'/0"
 export const TAPROOT_HD_PATH = "m/86'/0'/0'/0"
@@ -52,16 +54,13 @@ export class Oyl {
   /**
    * Initializes a new instance of the Wallet class.
    */
-  constructor() {
+  constructor(options: NetworkOptions = defaultNetworkOptions) {
     this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg' })
-    this.esploraRpc = new EsploraRpc(
-      'https://mainnet.sandshrew.io/v1/154f9aaa25a986241357836c37f8d71'
-    )
-    this.sandshrewBtcClient = new SandshrewBitcoinClient(
-      'https://sandshrew.io/v1/d6aebfed1769128379aca7d215f0b689'
-    )
+    const rpcUrl = `${options.baseUrl}/${options.version}/${options.projectId}`;
+    const provider = new Provider(rpcUrl);
+    this.sandshrewBtcClient = provider.sandshrew;
+    this.esploraRpc = provider.esplora
     this.fromProvider()
-    //create wallet should optionally take in a private key
     this.wallet = this.createWallet({})
   }
 
@@ -484,17 +483,6 @@ export class Oyl {
     return utxoArtifacts
   }
 
-  /**
-   * Imports a list of watch-only addresses into the wallet.
-   * @param {Object} param0 - An object containing an array of addresses.
-   * @param {string} param0.addresses - An array of addresses to be imported as watch-only.
-   */
-  async importWatchOnlyAddress({ addresses = [] }) {
-    for (let i = 0; i < addresses.length; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 10000))
-      await this.rpcClient.execute('importaddress', [addresses[i], '', true])
-    }
-  }
 
   /**
    * Creates a Partially Signed Bitcoin Transaction (PSBT) for an inscription, signs and broadcasts the tx.

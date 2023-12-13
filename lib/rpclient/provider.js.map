@@ -1,0 +1,1 @@
+{"version":3,"file":"provider.js","sourceRoot":"","sources":["../../src.ts/rpclient/provider.ts"],"names":[],"mappings":";;;AAAA,2CAAqD;AACrD,uCAAuC;AAEvC,MAAa,QAAQ;IAIjB,YAAY,GAAG;QACX,IAAI,CAAC,SAAS,GAAG,IAAI,kCAAsB,CAAC,GAAG,CAAC,CAAA;QAChD,IAAI,CAAC,OAAO,GAAG,IAAI,oBAAU,CAAC,GAAG,CAAC,CAAA;IACtC,CAAC;CACJ;AARD,4BAQC"}

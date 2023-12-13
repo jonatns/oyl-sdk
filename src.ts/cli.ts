@@ -1,5 +1,6 @@
 import yargs from 'yargs'
 import { camelCase } from 'change-case'
+import 'dotenv/config';
 import { NESTED_SEGWIT_HD_PATH, Oyl, TAPROOT_HD_PATH } from './oylib'
 import { PSBTTransaction } from './txbuilder/PSBTTransaction'
 import { Aggregator } from './PSBTAggregator'
@@ -73,6 +74,18 @@ export async function testAggregator() {
 export async function viewPsbt() {
   console.log(
     bitcoin.Psbt.fromBase64(process.env.PSBT_BASE64, {
+      network: bitcoin.networks.bitcoin,
+    }).data.inputs
+  )
+}
+
+export async function convertPsbt() {
+  const psbt = bitcoin.Psbt.fromHex(process.env.PSBT_HEX, {
+    network: bitcoin.networks.bitcoin,
+  }).toBase64()
+  console.log(psbt)
+  console.log(
+    bitcoin.Psbt.fromBase64(psbt, {
       network: bitcoin.networks.bitcoin,
     }).data.inputs
   )
@@ -278,6 +291,9 @@ export async function runCLI() {
       break
     case 'market':
       return await testMarketplaceBuy()
+      break
+    case 'convert':
+      return await convertPsbt()
       break
     case 'aggregate':
       return await testAggregator()

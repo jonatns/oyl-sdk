@@ -1,7 +1,7 @@
 import BcoinRpc from './rpclient';
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
-import { AddressType, InscribeTransfer, ProviderOptions, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
+import { AddressType, InscribeTransfer, NetworkOptions, ProviderOptions, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
 export declare const NESTED_SEGWIT_HD_PATH = "m/49'/0'/0'/0";
 export declare const TAPROOT_HD_PATH = "m/86'/0'/0'/0";
@@ -19,7 +19,7 @@ export declare class Oyl {
     /**
      * Initializes a new instance of the Wallet class.
      */
-    constructor();
+    constructor(options?: NetworkOptions);
     /**
      * Connects to a given blockchain RPC client.
      * @param {BcoinRpc} provider - The blockchain RPC client to connect to.
@@ -172,14 +172,6 @@ export declare class Oyl {
     getUtxosArtifacts({ address }: {
         address: any;
     }): Promise<any[]>;
-    /**
-     * Imports a list of watch-only addresses into the wallet.
-     * @param {Object} param0 - An object containing an array of addresses.
-     * @param {string} param0.addresses - An array of addresses to be imported as watch-only.
-     */
-    importWatchOnlyAddress({ addresses }: {
-        addresses?: any[];
-    }): Promise<void>;
     /**
      * Creates a Partially Signed Bitcoin Transaction (PSBT) for an inscription, signs and broadcasts the tx.
      * @param {Object} params - The parameters for creating the PSBT.
