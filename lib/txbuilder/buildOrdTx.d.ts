@@ -22,15 +22,16 @@ export declare function buildOrdTx({ psbtTx, allUtxos, toAddress, metaOutputValu
     segwitUtxos?: any[];
     segwitPubKey?: string;
 }): Promise<any>;
-export declare const getUtxosForFees: ({ payFeesWithSegwit, psbtTx, feeRate, taprootUtxos, taprootAddress, segwitUtxos, segwitAddress, segwitPubKey, }: {
+export declare const getUtxosForFees: ({ payFeesWithSegwit, psbtTx, feeRate, taprootUtxos, taprootAddress, segwitUtxos, segwitAddress, segwitPubKey, utxoToSend, }: {
     payFeesWithSegwit: boolean;
-    psbtTx: PSBTTransaction | bitcoin.Psbt;
+    psbtTx: bitcoin.Psbt;
     feeRate: number;
     taprootUtxos: Utxo[];
     taprootAddress: string;
     segwitUtxos?: Utxo[];
     segwitAddress?: string;
     segwitPubKey?: string;
+    utxoToSend?: Utxo[];
 }) => Promise<void>;
 export declare const addInscriptionUtxo: ({ metaUtxos, inscriptionId, toAddress, psbtTx, }: {
     metaUtxos: any[];
@@ -38,3 +39,8 @@ export declare const addInscriptionUtxo: ({ metaUtxos, inscriptionId, toAddress,
     toAddress: string;
     psbtTx: bitcoin.Psbt | any;
 }) => Promise<void>;
+export declare function findUtxosForFees(utxos: Utxo[], amount: number): {
+    selectedUtxos: Utxo[];
+    totalSatoshis: number;
+    change: number;
+};

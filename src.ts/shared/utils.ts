@@ -10,6 +10,7 @@ import {
   Network,
   BitcoinPaymentType,
   ToSignInput,
+  addressTypeToName,
 } from '../shared/interface'
 import BigNumber from 'bignumber.js'
 import { UTXO_DUST, maximumScriptBytes } from './constants'
@@ -19,7 +20,12 @@ import { Oyl } from '../oylib'
 import { address as PsbtAddress } from 'bitcoinjs-lib'
 import { Tap, Address, Tx, Signer } from '@cmdcode/tapscript'
 import * as ecc2 from '@cmdcode/crypto-utils'
-import { addInscriptionUtxo, getUtxosForFees } from '../txbuilder/buildOrdTx'
+import {
+  Utxo,
+  addInscriptionUtxo,
+  findUtxosForFees,
+  getUtxosForFees,
+} from '../txbuilder/buildOrdTx'
 import { isTaprootInput } from 'bitcoinjs-lib/src/psbt/bip371'
 
 export interface IBISWalletIx {
@@ -62,6 +68,8 @@ const RequiredPath = [
   "m/84'/0'/0'/0", // P2WPKH (SegWit)
   "m/86'/0'/0'/0", // P2TR (Taproot)
 ]
+
+const addressTypeMap = { 1: 'p2pkh', 2: 'p2sh', 3: 'p2wpkh', 4: 'p2tr' }
 
 export const ECPair = ECPairFactory(ecc)
 
@@ -1202,5 +1210,255 @@ const insertCollectibleUtxo = async ({
     })
   } catch (error) {
     console.log(error)
+  }
+}
+
+const insertBtcUtxo = async ({
+  taprootUtxos,
+  segwitUtxos,
+  toAddress,
+  fromAddress,
+  psbt,
+  amount,
+  sendFromSegwit,
+  segwitPubKey,
+}: {
+  taprootUtxos: any[]
+  segwitUtxos: any[]
+  toAddress: string
+  fromAddress: string
+  psbt: bitcoin.Psbt
+  amount: number
+  sendFromSegwit: boolean
+  segwitPubKey: string
+}) => {
+  try {
+    let nonMetaUtxos: any[]
+    if (sendFromSegwit) {
+      nonMetaUtxos = await filterTaprootUtxos({ taprootUtxos: taprootUtxos })
+    } else {
+      nonMetaUtxos = segwitUtxos
+    }
+    return await addBTCUtxo({
+      utxos: nonMetaUtxos,
+      toAddress: toAddress,
+      psbtTx: psbt,
+      amount: amount,
+      fromAddress: fromAddress,
+      segwitPubKey: segwitPubKey,
+    })
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+const filterTaprootUtxos = async ({
+  taprootUtxos,
+}: {
+  taprootUtxos: any[]
+}) => {
+  const { nonMetaUtxos } = taprootUtxos.reduce(
+    (acc, utxo) => {
+      utxo.inscriptions.length > 0 || utxo.satoshis === 546
+        ? acc.metaUtxos.push(utxo)
+        : acc.nonMetaUtxos.push(utxo)
+      return acc
+    },
+    { metaUtxos: [], nonMetaUtxos: [] }
+  )
+  return nonMetaUtxos
+}
+
+const addBTCUtxo = async ({
+  utxos,
+  toAddress,
+  psbtTx,
+  amount,
+  fromAddress,
+  segwitPubKey,
+}: {
+  utxos: Utxo[]
+  toAddress: string
+  psbtTx: bitcoin.Psbt
+  amount: number
+  fromAddress: string
+  segwitPubKey: string
+}) => {
+  const utxosTosend = findUtxosForFees(utxos, amount)
+
+  if (!utxosTosend) {
+    throw new Error('No available UTXOs')
+  }
+
+  const addressType = getAddressType(fromAddress)
+  let redeemScript
+
+  if (addressType === 2) {
+    try {
+      const p2wpkh = bitcoin.payments.p2wpkh({
+        pubkey: Buffer.from(segwitPubKey, 'hex'),
+        network: bitcoin.networks.bitcoin,
+      })
+
+      const p2sh = bitcoin.payments.p2sh({
+        redeem: p2wpkh,
+        network: bitcoin.networks.bitcoin,
+      })
+
+      redeemScript = p2sh.redeem.output
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  for (let i = 0; i < utxosTosend.selectedUtxos.length; i++) {
+    if (addressType === 2) {
+      psbtTx.addInput({
+        hash: utxosTosend.selectedUtxos[i].txId,
+        index: utxosTosend.selectedUtxos[i].outputIndex,
+        witnessUtxo: {
+          value: utxosTosend.selectedUtxos[i].satoshis,
+          script: Buffer.from(utxosTosend.selectedUtxos[i].scriptPk, 'hex'),
+        },
+        redeemScript: redeemScript,
+      })
+    } else {
+      psbtTx.addInput({
+        hash: utxosTosend.selectedUtxos[i].txId,
+        index: utxosTosend.selectedUtxos[i].outputIndex,
+        witnessUtxo: {
+          value: utxosTosend.selectedUtxos[i].satoshis,
+          script: Buffer.from(utxosTosend.selectedUtxos[i].scriptPk, 'hex'),
+        },
+      })
+    }
+    psbtTx.addOutput({
+      address: toAddress,
+      value: Math.floor(utxosTosend.change),
+    })
+  }
+  return utxosTosend.selectedUtxos
+}
+
+export const sendBtc = async ({
+  inputAddress,
+  outputAddress,
+  mnemonic,
+  taprootPublicKey,
+  segwitPublicKey,
+  segwitAddress,
+  isDry,
+  segwitHdPathWithIndex,
+  taprootHdPathWithIndex,
+  payFeesWithSegwit,
+  feeRate,
+  amount,
+}: {
+  inputAddress: string
+  outputAddress: string
+  mnemonic: string
+  taprootPublicKey: string
+  segwitPublicKey: string
+  segwitAddress: string
+  isDry?: boolean
+  feeRate: number
+  segwitHdPathWithIndex?: string
+  taprootHdPathWithIndex?: string
+  payFeesWithSegwit: boolean
+  amount: number
+}) => {
+  try {
+    const wallet = new Oyl()
+    const psbt = new bitcoin.Psbt()
+
+    const taprootUtxos: any[] = await wallet.getUtxosArtifacts({
+      address: inputAddress,
+    })
+    let segwitUtxos: any[] | undefined
+    if (segwitAddress) {
+      segwitUtxos = await wallet.getUtxosArtifacts({
+        address: segwitAddress,
+      })
+    }
+    const inputAddressType = addressTypeMap[getAddressType(inputAddress)]
+
+    const isSentFromSegwit =
+      addressTypeToName[inputAddressType] === 'nested-segwit' || 'segwit'
+        ? true
+        : false
+    const utxoToSend = await insertBtcUtxo({
+      taprootUtxos: taprootUtxos,
+      segwitUtxos: segwitUtxos,
+      psbt: psbt,
+      toAddress: outputAddress,
+      amount: amount,
+      sendFromSegwit: isSentFromSegwit,
+      segwitPubKey: segwitPublicKey,
+      fromAddress: inputAddress,
+    })
+
+    await getUtxosForFees({
+      payFeesWithSegwit: payFeesWithSegwit,
+      psbtTx: psbt,
+      utxoToSend: utxoToSend,
+      taprootUtxos: taprootUtxos,
+      segwitUtxos: segwitUtxos,
+      segwitAddress: segwitAddress,
+      feeRate: feeRate,
+      taprootAddress: inputAddress,
+      segwitPubKey: segwitPublicKey,
+    })
+
+    const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
+      _psbt: psbt,
+      isRevealTx: false,
+      pubkey: taprootPublicKey,
+      segwitPubkey: segwitPublicKey,
+      segwitAddress: segwitAddress,
+      taprootAddress: inputAddress,
+    })
+
+    const taprootSigner = await createTaprootSigner({
+      mnemonic: mnemonic,
+      taprootAddress: inputAddress,
+      hdPathWithIndex: taprootHdPathWithIndex,
+    })
+
+    const segwitSigner = await createSegwitSigner({
+      mnemonic: mnemonic,
+      segwitAddress: segwitAddress,
+      hdPathWithIndex: segwitHdPathWithIndex,
+    })
+
+    const signedPsbt = await signInputs(
+      psbt,
+      toSignInputs,
+      taprootPublicKey,
+      segwitPublicKey,
+      segwitSigner,
+      taprootSigner
+    )
+
+    signedPsbt.finalizeAllInputs()
+
+    const txnHash = signedPsbt.extractTransaction().toHex()
+    let txnId = signedPsbt.extractTransaction().getId()
+
+    const testTxAccept = await callBTCRPCEndpoint('bcli_testmempoolaccept', [
+      `${txnHash}`,
+    ])
+
+    if (testTxAccept.result[0]['reject-reason']) {
+      console.log(txnId)
+      console.log(txnHash)
+      throw new Error(testTxAccept.result[0]['reject-reason'])
+    }
+
+    return {
+      txnId,
+      txnHash,
+    }
+  } catch (error) {
+    console.error(error)
   }
 }

@@ -122,3 +122,20 @@ export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddr
 }) => Promise<string | {
     error: any;
 }>;
+export declare const sendBtc: ({ inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, feeRate, amount, }: {
+    inputAddress: string;
+    outputAddress: string;
+    mnemonic: string;
+    taprootPublicKey: string;
+    segwitPublicKey: string;
+    segwitAddress: string;
+    isDry?: boolean;
+    feeRate: number;
+    segwitHdPathWithIndex?: string;
+    taprootHdPathWithIndex?: string;
+    payFeesWithSegwit: boolean;
+    amount: number;
+}) => Promise<{
+    txnId: string;
+    txnHash: string;
+}>;
