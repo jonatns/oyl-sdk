@@ -6,6 +6,7 @@ import {
   createTaprootSigner,
   delay,
   inscribe,
+  sendBtc,
   sendCollectible,
 } from './shared/utils'
 import BcoinRpc from './rpclient'
@@ -613,6 +614,7 @@ export class Oyl {
     segwitPubkey,
     segwitHdPathWithIndex,
     taprootHdPathWithIndex,
+    payFeesWithSegwit = true,
   }: {
     to: string
     from: string
@@ -624,99 +626,24 @@ export class Oyl {
     segwitPubkey?: string
     segwitHdPathWithIndex: string
     taprootHdPathWithIndex: string
+    payFeesWithSegwit?: boolean
   }) {
     try {
-      const utxos = await this.getUtxosArtifacts({ address: from })
-
-      const segwitSigner: any = await createSegwitSigner({
-        mnemonic: mnemonic,
+      return await sendBtc({
+        inputAddress: from,
+        outputAddress: to,
+        amount: amount,
+        feeRate: feeRate,
         segwitAddress: segwitAddress,
-        hdPathWithIndex: segwitHdPathWithIndex,
-      })
-      const taprootSigner: any = await createTaprootSigner({
+        segwitPublicKey: segwitPubkey,
+        taprootPublicKey: publicKey,
         mnemonic: mnemonic,
-        taprootAddress: from,
-        hdPathWithIndex: taprootHdPathWithIndex,
+        payFeesWithSegwit: payFeesWithSegwit,
+        taprootHdPathWithIndex: taprootHdPathWithIndex,
+        segwitHdPathWithIndex: segwitHdPathWithIndex,
       })
-
-      const tx = new PSBTTransaction(
-        taprootSigner,
-        from,
-        publicKey,
-        feeRate,
-        segwitSigner,
-        segwitPubkey
-      )
-
-      tx.addOutput(to, amount)
-      tx.setChangeAddress(from)
-      const outputAmount = tx.getTotalOutput()
-
-      const nonOrdUtxos = []
-      const ordUtxos = []
-      utxos.forEach((v) => {
-        // TODO: figure out why we're getting inscribed utxos as un-inscribed
-        if (v.inscriptions.length > 0 || v.satoshis <= 546) {
-          ordUtxos.push(v)
-        } else {
-          nonOrdUtxos.push(v)
-        }
-      })
-
-      let tmpSum = tx.getTotalInput()
-
-      const vB = tx.getNumberOfInputs() * 149 + 3 * 32 + 12
-      const fee = vB * feeRate
-
-      for (let i = 0; i < nonOrdUtxos.length; i++) {
-        const nonOrdUtxo = nonOrdUtxos[i]
-        if (tmpSum < outputAmount + fee) {
-          tx.addInput(nonOrdUtxo)
-          tmpSum += nonOrdUtxo.satoshis
-        }
-      }
-
-      if (
-        nonOrdUtxos.length === 0 ||
-        tx.getTotalOutput() > tx.getTotalInput()
-      ) {
-        new Error('Balance not enough')
-      }
-
-      const totalUnspentAmount = tx.getUnspent()
-      if (totalUnspentAmount === 0) {
-        new Error('Balance not enough to pay network fee.')
-      }
-
-      const remainingBalance = totalUnspentAmount - fee
-      if (remainingBalance >= UTXO_DUST) {
-        tx.addOutput(from, remainingBalance)
-      }
-
-      const psbt = await tx.createSignedPsbt()
-      psbt.finalizeAllInputs()
-
-      //@ts-ignore
-      psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
-      const txId = psbt.extractTransaction().getId()
-      const txHex = psbt.extractTransaction().toHex()
-      const rawPsbtBase64 = psbt.toBase64()
-
-      const testTxAccept = await callBTCRPCEndpoint('bcli_testmempoolaccept', [
-        `${txHex}`,
-      ])
-
-      if (testTxAccept.result[0]['reject-reason']) {
-        throw new Error(testTxAccept.result[0]['reject-reason'])
-      }
-
-      return {
-        txId,
-        txHex,
-        rawPsbtBase64,
-      }
     } catch (error) {
-      console.error(error)
+      console.log(error)
     }
   }
 
