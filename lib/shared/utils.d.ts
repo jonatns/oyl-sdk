@@ -137,5 +137,5 @@ export declare const createBtcTx: ({ inputAddress, outputAddress, mnemonic, tapr
     amount: number;
 }) => Promise<{
     txId: string;
-    txHex: string;
+    rawTx: string;
 }>;

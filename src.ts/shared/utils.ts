@@ -1443,7 +1443,7 @@ export const createBtcTx = async ({
 
     return {
       txId: signedPsbt.extractTransaction().getId(),
-      txHex: signedPsbt.extractTransaction().toHex(),
+      rawTx: signedPsbt.extractTransaction().toHex(),
     }
   } catch (error) {
     console.error(error)

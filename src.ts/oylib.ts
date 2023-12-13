@@ -639,7 +639,7 @@ export class Oyl {
     taprootHdPathWithIndex: string
     payFeesWithSegwit?: boolean
   }) {
-    const { txId, txHex } = await createBtcTx({
+    const { txId, rawTx } = await createBtcTx({
       inputAddress: from,
       outputAddress: to,
       amount: amount,
@@ -655,7 +655,7 @@ export class Oyl {
 
     const [result] = await this.sandshrewBtcClient._call(
       'btc_testmempoolaccept',
-      [[txHex]]
+      [[rawTx]]
     )
 
     if (!result.allowed) {
