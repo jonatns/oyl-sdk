@@ -1,13 +1,12 @@
 import { buildOrdTx, PSBTTransaction } from './txbuilder'
 import { UTXO_DUST } from './shared/constants'
 import {
-  callBTCRPCEndpoint,
   createSegwitSigner,
   createTaprootSigner,
   delay,
   inscribe,
-  sendBtc,
   sendCollectible,
+  createBtcTx,
 } from './shared/utils'
 import BcoinRpc from './rpclient'
 import { SandshrewBitcoinClient } from './rpclient/sandshrew'
@@ -615,7 +614,7 @@ export class Oyl {
    * @param {string} params.publicKey - The public key associated with the transaction.
    * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
    */
-  async createBtcTx({
+  async sendBtc({
     to,
     from,
     amount,
@@ -640,23 +639,30 @@ export class Oyl {
     taprootHdPathWithIndex: string
     payFeesWithSegwit?: boolean
   }) {
-    try {
-      return await sendBtc({
-        inputAddress: from,
-        outputAddress: to,
-        amount: amount,
-        feeRate: feeRate,
-        segwitAddress: segwitAddress,
-        segwitPublicKey: segwitPubkey,
-        taprootPublicKey: publicKey,
-        mnemonic: mnemonic,
-        payFeesWithSegwit: payFeesWithSegwit,
-        taprootHdPathWithIndex: taprootHdPathWithIndex,
-        segwitHdPathWithIndex: segwitHdPathWithIndex,
-      })
-    } catch (error) {
-      console.log(error)
+    const { txId, rawTx } = await createBtcTx({
+      inputAddress: from,
+      outputAddress: to,
+      amount: amount,
+      feeRate: feeRate,
+      segwitAddress: segwitAddress,
+      segwitPublicKey: segwitPubkey,
+      taprootPublicKey: publicKey,
+      mnemonic: mnemonic,
+      payFeesWithSegwit: payFeesWithSegwit,
+      taprootHdPathWithIndex: taprootHdPathWithIndex,
+      segwitHdPathWithIndex: segwitHdPathWithIndex,
+    })
+
+    const [result] =
+      await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([rawTx])
+
+    if (!result.allowed) {
+      throw new Error(result['reject-reason'])
     }
+
+    await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(rawTx)
+
+    return { txId }
   }
 
   /**

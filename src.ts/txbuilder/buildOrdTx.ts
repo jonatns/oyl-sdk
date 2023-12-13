@@ -11,6 +11,7 @@ export type Utxo = {
   addressType: number
   address: string
   inscriptions: any[]
+  confirmations: number
 }
 
 export async function buildOrdTx({
@@ -340,6 +341,7 @@ export function findUtxosForFees(utxos: Utxo[], amount: number) {
 
   for (const utxo of utxos) {
     if (totalSatoshis >= amount) break
+    if (utxo.confirmations <= 0) continue
 
     selectedUtxos.push(utxo)
     totalSatoshis += utxo.satoshis

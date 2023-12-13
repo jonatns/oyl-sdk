@@ -221,7 +221,7 @@ export declare class Oyl {
      * @param {string} params.publicKey - The public key associated with the transaction.
      * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
      */
-    createBtcTx({ to, from, amount, feeRate, publicKey, mnemonic, segwitAddress, segwitPubkey, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, }: {
+    sendBtc({ to, from, amount, feeRate, publicKey, mnemonic, segwitAddress, segwitPubkey, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, }: {
         to: string;
         from: string;
         amount: number;
@@ -234,8 +234,7 @@ export declare class Oyl {
         taprootHdPathWithIndex: string;
         payFeesWithSegwit?: boolean;
     }): Promise<{
-        txnId: string;
-        txnHash: string;
+        txId: string;
     }>;
     /**
      * Retrieves information about a SegWit address.

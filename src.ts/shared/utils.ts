@@ -1239,7 +1239,8 @@ const insertBtcUtxo = async ({
     } else {
       nonMetaUtxos = segwitUtxos
     }
-    return await addBTCUtxo({
+
+    return addBTCUtxo({
       utxos: nonMetaUtxos,
       toAddress: toAddress,
       psbtTx: psbt,
@@ -1249,6 +1250,7 @@ const insertBtcUtxo = async ({
     })
   } catch (error) {
     console.log(error)
+    throw error
   }
 }
 
@@ -1287,7 +1289,7 @@ const addBTCUtxo = async ({
   const utxosTosend = findUtxosForFees(utxos, amount)
 
   if (!utxosTosend) {
-    throw new Error('No available UTXOs')
+    throw new Error('insufficient.balance')
   }
 
   const addressType = getAddressType(fromAddress)
@@ -1340,7 +1342,7 @@ const addBTCUtxo = async ({
   return utxosTosend.selectedUtxos
 }
 
-export const sendBtc = async ({
+export const createBtcTx = async ({
   inputAddress,
   outputAddress,
   mnemonic,
@@ -1441,24 +1443,12 @@ export const sendBtc = async ({
 
     signedPsbt.finalizeAllInputs()
 
-    const txnHash = signedPsbt.extractTransaction().toHex()
-    let txnId = signedPsbt.extractTransaction().getId()
-
-    const testTxAccept = await callBTCRPCEndpoint('bcli_testmempoolaccept', [
-      `${txnHash}`,
-    ])
-
-    if (testTxAccept.result[0]['reject-reason']) {
-      console.log(txnId)
-      console.log(txnHash)
-      throw new Error(testTxAccept.result[0]['reject-reason'])
-    }
-
     return {
-      txnId,
-      txnHash,
+      txId: signedPsbt.extractTransaction().getId(),
+      rawTx: signedPsbt.extractTransaction().toHex(),
     }
   } catch (error) {
     console.error(error)
+    throw error
   }
 }
