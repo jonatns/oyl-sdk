@@ -92,22 +92,22 @@ export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, m
     feeRate: number;
     segwitHdPathWithIndex?: string;
     taprootHdPathWithIndex?: string;
-    payFeesWithSegwit: boolean;
+    payFeesWithSegwit?: boolean;
 }) => Promise<{
     txnId: any;
-    commitTxnHex?: undefined;
-    txnHash?: undefined;
+    commitRawTxn?: undefined;
+    rawTxn?: undefined;
     error?: undefined;
 } | {
-    commitTxnHex: string;
+    commitRawTxn: string;
     txnId: string;
-    txnHash: string;
+    rawTxn: string;
     error?: undefined;
 } | {
     error: any;
     txnId?: undefined;
-    commitTxnHex?: undefined;
-    txnHash?: undefined;
+    commitRawTxn?: undefined;
+    rawTxn?: undefined;
 }>;
 export declare const createInscriptionScript: (pubKey: any, content: any) => any[];
 export declare const RPC_ADDR = "https://node.oyl.gg/v1/6e3bc3c289591bb447c116fda149b094";
@@ -133,15 +133,15 @@ export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddr
     feeRate: number;
     segwitHdPathWithIndex?: string;
     taprootHdPathWithIndex?: string;
-    payFeesWithSegwit: boolean;
+    payFeesWithSegwit?: boolean;
 }) => Promise<{
     txnId: string;
-    txnHash: string;
+    rawTxn: string;
     error?: undefined;
 } | {
     error: any;
     txnId?: undefined;
-    txnHash?: undefined;
+    rawTxn?: undefined;
 }>;
 export declare const createBtcTx: ({ inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, feeRate, amount, }: {
     inputAddress: string;
@@ -154,9 +154,9 @@ export declare const createBtcTx: ({ inputAddress, outputAddress, mnemonic, tapr
     feeRate: number;
     segwitHdPathWithIndex?: string;
     taprootHdPathWithIndex?: string;
-    payFeesWithSegwit: boolean;
+    payFeesWithSegwit?: boolean;
     amount: number;
 }) => Promise<{
-    txId: string;
-    rawTx: string;
+    txnId: string;
+    rawTxn: string;
 }>;

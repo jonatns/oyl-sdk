@@ -204,7 +204,8 @@ export declare class Oyl {
         taprootHdPathWithIndex: string;
         payFeesWithSegwit?: boolean;
     }): Promise<{
-        txId: string;
+        txnId: string;
+        rawTxn: string;
     }>;
     /**
      * Retrieves information about a SegWit address.
@@ -282,11 +283,11 @@ export declare class Oyl {
     sendBRC20(options: InscribeTransfer): Promise<unknown>;
     sendOrdCollectible(options: InscribeTransfer): Promise<{
         txnId: string;
-        txnHash: string;
+        rawTxn: string;
         error?: undefined;
     } | {
         error: any;
         txnId?: undefined;
-        txnHash?: undefined;
+        rawTxn?: undefined;
     }>;
 }

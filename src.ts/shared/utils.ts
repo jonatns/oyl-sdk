@@ -751,9 +751,6 @@ export const inscribe = async ({
     signedPsbt.finalizeAllInputs()
 
     const commitPsbtHash = signedPsbt.toHex()
-    const commitTxnHex = signedPsbt.extractTransaction().toHex()
-    console.log('commit hex', commitTxnHex)
-
     const commitTxPsbt: bitcoin.Psbt = bitcoin.Psbt.fromHex(commitPsbtHash)
 
     const commitTxHex = commitTxPsbt.extractTransaction().toHex()
@@ -807,9 +804,9 @@ export const inscribe = async ({
       return { txnId: result }
     } else {
       return {
-        commitTxnHex: commitTxHex,
+        commitRawTxn: commitTxHex,
         txnId: Tx.util.getTxid(txData),
-        txnHash: Tx.encode(txData).hex,
+        rawTxn: Tx.encode(txData).hex,
       }
     }
   } catch (e: any) {
@@ -1166,15 +1163,15 @@ export const sendCollectible = async ({
 
     signedPsbt.finalizeAllInputs()
 
-    const txnHash = signedPsbt.extractTransaction().toHex()
+    const rawTxn = signedPsbt.extractTransaction().toHex()
     let txnId = signedPsbt.extractTransaction().getId()
 
     if (isDry) {
-      return { txnId: txnId, txnHash: txnHash }
+      return { txnId: txnId, rawTxn: rawTxn }
     } else {
-      const { result } = await callBTCRPCEndpoint('sendrawtransaction', txnHash)
+      const { result } = await callBTCRPCEndpoint('sendrawtransaction', rawTxn)
       txnId = result
-      return { txnId: txnId, txnHash: txnHash }
+      return { txnId: txnId, rawTxn: rawTxn }
     }
   } catch (e: any) {
     return { error: e.message }
@@ -1446,7 +1443,7 @@ export const createBtcTx = async ({
 
     return {
       txnId: signedPsbt.extractTransaction().getId(),
-      txnHash: signedPsbt.extractTransaction().toHex(),
+      rawTxn: signedPsbt.extractTransaction().toHex(),
     }
   } catch (error) {
     console.error(error)

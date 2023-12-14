@@ -532,7 +532,7 @@ export class Oyl {
     taprootHdPathWithIndex: string
     payFeesWithSegwit?: boolean
   }) {
-    const { txnId, txnHash } = await createBtcTx({
+    const { txnId, rawTxn } = await createBtcTx({
       inputAddress: from,
       outputAddress: to,
       amount: amount,
@@ -547,15 +547,15 @@ export class Oyl {
     })
 
     const [result] =
-      await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([txnHash])
+      await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([rawTxn])
 
     if (!result.allowed) {
       throw new Error(result['reject-reason'])
     }
 
-    await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(txnHash)
+    await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(rawTxn)
 
-    return { txnId }
+    return { txnId: txnId, rawTxn: rawTxn }
   }
 
   /**
