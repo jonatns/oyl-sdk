@@ -108,7 +108,7 @@ const addSegwitFeeUtxo = async ({
         })
         return
       } catch (error) {
-        console.log(error)
+        throw new Error('No available UTXOs to pay for fees')
       }
     }
     const addressType = getAddressType(segwitAddress)
