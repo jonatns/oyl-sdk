@@ -138,9 +138,9 @@ export declare class Oyl {
      * @returns {Promise<any[]>} A promise that resolves to an array of processed transaction details.
      * @throws {Error} Throws an error if transaction history retrieval fails.
      */
-    getTxHistory({ address }: {
-        address: any;
-    }): Promise<any[]>;
+    getTxHistory({ addresses }: {
+        addresses: string[];
+    }): Promise<{}[]>;
     /******************************* */
     /**
      * Retrieves the fee rates for transactions from the mempool.

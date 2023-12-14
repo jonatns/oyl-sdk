@@ -357,68 +357,68 @@ export class Oyl {
    * @returns {Promise<any[]>} A promise that resolves to an array of processed transaction details.
    * @throws {Error} Throws an error if transaction history retrieval fails.
    */
-  async getTxHistory({ address }) {
-    const history = await this.apiClient.getTxByAddress(address)
-    const processedTxPromises = history
-      .map(async (tx) => {
-        const {
-          hash,
-          height,
-          time,
-          outputs,
-          inputs,
-          confirmations,
-          fee,
-          rate,
-        } = tx
-
-        const output = outputs.find((output) => output.address === address)
-        const input = inputs.find(
-          (input) =>
-            (input.coin ? input.coin.address : input.address) === address
+  async getTxHistory({ addresses }: { addresses: string[] }) {
+    try {
+      if (addresses.length > 2) {
+        throw new Error('Only accepts a max of 2 addresses')
+      }
+      const utxoPromises = addresses.map((address: string, index: number) =>
+        this.esploraRpc._call('esplora_address::txs', [address])
+      )
+      const currentBlock = await this.esploraRpc._call(
+        'esplora_blocks:tip:height',
+        []
+      )
+      const resolvedUtxoPromises = await Promise.all(utxoPromises)
+      const combinedHistory = resolvedUtxoPromises.flat()
+      const removedDuplicatesArray = new Map(
+        combinedHistory.map((item) => [item.txid, item])
+      )
+      const finalCombinedHistory = Array.from(removedDuplicatesArray.values())
+      const processedTxns = finalCombinedHistory.map((tx) => {
+        const { txid, vout, size, vin, status, fee } = tx
+        const blockDelta = currentBlock - status.block_height
+        const confirmations = blockDelta > 0 ? blockDelta : 0
+        const inputAddress = vin.find(
+          ({ prevout }) =>
+            prevout.scriptpubkey_address === addresses[0] ||
+            prevout.scriptpubkey_address === addresses[1]
         )
-        const txDetails = {}
-        txDetails['hash'] = hash
-        txDetails['confirmations'] = confirmations
-        txDetails['blocktime'] = time
-        txDetails['blockheight'] = height
-        txDetails['fee'] = fee
-        txDetails['feeRate'] = rate / 1000
-        if (input) {
-          txDetails['type'] = 'sent'
-          txDetails['to'] = outputs.find(
-            (output) => output.address != address
-          )?.address
-          if (output) {
-            txDetails['amount'] = input.coin
-              ? input.coin.value / 1e8 - output.value / 1e8
-              : (await this.getTxValueFromPrevOut(inputs, address)) / 1e8 -
-                output.value / 1e8
-          } else {
-            txDetails['amount'] = input.coin
-              ? input.coin.value / 1e8
-              : (await this.getTxValueFromPrevOut(inputs, address)) / 1e8
-          }
-        } else {
-          if (output) {
-            txDetails['type'] = 'received'
-            txDetails['amount'] = output.value / 1e8
-            const evalFrom = inputs.find(
-              (input) =>
-                (input.coin ? input.coin.address : input.address) != address
-            )
-            txDetails['from'] = evalFrom.coin
-              ? evalFrom.coin.address
-              : evalFrom.address
+
+        let vinSum: number = 0
+        let voutSum: number = 0
+
+        for (let input of vin) {
+          if (addresses.includes(input.prevout.scriptpubkey_address)) {
+            vinSum += input.prevout.value
           }
         }
+        for (let output of vout) {
+          if (addresses.includes(output.scriptpubkey_address)) {
+            voutSum += output.value
+          }
+        }
+
+        const txDetails = {}
+        txDetails['txId'] = txid
+        txDetails['confirmations'] = confirmations
+        txDetails['type'] = inputAddress ? 'sent' : 'received'
+        txDetails['blockTime'] = status.block_time
+        txDetails['blockHeight'] = status.block_height
+        txDetails['fee'] = fee
+        txDetails['feeRate'] = Math.floor(fee / size)
+        txDetails['vinSum'] = vinSum
+        txDetails['voutSum'] = voutSum
+        txDetails['amount'] = inputAddress ? vinSum - voutSum - fee : voutSum
         txDetails['symbol'] = 'BTC'
+
         return txDetails
       })
-      .filter((transaction) => transaction !== null) // Filter out null transactions
 
-    const processedTransactions = await Promise.all(processedTxPromises)
-    return processedTransactions
+      return processedTxns
+    } catch (error) {
+      console.log(error)
+    }
   }
   /******************************* */
 
