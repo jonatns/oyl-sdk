@@ -1,4 +1,4 @@
-import { buildOrdTx, PSBTTransaction } from './txbuilder'
+import { PSBTTransaction } from './txbuilder'
 import { UTXO_DUST } from './shared/constants'
 import {
   createSegwitSigner,
@@ -497,113 +497,6 @@ export class Oyl {
   }
 
   /**
-   * Creates a Partially Signed Bitcoin Transaction (PSBT) for an inscription, signs and broadcasts the tx.
-   * @param {Object} params - The parameters for creating the PSBT.
-   * @param {string} params.publicKey - The public key associated with the sending address.
-   * @param {string} params.fromAddress - The sending address.
-   * @param {string} params.toAddress - The receiving address.
-   * @param {string} params.changeAddress - The change address.
-   * @param {number} params.txFee - The transaction fee.
-   * @param {any} params.signer - The bound signer method to sign the transaction.
-   * @param {string} params.inscriptionId - The ID of the inscription to include in the transaction.
-   * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
-   */
-  async createOrdPsbtTx({
-    fromAddress,
-    toAddress,
-    changeAddress,
-    txFee,
-    segwitAddress,
-    taprootPubKey,
-    segwitPubKey,
-    inscriptionId,
-    payFeesWithSegwit,
-    mnemonic,
-    segwitHdPathWithIndex,
-    taprootHdPathWithIndex,
-  }: {
-    publicKey: string
-    fromAddress: string
-    toAddress: string
-    changeAddress: string
-    txFee: number
-    segwitAddress?: string
-    taprootPubKey: string
-    segwitPubKey?: string
-    inscriptionId: string
-    payFeesWithSegwit: boolean
-    mnemonic: string
-    segwitHdPathWithIndex?: string
-    taprootHdPathWithIndex?: string
-  }) {
-    const segwitSigner: any = await createSegwitSigner({
-      mnemonic: mnemonic,
-      segwitAddress: segwitAddress,
-      hdPathWithIndex: segwitHdPathWithIndex,
-    })
-    const taprootSigner: any = await createTaprootSigner({
-      mnemonic: mnemonic,
-      taprootAddress: fromAddress,
-      hdPathWithIndex: taprootHdPathWithIndex,
-    })
-
-    const { data: collectibleData } = await this.apiClient.getCollectiblesById(
-      inscriptionId
-    )
-
-    const metaOffset = collectibleData.satpoint.charAt(
-      collectibleData.satpoint.length - 1
-    )
-
-    const metaOutputValue = collectibleData.output_value || 10000
-
-    const minOrdOutputValue = Math.max(metaOffset, UTXO_DUST)
-    if (metaOutputValue < minOrdOutputValue) {
-      throw Error(`OutputValue must be at least ${minOrdOutputValue}`)
-    }
-
-    const allUtxos = await this.getUtxosArtifacts({ address: fromAddress })
-    let segwitUtxos: any[] | undefined
-    if (segwitAddress) {
-      segwitUtxos = await this.getUtxosArtifacts({ address: segwitAddress })
-    }
-    const feeRate = txFee
-    const psbtTx = new PSBTTransaction(
-      taprootSigner,
-      fromAddress,
-      taprootPubKey,
-      feeRate,
-      segwitSigner,
-      segwitPubKey
-    )
-    psbtTx.setChangeAddress(changeAddress)
-    const finalizedPsbt = await buildOrdTx({
-      psbtTx: psbtTx,
-      allUtxos: allUtxos,
-      segwitUtxos: segwitUtxos,
-      segwitAddress: segwitAddress,
-      segwitPubKey: segwitPubKey,
-      toAddress: toAddress,
-      metaOutputValue: metaOutputValue,
-      feeRate: feeRate,
-      inscriptionId: inscriptionId,
-      payFeesWithSegwit: payFeesWithSegwit,
-      taprootAddress: fromAddress,
-    })
-
-    //@ts-ignore
-    finalizedPsbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
-
-    const rawtx = finalizedPsbt.extractTransaction().toHex()
-    // const result = await this.apiClient.pushTx({ transactionHex: rawtx })
-
-    return {
-      txId: finalizedPsbt.extractTransaction().getId(),
-      rawtx: rawtx,
-      // ...result,
-    }
-  }
-  /**
    * Creates a Partially Signed Bitcoin Transaction (PSBT) to send regular satoshis, signs and broadcasts it.
    * @param {Object} params - The parameters for creating the PSBT.
    * @param {string} params.to - The receiving address.
@@ -639,7 +532,7 @@ export class Oyl {
     taprootHdPathWithIndex: string
     payFeesWithSegwit?: boolean
   }) {
-    const { txId, rawTx } = await createBtcTx({
+    const { txnId, rawTxn } = await createBtcTx({
       inputAddress: from,
       outputAddress: to,
       amount: amount,
@@ -654,15 +547,15 @@ export class Oyl {
     })
 
     const [result] =
-      await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([rawTx])
+      await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([rawTxn])
 
     if (!result.allowed) {
       throw new Error(result['reject-reason'])
     }
 
-    await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(rawTx)
+    await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(rawTxn)
 
-    return { txId }
+    return { txnId: txnId, rawTxn: rawTxn }
   }
 
   /**

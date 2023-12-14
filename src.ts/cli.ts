@@ -231,8 +231,8 @@ export async function runCLI() {
       }
 
       return
-    case 'test':
-      return await tapWallet.sendBRC20({
+    case 'sendBRC20':
+      const test0 = await tapWallet.sendBRC20({
         isDry: true,
         fromAddress:
           'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
@@ -251,9 +251,10 @@ export async function runCLI() {
         segwitHdPath: 'xverse',
         taprootHdPath: TAPROOT_HD_PATH,
       })
+      console.log(test0)
       break
     case 'send-collectible':
-      return await tapWallet.sendOrdCollectible({
+      const test = await tapWallet.sendOrdCollectible({
         isDry: true,
         fromAddress:
           'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
@@ -273,6 +274,7 @@ export async function runCLI() {
         segwitHdPath: 'xverse',
         taprootHdPath: TAPROOT_HD_PATH,
       })
+      console.log(test)
       break
     case 'view':
       return await viewPsbt()
