@@ -29,7 +29,7 @@ sendBtc: reset
 	$(Q)oyl-cli send
 	$(Q)echo "--- test complete"
 sendBRC20: reset
-	$(Q)oyl-cli test
+	$(Q)oyl-cli sendBRC20
 	$(Q)echo "--- test complete"
 sendCollectible: reset
 	$(Q)oyl-cli send-collectible

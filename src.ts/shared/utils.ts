@@ -654,7 +654,7 @@ export const inscribe = async ({
   isDry,
   segwitHdPathWithIndex,
   taprootHdPathWithIndex,
-  payFeesWithSegwit,
+  payFeesWithSegwit = true,
   feeRate,
 }: {
   ticker: string
@@ -669,7 +669,7 @@ export const inscribe = async ({
   feeRate: number
   segwitHdPathWithIndex?: string
   taprootHdPathWithIndex?: string
-  payFeesWithSegwit: boolean
+  payFeesWithSegwit?: boolean
 }) => {
   // const fastestFee = await getRecommendedBTCFeesMempool()
   try {
@@ -760,7 +760,6 @@ export const inscribe = async ({
     let commitTxId: string
     if (isDry) {
       commitTxId = commitTxPsbt.extractTransaction().getId()
-      console.log('commit txId', commitTxId)
     } else {
       const { result } = await callBTCRPCEndpoint(
         'sendrawtransaction',
@@ -801,13 +800,17 @@ export const inscribe = async ({
     txData.vin[0].witness = [sig, script, cblock]
 
     if (!isDry) {
-      return await callBTCRPCEndpoint(
+      const { result } = await callBTCRPCEndpoint(
         'sendrawtransaction',
         Tx.encode(txData).hex
       )
+      return { txnId: result }
     } else {
-      console.log({ result: Tx.util.getTxid(txData) }, Tx.encode(txData).hex)
-      return { result: Tx.util.getTxid(txData) }
+      return {
+        commitTxnHex: commitTxHex,
+        txnId: Tx.util.getTxid(txData),
+        txnHash: Tx.encode(txData).hex,
+      }
     }
   } catch (e: any) {
     return { error: e.message }
@@ -1066,7 +1069,7 @@ export const sendCollectible = async ({
   isDry,
   segwitHdPathWithIndex,
   taprootHdPathWithIndex,
-  payFeesWithSegwit,
+  payFeesWithSegwit = true,
   feeRate,
 }: {
   inscriptionId: string
@@ -1080,7 +1083,7 @@ export const sendCollectible = async ({
   feeRate: number
   segwitHdPathWithIndex?: string
   taprootHdPathWithIndex?: string
-  payFeesWithSegwit: boolean
+  payFeesWithSegwit?: boolean
 }) => {
   //const fastestFee = await getRecommendedBTCFeesMempool()
   try {
@@ -1110,7 +1113,7 @@ export const sendCollectible = async ({
     if (metaOutputValue < minOrdOutputValue) {
       throw Error(`OutputValue must be at least ${minOrdOutputValue}`)
     }
-    await insertCollectibleUtxo({
+    const utxosToSend = await insertCollectibleUtxo({
       taprootUtxos: taprootUtxos,
       inscriptionId: inscriptionId,
       toAddress: outputAddress,
@@ -1128,6 +1131,7 @@ export const sendCollectible = async ({
       feeRate: feeRate,
       taprootAddress: inputAddress,
       segwitPubKey: segwitPublicKey,
+      utxosToSend: utxosToSend,
     })
 
     const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
@@ -1166,14 +1170,11 @@ export const sendCollectible = async ({
     let txnId = signedPsbt.extractTransaction().getId()
 
     if (isDry) {
-      console.log('txn', txnId)
-      console.log('txnHash', txnHash)
-      return txnId
+      return { txnId: txnId, txnHash: txnHash }
     } else {
       const { result } = await callBTCRPCEndpoint('sendrawtransaction', txnHash)
       txnId = result
-      console.log(txnId)
-      return txnId
+      return { txnId: txnId, txnHash: txnHash }
     }
   } catch (e: any) {
     return { error: e.message }
@@ -1202,7 +1203,7 @@ const insertCollectibleUtxo = async ({
       { metaUtxos: [], nonMetaUtxos: [] }
     )
 
-    await addInscriptionUtxo({
+    return await addInscriptionUtxo({
       metaUtxos: metaUtxos,
       inscriptionId: inscriptionId,
       toAddress: toAddress,
@@ -1352,7 +1353,7 @@ export const createBtcTx = async ({
   isDry,
   segwitHdPathWithIndex,
   taprootHdPathWithIndex,
-  payFeesWithSegwit,
+  payFeesWithSegwit = true,
   feeRate,
   amount,
 }: {
@@ -1366,7 +1367,7 @@ export const createBtcTx = async ({
   feeRate: number
   segwitHdPathWithIndex?: string
   taprootHdPathWithIndex?: string
-  payFeesWithSegwit: boolean
+  payFeesWithSegwit?: boolean
   amount: number
 }) => {
   try {
@@ -1388,7 +1389,7 @@ export const createBtcTx = async ({
       addressTypeToName[inputAddressType] === 'nested-segwit' || 'segwit'
         ? true
         : false
-    const utxoToSend = await insertBtcUtxo({
+    const utxosToSend = await insertBtcUtxo({
       taprootUtxos: taprootUtxos,
       segwitUtxos: segwitUtxos,
       psbt: psbt,
@@ -1402,7 +1403,7 @@ export const createBtcTx = async ({
     await getUtxosForFees({
       payFeesWithSegwit: payFeesWithSegwit,
       psbtTx: psbt,
-      utxoToSend: utxoToSend,
+      utxosToSend: utxosToSend,
       taprootUtxos: taprootUtxos,
       segwitUtxos: segwitUtxos,
       segwitAddress: segwitAddress,
@@ -1444,8 +1445,8 @@ export const createBtcTx = async ({
     signedPsbt.finalizeAllInputs()
 
     return {
-      txId: signedPsbt.extractTransaction().getId(),
-      rawTx: signedPsbt.extractTransaction().toHex(),
+      txnId: signedPsbt.extractTransaction().getId(),
+      txnHash: signedPsbt.extractTransaction().toHex(),
     }
   } catch (error) {
     console.error(error)

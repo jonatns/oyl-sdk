@@ -93,7 +93,22 @@ export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, m
     segwitHdPathWithIndex?: string;
     taprootHdPathWithIndex?: string;
     payFeesWithSegwit: boolean;
-}) => Promise<any>;
+}) => Promise<{
+    txnId: any;
+    commitTxnHex?: undefined;
+    txnHash?: undefined;
+    error?: undefined;
+} | {
+    commitTxnHex: string;
+    txnId: string;
+    txnHash: string;
+    error?: undefined;
+} | {
+    error: any;
+    txnId?: undefined;
+    commitTxnHex?: undefined;
+    txnHash?: undefined;
+}>;
 export declare const createInscriptionScript: (pubKey: any, content: any) => any[];
 export declare const RPC_ADDR = "https://node.oyl.gg/v1/6e3bc3c289591bb447c116fda149b094";
 export declare const callBTCRPCEndpoint: (method: string, params: string | string[]) => Promise<any>;
@@ -119,8 +134,14 @@ export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddr
     segwitHdPathWithIndex?: string;
     taprootHdPathWithIndex?: string;
     payFeesWithSegwit: boolean;
-}) => Promise<string | {
+}) => Promise<{
+    txnId: string;
+    txnHash: string;
+    error?: undefined;
+} | {
     error: any;
+    txnId?: undefined;
+    txnHash?: undefined;
 }>;
 export declare const createBtcTx: ({ inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, feeRate, amount, }: {
     inputAddress: string;
