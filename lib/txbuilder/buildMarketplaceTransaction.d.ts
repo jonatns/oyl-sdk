@@ -1,6 +1,7 @@
 import { OylApiClient } from '../apiclient';
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew';
 import { EsploraRpc } from "../rpclient/esplora";
+import { MarketplaceBuy } from '../shared/interface';
 export declare class BuildMarketplaceTransaction {
     walletAddress: string;
     pubKey: string;
@@ -12,15 +13,13 @@ export declare class BuildMarketplaceTransaction {
     sandshrewBtcClient: SandshrewBitcoinClient;
     makersAddress: string | null;
     takerScript: string;
-    constructor({ address, pubKey, feeRate, psbtBase64, price }: {
-        address: string;
-        pubKey: string;
-        feeRate: number;
-        psbtBase64: string;
-        price: number;
-    });
+    constructor({ address, pubKey, feeRate, psbtBase64, price }: MarketplaceBuy);
     getUTXOsToCoverAmount(amountNeeded: number, inscriptionLocs?: string[]): Promise<any>;
-    psbtBuilder(): Promise<string>;
+    psbtBuilder(): Promise<{
+        psbtHex: string;
+        psbtBase64: string;
+    }>;
+    psbtMultiBuilder(): Promise<void>;
     getAllUTXOsWorthASpecificValue(value: number): Promise<any>;
     calculateAmountGathered(utxoArray: any): any;
     getUnspentsWithConfirmationsForAddress(): Promise<any>;

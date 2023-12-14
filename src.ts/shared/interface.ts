@@ -177,6 +177,14 @@ export interface FeeEstimatorOptions {
   witness?: Buffer[]
 }
 
+export interface MarketplaceBuy {
+   address: string 
+   pubKey: string 
+   feeRate: number
+   psbtBase64: string
+   price: number 
+}
+
 export interface IBlockchainInfoUTXO {
   tx_hash_big_endian: string
   tx_hash: string
