@@ -15,6 +15,7 @@ import {
 import axios from 'axios'
 import * as ecc2 from '@bitcoinerlab/secp256k1'
 import { BuildMarketplaceTransaction } from './txbuilder/buildMarketplaceTransaction'
+import { SandshrewBitcoinClient } from './rpclient/sandshrew'
 
 bitcoin.initEccLib(ecc2)
 
@@ -281,6 +282,16 @@ export async function runCLI() {
       break
     case 'aggregate':
       return await testAggregator()
+      break
+    case 'txn-history':
+      const test = new Oyl()
+      const testLog = await test.getTxHistory({
+        addresses: [
+          'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+          '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+        ],
+      })
+      console.log(testLog)
       break
     default:
       return await callAPI(yargs.argv._[0], options)
