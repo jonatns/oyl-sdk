@@ -16,6 +16,7 @@ import {
 import axios from 'axios'
 import * as ecc2 from '@bitcoinerlab/secp256k1'
 import { BuildMarketplaceTransaction } from './txbuilder/buildMarketplaceTransaction'
+import { SandshrewBitcoinClient } from './rpclient/sandshrew'
 
 bitcoin.initEccLib(ecc2)
 
@@ -208,7 +209,7 @@ export async function runCLI() {
       return await loadRpc(options)
       break
     case 'send':
-      const taprootResponse = await tapWallet.createBtcTx({
+      const taprootResponse = await tapWallet.sendBtc({
         to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
         from: 'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
         amount: 20000,
@@ -225,7 +226,7 @@ export async function runCLI() {
         console.log({ taprootResponse })
       }
 
-      const segwitResponse = await tapWallet.createBtcTx({
+      const segwitResponse = await tapWallet.sendBtc({
         to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
         from: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
         amount: 20000,
@@ -243,8 +244,8 @@ export async function runCLI() {
       }
 
       return
-    case 'test':
-      return await tapWallet.sendBRC20({
+    case 'sendBRC20':
+      const test0 = await tapWallet.sendBRC20({
         isDry: true,
         fromAddress:
           'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
@@ -263,9 +264,10 @@ export async function runCLI() {
         segwitHdPath: 'xverse',
         taprootHdPath: TAPROOT_HD_PATH,
       })
+      console.log(test0)
       break
     case 'send-collectible':
-      return await tapWallet.sendOrdCollectible({
+      const test = await tapWallet.sendOrdCollectible({
         isDry: true,
         fromAddress:
           'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
@@ -285,6 +287,7 @@ export async function runCLI() {
         segwitHdPath: 'xverse',
         taprootHdPath: TAPROOT_HD_PATH,
       })
+      console.log(test)
       break
     case 'view':
       return await viewPsbt()
@@ -297,6 +300,16 @@ export async function runCLI() {
       break
     case 'aggregate':
       return await testAggregator()
+      break
+    case 'txn-history':
+      const test = new Oyl()
+      const testLog = await test.getTxHistory({
+        addresses: [
+          'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+          '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+        ],
+      })
+      console.log(testLog)
       break
     default:
       return await callAPI(yargs.argv._[0], options)
