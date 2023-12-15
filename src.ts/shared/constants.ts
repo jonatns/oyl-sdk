@@ -1,4 +1,4 @@
-import { NetworkOptions } from "./interface"
+import { NetworkOptions } from './interface'
 
 export const UTXO_DUST = 546
 
@@ -20,5 +20,5 @@ export const getBrc20Data = ({
 export const defaultNetworkOptions: NetworkOptions = {
   baseUrl: 'https://mainnet.sandshrew.io',
   version: 'v1',
-  projectId: 'd6aebfed1769128379aca7d215f0b689' // default mainnet API key
-};
+  projectId: 'd6aebfed1769128379aca7d215f0b689', // default mainnet API key
+}

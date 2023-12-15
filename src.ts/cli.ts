@@ -1,6 +1,6 @@
 import yargs from 'yargs'
 import { camelCase } from 'change-case'
-import 'dotenv/config';
+import 'dotenv/config'
 import { NESTED_SEGWIT_HD_PATH, Oyl, TAPROOT_HD_PATH } from './oylib'
 import { PSBTTransaction } from './txbuilder/PSBTTransaction'
 import { Aggregator } from './PSBTAggregator'
@@ -267,7 +267,7 @@ export async function runCLI() {
       console.log(test0)
       break
     case 'send-collectible':
-      const test = await tapWallet.sendOrdCollectible({
+      const test1 = await tapWallet.sendOrdCollectible({
         isDry: true,
         fromAddress:
           'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
@@ -287,7 +287,7 @@ export async function runCLI() {
         segwitHdPath: 'xverse',
         taprootHdPath: TAPROOT_HD_PATH,
       })
-      console.log(test)
+      console.log(test1)
       break
     case 'view':
       return await viewPsbt()

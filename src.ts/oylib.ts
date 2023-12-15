@@ -1,17 +1,8 @@
-import { buildOrdTx, PSBTTransaction } from './txbuilder'
-import { defaultNetworkOptions, UTXO_DUST } from './shared/constants'
+import { defaultNetworkOptions } from './shared/constants'
 
 import { PSBTTransaction } from './txbuilder'
-import { UTXO_DUST } from './shared/constants'
 
-import {
-  createSegwitSigner,
-  createTaprootSigner,
-  delay,
-  inscribe,
-  sendCollectible,
-  createBtcTx,
-} from './shared/utils'
+import { delay, inscribe, sendCollectible, createBtcTx } from './shared/utils'
 import BcoinRpc from './rpclient'
 import { SandshrewBitcoinClient } from './rpclient/sandshrew'
 import { EsploraRpc } from './rpclient/esplora'
@@ -60,9 +51,9 @@ export class Oyl {
    */
   constructor(options: NetworkOptions = defaultNetworkOptions) {
     this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg' })
-    const rpcUrl = `${options.baseUrl}/${options.version}/${options.projectId}`;
-    const provider = new Provider(rpcUrl);
-    this.sandshrewBtcClient = provider.sandshrew;
+    const rpcUrl = `${options.baseUrl}/${options.version}/${options.projectId}`
+    const provider = new Provider(rpcUrl)
+    this.sandshrewBtcClient = provider.sandshrew
     this.esploraRpc = provider.esplora
     this.fromProvider()
     this.wallet = this.createWallet({})
@@ -486,7 +477,6 @@ export class Oyl {
     )
     return utxoArtifacts
   }
-
 
   /**
    * Creates a Partially Signed Bitcoin Transaction (PSBT) to send regular satoshis, signs and broadcasts it.
