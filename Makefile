@@ -29,9 +29,12 @@ sendBtc: reset
 	$(Q)oyl-cli send
 	$(Q)echo "--- test complete"
 sendBRC20: reset
-	$(Q)oyl-cli test
+	$(Q)oyl-cli sendBRC20
 	$(Q)echo "--- test complete"
 sendCollectible: reset
 	$(Q)oyl-cli send-collectible
+txnHistory: reset
+	$(Q)oyl-cli txn-history
+	$(Q)echo "--- test complete"
 testAll: sendBRC20 sendCollectible sendBtc
 	$(Q)echo "--- test all complete"

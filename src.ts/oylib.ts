@@ -1,13 +1,8 @@
-import { buildOrdTx, PSBTTransaction } from './txbuilder'
-import { UTXO_DUST } from './shared/constants'
-import {
-  callBTCRPCEndpoint,
-  createSegwitSigner,
-  createTaprootSigner,
-  delay,
-  inscribe,
-  sendCollectible,
-} from './shared/utils'
+import { defaultNetworkOptions } from './shared/constants'
+
+import { PSBTTransaction } from './txbuilder'
+
+import { delay, inscribe, sendCollectible, createBtcTx } from './shared/utils'
 import BcoinRpc from './rpclient'
 import { SandshrewBitcoinClient } from './rpclient/sandshrew'
 import { EsploraRpc } from './rpclient/esplora'
@@ -19,6 +14,7 @@ import { AccountManager, customPaths } from './wallet/accountsManager'
 import {
   AddressType,
   InscribeTransfer,
+  NetworkOptions,
   ProviderOptions,
   Providers,
   RecoverAccountOptions,
@@ -26,6 +22,7 @@ import {
 } from './shared/interface'
 import { OylApiClient } from './apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
+import { Provider } from './rpclient/provider'
 
 export const NESTED_SEGWIT_HD_PATH = "m/49'/0'/0'/0"
 export const TAPROOT_HD_PATH = "m/86'/0'/0'/0"
@@ -52,16 +49,13 @@ export class Oyl {
   /**
    * Initializes a new instance of the Wallet class.
    */
-  constructor() {
+  constructor(options: NetworkOptions = defaultNetworkOptions) {
     this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg' })
-    this.esploraRpc = new EsploraRpc(
-      'https://mainnet.sandshrew.io/v1/154f9aaa25a986241357836c37f8d71'
-    )
-    this.sandshrewBtcClient = new SandshrewBitcoinClient(
-      'https://sandshrew.io/v1/d6aebfed1769128379aca7d215f0b689'
-    )
+    const rpcUrl = `${options.baseUrl}/${options.version}/${options.projectId}`
+    const provider = new Provider(rpcUrl)
+    this.sandshrewBtcClient = provider.sandshrew
+    this.esploraRpc = provider.esplora
     this.fromProvider()
-    //create wallet should optionally take in a private key
     this.wallet = this.createWallet({})
   }
 
@@ -357,68 +351,68 @@ export class Oyl {
    * @returns {Promise<any[]>} A promise that resolves to an array of processed transaction details.
    * @throws {Error} Throws an error if transaction history retrieval fails.
    */
-  async getTxHistory({ address }) {
-    const history = await this.apiClient.getTxByAddress(address)
-    const processedTxPromises = history
-      .map(async (tx) => {
-        const {
-          hash,
-          height,
-          time,
-          outputs,
-          inputs,
-          confirmations,
-          fee,
-          rate,
-        } = tx
-
-        const output = outputs.find((output) => output.address === address)
-        const input = inputs.find(
-          (input) =>
-            (input.coin ? input.coin.address : input.address) === address
+  async getTxHistory({ addresses }: { addresses: string[] }) {
+    try {
+      if (addresses.length > 2) {
+        throw new Error('Only accepts a max of 2 addresses')
+      }
+      const utxoPromises = addresses.map((address: string, index: number) =>
+        this.esploraRpc._call('esplora_address::txs', [address])
+      )
+      const currentBlock = await this.esploraRpc._call(
+        'esplora_blocks:tip:height',
+        []
+      )
+      const resolvedUtxoPromises = await Promise.all(utxoPromises)
+      const combinedHistory = resolvedUtxoPromises.flat()
+      const removedDuplicatesArray = new Map(
+        combinedHistory.map((item) => [item.txid, item])
+      )
+      const finalCombinedHistory = Array.from(removedDuplicatesArray.values())
+      const processedTxns = finalCombinedHistory.map((tx) => {
+        const { txid, vout, size, vin, status, fee } = tx
+        const blockDelta = currentBlock - status.block_height
+        const confirmations = blockDelta > 0 ? blockDelta : 0
+        const inputAddress = vin.find(
+          ({ prevout }) =>
+            prevout.scriptpubkey_address === addresses[0] ||
+            prevout.scriptpubkey_address === addresses[1]
         )
-        const txDetails = {}
-        txDetails['hash'] = hash
-        txDetails['confirmations'] = confirmations
-        txDetails['blocktime'] = time
-        txDetails['blockheight'] = height
-        txDetails['fee'] = fee
-        txDetails['feeRate'] = rate / 1000
-        if (input) {
-          txDetails['type'] = 'sent'
-          txDetails['to'] = outputs.find(
-            (output) => output.address != address
-          )?.address
-          if (output) {
-            txDetails['amount'] = input.coin
-              ? input.coin.value / 1e8 - output.value / 1e8
-              : (await this.getTxValueFromPrevOut(inputs, address)) / 1e8 -
-                output.value / 1e8
-          } else {
-            txDetails['amount'] = input.coin
-              ? input.coin.value / 1e8
-              : (await this.getTxValueFromPrevOut(inputs, address)) / 1e8
-          }
-        } else {
-          if (output) {
-            txDetails['type'] = 'received'
-            txDetails['amount'] = output.value / 1e8
-            const evalFrom = inputs.find(
-              (input) =>
-                (input.coin ? input.coin.address : input.address) != address
-            )
-            txDetails['from'] = evalFrom.coin
-              ? evalFrom.coin.address
-              : evalFrom.address
+
+        let vinSum: number = 0
+        let voutSum: number = 0
+
+        for (let input of vin) {
+          if (addresses.includes(input.prevout.scriptpubkey_address)) {
+            vinSum += input.prevout.value
           }
         }
+        for (let output of vout) {
+          if (addresses.includes(output.scriptpubkey_address)) {
+            voutSum += output.value
+          }
+        }
+
+        const txDetails = {}
+        txDetails['txId'] = txid
+        txDetails['confirmations'] = confirmations
+        txDetails['type'] = inputAddress ? 'sent' : 'received'
+        txDetails['blockTime'] = status.block_time
+        txDetails['blockHeight'] = status.block_height
+        txDetails['fee'] = fee
+        txDetails['feeRate'] = Math.floor(fee / size)
+        txDetails['vinSum'] = vinSum
+        txDetails['voutSum'] = voutSum
+        txDetails['amount'] = inputAddress ? vinSum - voutSum - fee : voutSum
         txDetails['symbol'] = 'BTC'
+
         return txDetails
       })
-      .filter((transaction) => transaction !== null) // Filter out null transactions
 
-    const processedTransactions = await Promise.all(processedTxPromises)
-    return processedTransactions
+      return processedTxns
+    } catch (error) {
+      console.log(error)
+    }
   }
   /******************************* */
 
@@ -485,125 +479,6 @@ export class Oyl {
   }
 
   /**
-   * Imports a list of watch-only addresses into the wallet.
-   * @param {Object} param0 - An object containing an array of addresses.
-   * @param {string} param0.addresses - An array of addresses to be imported as watch-only.
-   */
-  async importWatchOnlyAddress({ addresses = [] }) {
-    for (let i = 0; i < addresses.length; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 10000))
-      await this.rpcClient.execute('importaddress', [addresses[i], '', true])
-    }
-  }
-
-  /**
-   * Creates a Partially Signed Bitcoin Transaction (PSBT) for an inscription, signs and broadcasts the tx.
-   * @param {Object} params - The parameters for creating the PSBT.
-   * @param {string} params.publicKey - The public key associated with the sending address.
-   * @param {string} params.fromAddress - The sending address.
-   * @param {string} params.toAddress - The receiving address.
-   * @param {string} params.changeAddress - The change address.
-   * @param {number} params.txFee - The transaction fee.
-   * @param {any} params.signer - The bound signer method to sign the transaction.
-   * @param {string} params.inscriptionId - The ID of the inscription to include in the transaction.
-   * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
-   */
-  async createOrdPsbtTx({
-    fromAddress,
-    toAddress,
-    changeAddress,
-    txFee,
-    segwitAddress,
-    taprootPubKey,
-    segwitPubKey,
-    inscriptionId,
-    payFeesWithSegwit,
-    mnemonic,
-    segwitHdPathWithIndex,
-    taprootHdPathWithIndex,
-  }: {
-    publicKey: string
-    fromAddress: string
-    toAddress: string
-    changeAddress: string
-    txFee: number
-    segwitAddress?: string
-    taprootPubKey: string
-    segwitPubKey?: string
-    inscriptionId: string
-    payFeesWithSegwit: boolean
-    mnemonic: string
-    segwitHdPathWithIndex?: string
-    taprootHdPathWithIndex?: string
-  }) {
-    const segwitSigner: any = await createSegwitSigner({
-      mnemonic: mnemonic,
-      segwitAddress: segwitAddress,
-      hdPathWithIndex: segwitHdPathWithIndex,
-    })
-    const taprootSigner: any = await createTaprootSigner({
-      mnemonic: mnemonic,
-      taprootAddress: fromAddress,
-      hdPathWithIndex: taprootHdPathWithIndex,
-    })
-
-    const { data: collectibleData } = await this.apiClient.getCollectiblesById(
-      inscriptionId
-    )
-
-    const metaOffset = collectibleData.satpoint.charAt(
-      collectibleData.satpoint.length - 1
-    )
-
-    const metaOutputValue = collectibleData.output_value || 10000
-
-    const minOrdOutputValue = Math.max(metaOffset, UTXO_DUST)
-    if (metaOutputValue < minOrdOutputValue) {
-      throw Error(`OutputValue must be at least ${minOrdOutputValue}`)
-    }
-
-    const allUtxos = await this.getUtxosArtifacts({ address: fromAddress })
-    let segwitUtxos: any[] | undefined
-    if (segwitAddress) {
-      segwitUtxos = await this.getUtxosArtifacts({ address: segwitAddress })
-    }
-    const feeRate = txFee
-    const psbtTx = new PSBTTransaction(
-      taprootSigner,
-      fromAddress,
-      taprootPubKey,
-      feeRate,
-      segwitSigner,
-      segwitPubKey
-    )
-    psbtTx.setChangeAddress(changeAddress)
-    const finalizedPsbt = await buildOrdTx({
-      psbtTx: psbtTx,
-      allUtxos: allUtxos,
-      segwitUtxos: segwitUtxos,
-      segwitAddress: segwitAddress,
-      segwitPubKey: segwitPubKey,
-      toAddress: toAddress,
-      metaOutputValue: metaOutputValue,
-      feeRate: feeRate,
-      inscriptionId: inscriptionId,
-      payFeesWithSegwit: payFeesWithSegwit,
-      taprootAddress: fromAddress,
-    })
-
-    //@ts-ignore
-    finalizedPsbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
-
-    const rawtx = finalizedPsbt.extractTransaction().toHex()
-    // const result = await this.apiClient.pushTx({ transactionHex: rawtx })
-
-    return {
-      txId: finalizedPsbt.extractTransaction().getId(),
-      rawtx: rawtx,
-      // ...result,
-    }
-  }
-  /**
    * Creates a Partially Signed Bitcoin Transaction (PSBT) to send regular satoshis, signs and broadcasts it.
    * @param {Object} params - The parameters for creating the PSBT.
    * @param {string} params.to - The receiving address.
@@ -614,7 +489,7 @@ export class Oyl {
    * @param {string} params.publicKey - The public key associated with the transaction.
    * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
    */
-  async createBtcTx({
+  async sendBtc({
     to,
     from,
     amount,
@@ -625,6 +500,7 @@ export class Oyl {
     segwitPubkey,
     segwitHdPathWithIndex,
     taprootHdPathWithIndex,
+    payFeesWithSegwit = true,
   }: {
     to: string
     from: string
@@ -636,100 +512,32 @@ export class Oyl {
     segwitPubkey?: string
     segwitHdPathWithIndex: string
     taprootHdPathWithIndex: string
+    payFeesWithSegwit?: boolean
   }) {
-    try {
-      const utxos = await this.getUtxosArtifacts({ address: from })
+    const { txnId, rawTxn } = await createBtcTx({
+      inputAddress: from,
+      outputAddress: to,
+      amount: amount,
+      feeRate: feeRate,
+      segwitAddress: segwitAddress,
+      segwitPublicKey: segwitPubkey,
+      taprootPublicKey: publicKey,
+      mnemonic: mnemonic,
+      payFeesWithSegwit: payFeesWithSegwit,
+      taprootHdPathWithIndex: taprootHdPathWithIndex,
+      segwitHdPathWithIndex: segwitHdPathWithIndex,
+    })
 
-      const segwitSigner: any = await createSegwitSigner({
-        mnemonic: mnemonic,
-        segwitAddress: segwitAddress,
-        hdPathWithIndex: segwitHdPathWithIndex,
-      })
-      const taprootSigner: any = await createTaprootSigner({
-        mnemonic: mnemonic,
-        taprootAddress: from,
-        hdPathWithIndex: taprootHdPathWithIndex,
-      })
+    const [result] =
+      await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([rawTxn])
 
-      const tx = new PSBTTransaction(
-        taprootSigner,
-        from,
-        publicKey,
-        feeRate,
-        segwitSigner,
-        segwitPubkey
-      )
-
-      tx.addOutput(to, amount)
-      tx.setChangeAddress(from)
-      const outputAmount = tx.getTotalOutput()
-
-      const nonOrdUtxos = []
-      const ordUtxos = []
-      utxos.forEach((v) => {
-        // TODO: figure out why we're getting inscribed utxos as un-inscribed
-        if (v.inscriptions.length > 0 || v.satoshis <= 546) {
-          ordUtxos.push(v)
-        } else {
-          nonOrdUtxos.push(v)
-        }
-      })
-
-      let tmpSum = tx.getTotalInput()
-
-      const vB = tx.getNumberOfInputs() * 149 + 3 * 32 + 12
-      const fee = vB * feeRate
-
-      for (let i = 0; i < nonOrdUtxos.length; i++) {
-        const nonOrdUtxo = nonOrdUtxos[i]
-        if (tmpSum < outputAmount + fee) {
-          tx.addInput(nonOrdUtxo)
-          tmpSum += nonOrdUtxo.satoshis
-        }
-      }
-
-      if (
-        nonOrdUtxos.length === 0 ||
-        tx.getTotalOutput() > tx.getTotalInput()
-      ) {
-        new Error('Balance not enough')
-      }
-
-      const totalUnspentAmount = tx.getUnspent()
-      if (totalUnspentAmount === 0) {
-        new Error('Balance not enough to pay network fee.')
-      }
-
-      const remainingBalance = totalUnspentAmount - fee
-      if (remainingBalance >= UTXO_DUST) {
-        tx.addOutput(from, remainingBalance)
-      }
-
-      const psbt = await tx.createSignedPsbt()
-      psbt.finalizeAllInputs()
-
-      //@ts-ignore
-      psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
-      const txId = psbt.extractTransaction().getId()
-      const txHex = psbt.extractTransaction().toHex()
-      const rawPsbtBase64 = psbt.toBase64()
-
-      const testTxAccept = await callBTCRPCEndpoint('bcli_testmempoolaccept', [
-        `${txHex}`,
-      ])
-
-      if (testTxAccept.result[0]['reject-reason']) {
-        throw new Error(testTxAccept.result[0]['reject-reason'])
-      }
-
-      return {
-        txId,
-        txHex,
-        rawPsbtBase64,
-      }
-    } catch (error) {
-      console.error(error)
+    if (!result.allowed) {
+      throw new Error(result['reject-reason'])
     }
+
+    await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(rawTxn)
+
+    return { txnId: txnId, rawTxn: rawTxn }
   }
 
   /**

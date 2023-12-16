@@ -1,6 +1,4 @@
 import * as bitcoin from 'bitcoinjs-lib'
-import { PSBTTransaction } from './PSBTTransaction'
-import { getRawTxnHashFromTxnId } from '../shared/utils'
 import { getAddressType } from '../transactions'
 
 export type Utxo = {
@@ -11,73 +9,7 @@ export type Utxo = {
   addressType: number
   address: string
   inscriptions: any[]
-}
-
-export async function buildOrdTx({
-  psbtTx,
-  allUtxos,
-  toAddress,
-  metaOutputValue,
-  feeRate,
-  inscriptionId,
-  taprootAddress,
-  payFeesWithSegwit,
-  segwitAddress,
-  segwitUtxos,
-  segwitPubKey,
-}: {
-  psbtTx: PSBTTransaction | bitcoin.Psbt | any
-  allUtxos: any[]
-  toAddress: string
-  metaOutputValue?: any
-  feeRate: number
-  inscriptionId?: string
-  taprootAddress: string
-  payFeesWithSegwit: boolean
-  segwitAddress?: string
-  segwitUtxos?: any[]
-  segwitPubKey?: string
-}) {
-  const { metaUtxos, nonMetaUtxos } = allUtxos.reduce(
-    (acc, utxo) => {
-      utxo.inscriptions.length
-        ? acc.metaUtxos.push(utxo)
-        : acc.nonMetaUtxos.push(utxo)
-      return acc
-    },
-    { metaUtxos: [], nonMetaUtxos: [] }
-  )
-
-  await addInscriptionUtxo({
-    metaUtxos: metaUtxos,
-    inscriptionId: inscriptionId,
-    toAddress: toAddress,
-    psbtTx: psbtTx,
-  })
-
-  psbtTx.outputs[0].value = metaOutputValue
-
-  await getUtxosForFees({
-    payFeesWithSegwit: payFeesWithSegwit,
-    psbtTx: psbtTx,
-    feeRate: feeRate,
-    taprootUtxos: nonMetaUtxos,
-    taprootAddress: taprootAddress,
-    segwitUtxos: segwitUtxos,
-    segwitAddress: segwitAddress,
-    segwitPubKey: segwitPubKey,
-  })
-
-  const remainingUnspent = psbtTx.getUnspent()
-  if (remainingUnspent <= 0) {
-    throw new Error('Not enough balance for the fee')
-  }
-
-  const psbt = await psbtTx.createSignedPsbt()
-
-  psbtTx.dumpTx(psbt)
-
-  return psbt
+  confirmations: number
 }
 
 export const getUtxosForFees = async ({
@@ -89,33 +21,29 @@ export const getUtxosForFees = async ({
   segwitUtxos,
   segwitAddress,
   segwitPubKey,
+  utxosToSend,
 }: {
   payFeesWithSegwit: boolean
-  psbtTx: PSBTTransaction | bitcoin.Psbt
+  psbtTx: bitcoin.Psbt
   feeRate: number
   taprootUtxos: Utxo[]
   taprootAddress: string
   segwitUtxos?: Utxo[]
   segwitAddress?: string
   segwitPubKey?: string
+  utxosToSend?: Utxo[]
 }) => {
   try {
-    if (payFeesWithSegwit && segwitUtxos) {
-      await addSegwitFeeUtxo({
-        segwitUtxos: segwitUtxos,
-        feeRate: feeRate,
-        psbtTx: psbtTx,
-        segwitAddress: segwitAddress,
-        segwitPubKey: segwitPubKey,
-      })
-    } else {
-      await addTaprootFeeUtxo({
-        taprootUtxos: taprootUtxos,
-        feeRate: feeRate,
-        psbtTx: psbtTx,
-        taprootAddress: taprootAddress,
-      })
-    }
+    await addSegwitFeeUtxo({
+      taprootUtxos: taprootUtxos,
+      segwitUtxos: segwitUtxos,
+      feeRate: feeRate,
+      psbtTx: psbtTx,
+      segwitAddress: segwitAddress,
+      segwitPubKey: segwitPubKey,
+      utxosToSend: utxosToSend,
+      taprootAddress: taprootAddress,
+    })
     return
   } catch (error) {
     console.log(error)
@@ -128,6 +56,9 @@ const addSegwitFeeUtxo = async ({
   psbtTx,
   segwitAddress,
   segwitPubKey,
+  utxosToSend,
+  taprootUtxos,
+  taprootAddress,
 }: {
   segwitUtxos: {
     txId: string
@@ -139,13 +70,14 @@ const addSegwitFeeUtxo = async ({
     inscriptions: any[]
   }[]
   feeRate: number
-  psbtTx: PSBTTransaction | bitcoin.Psbt
+  psbtTx: bitcoin.Psbt
   segwitAddress: string
   segwitPubKey: string
+  utxosToSend?: Utxo[]
+  taprootUtxos: Utxo[]
+  taprootAddress: string
 }) => {
   try {
-    const isBitcoinJSLib = psbtTx instanceof bitcoin.Psbt
-
     const { nonMetaSegwitUtxos } = segwitUtxos.reduce(
       (acc, utxo) => {
         utxo.inscriptions.length > 0
@@ -158,13 +90,7 @@ const addSegwitFeeUtxo = async ({
 
     nonMetaSegwitUtxos.sort((a, b) => b.satoshis - a.satoshis)
 
-    const inputCount = isBitcoinJSLib
-      ? psbtTx.txInputs.length === 0
-        ? 1
-        : psbtTx.txInputs.length
-      : psbtTx.getNumberOfInputs() === 0
-      ? 1
-      : psbtTx.getNumberOfInputs()
+    const inputCount = psbtTx.txInputs.length === 0 ? 1 : psbtTx.txInputs.length
 
     const vB = inputCount * 1 * 149 + 3 * 32 + 12
     const fee = vB * feeRate
@@ -172,7 +98,18 @@ const addSegwitFeeUtxo = async ({
     const feeUtxos = findUtxosForFees(nonMetaSegwitUtxos, fee)
 
     if (!feeUtxos) {
-      throw new Error('No available UTXOs')
+      try {
+        await addTaprootFeeUtxo({
+          taprootUtxos: taprootUtxos,
+          feeRate: feeRate,
+          psbtTx: psbtTx,
+          taprootAddress: taprootAddress,
+          utxosToSend: utxosToSend,
+        })
+        return
+      } catch (error) {
+        throw new Error('No available UTXOs to pay for fees')
+      }
     }
     const addressType = getAddressType(segwitAddress)
     let redeemScript
@@ -206,7 +143,7 @@ const addSegwitFeeUtxo = async ({
     }
 
     for (let i = 0; i < feeUtxos.selectedUtxos.length; i++) {
-      if (isBitcoinJSLib) {
+      if (await usableUtxo(feeUtxos.selectedUtxos[i], utxosToSend)) {
         psbtTx.addInput({
           hash: feeUtxos.selectedUtxos[i].txId,
           index: feeUtxos.selectedUtxos[i].outputIndex,
@@ -216,21 +153,13 @@ const addSegwitFeeUtxo = async ({
           },
           redeemScript: redeemScript,
         })
-      } else {
-        psbtTx.addInput(feeUtxos.selectedUtxos[i], true)
-        psbtTx.addOutput(
-          segwitAddress,
-          feeUtxos.selectedUtxos[i].satoshis - fee
-        )
+        psbtTx.addOutput({
+          address: segwitAddress,
+          value: Math.floor(feeUtxos.change),
+        })
       }
+      return
     }
-    if (isBitcoinJSLib) {
-      psbtTx.addOutput({
-        address: segwitAddress,
-        value: Math.floor(feeUtxos.change),
-      })
-    }
-    return
   } catch (e) {
     console.error(e)
     return
@@ -242,13 +171,14 @@ const addTaprootFeeUtxo = async ({
   feeRate,
   psbtTx,
   taprootAddress,
+  utxosToSend,
 }: {
   taprootUtxos: Utxo[]
   feeRate: number
-  psbtTx: PSBTTransaction | bitcoin.Psbt
+  psbtTx: bitcoin.Psbt
   taprootAddress: string
+  utxosToSend?: Utxo[]
 }) => {
-  const isBitcoinJSLib = psbtTx instanceof bitcoin.Psbt
   const { nonMetaTaprootUtxos } = taprootUtxos.reduce(
     (acc, utxo) => {
       utxo.inscriptions.length > 0 || utxo.satoshis === 546
@@ -261,13 +191,7 @@ const addTaprootFeeUtxo = async ({
 
   nonMetaTaprootUtxos.sort((a, b) => b.satoshis - a.satoshis)
 
-  const inputCount = isBitcoinJSLib
-    ? psbtTx.txInputs.length === 0
-      ? 1
-      : psbtTx.txInputs.length
-    : psbtTx.getNumberOfInputs() === 0
-    ? 1
-    : psbtTx.getNumberOfInputs()
+  const inputCount = psbtTx.txInputs.length === 0 ? 1 : psbtTx.txInputs.length
 
   const vB = inputCount * 149 + 3 * 32 + 12
   const fee = vB * feeRate
@@ -279,7 +203,10 @@ const addTaprootFeeUtxo = async ({
   }
 
   for (let i = 0; i < feeUtxos.selectedUtxos.length; i++) {
-    if (isBitcoinJSLib) {
+    if (
+      (await usableUtxo(feeUtxos.selectedUtxos[i], utxosToSend)) &&
+      confirmedUtxo(feeUtxos.selectedUtxos[i])
+    ) {
       psbtTx.addInput({
         hash: feeUtxos.selectedUtxos[i].txId,
         index: feeUtxos.selectedUtxos[i].outputIndex,
@@ -292,12 +219,10 @@ const addTaprootFeeUtxo = async ({
         address: taprootAddress,
         value: Math.floor(feeUtxos.change),
       })
-    } else {
-      psbtTx.addInput(feeUtxos.selectedUtxos[i])
-      psbtTx.addOutput(taprootAddress, Math.floor(feeUtxos.change))
     }
+
+    return
   }
-  return
 }
 
 export const addInscriptionUtxo = async ({
@@ -336,15 +261,16 @@ export const addInscriptionUtxo = async ({
     address: toAddress,
     value: Math.floor(matchedUtxo.satoshis),
   })
-  return
+  return matchedUtxo
 }
 
-function findUtxosForFees(utxos: Utxo[], amount: number) {
+export function findUtxosForFees(utxos: Utxo[], amount: number) {
   let totalSatoshis = 0
-  const selectedUtxos = []
+  const selectedUtxos: Utxo[] = []
 
   for (const utxo of utxos) {
     if (totalSatoshis >= amount) break
+    if (utxo.confirmations <= 0) continue
 
     selectedUtxos.push(utxo)
     totalSatoshis += utxo.satoshis
@@ -359,4 +285,17 @@ function findUtxosForFees(utxos: Utxo[], amount: number) {
   } else {
     return null
   }
+}
+
+const usableUtxo = async (feeUtxo: Utxo, utxosToSend: Utxo[]) => {
+  if (!utxosToSend) {
+    return true
+  }
+  for (let j = 0; j < utxosToSend.length; j++) {
+    if (feeUtxo.txId === utxosToSend[j].txId) return false
+  }
+}
+
+const confirmedUtxo = (feeUtxo: Utxo) => {
+  return feeUtxo.confirmations > 0
 }
