@@ -1,5 +1,4 @@
 import * as bitcoin from 'bitcoinjs-lib';
-import { PSBTTransaction } from './PSBTTransaction';
 export type Utxo = {
     txId: string;
     outputIndex: number;
@@ -8,33 +7,27 @@ export type Utxo = {
     addressType: number;
     address: string;
     inscriptions: any[];
+    confirmations: number;
 };
-export declare function buildOrdTx({ psbtTx, allUtxos, toAddress, metaOutputValue, feeRate, inscriptionId, taprootAddress, payFeesWithSegwit, segwitAddress, segwitUtxos, segwitPubKey, }: {
-    psbtTx: PSBTTransaction | bitcoin.Psbt | any;
-    allUtxos: any[];
-    toAddress: string;
-    metaOutputValue?: any;
-    feeRate: number;
-    inscriptionId?: string;
-    taprootAddress: string;
+export declare const getUtxosForFees: ({ payFeesWithSegwit, psbtTx, feeRate, taprootUtxos, taprootAddress, segwitUtxos, segwitAddress, segwitPubKey, utxosToSend, }: {
     payFeesWithSegwit: boolean;
-    segwitAddress?: string;
-    segwitUtxos?: any[];
-    segwitPubKey?: string;
-}): Promise<any>;
-export declare const getUtxosForFees: ({ payFeesWithSegwit, psbtTx, feeRate, taprootUtxos, taprootAddress, segwitUtxos, segwitAddress, segwitPubKey, }: {
-    payFeesWithSegwit: boolean;
-    psbtTx: PSBTTransaction | bitcoin.Psbt;
+    psbtTx: bitcoin.Psbt;
     feeRate: number;
     taprootUtxos: Utxo[];
     taprootAddress: string;
     segwitUtxos?: Utxo[];
     segwitAddress?: string;
     segwitPubKey?: string;
+    utxosToSend?: Utxo[];
 }) => Promise<void>;
 export declare const addInscriptionUtxo: ({ metaUtxos, inscriptionId, toAddress, psbtTx, }: {
     metaUtxos: any[];
     inscriptionId: string;
     toAddress: string;
     psbtTx: bitcoin.Psbt | any;
-}) => Promise<void>;
+}) => Promise<any>;
+export declare function findUtxosForFees(utxos: Utxo[], amount: number): {
+    selectedUtxos: Utxo[];
+    totalSatoshis: number;
+    change: number;
+};

@@ -10,6 +10,7 @@ import {
   Network,
   BitcoinPaymentType,
   ToSignInput,
+  addressTypeToName,
 } from '../shared/interface'
 import BigNumber from 'bignumber.js'
 import { UTXO_DUST, maximumScriptBytes } from './constants'
@@ -19,7 +20,12 @@ import { Oyl } from '../oylib'
 import { address as PsbtAddress } from 'bitcoinjs-lib'
 import { Tap, Address, Tx, Signer } from '@cmdcode/tapscript'
 import * as ecc2 from '@cmdcode/crypto-utils'
-import { addInscriptionUtxo, getUtxosForFees } from '../txbuilder/buildOrdTx'
+import {
+  Utxo,
+  addInscriptionUtxo,
+  findUtxosForFees,
+  getUtxosForFees,
+} from '../txbuilder/buildOrdTx'
 import { isTaprootInput } from 'bitcoinjs-lib/src/psbt/bip371'
 
 export interface IBISWalletIx {
@@ -62,6 +68,8 @@ const RequiredPath = [
   "m/84'/0'/0'/0", // P2WPKH (SegWit)
   "m/86'/0'/0'/0", // P2TR (Taproot)
 ]
+
+const addressTypeMap = { 1: 'p2pkh', 2: 'p2sh', 3: 'p2wpkh', 4: 'p2tr' }
 
 export const ECPair = ECPairFactory(ecc)
 
@@ -646,7 +654,7 @@ export const inscribe = async ({
   isDry,
   segwitHdPathWithIndex,
   taprootHdPathWithIndex,
-  payFeesWithSegwit,
+  payFeesWithSegwit = true,
   feeRate,
 }: {
   ticker: string
@@ -661,7 +669,7 @@ export const inscribe = async ({
   feeRate: number
   segwitHdPathWithIndex?: string
   taprootHdPathWithIndex?: string
-  payFeesWithSegwit: boolean
+  payFeesWithSegwit?: boolean
 }) => {
   // const fastestFee = await getRecommendedBTCFeesMempool()
   try {
@@ -743,16 +751,12 @@ export const inscribe = async ({
     signedPsbt.finalizeAllInputs()
 
     const commitPsbtHash = signedPsbt.toHex()
-    const commitTxnHex = signedPsbt.extractTransaction().toHex()
-    console.log('commit hex', commitTxnHex)
-
     const commitTxPsbt: bitcoin.Psbt = bitcoin.Psbt.fromHex(commitPsbtHash)
 
     const commitTxHex = commitTxPsbt.extractTransaction().toHex()
     let commitTxId: string
     if (isDry) {
       commitTxId = commitTxPsbt.extractTransaction().getId()
-      console.log('commit txId', commitTxId)
     } else {
       const { result } = await callBTCRPCEndpoint(
         'sendrawtransaction',
@@ -793,13 +797,17 @@ export const inscribe = async ({
     txData.vin[0].witness = [sig, script, cblock]
 
     if (!isDry) {
-      return await callBTCRPCEndpoint(
+      const { result } = await callBTCRPCEndpoint(
         'sendrawtransaction',
         Tx.encode(txData).hex
       )
+      return { txnId: result }
     } else {
-      console.log({ result: Tx.util.getTxid(txData) }, Tx.encode(txData).hex)
-      return { result: Tx.util.getTxid(txData) }
+      return {
+        commitRawTxn: commitTxHex,
+        txnId: Tx.util.getTxid(txData),
+        rawTxn: Tx.encode(txData).hex,
+      }
     }
   } catch (e: any) {
     return { error: e.message }
@@ -1058,7 +1066,7 @@ export const sendCollectible = async ({
   isDry,
   segwitHdPathWithIndex,
   taprootHdPathWithIndex,
-  payFeesWithSegwit,
+  payFeesWithSegwit = true,
   feeRate,
 }: {
   inscriptionId: string
@@ -1072,7 +1080,7 @@ export const sendCollectible = async ({
   feeRate: number
   segwitHdPathWithIndex?: string
   taprootHdPathWithIndex?: string
-  payFeesWithSegwit: boolean
+  payFeesWithSegwit?: boolean
 }) => {
   //const fastestFee = await getRecommendedBTCFeesMempool()
   try {
@@ -1102,7 +1110,7 @@ export const sendCollectible = async ({
     if (metaOutputValue < minOrdOutputValue) {
       throw Error(`OutputValue must be at least ${minOrdOutputValue}`)
     }
-    await insertCollectibleUtxo({
+    const utxosToSend = await insertCollectibleUtxo({
       taprootUtxos: taprootUtxos,
       inscriptionId: inscriptionId,
       toAddress: outputAddress,
@@ -1114,6 +1122,285 @@ export const sendCollectible = async ({
     await getUtxosForFees({
       payFeesWithSegwit: payFeesWithSegwit,
       psbtTx: psbt,
+      taprootUtxos: taprootUtxos,
+      segwitUtxos: segwitUtxos,
+      segwitAddress: segwitAddress,
+      feeRate: feeRate,
+      taprootAddress: inputAddress,
+      segwitPubKey: segwitPublicKey,
+      utxosToSend: utxosToSend,
+    })
+
+    const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
+      _psbt: psbt,
+      isRevealTx: false,
+      pubkey: taprootPublicKey,
+      segwitPubkey: segwitPublicKey,
+      segwitAddress: segwitAddress,
+      taprootAddress: inputAddress,
+    })
+
+    const taprootSigner = await createTaprootSigner({
+      mnemonic: mnemonic,
+      taprootAddress: inputAddress,
+      hdPathWithIndex: taprootHdPathWithIndex,
+    })
+
+    const segwitSigner = await createSegwitSigner({
+      mnemonic: mnemonic,
+      segwitAddress: segwitAddress,
+      hdPathWithIndex: segwitHdPathWithIndex,
+    })
+
+    const signedPsbt = await signInputs(
+      psbt,
+      toSignInputs,
+      taprootPublicKey,
+      segwitPublicKey,
+      segwitSigner,
+      taprootSigner
+    )
+
+    signedPsbt.finalizeAllInputs()
+
+    const rawTxn = signedPsbt.extractTransaction().toHex()
+    let txnId = signedPsbt.extractTransaction().getId()
+
+    if (isDry) {
+      return { txnId: txnId, rawTxn: rawTxn }
+    } else {
+      const { result } = await callBTCRPCEndpoint('sendrawtransaction', rawTxn)
+      txnId = result
+      return { txnId: txnId, rawTxn: rawTxn }
+    }
+  } catch (e: any) {
+    return { error: e.message }
+  }
+}
+
+const insertCollectibleUtxo = async ({
+  taprootUtxos,
+  inscriptionId,
+  toAddress,
+  psbt,
+}: {
+  taprootUtxos: any[]
+  inscriptionId: string
+  toAddress: string
+  psbt: bitcoin.Psbt
+}) => {
+  try {
+    const { metaUtxos } = taprootUtxos.reduce(
+      (acc, utxo) => {
+        utxo.inscriptions.length
+          ? acc.metaUtxos.push(utxo)
+          : acc.nonMetaUtxos.push(utxo)
+        return acc
+      },
+      { metaUtxos: [], nonMetaUtxos: [] }
+    )
+
+    return await addInscriptionUtxo({
+      metaUtxos: metaUtxos,
+      inscriptionId: inscriptionId,
+      toAddress: toAddress,
+      psbtTx: psbt,
+    })
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+const insertBtcUtxo = async ({
+  taprootUtxos,
+  segwitUtxos,
+  toAddress,
+  fromAddress,
+  psbt,
+  amount,
+  sendFromSegwit,
+  segwitPubKey,
+}: {
+  taprootUtxos: any[]
+  segwitUtxos: any[]
+  toAddress: string
+  fromAddress: string
+  psbt: bitcoin.Psbt
+  amount: number
+  sendFromSegwit: boolean
+  segwitPubKey: string
+}) => {
+  try {
+    let nonMetaUtxos: any[]
+    if (sendFromSegwit) {
+      nonMetaUtxos = await filterTaprootUtxos({ taprootUtxos: taprootUtxos })
+    } else {
+      nonMetaUtxos = segwitUtxos
+    }
+
+    return addBTCUtxo({
+      utxos: nonMetaUtxos,
+      toAddress: toAddress,
+      psbtTx: psbt,
+      amount: amount,
+      fromAddress: fromAddress,
+      segwitPubKey: segwitPubKey,
+    })
+  } catch (error) {
+    console.log(error)
+    throw error
+  }
+}
+
+const filterTaprootUtxos = async ({
+  taprootUtxos,
+}: {
+  taprootUtxos: any[]
+}) => {
+  const { nonMetaUtxos } = taprootUtxos.reduce(
+    (acc, utxo) => {
+      utxo.inscriptions.length > 0 || utxo.satoshis === 546
+        ? acc.metaUtxos.push(utxo)
+        : acc.nonMetaUtxos.push(utxo)
+      return acc
+    },
+    { metaUtxos: [], nonMetaUtxos: [] }
+  )
+  return nonMetaUtxos
+}
+
+const addBTCUtxo = async ({
+  utxos,
+  toAddress,
+  psbtTx,
+  amount,
+  fromAddress,
+  segwitPubKey,
+}: {
+  utxos: Utxo[]
+  toAddress: string
+  psbtTx: bitcoin.Psbt
+  amount: number
+  fromAddress: string
+  segwitPubKey: string
+}) => {
+  const utxosTosend = findUtxosForFees(utxos, amount)
+
+  if (!utxosTosend) {
+    throw new Error('insufficient.balance')
+  }
+
+  const addressType = getAddressType(fromAddress)
+  let redeemScript
+
+  if (addressType === 2) {
+    try {
+      const p2wpkh = bitcoin.payments.p2wpkh({
+        pubkey: Buffer.from(segwitPubKey, 'hex'),
+        network: bitcoin.networks.bitcoin,
+      })
+
+      const p2sh = bitcoin.payments.p2sh({
+        redeem: p2wpkh,
+        network: bitcoin.networks.bitcoin,
+      })
+
+      redeemScript = p2sh.redeem.output
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  for (let i = 0; i < utxosTosend.selectedUtxos.length; i++) {
+    if (addressType === 2) {
+      psbtTx.addInput({
+        hash: utxosTosend.selectedUtxos[i].txId,
+        index: utxosTosend.selectedUtxos[i].outputIndex,
+        witnessUtxo: {
+          value: utxosTosend.selectedUtxos[i].satoshis,
+          script: Buffer.from(utxosTosend.selectedUtxos[i].scriptPk, 'hex'),
+        },
+        redeemScript: redeemScript,
+      })
+    } else {
+      psbtTx.addInput({
+        hash: utxosTosend.selectedUtxos[i].txId,
+        index: utxosTosend.selectedUtxos[i].outputIndex,
+        witnessUtxo: {
+          value: utxosTosend.selectedUtxos[i].satoshis,
+          script: Buffer.from(utxosTosend.selectedUtxos[i].scriptPk, 'hex'),
+        },
+      })
+    }
+    psbtTx.addOutput({
+      address: toAddress,
+      value: Math.floor(utxosTosend.change),
+    })
+  }
+  return utxosTosend.selectedUtxos
+}
+
+export const createBtcTx = async ({
+  inputAddress,
+  outputAddress,
+  mnemonic,
+  taprootPublicKey,
+  segwitPublicKey,
+  segwitAddress,
+  isDry,
+  segwitHdPathWithIndex,
+  taprootHdPathWithIndex,
+  payFeesWithSegwit = true,
+  feeRate,
+  amount,
+}: {
+  inputAddress: string
+  outputAddress: string
+  mnemonic: string
+  taprootPublicKey: string
+  segwitPublicKey: string
+  segwitAddress: string
+  isDry?: boolean
+  feeRate: number
+  segwitHdPathWithIndex?: string
+  taprootHdPathWithIndex?: string
+  payFeesWithSegwit?: boolean
+  amount: number
+}) => {
+  try {
+    const wallet = new Oyl()
+    const psbt = new bitcoin.Psbt()
+
+    const taprootUtxos: any[] = await wallet.getUtxosArtifacts({
+      address: inputAddress,
+    })
+    let segwitUtxos: any[] | undefined
+    if (segwitAddress) {
+      segwitUtxos = await wallet.getUtxosArtifacts({
+        address: segwitAddress,
+      })
+    }
+    const inputAddressType = addressTypeMap[getAddressType(inputAddress)]
+
+    const isSentFromSegwit =
+      addressTypeToName[inputAddressType] === 'nested-segwit' || 'segwit'
+        ? true
+        : false
+    const utxosToSend = await insertBtcUtxo({
+      taprootUtxos: taprootUtxos,
+      segwitUtxos: segwitUtxos,
+      psbt: psbt,
+      toAddress: outputAddress,
+      amount: amount,
+      sendFromSegwit: isSentFromSegwit,
+      segwitPubKey: segwitPublicKey,
+      fromAddress: inputAddress,
+    })
+
+    await getUtxosForFees({
+      payFeesWithSegwit: payFeesWithSegwit,
+      psbtTx: psbt,
+      utxosToSend: utxosToSend,
       taprootUtxos: taprootUtxos,
       segwitUtxos: segwitUtxos,
       segwitAddress: segwitAddress,
@@ -1154,53 +1441,12 @@ export const sendCollectible = async ({
 
     signedPsbt.finalizeAllInputs()
 
-    const txnHash = signedPsbt.extractTransaction().toHex()
-    let txnId = signedPsbt.extractTransaction().getId()
-
-    if (isDry) {
-      console.log('txn', txnId)
-      console.log('txnHash', txnHash)
-      return txnId
-    } else {
-      const { result } = await callBTCRPCEndpoint('sendrawtransaction', txnHash)
-      txnId = result
-      console.log(txnId)
-      return txnId
+    return {
+      txnId: signedPsbt.extractTransaction().getId(),
+      rawTxn: signedPsbt.extractTransaction().toHex(),
     }
-  } catch (e: any) {
-    return { error: e.message }
-  }
-}
-
-const insertCollectibleUtxo = async ({
-  taprootUtxos,
-  inscriptionId,
-  toAddress,
-  psbt,
-}: {
-  taprootUtxos: any[]
-  inscriptionId: string
-  toAddress: string
-  psbt: bitcoin.Psbt
-}) => {
-  try {
-    const { metaUtxos } = taprootUtxos.reduce(
-      (acc, utxo) => {
-        utxo.inscriptions.length
-          ? acc.metaUtxos.push(utxo)
-          : acc.nonMetaUtxos.push(utxo)
-        return acc
-      },
-      { metaUtxos: [], nonMetaUtxos: [] }
-    )
-
-    await addInscriptionUtxo({
-      metaUtxos: metaUtxos,
-      inscriptionId: inscriptionId,
-      toAddress: toAddress,
-      psbtTx: psbt,
-    })
   } catch (error) {
-    console.log(error)
+    console.error(error)
+    throw error
   }
 }

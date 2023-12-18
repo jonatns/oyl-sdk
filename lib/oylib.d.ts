@@ -1,7 +1,7 @@
 import BcoinRpc from './rpclient';
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
-import { AddressType, InscribeTransfer, ProviderOptions, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
+import { AddressType, InscribeTransfer, NetworkOptions, ProviderOptions, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
 export declare const NESTED_SEGWIT_HD_PATH = "m/49'/0'/0'/0";
 export declare const TAPROOT_HD_PATH = "m/86'/0'/0'/0";
@@ -19,7 +19,7 @@ export declare class Oyl {
     /**
      * Initializes a new instance of the Wallet class.
      */
-    constructor();
+    constructor(options?: NetworkOptions);
     /**
      * Connects to a given blockchain RPC client.
      * @param {BcoinRpc} provider - The blockchain RPC client to connect to.
@@ -138,9 +138,9 @@ export declare class Oyl {
      * @returns {Promise<any[]>} A promise that resolves to an array of processed transaction details.
      * @throws {Error} Throws an error if transaction history retrieval fails.
      */
-    getTxHistory({ address }: {
-        address: any;
-    }): Promise<any[]>;
+    getTxHistory({ addresses }: {
+        addresses: string[];
+    }): Promise<{}[]>;
     /******************************* */
     /**
      * Retrieves the fee rates for transactions from the mempool.
@@ -173,44 +173,6 @@ export declare class Oyl {
         address: any;
     }): Promise<any[]>;
     /**
-     * Imports a list of watch-only addresses into the wallet.
-     * @param {Object} param0 - An object containing an array of addresses.
-     * @param {string} param0.addresses - An array of addresses to be imported as watch-only.
-     */
-    importWatchOnlyAddress({ addresses }: {
-        addresses?: any[];
-    }): Promise<void>;
-    /**
-     * Creates a Partially Signed Bitcoin Transaction (PSBT) for an inscription, signs and broadcasts the tx.
-     * @param {Object} params - The parameters for creating the PSBT.
-     * @param {string} params.publicKey - The public key associated with the sending address.
-     * @param {string} params.fromAddress - The sending address.
-     * @param {string} params.toAddress - The receiving address.
-     * @param {string} params.changeAddress - The change address.
-     * @param {number} params.txFee - The transaction fee.
-     * @param {any} params.signer - The bound signer method to sign the transaction.
-     * @param {string} params.inscriptionId - The ID of the inscription to include in the transaction.
-     * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
-     */
-    createOrdPsbtTx({ fromAddress, toAddress, changeAddress, txFee, segwitAddress, taprootPubKey, segwitPubKey, inscriptionId, payFeesWithSegwit, mnemonic, segwitHdPathWithIndex, taprootHdPathWithIndex, }: {
-        publicKey: string;
-        fromAddress: string;
-        toAddress: string;
-        changeAddress: string;
-        txFee: number;
-        segwitAddress?: string;
-        taprootPubKey: string;
-        segwitPubKey?: string;
-        inscriptionId: string;
-        payFeesWithSegwit: boolean;
-        mnemonic: string;
-        segwitHdPathWithIndex?: string;
-        taprootHdPathWithIndex?: string;
-    }): Promise<{
-        txId: any;
-        rawtx: any;
-    }>;
-    /**
      * Creates a Partially Signed Bitcoin Transaction (PSBT) to send regular satoshis, signs and broadcasts it.
      * @param {Object} params - The parameters for creating the PSBT.
      * @param {string} params.to - The receiving address.
@@ -221,7 +183,7 @@ export declare class Oyl {
      * @param {string} params.publicKey - The public key associated with the transaction.
      * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
      */
-    createBtcTx({ to, from, amount, feeRate, publicKey, mnemonic, segwitAddress, segwitPubkey, segwitHdPathWithIndex, taprootHdPathWithIndex, }: {
+    sendBtc({ to, from, amount, feeRate, publicKey, mnemonic, segwitAddress, segwitPubkey, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, }: {
         to: string;
         from: string;
         amount: number;
@@ -232,10 +194,10 @@ export declare class Oyl {
         segwitPubkey?: string;
         segwitHdPathWithIndex: string;
         taprootHdPathWithIndex: string;
+        payFeesWithSegwit?: boolean;
     }): Promise<{
-        txId: string;
-        txHex: string;
-        rawPsbtBase64: string;
+        txnId: string;
+        rawTxn: string;
     }>;
     /**
      * Retrieves information about a SegWit address.
@@ -310,8 +272,14 @@ export declare class Oyl {
         signedPsbtBase64: string;
     }>;
     signInscriptionPsbt(psbt: any, fee: any, pubKey: any, signer: any, address?: string): Promise<any>;
-    sendBRC20(options: InscribeTransfer): Promise<any>;
-    sendOrdCollectible(options: InscribeTransfer): Promise<string | {
+    sendBRC20(options: InscribeTransfer): Promise<unknown>;
+    sendOrdCollectible(options: InscribeTransfer): Promise<{
+        txnId: string;
+        rawTxn: string;
+        error?: undefined;
+    } | {
         error: any;
+        txnId?: undefined;
+        rawTxn?: undefined;
     }>;
 }
