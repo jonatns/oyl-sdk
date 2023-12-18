@@ -1,6 +1,7 @@
 import fetch from 'node-fetch'
 import * as bitcoin from 'bitcoinjs-lib'
 import { AddressType, IBlockchainInfoUTXO } from '../shared/interface'
+import { addressFormats } from '../wallet/accounts'
 
 /**
  *
@@ -105,16 +106,21 @@ export const getMetaUtxos = async (
 }
 
 export function getAddressType(address: string): AddressType | null {
-  if (address.startsWith('1')) {
-    return 0
-  } else if (address.startsWith('bc1p')) {
-    return 1
-  } else if (address.startsWith('3')) {
-    return 2
-  } else if (address.startsWith('bc1q')) {
-    return 3
-  } else {
-    return null // If the address doesn't match any known type
+  if (addressFormats.mainnet.p2pkh.test(address) || addressFormats.testnet.p2pkh.test(address) || addressFormats.regtest.p2pkh.test(address)) {
+    return AddressType.P2PKH;
+  }
+  else if (addressFormats.mainnet.p2tr.test(address) || addressFormats.testnet.p2tr.test(address) || addressFormats.regtest.p2tr.test(address)) {
+    return AddressType.P2TR;
+  }
+  else if (addressFormats.mainnet.p2sh.test(address) || addressFormats.testnet.p2sh.test(address) || addressFormats.regtest.p2sh.test(address)) {
+    return AddressType.P2SH_P2WPKH;
+  }
+  else if (addressFormats.mainnet.p2wpkh.test(address) || addressFormats.testnet.p2wpkh.test(address) || addressFormats.regtest.p2wpkh.test(address)) {
+    return AddressType.P2WPKH;
+  }
+ 
+  else {
+    return null;
   }
 }
 
