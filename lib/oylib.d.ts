@@ -3,6 +3,7 @@ import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
 import { AddressType, InscribeTransfer, NetworkOptions, ProviderOptions, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
+import * as bitcoin from 'bitcoinjs-lib';
 export declare const NESTED_SEGWIT_HD_PATH = "m/49'/0'/0'/0";
 export declare const TAPROOT_HD_PATH = "m/86'/0'/0'/0";
 export declare const SEGWIT_HD_PATH = "m/84'/0'/0'/0";
@@ -10,6 +11,7 @@ export declare const LEGACY_HD_PATH = "m/44'/0'/0'/0";
 export declare class Oyl {
     private mnemonic;
     private wallet;
+    network: bitcoin.Network;
     sandshrewBtcClient: SandshrewBitcoinClient;
     esploraRpc: EsploraRpc;
     provider: Providers;

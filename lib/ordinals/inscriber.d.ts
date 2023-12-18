@@ -7,6 +7,7 @@ export declare class Inscriber {
     private mediaType;
     private mediaContent;
     private pubKey;
+    private network;
     private meta;
     private postage;
     private address;
@@ -20,11 +21,12 @@ export declare class Inscriber {
      * Initializes a new instance of the Inscriber.
      * @param options - Initialization options for the inscriber.
      */
-    constructor({ address, destinationAddress, pubKey, postage, mediaContent, mediaType, outputs, meta, }: {
+    constructor({ address, destinationAddress, pubKey, postage, mediaContent, mediaType, outputs, meta, network }: {
         address: string;
         destinationAddress: string;
         pubKey: string;
         postage: number;
+        network: bitcoin.Network;
         mediaContent: string;
         mediaType: string;
         outputs?: any[];

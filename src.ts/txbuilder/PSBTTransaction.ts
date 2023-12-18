@@ -19,7 +19,7 @@ export class PSBTTransaction {
   private segwitPubKey: any
   private address: string
   public changedAddress: string
-  private network: bitcoin.Network = bitcoin.networks.bitcoin
+  private network: bitcoin.Network
   private feeRate: number
   private pubkey: string
   private enableRBF = false
@@ -36,8 +36,9 @@ export class PSBTTransaction {
     address,
     publicKey,
     feeRate,
+    network,
     segwitSigner?,
-    segwitPubKey?
+    segwitPubKey?,
   ) {
     this.signer = signer
     this.segwitSigner = segwitSigner
@@ -45,6 +46,7 @@ export class PSBTTransaction {
     this.address = address
     this.pubkey = publicKey
     this.feeRate = feeRate || 5
+    this.network = network
   }
 
   /**
@@ -213,7 +215,7 @@ export class PSBTTransaction {
    */
   formatOptionsToSignInputs = async (psbt: bitcoin.Psbt) => {
     let toSignInputs: ToSignInput[] = []
-    const psbtNetwork = bitcoin.networks.bitcoin
+    const psbtNetwork = this.network
 
     psbt.data.inputs.forEach((v, index: number) => {
       let script: any = null

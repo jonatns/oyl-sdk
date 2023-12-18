@@ -9,6 +9,7 @@ export interface HDKeyringOption {
     mnemonic?: any;
     activeIndexes?: number[];
     passphrase?: string;
+    network: bitcoin.Network;
 }
 export declare class HdKeyring extends EventEmitter {
     mnemonic: any;
@@ -40,19 +41,19 @@ export declare class HdKeyring extends EventEmitter {
      * Initializes the HD keyring from a mnemonic phrase.
      * @param {string} mnemonic - The mnemonic phrase to use for initialization.
      */
-    initFromMnemonic(mnemonic: string): void;
+    initFromMnemonic(mnemonic: string, network: bitcoin.Network): void;
     /**
      * Changes the HD path used by the keyring and reinitializes accounts.
      * @param {string} hdPath - The new HD path to be used.
      */
-    changeHdPath(hdPath: string): void;
+    changeHdPath(hdPath: string, network: bitcoin.Network): void;
     /**
      * Retrieves an account's address by its HD path and index.
      * @param {string} hdPath - The HD path to derive the account from.
      * @param {number} index - The index of the account.
      * @returns {string} The account address as a string.
      */
-    getAccountByHdPath(hdPath: string, index: number): string;
+    getAccountByHdPath(hdPath: string, index: number, network: bitcoin.Network): string;
     /**
      * Adds a specified number of new accounts to the keyring.
      * @param {number} numberOfAccounts - The number of new accounts to add. Defaults to 1 if not specified.
