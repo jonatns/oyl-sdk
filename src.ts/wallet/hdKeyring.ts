@@ -97,7 +97,6 @@ export class HdKeyring extends EventEmitter {
         this.network == bitcoin.networks.bitcoin ? 'livenet' : 'testnet'
       )
       .deriveChild(this.hdPath)
-    //console.log("root", this.root)
   }
 
   /**

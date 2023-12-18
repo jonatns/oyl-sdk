@@ -3,7 +3,6 @@ import { publicKeyToAddress } from './accounts'
 import { AddressType, oylAccounts } from '../shared/interface'
 import Mnemonic from 'bitcore-mnemonic'
 
-const genMnemonic = new Mnemonic(Mnemonic.Words.ENGLISH).toString()
 
 export const customPaths = {
   oyl: {
@@ -33,7 +32,7 @@ export const customPaths = {
 }
 
 export class AccountManager {
-  private mnemonic: string = genMnemonic
+  private mnemonic: string
   private taprootKeyring: any
   private segwitKeyring: any
   public activeIndexes: number[]
@@ -45,18 +44,18 @@ export class AccountManager {
    * @param options - Configuration options for the AccountManager.
    */
   constructor(options?) {
-    this.mnemonic = options?.mnemonic
+    this.mnemonic = options?.mnemonic || new Mnemonic(Mnemonic.Words.ENGLISH).toString()
     this.activeIndexes = options?.activeIndexes
     this.hdPath = options?.customPath
       ? customPaths[options.customPath]
       : customPaths.oyl
     this.taprootKeyring = new HdKeyring({
-      mnemonic: this.mnemonic || genMnemonic,
+      mnemonic: this.mnemonic,
       hdPath: this.hdPath.taprootPath,
       activeIndexes: this.activeIndexes,
     })
     this.segwitKeyring = new HdKeyring({
-      mnemonic: this.mnemonic || genMnemonic,
+      mnemonic: this.mnemonic,
       hdPath: this.hdPath.segwitPath,
       activeIndexes: this.activeIndexes,
     })
@@ -90,7 +89,7 @@ export class AccountManager {
         segwitAddresses,
       },
       initializedFrom: this.hdPath.initializedFrom,
-      mnemonic: genMnemonic,
+      mnemonic: this.mnemonic,
     }
     return ret
   }
