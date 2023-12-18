@@ -4,7 +4,7 @@ import { EsploraRpc } from "../rpclient/esplora";
 import { assertHex, getSatpointFromUtxo } from "../shared/utils";
 import * as transactions from '../transactions'
 import * as bitcoin from 'bitcoinjs-lib'
-import { AddressType } from '../shared/interface';
+import { AddressType, MarketplaceBuy } from '../shared/interface';
 
 
 export class BuildMarketplaceTransaction {
@@ -20,7 +20,7 @@ export class BuildMarketplaceTransaction {
     public takerScript: string
 
 
-    constructor({ address, pubKey, feeRate, psbtBase64, price }: { address: string, pubKey: string, feeRate: number, psbtBase64: string, price: number }) {
+    constructor({ address, pubKey, feeRate, psbtBase64, price }: MarketplaceBuy) {
         this.walletAddress = address;
         this.pubKey = pubKey;
         this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg' })
@@ -193,7 +193,12 @@ export class BuildMarketplaceTransaction {
             value: remainder,
           })
           console.log("=========== Returning PSBT Hex Value to be signed by taker ============")
-          return swapPsbt.toHex()
+          return { psbtHex: swapPsbt.toHex(), psbtBase64: swapPsbt.toBase64() }
+
+    }
+
+    async psbtMultiBuilder(){
+
     }
 
 
