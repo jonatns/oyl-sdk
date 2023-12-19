@@ -736,12 +736,11 @@ export class Oyl {
   }) {
     if (segwitAddress) {
       let payload: any
-      const wallet = new Oyl()
       const segwitAddressType = transactions.getAddressType(segwitAddress)
       if (segwitAddressType == null) {
         throw Error('Unrecognized Address Type')
       }
-      payload = await wallet.fromPhrase({
+      payload = await this.fromPhrase({
         mnemonic: mnemonic.trim(),
         hdPath: hdPathWithIndex,
         addrType: segwitAddressType,
@@ -766,9 +765,33 @@ export class Oyl {
     if (addressType == null) {
       throw Error('Unrecognized Address Type')
     }
-    const tapWallet = new Oyl()
 
-    const tapPayload = await tapWallet.fromPhrase({
+    const tapPayload = await this.fromPhrase({
+      mnemonic: mnemonic.trim(),
+      hdPath: hdPathWithIndex,
+      addrType: addressType,
+    })
+
+    const tapKeyring = tapPayload.keyring.keyring
+    const taprootSigner = tapKeyring.signTransaction.bind(tapKeyring)
+    return taprootSigner
+  }
+
+  async createSigner({
+    mnemonic,
+    fromAddress,
+    hdPathWithIndex,
+  }: {
+    mnemonic: string
+    fromAddress: string
+    hdPathWithIndex: string
+  }) {
+    const addressType = transactions.getAddressType(fromAddress)
+    if (addressType == null) {
+      throw Error('Unrecognized Address Type')
+    }
+
+    const tapPayload = await this.fromPhrase({
       mnemonic: mnemonic.trim(),
       hdPath: hdPathWithIndex,
       addrType: addressType,

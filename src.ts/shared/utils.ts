@@ -140,32 +140,6 @@ export function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-export async function createSigner({
-  mnemonic,
-  fromAddress,
-  hdPathWithIndex,
-}: {
-  mnemonic: string
-  fromAddress: string
-  hdPathWithIndex: string
-}) {
-  const addressType = getAddressType(fromAddress)
-  if (addressType == null) {
-    throw Error('Unrecognized Address Type')
-  }
-  const tapWallet = new Oyl()
-
-  const tapPayload = await tapWallet.fromPhrase({
-    mnemonic: mnemonic.trim(),
-    hdPath: hdPathWithIndex,
-    addrType: addressType,
-  })
-
-  const tapKeyring = tapPayload.keyring.keyring
-  const taprootSigner = tapKeyring.signTransaction.bind(tapKeyring)
-  return taprootSigner
-}
-
 export function amountToSatoshis(val: any) {
   const num = new BigNumber(val)
   return num.multipliedBy(100000000).toNumber()
