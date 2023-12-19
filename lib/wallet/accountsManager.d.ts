@@ -1,4 +1,5 @@
-import { AddressType, oylAccounts } from '../shared/interface';
+import { AddressType, RecoverAccountOptions, oylAccounts } from '../shared/interface';
+import * as bitcoin from 'bitcoinjs-lib';
 export declare const customPaths: {
     oyl: {
         taprootPath: string;
@@ -30,13 +31,14 @@ export declare class AccountManager {
     private taprootKeyring;
     private segwitKeyring;
     activeIndexes: number[];
+    network: bitcoin.Network;
     private hdPath;
     /**
      * Initializes a new AccountManager instance with the given options.
      *
      * @param options - Configuration options for the AccountManager.
      */
-    constructor(options?: any);
+    constructor(options: RecoverAccountOptions);
     /**
      * Initializes taproot and segwit accounts by generating the necessary addresses.
      *

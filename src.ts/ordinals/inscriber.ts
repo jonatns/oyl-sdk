@@ -14,6 +14,7 @@ export class Inscriber {
   private mediaType: string
   private mediaContent: string
   private pubKey: string
+  private network: bitcoin.Network
   private meta: Record<string, any> | null
   private postage: number
   private address: string
@@ -41,11 +42,13 @@ export class Inscriber {
     mediaType,
     outputs = [],
     meta = {},
+    network
   }: {
     address: string
     destinationAddress: string
     pubKey: string
     postage: number
+    network: bitcoin.Network
     mediaContent: string
     mediaType: string
     outputs?: any[]
@@ -54,6 +57,7 @@ export class Inscriber {
     if (!pubKey || !mediaContent) {
       throw new Error('Invalid options provided')
     }
+    this.network = network
     this.pubKey = pubKey
     this.destinationAddress = destinationAddress
     this.mediaType = mediaType
@@ -123,7 +127,7 @@ export class Inscriber {
     this.buildTaprootTree()
     this.payment = bitcoin.payments.p2tr({
       internalPubkey: Buffer.from(this.pubKey, 'hex'),
-      network: bitcoin.networks.bitcoin,
+      network: this.network,
       scriptTree: this.taprootTree,
       redeem: this.getInscriptionRedeemScript(),
     })

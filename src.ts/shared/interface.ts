@@ -1,4 +1,5 @@
 import { payments, Psbt } from 'bitcoinjs-lib'
+import * as bitcoin from 'bitcoinjs-lib'
 
 export interface InscriptionResponse {
   address: string
@@ -146,9 +147,10 @@ export interface ProviderOptions {
 }
 
 export interface RecoverAccountOptions {
-  mnemonic: string
-  activeIndexes: number[]
-  customPath?: 'xverse' | 'leather' | 'unisat'
+  mnemonic?: string
+  activeIndexes?: number[]
+  customPath?: 'xverse' | 'leather' | 'unisat',
+  network: bitcoin.Network
 }
 
 export enum Providers {
@@ -267,6 +269,8 @@ export interface NetworkOptions {
    * ProjectId is used as an API key for local test servers. Defaults to mainnet API key
    */
   projectId?: string;
+
+  network: 'mainnet' | 'testnet' | 'regtest'
 }
 
 export interface SwapBrc {

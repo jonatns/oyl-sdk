@@ -70,16 +70,17 @@ export declare const getTheOtherUTXOsToCoverAmount: (address: string, amountNeed
 export declare const getUTXOByAddressTxIDAndVOut: (address: string, txId: string, vOut: number) => Promise<IBlockchainInfoUTXO>;
 export declare function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]): number;
 export declare const getScriptForAddress: (address: string) => Promise<any>;
-export declare const formatOptionsToSignInputs: ({ _psbt, isRevealTx, pubkey, segwitPubkey, segwitAddress, taprootAddress, }: {
+export declare const formatOptionsToSignInputs: ({ _psbt, isRevealTx, pubkey, segwitPubkey, segwitAddress, taprootAddress, network }: {
     _psbt: bitcoin.Psbt;
     isRevealTx: boolean;
     pubkey: string;
     segwitPubkey: string;
     segwitAddress: string;
     taprootAddress: string;
+    network: bitcoin.Network;
 }) => Promise<ToSignInput[]>;
 export declare const signInputs: (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], taprootPubkey: string, segwitPubKey: string, segwitSigner: any, taprootSigner: any) => Promise<bitcoin.Psbt>;
-export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, feeRate, }: {
+export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, feeRate, network }: {
     ticker: string;
     amount: number;
     inputAddress: string;
@@ -93,6 +94,7 @@ export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, m
     segwitHdPathWithIndex?: string;
     taprootHdPathWithIndex?: string;
     payFeesWithSegwit?: boolean;
+    network: bitcoin.Network;
 }) => Promise<{
     txnId: any;
     commitRawTxn?: undefined;
@@ -121,7 +123,7 @@ export declare const isP2WPKH: (script: Buffer, network: Network) => BitcoinPaym
 export declare const isP2WSHScript: (script: Buffer, network: Network) => BitcoinPaymentType;
 export declare const isP2SHScript: (script: Buffer, network: Network) => BitcoinPaymentType;
 export declare const isP2TR: (script: Buffer, network: Network) => BitcoinPaymentType;
-export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, feeRate, }: {
+export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, feeRate, network }: {
     inscriptionId: string;
     inputAddress: string;
     outputAddress: string;
@@ -134,6 +136,7 @@ export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddr
     segwitHdPathWithIndex?: string;
     taprootHdPathWithIndex?: string;
     payFeesWithSegwit?: boolean;
+    network: bitcoin.Network;
 }) => Promise<{
     txnId: string;
     rawTxn: string;
@@ -143,7 +146,7 @@ export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddr
     txnId?: undefined;
     rawTxn?: undefined;
 }>;
-export declare const createBtcTx: ({ inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, feeRate, amount, }: {
+export declare const createBtcTx: ({ inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, feeRate, amount, network }: {
     inputAddress: string;
     outputAddress: string;
     mnemonic: string;
@@ -156,6 +159,7 @@ export declare const createBtcTx: ({ inputAddress, outputAddress, mnemonic, tapr
     taprootHdPathWithIndex?: string;
     payFeesWithSegwit?: boolean;
     amount: number;
+    network: bitcoin.Network;
 }) => Promise<{
     txnId: string;
     rawTxn: string;

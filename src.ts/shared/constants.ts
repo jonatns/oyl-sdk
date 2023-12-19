@@ -21,4 +21,5 @@ export const defaultNetworkOptions: NetworkOptions = {
   baseUrl: 'https://mainnet.sandshrew.io',
   version: 'v1',
   projectId: 'd6aebfed1769128379aca7d215f0b689', // default mainnet API key
+  network: 'mainnet'
 }

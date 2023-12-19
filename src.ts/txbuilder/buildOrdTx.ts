@@ -22,6 +22,7 @@ export const getUtxosForFees = async ({
   segwitAddress,
   segwitPubKey,
   utxosToSend,
+  network
 }: {
   payFeesWithSegwit: boolean
   psbtTx: bitcoin.Psbt
@@ -32,6 +33,7 @@ export const getUtxosForFees = async ({
   segwitAddress?: string
   segwitPubKey?: string
   utxosToSend?: Utxo[]
+  network: bitcoin.Network
 }) => {
   try {
     await addSegwitFeeUtxo({
@@ -43,6 +45,7 @@ export const getUtxosForFees = async ({
       segwitPubKey: segwitPubKey,
       utxosToSend: utxosToSend,
       taprootAddress: taprootAddress,
+      network
     })
     return
   } catch (error) {
@@ -59,6 +62,7 @@ const addSegwitFeeUtxo = async ({
   utxosToSend,
   taprootUtxos,
   taprootAddress,
+  network
 }: {
   segwitUtxos: {
     txId: string
@@ -76,6 +80,7 @@ const addSegwitFeeUtxo = async ({
   utxosToSend?: Utxo[]
   taprootUtxos: Utxo[]
   taprootAddress: string
+  network: bitcoin.Network
 }) => {
   try {
     const { nonMetaSegwitUtxos } = segwitUtxos.reduce(
@@ -118,7 +123,7 @@ const addSegwitFeeUtxo = async ({
       const p2shObj = bitcoin.payments.p2sh({
         redeem: bitcoin.payments.p2sh({
           pubkey: Buffer.from(segwitPubKey, 'hex'),
-          network: bitcoin.networks.bitcoin,
+          network: network,
         }),
       })
 
@@ -128,12 +133,12 @@ const addSegwitFeeUtxo = async ({
       try {
         const p2wpkh = bitcoin.payments.p2wpkh({
           pubkey: Buffer.from(segwitPubKey, 'hex'),
-          network: bitcoin.networks.bitcoin,
+          network: network
         })
 
         const p2sh = bitcoin.payments.p2sh({
           redeem: p2wpkh,
-          network: bitcoin.networks.bitcoin,
+          network: network,
         })
 
         redeemScript = p2sh.redeem.output

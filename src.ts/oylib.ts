@@ -2,7 +2,7 @@ import { defaultNetworkOptions } from './shared/constants'
 
 import { PSBTTransaction } from './txbuilder'
 
-import { delay, inscribe, sendCollectible, createBtcTx } from './shared/utils'
+import { delay, inscribe, sendCollectible, createBtcTx, getNetwork } from './shared/utils'
 import BcoinRpc from './rpclient'
 import { SandshrewBitcoinClient } from './rpclient/sandshrew'
 import { EsploraRpc } from './rpclient/esplora'
@@ -39,6 +39,7 @@ const RequiredPath = [
 export class Oyl {
   private mnemonic: String
   private wallet
+  public network: bitcoin.Network
   public sandshrewBtcClient: SandshrewBitcoinClient
   public esploraRpc: EsploraRpc
   public provider: Providers
@@ -53,6 +54,7 @@ export class Oyl {
     this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg' })
     const rpcUrl = `${options.baseUrl}/${options.version}/${options.projectId}`
     const provider = new Provider(rpcUrl)
+    this.network = getNetwork(options.network)
     this.sandshrewBtcClient = provider.sandshrew
     this.esploraRpc = provider.esplora
     this.fromProvider()
@@ -127,7 +129,7 @@ export class Oyl {
    */
   getTaprootAddress({ publicKey }) {
     try {
-      const address = publicKeyToAddress(publicKey, AddressType.P2TR)
+      const address = publicKeyToAddress(publicKey, AddressType.P2TR, this.network)
       return address
     } catch (err) {
       return err
@@ -166,7 +168,7 @@ export class Oyl {
     hdPath = RequiredPath[3],
   }) {
     try {
-      const wallet = await accounts.importMnemonic(mnemonic, hdPath, addrType)
+      const wallet = await accounts.importMnemonic(mnemonic, hdPath, addrType, this.network)
       this.wallet = wallet
       const meta = await this.getUtxosArtifacts({ address: wallet['address'] })
       const data = {
@@ -219,7 +221,7 @@ export class Oyl {
    */
   async initializeWallet() {
     try {
-      const wallet = new AccountManager()
+      const wallet = new AccountManager({network: this.network})
       const walletPayload = await wallet.initializeAccounts()
       return walletPayload
     } catch (error) {
@@ -235,7 +237,7 @@ export class Oyl {
    * @throws {Error} Throws an error if address derivation fails.
    */
   async getSegwitAddress({ publicKey }) {
-    const address = publicKeyToAddress(publicKey, AddressType.P2WPKH)
+    const address = publicKeyToAddress(publicKey, AddressType.P2WPKH, this.network)
     return address
   }
 
@@ -272,7 +274,7 @@ export class Oyl {
           break
       }
 
-      const wallet = accounts.createWallet(hdPath, addrType)
+      const wallet = accounts.createWallet(hdPath, addrType, this.network)
       return wallet
     } catch (err) {
       return err
@@ -526,6 +528,7 @@ export class Oyl {
       payFeesWithSegwit: payFeesWithSegwit,
       taprootHdPathWithIndex: taprootHdPathWithIndex,
       segwitHdPathWithIndex: segwitHdPathWithIndex,
+      network: this.network
     })
 
     const [result] =
@@ -722,6 +725,7 @@ export class Oyl {
         segwitHdPathWithIndex: hdPaths['segwitPath'],
         taprootHdPathWithIndex: hdPaths['taprootPath'],
         feeRate: options.feeRate,
+        network: this.network
       })
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -750,6 +754,7 @@ export class Oyl {
         segwitHdPathWithIndex: hdPaths['segwitPath'],
         taprootHdPathWithIndex: hdPaths['taprootPath'],
         feeRate: options.feeRate,
+        network: this.network
       })
     } catch (error) {
       console.log(error)
