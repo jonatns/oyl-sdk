@@ -2,21 +2,11 @@ import yargs from 'yargs'
 import { camelCase } from 'change-case'
 import 'dotenv/config'
 import { NESTED_SEGWIT_HD_PATH, Oyl, TAPROOT_HD_PATH } from './oylib'
-import { PSBTTransaction } from './txbuilder/PSBTTransaction'
 import { Aggregator } from './PSBTAggregator'
-import * as transactions from './transactions'
 import * as bitcoin from 'bitcoinjs-lib'
-import { address as PsbtAddress } from 'bitcoinjs-lib'
-import { ToSignInput } from './shared/interface'
-import {
-  assertHex,
-  createSegwitSigner,
-  createTaprootSigner,
-} from './shared/utils'
 import axios from 'axios'
 import * as ecc2 from '@bitcoinerlab/secp256k1'
 import { BuildMarketplaceTransaction } from './txbuilder/buildMarketplaceTransaction'
-import { SandshrewBitcoinClient } from './rpclient/sandshrew'
 
 bitcoin.initEccLib(ecc2)
 
@@ -182,18 +172,6 @@ export async function runCLI() {
     '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be'
   const segwitPubkey =
     '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b'
-  const taprootSigner = await createTaprootSigner({
-    mnemonic,
-    taprootAddress,
-    hdPathWithIndex: taprootHdPathWithIndex,
-  })
-  const segwitSigner = await createSegwitSigner({
-    mnemonic,
-    segwitAddress,
-    hdPathWithIndex: segwitHdPathWithIndex,
-  })
-
-  // const getAddress
 
   const psbtsForTaprootAddressEndingDTM = {
     psbtHex:
@@ -217,9 +195,9 @@ export async function runCLI() {
         mnemonic,
         publicKey: taprootPubkey,
         segwitAddress,
-        segwitHdPathWithIndex,
+        segwitHdPathWithIndex: 'xverse',
         segwitPubkey,
-        taprootHdPathWithIndex,
+        taprootHdPathWithIndex: taprootHdPathWithIndex,
       })
 
       if (taprootResponse) {
