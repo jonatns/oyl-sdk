@@ -273,6 +273,16 @@ export declare class Oyl {
         signedPsbtHex: string;
         signedPsbtBase64: string;
     }>;
+    createSegwitSigner({ mnemonic, segwitAddress, hdPathWithIndex, }: {
+        mnemonic: string;
+        segwitAddress: string;
+        hdPathWithIndex: string;
+    }): Promise<any>;
+    createTaprootSigner({ mnemonic, taprootAddress, hdPathWithIndex, }: {
+        mnemonic: string;
+        taprootAddress: string;
+        hdPathWithIndex: string;
+    }): Promise<any>;
     signInscriptionPsbt(psbt: any, fee: any, pubKey: any, signer: any, address?: string): Promise<any>;
     sendBRC20(options: InscribeTransfer): Promise<unknown>;
     sendOrdCollectible(options: InscribeTransfer): Promise<{

@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import * as bitcoin from 'bitcoinjs-lib';
 import { UnspentOutput, TxInput, IBlockchainInfoUTXO, Network, BitcoinPaymentType, ToSignInput } from '../shared/interface';
+import { Utxo } from '../txbuilder/buildOrdTx';
 export interface IBISWalletIx {
     validity: any;
     isBrc: boolean;
@@ -40,16 +41,6 @@ export declare function checkPaymentType(payment: bitcoin.PaymentCreator, networ
 export declare function tweakSigner(signer: bitcoin.Signer, opts?: any): bitcoin.Signer;
 export declare function satoshisToAmount(val: number): string;
 export declare function delay(ms: number): Promise<unknown>;
-export declare function createSegwitSigner({ mnemonic, segwitAddress, hdPathWithIndex, }: {
-    mnemonic: string;
-    segwitAddress: string;
-    hdPathWithIndex: string;
-}): Promise<any>;
-export declare function createTaprootSigner({ mnemonic, taprootAddress, hdPathWithIndex, }: {
-    mnemonic: string;
-    taprootAddress: string;
-    hdPathWithIndex: string;
-}): Promise<any>;
 export declare function createSigner({ mnemonic, fromAddress, hdPathWithIndex, }: {
     mnemonic: string;
     fromAddress: string;
@@ -70,7 +61,7 @@ export declare const getTheOtherUTXOsToCoverAmount: (address: string, amountNeed
 export declare const getUTXOByAddressTxIDAndVOut: (address: string, txId: string, vOut: number) => Promise<IBlockchainInfoUTXO>;
 export declare function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]): number;
 export declare const getScriptForAddress: (address: string) => Promise<any>;
-export declare const formatOptionsToSignInputs: ({ _psbt, isRevealTx, pubkey, segwitPubkey, segwitAddress, taprootAddress, network }: {
+export declare const formatOptionsToSignInputs: ({ _psbt, isRevealTx, pubkey, segwitPubkey, segwitAddress, taprootAddress, network, }: {
     _psbt: bitcoin.Psbt;
     isRevealTx: boolean;
     pubkey: string;
@@ -80,7 +71,7 @@ export declare const formatOptionsToSignInputs: ({ _psbt, isRevealTx, pubkey, se
     network: bitcoin.Network;
 }) => Promise<ToSignInput[]>;
 export declare const signInputs: (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], taprootPubkey: string, segwitPubKey: string, segwitSigner: any, taprootSigner: any) => Promise<bitcoin.Psbt>;
-export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, feeRate, network }: {
+export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, network, segwitUtxos, taprootUtxos, }: {
     ticker: string;
     amount: number;
     inputAddress: string;
@@ -91,10 +82,12 @@ export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, m
     segwitAddress: string;
     isDry?: boolean;
     feeRate: number;
-    segwitHdPathWithIndex?: string;
-    taprootHdPathWithIndex?: string;
+    taprootSigner: any;
+    segwitSigner: any;
     payFeesWithSegwit?: boolean;
     network: bitcoin.Network;
+    segwitUtxos: Utxo[];
+    taprootUtxos: Utxo[];
 }) => Promise<{
     txnId: any;
     commitRawTxn?: undefined;
@@ -123,7 +116,7 @@ export declare const isP2WPKH: (script: Buffer, network: Network) => BitcoinPaym
 export declare const isP2WSHScript: (script: Buffer, network: Network) => BitcoinPaymentType;
 export declare const isP2SHScript: (script: Buffer, network: Network) => BitcoinPaymentType;
 export declare const isP2TR: (script: Buffer, network: Network) => BitcoinPaymentType;
-export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, feeRate, network }: {
+export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, network, taprootUtxos, segwitUtxos, metaOutputValue, }: {
     inscriptionId: string;
     inputAddress: string;
     outputAddress: string;
@@ -133,10 +126,13 @@ export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddr
     segwitAddress: string;
     isDry?: boolean;
     feeRate: number;
-    segwitHdPathWithIndex?: string;
-    taprootHdPathWithIndex?: string;
+    segwitSigner: any;
+    taprootSigner: any;
     payFeesWithSegwit?: boolean;
     network: bitcoin.Network;
+    taprootUtxos: Utxo[];
+    segwitUtxos: Utxo[];
+    metaOutputValue: number;
 }) => Promise<{
     txnId: string;
     rawTxn: string;
@@ -146,7 +142,7 @@ export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddr
     txnId?: undefined;
     rawTxn?: undefined;
 }>;
-export declare const createBtcTx: ({ inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, feeRate, amount, network }: {
+export declare const createBtcTx: ({ inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, amount, network, segwitUtxos, taprootUtxos, }: {
     inputAddress: string;
     outputAddress: string;
     mnemonic: string;
@@ -155,11 +151,13 @@ export declare const createBtcTx: ({ inputAddress, outputAddress, mnemonic, tapr
     segwitAddress: string;
     isDry?: boolean;
     feeRate: number;
-    segwitHdPathWithIndex?: string;
-    taprootHdPathWithIndex?: string;
+    segwitSigner: any;
+    taprootSigner: any;
     payFeesWithSegwit?: boolean;
     amount: number;
     network: bitcoin.Network;
+    segwitUtxos: Utxo[];
+    taprootUtxos: Utxo[];
 }) => Promise<{
     txnId: string;
     rawTxn: string;
