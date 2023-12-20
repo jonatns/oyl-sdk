@@ -192,6 +192,18 @@ export class OylApiClient {
       return response
     }
 
+     /**
+   * Get Omnisat offer psbt.
+   * @param offerId - The offer Id to query.
+   */
+     async getOmnisatOfferPsbt({ offerId, ticker }: { offerId: string, ticker: string }): Promise<any> {
+      const response = await this._call('/get-omnisat-offer-psbt', 'post', {
+        offerId: offerId,
+        ticker: ticker
+      })
+      return response
+    }
+
   /**
    * Initialize a swap bid.
    * @param params - Parameters for the bid.
