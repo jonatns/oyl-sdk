@@ -283,6 +283,11 @@ export declare class Oyl {
         taprootAddress: string;
         hdPathWithIndex: string;
     }): Promise<any>;
+    createSigner({ mnemonic, fromAddress, hdPathWithIndex, }: {
+        mnemonic: string;
+        fromAddress: string;
+        hdPathWithIndex: string;
+    }): Promise<any>;
     signInscriptionPsbt(psbt: any, fee: any, pubKey: any, signer: any, address?: string): Promise<any>;
     sendBRC20(options: InscribeTransfer): Promise<unknown>;
     sendOrdCollectible(options: InscribeTransfer): Promise<{

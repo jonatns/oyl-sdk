@@ -41,11 +41,6 @@ export declare function checkPaymentType(payment: bitcoin.PaymentCreator, networ
 export declare function tweakSigner(signer: bitcoin.Signer, opts?: any): bitcoin.Signer;
 export declare function satoshisToAmount(val: number): string;
 export declare function delay(ms: number): Promise<unknown>;
-export declare function createSigner({ mnemonic, fromAddress, hdPathWithIndex, }: {
-    mnemonic: string;
-    fromAddress: string;
-    hdPathWithIndex: string;
-}): Promise<any>;
 export declare function amountToSatoshis(val: any): number;
 export declare const validator: (pubkey: Buffer, msghash: Buffer, signature: Buffer) => boolean;
 export declare function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput;

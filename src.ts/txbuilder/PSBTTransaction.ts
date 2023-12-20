@@ -238,17 +238,8 @@ export class PSBTTransaction {
           internalPubkey: tapInternalKey,
           network: psbtNetwork,
         })
-
-        const p2wpkh = bitcoin.payments.p2wpkh({
-          pubkey: Buffer.from(this.segwitPubKey, 'hex'),
-        })
-        const p2sh = bitcoin.payments.p2sh({ redeem: p2wpkh })
-
         const scriptPubkeyHash = v.witnessUtxo?.script.toString('hex')
         const isSameTapScript = scriptPubkeyHash == p2tr.output?.toString('hex')
-        const isSameSegwitScript =
-          scriptPubkeyHash == p2sh.output?.toString('hex')
-
         if (isSameTapScript) {
           v.tapInternalKey = tapInternalKey
           toSignInputs.push({
@@ -256,16 +247,24 @@ export class PSBTTransaction {
             publicKey: this.pubkey,
             sighashTypes: v.sighashType ? [v.sighashType] : undefined,
           })
-        } else if (isSameSegwitScript) {
+        }
+        if (this.segwitPubKey){
+        const p2wpkh = bitcoin.payments.p2wpkh({
+          pubkey: Buffer.from(this.segwitPubKey, 'hex'),
+        })
+        const p2sh = bitcoin.payments.p2sh({ redeem: p2wpkh })
+        const isSameSegwitScript = scriptPubkeyHash == p2sh.output?.toString('hex')
+        if (isSameSegwitScript) {
           v.redeemScript = p2sh.redeem.output
           toSignInputs.push({
             index: index,
             publicKey: this.segwitPubKey,
             sighashTypes: v.sighashType ? [v.sighashType] : undefined,
           })
-        } else {
+        } else if (!isSameTapScript) {
           console.log("YO DON'T HAVE THE KEY!")
         }
+      }
       }
     })
 
