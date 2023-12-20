@@ -3,6 +3,7 @@ import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
 import { AddressType, InscribeTransfer, NetworkOptions, ProviderOptions, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
+import * as bitcoin from 'bitcoinjs-lib';
 export declare const NESTED_SEGWIT_HD_PATH = "m/49'/0'/0'/0";
 export declare const TAPROOT_HD_PATH = "m/86'/0'/0'/0";
 export declare const SEGWIT_HD_PATH = "m/84'/0'/0'/0";
@@ -10,6 +11,7 @@ export declare const LEGACY_HD_PATH = "m/44'/0'/0'/0";
 export declare class Oyl {
     private mnemonic;
     private wallet;
+    network: bitcoin.Network;
     sandshrewBtcClient: SandshrewBitcoinClient;
     esploraRpc: EsploraRpc;
     provider: Providers;
@@ -271,6 +273,16 @@ export declare class Oyl {
         signedPsbtHex: string;
         signedPsbtBase64: string;
     }>;
+    createSegwitSigner({ mnemonic, segwitAddress, hdPathWithIndex, }: {
+        mnemonic: string;
+        segwitAddress: string;
+        hdPathWithIndex: string;
+    }): Promise<any>;
+    createTaprootSigner({ mnemonic, taprootAddress, hdPathWithIndex, }: {
+        mnemonic: string;
+        taprootAddress: string;
+        hdPathWithIndex: string;
+    }): Promise<any>;
     signInscriptionPsbt(psbt: any, fee: any, pubKey: any, signer: any, address?: string): Promise<any>;
     sendBRC20(options: InscribeTransfer): Promise<unknown>;
     sendOrdCollectible(options: InscribeTransfer): Promise<{

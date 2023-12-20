@@ -13,7 +13,7 @@ import {
   addressTypeToName,
 } from '../shared/interface'
 import BigNumber from 'bignumber.js'
-import { UTXO_DUST, maximumScriptBytes } from './constants'
+import { maximumScriptBytes } from './constants'
 import axios from 'axios'
 import { getUnspentOutputs, getAddressType } from '../transactions'
 import { Oyl } from '../oylib'
@@ -138,86 +138,6 @@ export function satoshisToAmount(val: number) {
 
 export function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-export async function createSegwitSigner({
-  mnemonic,
-  segwitAddress,
-  hdPathWithIndex,
-}: {
-  mnemonic: string
-  segwitAddress: string
-  hdPathWithIndex: string
-}) {
-  if (segwitAddress) {
-    let payload: any
-    const wallet = new Oyl()
-    const segwitAddressType = getAddressType(segwitAddress)
-    if (segwitAddressType == null) {
-      throw Error('Unrecognized Address Type')
-    }
-    payload = await wallet.fromPhrase({
-      mnemonic: mnemonic.trim(),
-      hdPath: hdPathWithIndex,
-      addrType: segwitAddressType,
-    })
-    const segwitKeyring = payload.keyring.keyring
-    const segwitSigner = segwitKeyring.signTransaction.bind(segwitKeyring)
-    return segwitSigner
-  }
-  return undefined
-}
-
-export async function createTaprootSigner({
-  mnemonic,
-  taprootAddress,
-  hdPathWithIndex,
-}: {
-  mnemonic: string
-  taprootAddress: string
-  hdPathWithIndex: string
-}) {
-  const addressType = getAddressType(taprootAddress)
-  if (addressType == null) {
-    throw Error('Unrecognized Address Type')
-  }
-  const tapWallet = new Oyl()
-
-  const tapPayload = await tapWallet.fromPhrase({
-    mnemonic: mnemonic.trim(),
-    hdPath: hdPathWithIndex,
-    addrType: addressType,
-  })
-
-  const tapKeyring = tapPayload.keyring.keyring
-  const taprootSigner = tapKeyring.signTransaction.bind(tapKeyring)
-  return taprootSigner
-}
-
-export async function createSigner({
-  mnemonic,
-  fromAddress,
-  hdPathWithIndex,
-}: {
-  mnemonic: string
-  fromAddress: string
-  hdPathWithIndex: string
-}) {
-  const addressType = getAddressType(fromAddress)
-  if (addressType == null) {
-    throw Error('Unrecognized Address Type')
-  }
-  const tapWallet = new Oyl()
-
-  const tapPayload = await tapWallet.fromPhrase({
-    mnemonic: mnemonic.trim(),
-    hdPath: hdPathWithIndex,
-    addrType: addressType,
-  })
-
-  const tapKeyring = tapPayload.keyring.keyring
-  const taprootSigner = tapKeyring.signTransaction.bind(tapKeyring)
-  return taprootSigner
 }
 
 export function amountToSatoshis(val: any) {
@@ -542,6 +462,7 @@ export const formatOptionsToSignInputs = async ({
   segwitPubkey,
   segwitAddress,
   taprootAddress,
+  network,
 }: {
   _psbt: bitcoin.Psbt
   isRevealTx: boolean
@@ -549,9 +470,10 @@ export const formatOptionsToSignInputs = async ({
   segwitPubkey: string
   segwitAddress: string
   taprootAddress: string
+  network: bitcoin.Network
 }) => {
   let toSignInputs: ToSignInput[] = []
-  const psbtNetwork = bitcoin.networks.bitcoin
+  const psbtNetwork = network
   try {
     let index = 0
     for await (const v of _psbt.data.inputs) {
@@ -652,10 +574,13 @@ export const inscribe = async ({
   segwitPublicKey,
   segwitAddress,
   isDry,
-  segwitHdPathWithIndex,
-  taprootHdPathWithIndex,
+  segwitSigner,
+  taprootSigner,
   payFeesWithSegwit = true,
   feeRate,
+  network,
+  segwitUtxos,
+  taprootUtxos,
 }: {
   ticker: string
   amount: number
@@ -667,9 +592,12 @@ export const inscribe = async ({
   segwitAddress: string
   isDry?: boolean
   feeRate: number
-  segwitHdPathWithIndex?: string
-  taprootHdPathWithIndex?: string
+  taprootSigner: any
+  segwitSigner: any
   payFeesWithSegwit?: boolean
+  network: bitcoin.Network
+  segwitUtxos: Utxo[]
+  taprootUtxos: Utxo[]
 }) => {
   // const fastestFee = await getRecommendedBTCFeesMempool()
   try {
@@ -685,18 +613,7 @@ export const inscribe = async ({
     const [tpubkey, cblock] = Tap.getPubKey(pubKey, { target: tapleaf })
     const inscriberAddress = Address.p2tr.fromPubKey(tpubkey)
 
-    const wallet = new Oyl()
     const psbt = new bitcoin.Psbt()
-
-    const taprootUtxos = await wallet.getUtxosArtifacts({
-      address: inputAddress,
-    })
-    let segwitUtxos: any[] | undefined
-    if (segwitAddress) {
-      segwitUtxos = await wallet.getUtxosArtifacts({
-        address: segwitAddress,
-      })
-    }
 
     const inputs = 1
     const revealVb = calculateTaprootTxSize(inputs, 0, 1)
@@ -716,6 +633,7 @@ export const inscribe = async ({
       feeRate: feeRate,
       taprootAddress: inputAddress,
       segwitPubKey: segwitPublicKey,
+      network,
     })
 
     const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
@@ -725,18 +643,7 @@ export const inscribe = async ({
       segwitPubkey: segwitPublicKey,
       segwitAddress: segwitAddress,
       taprootAddress: inputAddress,
-    })
-
-    const taprootSigner = await createTaprootSigner({
-      mnemonic: mnemonic,
-      taprootAddress: inputAddress,
-      hdPathWithIndex: taprootHdPathWithIndex,
-    })
-
-    const segwitSigner = await createSegwitSigner({
-      mnemonic: mnemonic,
-      segwitAddress: segwitAddress,
-      hdPathWithIndex: segwitHdPathWithIndex,
+      network,
     })
 
     const signedPsbt = await signInputs(
@@ -1064,10 +971,14 @@ export const sendCollectible = async ({
   segwitPublicKey,
   segwitAddress,
   isDry,
-  segwitHdPathWithIndex,
-  taprootHdPathWithIndex,
+  segwitSigner,
+  taprootSigner,
   payFeesWithSegwit = true,
   feeRate,
+  network,
+  taprootUtxos,
+  segwitUtxos,
+  metaOutputValue,
 }: {
   inscriptionId: string
   inputAddress: string
@@ -1078,38 +989,18 @@ export const sendCollectible = async ({
   segwitAddress: string
   isDry?: boolean
   feeRate: number
-  segwitHdPathWithIndex?: string
-  taprootHdPathWithIndex?: string
+  segwitSigner: any
+  taprootSigner: any
   payFeesWithSegwit?: boolean
+  network: bitcoin.Network
+  taprootUtxos: Utxo[]
+  segwitUtxos: Utxo[]
+  metaOutputValue: number
 }) => {
   //const fastestFee = await getRecommendedBTCFeesMempool()
   try {
-    const wallet = new Oyl()
     const psbt = new bitcoin.Psbt()
 
-    const taprootUtxos: any[] = await wallet.getUtxosArtifacts({
-      address: inputAddress,
-    })
-    let segwitUtxos: any[] | undefined
-    if (segwitAddress) {
-      segwitUtxos = await wallet.getUtxosArtifacts({
-        address: segwitAddress,
-      })
-    }
-
-    const { data: collectibleData } =
-      await new Oyl().apiClient.getCollectiblesById(inscriptionId)
-
-    const metaOffset = collectibleData.satpoint.charAt(
-      collectibleData.satpoint.length - 1
-    )
-
-    const metaOutputValue = collectibleData.output_value || 10000
-
-    const minOrdOutputValue = Math.max(metaOffset, UTXO_DUST)
-    if (metaOutputValue < minOrdOutputValue) {
-      throw Error(`OutputValue must be at least ${minOrdOutputValue}`)
-    }
     const utxosToSend = await insertCollectibleUtxo({
       taprootUtxos: taprootUtxos,
       inscriptionId: inscriptionId,
@@ -1129,6 +1020,7 @@ export const sendCollectible = async ({
       taprootAddress: inputAddress,
       segwitPubKey: segwitPublicKey,
       utxosToSend: utxosToSend,
+      network,
     })
 
     const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
@@ -1138,18 +1030,7 @@ export const sendCollectible = async ({
       segwitPubkey: segwitPublicKey,
       segwitAddress: segwitAddress,
       taprootAddress: inputAddress,
-    })
-
-    const taprootSigner = await createTaprootSigner({
-      mnemonic: mnemonic,
-      taprootAddress: inputAddress,
-      hdPathWithIndex: taprootHdPathWithIndex,
-    })
-
-    const segwitSigner = await createSegwitSigner({
-      mnemonic: mnemonic,
-      segwitAddress: segwitAddress,
-      hdPathWithIndex: segwitHdPathWithIndex,
+      network,
     })
 
     const signedPsbt = await signInputs(
@@ -1220,6 +1101,7 @@ const insertBtcUtxo = async ({
   amount,
   sendFromSegwit,
   segwitPubKey,
+  network,
 }: {
   taprootUtxos: any[]
   segwitUtxos: any[]
@@ -1229,6 +1111,7 @@ const insertBtcUtxo = async ({
   amount: number
   sendFromSegwit: boolean
   segwitPubKey: string
+  network: bitcoin.Network
 }) => {
   try {
     let nonMetaUtxos: any[]
@@ -1245,6 +1128,7 @@ const insertBtcUtxo = async ({
       amount: amount,
       fromAddress: fromAddress,
       segwitPubKey: segwitPubKey,
+      network,
     })
   } catch (error) {
     console.log(error)
@@ -1276,6 +1160,7 @@ const addBTCUtxo = async ({
   amount,
   fromAddress,
   segwitPubKey,
+  network,
 }: {
   utxos: Utxo[]
   toAddress: string
@@ -1283,6 +1168,7 @@ const addBTCUtxo = async ({
   amount: number
   fromAddress: string
   segwitPubKey: string
+  network: bitcoin.Network
 }) => {
   const utxosTosend = findUtxosForFees(utxos, amount)
 
@@ -1297,12 +1183,12 @@ const addBTCUtxo = async ({
     try {
       const p2wpkh = bitcoin.payments.p2wpkh({
         pubkey: Buffer.from(segwitPubKey, 'hex'),
-        network: bitcoin.networks.bitcoin,
+        network: network,
       })
 
       const p2sh = bitcoin.payments.p2sh({
         redeem: p2wpkh,
-        network: bitcoin.networks.bitcoin,
+        network: network,
       })
 
       redeemScript = p2sh.redeem.output
@@ -1348,11 +1234,14 @@ export const createBtcTx = async ({
   segwitPublicKey,
   segwitAddress,
   isDry,
-  segwitHdPathWithIndex,
-  taprootHdPathWithIndex,
+  segwitSigner,
+  taprootSigner,
   payFeesWithSegwit = true,
   feeRate,
   amount,
+  network,
+  segwitUtxos,
+  taprootUtxos,
 }: {
   inputAddress: string
   outputAddress: string
@@ -1362,24 +1251,17 @@ export const createBtcTx = async ({
   segwitAddress: string
   isDry?: boolean
   feeRate: number
-  segwitHdPathWithIndex?: string
-  taprootHdPathWithIndex?: string
+  segwitSigner: any
+  taprootSigner: any
   payFeesWithSegwit?: boolean
   amount: number
+  network: bitcoin.Network
+  segwitUtxos: Utxo[]
+  taprootUtxos: Utxo[]
 }) => {
   try {
-    const wallet = new Oyl()
     const psbt = new bitcoin.Psbt()
 
-    const taprootUtxos: any[] = await wallet.getUtxosArtifacts({
-      address: inputAddress,
-    })
-    let segwitUtxos: any[] | undefined
-    if (segwitAddress) {
-      segwitUtxos = await wallet.getUtxosArtifacts({
-        address: segwitAddress,
-      })
-    }
     const inputAddressType = addressTypeMap[getAddressType(inputAddress)]
 
     const isSentFromSegwit =
@@ -1395,6 +1277,7 @@ export const createBtcTx = async ({
       sendFromSegwit: isSentFromSegwit,
       segwitPubKey: segwitPublicKey,
       fromAddress: inputAddress,
+      network,
     })
 
     await getUtxosForFees({
@@ -1407,6 +1290,7 @@ export const createBtcTx = async ({
       feeRate: feeRate,
       taprootAddress: inputAddress,
       segwitPubKey: segwitPublicKey,
+      network,
     })
 
     const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
@@ -1416,18 +1300,7 @@ export const createBtcTx = async ({
       segwitPubkey: segwitPublicKey,
       segwitAddress: segwitAddress,
       taprootAddress: inputAddress,
-    })
-
-    const taprootSigner = await createTaprootSigner({
-      mnemonic: mnemonic,
-      taprootAddress: inputAddress,
-      hdPathWithIndex: taprootHdPathWithIndex,
-    })
-
-    const segwitSigner = await createSegwitSigner({
-      mnemonic: mnemonic,
-      segwitAddress: segwitAddress,
-      hdPathWithIndex: segwitHdPathWithIndex,
+      network,
     })
 
     const signedPsbt = await signInputs(

@@ -1,8 +1,14 @@
-import { defaultNetworkOptions } from './shared/constants'
+import { UTXO_DUST, defaultNetworkOptions } from './shared/constants'
 
 import { PSBTTransaction } from './txbuilder'
 
-import { delay, inscribe, sendCollectible, createBtcTx } from './shared/utils'
+import {
+  delay,
+  inscribe,
+  sendCollectible,
+  createBtcTx,
+  getNetwork,
+} from './shared/utils'
 import BcoinRpc from './rpclient'
 import { SandshrewBitcoinClient } from './rpclient/sandshrew'
 import { EsploraRpc } from './rpclient/esplora'
@@ -39,6 +45,7 @@ const RequiredPath = [
 export class Oyl {
   private mnemonic: String
   private wallet
+  public network: bitcoin.Network
   public sandshrewBtcClient: SandshrewBitcoinClient
   public esploraRpc: EsploraRpc
   public provider: Providers
@@ -53,6 +60,7 @@ export class Oyl {
     this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg' })
     const rpcUrl = `${options.baseUrl}/${options.version}/${options.projectId}`
     const provider = new Provider(rpcUrl)
+    this.network = getNetwork(options.network)
     this.sandshrewBtcClient = provider.sandshrew
     this.esploraRpc = provider.esplora
     this.fromProvider()
@@ -127,7 +135,11 @@ export class Oyl {
    */
   getTaprootAddress({ publicKey }) {
     try {
-      const address = publicKeyToAddress(publicKey, AddressType.P2TR)
+      const address = publicKeyToAddress(
+        publicKey,
+        AddressType.P2TR,
+        this.network
+      )
       return address
     } catch (err) {
       return err
@@ -166,7 +178,12 @@ export class Oyl {
     hdPath = RequiredPath[3],
   }) {
     try {
-      const wallet = await accounts.importMnemonic(mnemonic, hdPath, addrType)
+      const wallet = await accounts.importMnemonic(
+        mnemonic,
+        hdPath,
+        addrType,
+        this.network
+      )
       this.wallet = wallet
       const meta = await this.getUtxosArtifacts({ address: wallet['address'] })
       const data = {
@@ -219,7 +236,7 @@ export class Oyl {
    */
   async initializeWallet() {
     try {
-      const wallet = new AccountManager()
+      const wallet = new AccountManager({ network: this.network })
       const walletPayload = await wallet.initializeAccounts()
       return walletPayload
     } catch (error) {
@@ -235,7 +252,11 @@ export class Oyl {
    * @throws {Error} Throws an error if address derivation fails.
    */
   async getSegwitAddress({ publicKey }) {
-    const address = publicKeyToAddress(publicKey, AddressType.P2WPKH)
+    const address = publicKeyToAddress(
+      publicKey,
+      AddressType.P2WPKH,
+      this.network
+    )
     return address
   }
 
@@ -272,7 +293,7 @@ export class Oyl {
           break
       }
 
-      const wallet = accounts.createWallet(hdPath, addrType)
+      const wallet = accounts.createWallet(hdPath, addrType, this.network)
       return wallet
     } catch (err) {
       return err
@@ -514,6 +535,29 @@ export class Oyl {
     taprootHdPathWithIndex: string
     payFeesWithSegwit?: boolean
   }) {
+    const hdPaths = customPaths[segwitHdPathWithIndex]
+    const taprootSigner = await this.createTaprootSigner({
+      mnemonic: mnemonic,
+      taprootAddress: from,
+      hdPathWithIndex: hdPaths['taprootPath'],
+    })
+
+    const segwitSigner = await this.createSegwitSigner({
+      mnemonic: mnemonic,
+      segwitAddress: segwitAddress,
+      hdPathWithIndex: hdPaths['segwitPath'],
+    })
+
+    const taprootUtxos = await this.getUtxosArtifacts({
+      address: from,
+    })
+    let segwitUtxos: any[] | undefined
+    if (segwitAddress) {
+      segwitUtxos = await this.getUtxosArtifacts({
+        address: segwitAddress,
+      })
+    }
+
     const { txnId, rawTxn } = await createBtcTx({
       inputAddress: from,
       outputAddress: to,
@@ -524,8 +568,11 @@ export class Oyl {
       taprootPublicKey: publicKey,
       mnemonic: mnemonic,
       payFeesWithSegwit: payFeesWithSegwit,
-      taprootHdPathWithIndex: taprootHdPathWithIndex,
-      segwitHdPathWithIndex: segwitHdPathWithIndex,
+      taprootSigner: taprootSigner,
+      segwitSigner: segwitSigner,
+      network: this.network,
+      segwitUtxos: segwitUtxos,
+      taprootUtxos: taprootUtxos,
     })
 
     const [result] =
@@ -678,6 +725,83 @@ export class Oyl {
     }
   }
 
+  async createSegwitSigner({
+    mnemonic,
+    segwitAddress,
+    hdPathWithIndex,
+  }: {
+    mnemonic: string
+    segwitAddress: string
+    hdPathWithIndex: string
+  }) {
+    if (segwitAddress) {
+      let payload: any
+      const segwitAddressType = transactions.getAddressType(segwitAddress)
+      if (segwitAddressType == null) {
+        throw Error('Unrecognized Address Type')
+      }
+      payload = await this.fromPhrase({
+        mnemonic: mnemonic.trim(),
+        hdPath: hdPathWithIndex,
+        addrType: segwitAddressType,
+      })
+      const segwitKeyring = payload.keyring.keyring
+      const segwitSigner = segwitKeyring.signTransaction.bind(segwitKeyring)
+      return segwitSigner
+    }
+    return undefined
+  }
+
+  async createTaprootSigner({
+    mnemonic,
+    taprootAddress,
+    hdPathWithIndex,
+  }: {
+    mnemonic: string
+    taprootAddress: string
+    hdPathWithIndex: string
+  }) {
+    const addressType = transactions.getAddressType(taprootAddress)
+    if (addressType == null) {
+      throw Error('Unrecognized Address Type')
+    }
+
+    const tapPayload = await this.fromPhrase({
+      mnemonic: mnemonic.trim(),
+      hdPath: hdPathWithIndex,
+      addrType: addressType,
+    })
+
+    const tapKeyring = tapPayload.keyring.keyring
+    const taprootSigner = tapKeyring.signTransaction.bind(tapKeyring)
+    return taprootSigner
+  }
+
+  async createSigner({
+    mnemonic,
+    fromAddress,
+    hdPathWithIndex,
+  }: {
+    mnemonic: string
+    fromAddress: string
+    hdPathWithIndex: string
+  }) {
+    const addressType = transactions.getAddressType(fromAddress)
+    if (addressType == null) {
+      throw Error('Unrecognized Address Type')
+    }
+
+    const tapPayload = await this.fromPhrase({
+      mnemonic: mnemonic.trim(),
+      hdPath: hdPathWithIndex,
+      addrType: addressType,
+    })
+
+    const tapKeyring = tapPayload.keyring.keyring
+    const taprootSigner = tapKeyring.signTransaction.bind(tapKeyring)
+    return taprootSigner
+  }
+
   async signInscriptionPsbt(psbt, fee, pubKey, signer, address = '') {
     //INITIALIZE NEW PSBTTransaction INSTANCE
     const wallet = new Oyl()
@@ -706,6 +830,28 @@ export class Oyl {
   async sendBRC20(options: InscribeTransfer) {
     await isDryDisclaimer(options.isDry)
     const hdPaths = customPaths[options.segwitHdPath]
+
+    const taprootUtxos = await this.getUtxosArtifacts({
+      address: options.fromAddress,
+    })
+    let segwitUtxos: any[] | undefined
+    if (options.segwitAddress) {
+      segwitUtxos = await this.getUtxosArtifacts({
+        address: options.segwitAddress,
+      })
+    }
+
+    const taprootSigner = await this.createTaprootSigner({
+      mnemonic: options.mnemonic,
+      taprootAddress: options.fromAddress,
+      hdPathWithIndex: hdPaths['taprootPath'],
+    })
+
+    const segwitSigner = await this.createSegwitSigner({
+      mnemonic: options.mnemonic,
+      segwitAddress: options.segwitAddress,
+      hdPathWithIndex: hdPaths['segwitPath'],
+    })
     try {
       // CREATE TRANSFER INSCRIPTION
       return await inscribe({
@@ -719,9 +865,12 @@ export class Oyl {
         segwitAddress: options.segwitAddress,
         isDry: options.isDry,
         payFeesWithSegwit: options.payFeesWithSegwit,
-        segwitHdPathWithIndex: hdPaths['segwitPath'],
-        taprootHdPathWithIndex: hdPaths['taprootPath'],
+        segwitSigner: segwitSigner,
+        taprootSigner: taprootSigner,
         feeRate: options.feeRate,
+        network: this.network,
+        segwitUtxos: segwitUtxos,
+        taprootUtxos: taprootUtxos,
       })
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -737,6 +886,42 @@ export class Oyl {
     await isDryDisclaimer(options.isDry)
     const hdPaths = customPaths[options.segwitHdPath]
     try {
+      const taprootUtxos: any[] = await this.getUtxosArtifacts({
+        address: options.fromAddress,
+      })
+      let segwitUtxos: any[] | undefined
+      if (options.segwitAddress) {
+        segwitUtxos = await this.getUtxosArtifacts({
+          address: options.segwitAddress,
+        })
+      }
+
+      const { data: collectibleData } =
+        await this.apiClient.getCollectiblesById(options.inscriptionId)
+
+      const metaOffset = collectibleData.satpoint.charAt(
+        collectibleData.satpoint.length - 1
+      )
+
+      const metaOutputValue = collectibleData.output_value || 10000
+
+      const minOrdOutputValue = Math.max(metaOffset, UTXO_DUST)
+      if (metaOutputValue < minOrdOutputValue) {
+        throw Error(`OutputValue must be at least ${minOrdOutputValue}`)
+      }
+
+      const taprootSigner = await this.createTaprootSigner({
+        mnemonic: options.mnemonic,
+        taprootAddress: options.fromAddress,
+        hdPathWithIndex: hdPaths['taprootPath'],
+      })
+
+      const segwitSigner = await this.createSegwitSigner({
+        mnemonic: options.mnemonic,
+        segwitAddress: options.segwitAddress,
+        hdPathWithIndex: hdPaths['segwitPath'],
+      })
+
       return await sendCollectible({
         inscriptionId: options.inscriptionId,
         inputAddress: options.fromAddress,
@@ -747,9 +932,13 @@ export class Oyl {
         segwitAddress: options.segwitAddress,
         isDry: options.isDry,
         payFeesWithSegwit: options.payFeesWithSegwit,
-        segwitHdPathWithIndex: hdPaths['segwitPath'],
-        taprootHdPathWithIndex: hdPaths['taprootPath'],
+        segwitSigner: segwitSigner,
+        taprootSigner: taprootSigner,
         feeRate: options.feeRate,
+        network: this.network,
+        taprootUtxos: taprootUtxos,
+        segwitUtxos: segwitUtxos,
+        metaOutputValue: metaOutputValue,
       })
     } catch (error) {
       console.log(error)

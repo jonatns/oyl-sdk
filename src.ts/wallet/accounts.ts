@@ -8,15 +8,15 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { HdKeyring } from './hdKeyring'
 import { AddressType } from '../shared/interface'
 
-export function createWallet(hdPathString: string, type: AddressType) {
+export function createWallet(hdPathString: string, type: AddressType, network: bitcoin.Network) {
   // Create a new instance of HdKeyring with the provided hdPathString
-  const keyring = new HdKeyring({ hdPath: hdPathString })
+  const keyring = new HdKeyring({ hdPath: hdPathString, network })
   // Add a single account to the keyring
   keyring.addAccounts(1)
   // Get the first account public key
   const accounts = keyring.getAccounts()
   const pubkey = accounts[0]
-  const address = publicKeyToAddress(pubkey, type)
+  const address = publicKeyToAddress(pubkey, type, network)
   if (address == null) throw Error('Invalid publickey or address type')
   const fullPayload = {}
   fullPayload['keyring'] = keyring
@@ -25,8 +25,7 @@ export function createWallet(hdPathString: string, type: AddressType) {
   return fullPayload
 }
 
-export function publicKeyToAddress(publicKey: string, type: AddressType) {
-  const network = bitcoin.networks.bitcoin
+export function publicKeyToAddress(publicKey: string, type: AddressType, network: bitcoin.Network) {
   if (!publicKey) return null
   const pubkey = Buffer.from(publicKey, 'hex')
   if (type === AddressType.P2PKH) {
@@ -59,7 +58,7 @@ export function publicKeyToAddress(publicKey: string, type: AddressType) {
 
 export function isValidAddress(
   address: string,
-  network: bitcoin.Network = bitcoin.networks.bitcoin
+  network: bitcoin.Network
 ) {
   let error
   try {
@@ -77,16 +76,17 @@ export function isValidAddress(
 export async function importMnemonic(
   mnemonic: string,
   path: string,
-  type: AddressType
+  type: AddressType,
+  network: bitcoin.Network
 ) {
-  const keyring = await new HdKeyring({ mnemonic: mnemonic, hdPath: path })
+  const keyring = await new HdKeyring({ mnemonic: mnemonic, hdPath: path, network })
   // Add a single account to the keyring
   await keyring.addAccounts(1)
   // Get the first account public key
   const accounts = await keyring.getAccounts()
   //console.log(accounts);
   const pubkey = accounts[0]
-  const address = publicKeyToAddress(pubkey, type)
+  const address = publicKeyToAddress(pubkey, type, network)
   if (address == null) throw Error('Invalid publickey or address type')
   const fullPayload = {}
   fullPayload['keyring'] = keyring
