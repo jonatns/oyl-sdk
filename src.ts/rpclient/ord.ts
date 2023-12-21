@@ -40,7 +40,8 @@ export class OrdRpc {
     return await this._call('ord_inscription', [inscriptionId])
   }
   async getInscriptionContent(inscriptionId: string) {
-    return await this._call('ord_content', [inscriptionId])
+    const resp = await this._call('ord_content', [inscriptionId])
+    return Buffer.from(resp).toString('base64')
   }
   async getInscriptionByNumber(number: string) {
     return await this._call('ord_inscription', [number])

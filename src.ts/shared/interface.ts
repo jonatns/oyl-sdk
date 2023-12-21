@@ -149,7 +149,7 @@ export interface ProviderOptions {
 export interface RecoverAccountOptions {
   mnemonic?: string
   activeIndexes?: number[]
-  customPath?: 'xverse' | 'leather' | 'unisat',
+  customPath?: 'xverse' | 'leather' | 'unisat'
   network: bitcoin.Network
 }
 
@@ -180,11 +180,11 @@ export interface FeeEstimatorOptions {
 }
 
 export interface MarketplaceBuy {
-   address: string 
-   pubKey: string 
-   feeRate: number
-   psbtBase64: string
-   price: number 
+  address: string
+  pubKey: string
+  feeRate: number
+  psbtBase64: string
+  price: number
 }
 
 export interface IBlockchainInfoUTXO {
@@ -257,18 +257,18 @@ export interface NetworkOptions {
    * Base URL of the network, may include port. Defaults to sandshrew.io "mainnet" URL.
    * Example: 'https://mainnet.sandshrew.io' or 'http://localhost:3000'
    */
-  baseUrl?: string;
+  baseUrl?: string
 
   /**
    * RPC version, allows for future upgrades. Defaults to "v1"
    * Example: 'v1'
    */
-  version?: string;
+  version?: string
 
   /**
    * ProjectId is used as an API key for local test servers. Defaults to mainnet API key
    */
-  projectId?: string;
+  projectId?: string
 
   network: 'mainnet' | 'testnet' | 'regtest'
 }

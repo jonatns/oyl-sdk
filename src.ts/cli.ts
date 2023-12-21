@@ -264,7 +264,7 @@ export async function runCLI() {
       return await testAggregator()
       break
     case 'ord-test':
-      const testCase = await tapWallet.ordRpc.getInscriptionById(
+      const testCase = await tapWallet.ordRpc.getInscriptionContent(
         '6c51990395726ddbd922a3318b5713bb318da8be6aa199ee79cf9bdb6c91e37ai0'
       )
       console.log(testCase)
