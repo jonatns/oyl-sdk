@@ -141,22 +141,6 @@ export const callBTCRPCEndpoint = async (
     })
 }
 
-// async function createOrdPsbtTx() {
-//   const wallet = new Oyl()
-//   const test0 = await wallet.createOrdPsbtTx({
-//     changeAddress: '',
-//     fromAddress: '',
-//     inscriptionId: '',
-//     taprootPubKey: '',
-//     segwitAddress: '',
-//     segwitPubKey: '',
-//     toAddress: '',
-//     txFee: 0,
-//     mnemonic: '',
-//   })
-//   console.log(test0)
-// }
-
 export async function runCLI() {
   const [command] = yargs.argv._
   const options = Object.assign({}, yargs.argv)
@@ -278,6 +262,13 @@ export async function runCLI() {
       break
     case 'aggregate':
       return await testAggregator()
+      break
+    case 'ord-test':
+      const testCase = await tapWallet.ordRpc.getInscriptionById(
+        '6c51990395726ddbd922a3318b5713bb318da8be6aa199ee79cf9bdb6c91e37ai0'
+      )
+      console.log(testCase)
+      return
       break
     case 'txn-history':
       const test = new Oyl()
