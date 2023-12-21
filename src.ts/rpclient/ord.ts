@@ -10,7 +10,7 @@ export class OrdRpc {
       jsonrpc: '2.0',
       method: method,
       params: params,
-      id: 1,
+      id: 2,
     }
 
     const requestOptions = {
