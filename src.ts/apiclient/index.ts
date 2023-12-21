@@ -125,7 +125,7 @@ export class OylApiClient {
   async getCollectiblesByAddress(address: string): Promise<any> {
     return await this._call('/get-inscriptions', 'post', {
       address: address,
-      exclude_brc20: false,
+      exclude_brc20: true,
     })
   }
 
@@ -165,7 +165,7 @@ export class OylApiClient {
     const response = await this._call('/get-token-unisat-offers', 'post', {
       ticker: ticker,
     })
-    if (response.error) throw Error (response.error)
+    if (response.error) throw Error(response.error)
     return response.data.list
   }
 
@@ -177,32 +177,38 @@ export class OylApiClient {
     const response = await this._call('/get-token-okx-offers', 'post', {
       ticker: ticker,
     })
-    if (response.error) throw Error (response.error)
+    if (response.error) throw Error(response.error)
     return response.data.items
   }
 
-    /**
+  /**
    * Get Okx offer psbt.
    * @param offerId - The offer Id to query.
    */
-    async getOkxOfferPsbt({ offerId }: { offerId: number }): Promise<any> {
-      const response = await this._call('/get-token-okx-offers', 'post', {
-        offerId: offerId,
-      })
-      return response
-    }
+  async getOkxOfferPsbt({ offerId }: { offerId: number }): Promise<any> {
+    const response = await this._call('/get-token-okx-offers', 'post', {
+      offerId: offerId,
+    })
+    return response
+  }
 
-     /**
+  /**
    * Get Omnisat offer psbt.
    * @param offerId - The offer Id to query.
    */
-     async getOmnisatOfferPsbt({ offerId, ticker }: { offerId: string, ticker: string }): Promise<any> {
-      const response = await this._call('/get-omnisat-offer-psbt', 'post', {
-        offerId: offerId,
-        ticker: ticker
-      })
-      return response
-    }
+  async getOmnisatOfferPsbt({
+    offerId,
+    ticker,
+  }: {
+    offerId: string
+    ticker: string
+  }): Promise<any> {
+    const response = await this._call('/get-omnisat-offer-psbt', 'post', {
+      offerId: offerId,
+      ticker: ticker,
+    })
+    return response
+  }
 
   /**
    * Initialize a swap bid.
