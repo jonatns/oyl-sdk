@@ -102,17 +102,17 @@ export declare class OylApiClient {
         ticker: string;
     }): Promise<any>;
     /**
-   * Get Okx offer psbt.
-   * @param offerId - The offer Id to query.
-   */
+     * Get Okx offer psbt.
+     * @param offerId - The offer Id to query.
+     */
     getOkxOfferPsbt({ offerId }: {
         offerId: number;
     }): Promise<any>;
     /**
-  * Get Omnisat offer psbt.
-  * @param offerId - The offer Id to query.
-  */
-    getOmnisatOfferPsbt({ offerId, ticker }: {
+     * Get Omnisat offer psbt.
+     * @param offerId - The offer Id to query.
+     */
+    getOmnisatOfferPsbt({ offerId, ticker, }: {
         offerId: string;
         ticker: string;
     }): Promise<any>;

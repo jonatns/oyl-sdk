@@ -3,7 +3,7 @@ export declare class OrdRpc {
     constructor(url: string);
     _call(method: string, params?: any[]): Promise<any>;
     getInscriptionById(inscriptionId: string): Promise<any>;
-    getInscriptionContent(inscriptionId: string): Promise<string>;
+    getInscriptionContent(inscriptionId: string): Promise<any>;
     getInscriptionByNumber(number: string): Promise<any>;
     getInscriptions(numberToReturn: string, startingWith?: string): Promise<any>;
     getInscriptionsByBlockHash(blockHash: string): Promise<any>;
