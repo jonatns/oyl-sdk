@@ -1,9 +1,12 @@
 import { HdKeyring } from './hdKeyring'
 import { publicKeyToAddress } from './accounts'
-import { AddressType, RecoverAccountOptions, oylAccounts } from '../shared/interface'
+import {
+  AddressType,
+  RecoverAccountOptions,
+  oylAccounts,
+} from '../shared/interface'
 import * as bitcoin from 'bitcoinjs-lib'
 import Mnemonic from 'bitcore-mnemonic'
-
 
 export const customPaths = {
   oyl: {
@@ -46,7 +49,8 @@ export class AccountManager {
    * @param options - Configuration options for the AccountManager.
    */
   constructor(options: RecoverAccountOptions) {
-    this.mnemonic = options?.mnemonic || new Mnemonic(Mnemonic.Words.ENGLISH).toString()
+    this.mnemonic =
+      options?.mnemonic || new Mnemonic(Mnemonic.Words.ENGLISH).toString()
     this.activeIndexes = options?.activeIndexes
     this.network = options.network
     this.hdPath = options?.customPath
@@ -56,13 +60,13 @@ export class AccountManager {
       mnemonic: this.mnemonic,
       hdPath: this.hdPath.taprootPath,
       activeIndexes: this.activeIndexes,
-      network: this.network
+      network: this.network,
     })
     this.segwitKeyring = new HdKeyring({
       mnemonic: this.mnemonic,
       hdPath: this.hdPath.segwitPath,
       activeIndexes: this.activeIndexes,
-      network: this.network
+      network: this.network,
     })
   }
 
@@ -82,7 +86,11 @@ export class AccountManager {
       publicKeyToAddress(taprootAcccounts[0], AddressType.P2TR, this.network)!
     )
     segwitAddresses.push(
-      publicKeyToAddress(segwitAccounts[0], this.hdPath.segwitAddressType, this.network)!
+      publicKeyToAddress(
+        segwitAccounts[0],
+        this.hdPath.segwitAddressType,
+        this.network
+      )!
     )
     const ret: oylAccounts = {
       taproot: {
@@ -115,7 +123,11 @@ export class AccountManager {
         publicKeyToAddress(taprootAcccounts[i], AddressType.P2TR, this.network)!
       )
       segwitAddresses.push(
-        publicKeyToAddress(segwitAccounts[i], this.hdPath.segwitAddressType, this.network)!
+        publicKeyToAddress(
+          segwitAccounts[i],
+          this.hdPath.segwitAddressType,
+          this.network
+        )!
       )
       i++
     }
@@ -153,7 +165,11 @@ export class AccountManager {
         publicKeyToAddress(taprootAcccounts[i], AddressType.P2TR, this.network)!
       )
       segwitAddresses.push(
-        publicKeyToAddress(segwitAccounts[i], this.hdPath.segwitAddressType, this.network)!
+        publicKeyToAddress(
+          segwitAccounts[i],
+          this.hdPath.segwitAddressType,
+          this.network
+        )!
       )
       i++
     }
