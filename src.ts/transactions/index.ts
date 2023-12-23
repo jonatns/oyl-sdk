@@ -16,28 +16,9 @@ import { addressFormats } from '../wallet/accounts'
  *
  */
 
-export const getUnspentOutputs = async (address) => {
-  try {
-    const response = await fetch(
-      `https://blockchain.info/unspent?active=${address}`,
-      {
-        headers: {
-          Accept: 'application/json',
-        },
-      }
-    )
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch unspent output for address ${address}`)
-    }
 
-    const jsonResponse = await response.json()
 
-    return jsonResponse
-  } catch (error) {
-    console.log(error)
-  }
-}
 
 export const getBtcPrice = async () => {
   try {
@@ -80,7 +61,6 @@ export const getMetaUtxos = async (
   inscriptions
 ) => {
   const formattedData = []
-
   for (const utxo of utxos) {
     const formattedUtxo = {
       txId: utxo.tx_hash_big_endian,

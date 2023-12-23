@@ -11,7 +11,6 @@ import { AddressType, IBlockchainInfoUTXO } from '../shared/interface';
  need to be a default alternative outside Oyl Api (e.g the blockchainApi)
  *
  */
-export declare const getUnspentOutputs: (address: any) => Promise<any>;
 export declare const getBtcPrice: () => Promise<any>;
 export declare const calculateBalance: (utxos: any) => number;
 export declare const convertUsdValue: (amount: any) => Promise<string>;

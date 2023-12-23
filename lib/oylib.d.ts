@@ -133,6 +133,9 @@ export declare class Oyl {
      * @throws {Error} Throws an error if it fails to retrieve previous transaction data.
      */
     getTxValueFromPrevOut(inputs: any[], address: string): Promise<number>;
+    getUtxos(address: string): Promise<{
+        unspent_outputs: any[];
+    }>;
     /**
      * Retrieves the transaction history for a given address and processes the transactions.
      * @param {Object} param0 - An object containing the address property.

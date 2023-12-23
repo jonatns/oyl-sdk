@@ -19,7 +19,10 @@ export async function loadRpc(options) {
     const fees = await wallet.esploraRpc.getAddressUtxo(
       process.env.TAPROOT_ADDRESS
     )
-    console.log('Block Info:', JSON.stringify(blockInfo))
+
+    const utxos = await wallet.esploraRpc.getAddressUtxo("bc1pmtkac5u6rx7vkwhcnt0gal5muejwhp8hcrmx2yhvjg8nenu7rp3syw6yp0")
+    const txinfo = await wallet.esploraRpc.getTxInfo("5b05fc9279e9171160a4e75e1b6984151d42b8445452ac276db8451bf91d8043")
+    console.log('txinfo:', txinfo)
   } catch (error) {
     console.error('Error:', error)
   }

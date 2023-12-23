@@ -118,7 +118,7 @@ export class Oyl {
     }
     const addressesUtxo = []
     for (let i = 0; i < address.length; i++) {
-      let utxos = await transactions.getUnspentOutputs(address[i])
+      let utxos = await this.getUtxos(address[i])
       addressesUtxo[i] = {}
       addressesUtxo[i]['utxo'] = utxos.unspent_outputs
       addressesUtxo[i]['balance'] = transactions.calculateBalance(
@@ -365,6 +365,31 @@ export class Oyl {
     return totalMissingValue
   }
 
+  async getUtxos (address: string) {
+    
+    const utxosResponse = await this.esploraRpc.getAddressUtxo(address); 
+  
+    const formattedUtxos = [];
+  
+    for (const utxo of utxosResponse) {
+      const transactionDetails = await this.esploraRpc.getTxInfo(utxo.txid);
+  
+      const voutEntry = transactionDetails.vout.find(v => v.scriptpubkey_address === address);
+      const script = voutEntry ? voutEntry.scriptpubkey : '';
+  
+      formattedUtxos.push({
+        tx_hash_big_endian: utxo.txid,
+        tx_output_n: utxo.vout,
+        value: utxo.value,
+        confirmations: utxo.status.confirmed ? 3 : 0,
+        script: script,
+        tx_index: 0
+    })
+  };
+  return {unspent_outputs: formattedUtxos};
+}
+  
+
   /**
    * Retrieves the transaction history for a given address and processes the transactions.
    * @param {Object} param0 - An object containing the address property.
@@ -446,13 +471,8 @@ export class Oyl {
   }
 
   async getTotalBalance({ batch }) {
-    const res = await this.getAddressSummary({ address: batch })
-    let total = 0
-    res.forEach((element) => {
-      total += element.balance
-    })
-
-    return total
+    //deprecated 
+    return 0;
   }
 
   /**
@@ -489,7 +509,7 @@ export class Oyl {
    * @returns A promise that resolves to the UTXO artifacts.
    */
   async getUtxosArtifacts({ address }) {
-    const utxos = await transactions.getUnspentOutputs(address)
+    const utxos = await this.getUtxos(address)
     const inscriptions = await this.getInscriptions({ address })
     const utxoArtifacts = await transactions.getMetaUtxos(
       address,

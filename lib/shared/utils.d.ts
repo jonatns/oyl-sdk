@@ -45,17 +45,9 @@ export declare function amountToSatoshis(val: any): number;
 export declare const validator: (pubkey: Buffer, msghash: Buffer, signature: Buffer) => boolean;
 export declare function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput;
 export declare const getWitnessDataChunk: (content: string, encodeType?: BufferEncoding) => Buffer[];
-export declare const getUnspentsWithConfirmationsForAddress: (address: string) => Promise<IBlockchainInfoUTXO[]>;
-export declare const getUTXOWorthGreatestValueForAddress: (address: string) => Promise<IBlockchainInfoUTXO>;
 export declare const getSatpointFromUtxo: (utxo: IBlockchainInfoUTXO) => string;
-export declare const getUnspentsForAddressInOrderByValue: (address: string) => Promise<IBlockchainInfoUTXO[]>;
 export declare const getInscriptionsByWalletBIS: (walletAddress: string, offset?: number) => Promise<IBISWalletIx[]>;
-export declare const getUTXOsToCoverAmount: (address: string, amountNeeded: number, inscriptionLocs?: string[], usedUtxos?: IBlockchainInfoUTXO[]) => Promise<IBlockchainInfoUTXO[]>;
-export declare const getUTXOsToCoverAmountWithRemainder: (address: string, amountNeeded: number, inscriptionLocs?: string[]) => Promise<IBlockchainInfoUTXO[]>;
-export declare const getTheOtherUTXOsToCoverAmount: (address: string, amountNeeded: number, inscriptionLocs?: string[]) => Promise<IBlockchainInfoUTXO[]>;
-export declare const getUTXOByAddressTxIDAndVOut: (address: string, txId: string, vOut: number) => Promise<IBlockchainInfoUTXO>;
 export declare function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]): number;
-export declare const getScriptForAddress: (address: string) => Promise<any>;
 export declare const formatOptionsToSignInputs: ({ _psbt, isRevealTx, pubkey, segwitPubkey, segwitAddress, taprootAddress, network, }: {
     _psbt: bitcoin.Psbt;
     isRevealTx: boolean;
