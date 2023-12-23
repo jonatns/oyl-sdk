@@ -4,12 +4,14 @@ import { SwapBrcBid, SignedBid } from '../shared/interface';
  */
 export declare class OylApiClient {
     private host;
+    private testnet;
     /**
      * Create an instance of the OylApiClient.
      * @param options - Configuration object containing the API host.
      */
     constructor(options?: {
         host: string;
+        testnet?: boolean;
     });
     /**
      * Create an instance of the OylApiClient from a plain object.
@@ -18,6 +20,7 @@ export declare class OylApiClient {
      */
     static fromObject(data: {
         host: string;
+        testnet?: boolean;
     }): OylApiClient;
     /**
      * Convert this OylApiClient instance to a plain object.
@@ -25,6 +28,7 @@ export declare class OylApiClient {
      */
     toObject(): {
         host: string;
+        testnet: boolean;
     };
     private _call;
     /**

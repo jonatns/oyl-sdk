@@ -5,14 +5,16 @@ import { SwapBrcBid, SignedBid } from '../shared/interface'
  * Represents the client for interacting with the Oyl API.
  */
 export class OylApiClient {
-  private host: string
+  private host: string;
+  private testnet: boolean;
 
   /**
    * Create an instance of the OylApiClient.
    * @param options - Configuration object containing the API host.
    */
-  constructor(options?: { host: string }) {
+  constructor(options?: { host: string, testnet?: boolean }) {
     this.host = options?.host || ''
+    this.testnet = options.testnet == true 
   }
 
   /**
@@ -20,7 +22,7 @@ export class OylApiClient {
    * @param data - The data object.
    * @returns An instance of OylApiClient.
    */
-  static fromObject(data: { host: string }): OylApiClient {
+  static fromObject(data: { host: string, testnet?: boolean }): OylApiClient {
     return new this(data)
   }
 
@@ -28,9 +30,10 @@ export class OylApiClient {
    * Convert this OylApiClient instance to a plain object.
    * @returns The plain object representation.
    */
-  toObject(): { host: string } {
+  toObject(): { host: string, testnet: boolean } {
     return {
       host: this.host,
+      testnet: this.testnet
     }
   }
 
@@ -39,6 +42,9 @@ export class OylApiClient {
       const options: RequestInit = {
         method: method,
         headers: { 'Content-Type': 'application/json' },
+      }
+      if(this.testnet){
+        data["testnet"] = this.testnet
       }
 
       if (['post', 'put', 'patch'].includes(method)) {

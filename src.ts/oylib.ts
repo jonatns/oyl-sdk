@@ -59,7 +59,7 @@ export class Oyl {
    * Initializes a new instance of the Wallet class.
    */
   constructor(options: NetworkOptions = defaultNetworkOptions) {
-    this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg' })
+    this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg', testnet: options.network == "testnet"? true : null  })
     const rpcUrl = `${options.baseUrl}/${options.version}/${options.projectId}`
     const provider = new Provider(rpcUrl)
     this.network = getNetwork(options.network)

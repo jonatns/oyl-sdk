@@ -270,7 +270,7 @@ export interface NetworkOptions {
    */
   projectId?: string
 
-  network: 'mainnet' | 'testnet' | 'regtest'
+  network: Network
 }
 
 export interface SwapBrc {

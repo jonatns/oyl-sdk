@@ -238,7 +238,7 @@ export interface NetworkOptions {
      * ProjectId is used as an API key for local test servers. Defaults to mainnet API key
      */
     projectId?: string;
-    network: 'mainnet' | 'testnet' | 'regtest';
+    network: Network;
 }
 export interface SwapBrc {
     address: String;
