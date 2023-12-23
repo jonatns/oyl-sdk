@@ -934,7 +934,7 @@ const insertBtcUtxo = async ({
 }) => {
   try {
     let nonMetaUtxos: any[]
-    if (sendFromSegwit) {
+    if (!sendFromSegwit) {
       nonMetaUtxos = await filterTaprootUtxos({ taprootUtxos: taprootUtxos })
     } else {
       nonMetaUtxos = segwitUtxos

@@ -29,6 +29,7 @@ import {
 import { OylApiClient } from './apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from './rpclient/provider'
+import { OrdRpc } from './rpclient/ord'
 
 export const NESTED_SEGWIT_HD_PATH = "m/49'/0'/0'/0"
 export const TAPROOT_HD_PATH = "m/86'/0'/0'/0"
@@ -48,6 +49,7 @@ export class Oyl {
   public network: bitcoin.Network
   public sandshrewBtcClient: SandshrewBitcoinClient
   public esploraRpc: EsploraRpc
+  public ordRpc: OrdRpc
   public provider: Providers
   public rpcClient: BcoinRpc
   public apiClient: OylApiClient
@@ -63,6 +65,7 @@ export class Oyl {
     this.network = getNetwork(options.network)
     this.sandshrewBtcClient = provider.sandshrew
     this.esploraRpc = provider.esplora
+    this.ordRpc = provider.ord
     this.fromProvider()
     this.wallet = this.createWallet({})
   }
