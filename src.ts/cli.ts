@@ -12,24 +12,9 @@ import { NetworkOptions } from './shared/interface'
 bitcoin.initEccLib(ecc2)
 
 export async function loadRpc(options) {
-  const networkOptions: NetworkOptions = {
-    baseUrl: 'https://testnet.sandshrew.io',
-    version: 'v1',
-    projectId: 'd6aebfed1769128379aca7d215f0b689', // default mainnet API key
-    network: 'testnet'
-  }
-  const wallet = new Oyl(networkOptions)
+  const wallet = new Oyl()
   try {
-    // const blockInfo = await wallet.sandshrewBtcClient.bitcoindRpc.decodePSBT(
-    //   process.env.PSBT_BASE64
-    // )
-    // const fees = await wallet.esploraRpc.getAddressUtxo(
-    //   process.env.TAPROOT_ADDRESS
-    // )
-
-    // const utxos = await wallet.esploraRpc.getAddressUtxo("bc1pmtkac5u6rx7vkwhcnt0gal5muejwhp8hcrmx2yhvjg8nenu7rp3syw6yp0")
-    // const txinfo = await wallet.esploraRpc.getTxInfo("5b05fc9279e9171160a4e75e1b6984151d42b8445452ac276db8451bf91d8043")
-    const newWallet = await wallet.listCollectibles({address: "tb1pcu49t9cdneymqvhmvrgaxs5t0lw5vv8gn7yhgshwkge4jjgm8mqq5529zh" })
+    const newWallet = await wallet.getUtxosArtifacts({address: "bc1pmtkac5u6rx7vkwhcnt0gal5muejwhp8hcrmx2yhvjg8nenu7rp3syw6yp0" })
     console.log('newWallet:', newWallet)
   } catch (error) {
     console.error('Error:', error)

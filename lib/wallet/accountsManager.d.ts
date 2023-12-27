@@ -25,6 +25,12 @@ export declare const customPaths: {
         initializedFrom: string;
         segwitAddressType: AddressType;
     };
+    testnet: {
+        taprootPath: string;
+        initializedFrom: string;
+        segwitPath: string;
+        segwitAddressType: AddressType;
+    };
 };
 export declare class AccountManager {
     private mnemonic;

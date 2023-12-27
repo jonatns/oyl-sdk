@@ -33,6 +33,12 @@ export const customPaths = {
     initializedFrom: 'unisat',
     segwitAddressType: AddressType.P2WPKH,
   },
+  testnet: {
+    taprootPath: "m/86'/1'/0'/0",
+    initializedFrom: 'oyl',
+    segwitPath: "m/84'/1'/0'/0",
+    segwitAddressType: AddressType.P2WPKH,
+  }
 }
 
 export class AccountManager {

@@ -134,7 +134,7 @@ export interface ProviderOptions {
 export interface RecoverAccountOptions {
     mnemonic?: string;
     activeIndexes?: number[];
-    customPath?: 'xverse' | 'leather' | 'unisat';
+    customPath?: 'xverse' | 'leather' | 'unisat' | 'testnet';
     network: bitcoin.Network;
 }
 export declare enum Providers {

@@ -239,7 +239,7 @@ export class Oyl {
    */
   async initializeWallet() {
     try {
-      const wallet = new AccountManager({ network: this.network })
+      const wallet = new AccountManager({ network: this.network, customPath: this.network == getNetwork('testnet') ? 'testnet' : null })
       const walletPayload = await wallet.initializeAccounts()
       return walletPayload
     } catch (error) {
