@@ -14,7 +14,9 @@ bitcoin.initEccLib(ecc2)
 export async function loadRpc(options) {
   const wallet = new Oyl()
   try {
-    const newWallet = await wallet.getUtxosArtifacts({address: "bc1pmtkac5u6rx7vkwhcnt0gal5muejwhp8hcrmx2yhvjg8nenu7rp3syw6yp0" })
+    const newWallet = await wallet.getUtxosArtifacts({
+      address: 'bc1pmtkac5u6rx7vkwhcnt0gal5muejwhp8hcrmx2yhvjg8nenu7rp3syw6yp0',
+    })
     console.log('newWallet:', newWallet)
   } catch (error) {
     console.error('Error:', error)
@@ -168,16 +170,18 @@ export async function runCLI() {
       break
     case 'send':
       const taprootResponse = await tapWallet.sendBtc({
-        to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
-        from: 'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-        amount: 20000,
-        feeRate: 10,
-        mnemonic,
-        publicKey: taprootPubkey,
-        segwitAddress,
-        segwitHdPathWithIndex: 'xverse',
-        segwitPubkey,
-        taprootHdPathWithIndex: taprootHdPathWithIndex,
+        options: {
+          to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
+          from: 'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+          amount: 20000,
+          feeRate: 10,
+          mnemonic,
+          publicKey: taprootPubkey,
+          segwitAddress,
+          segwitHdPath: 'xverse',
+          segwitPubkey,
+          taprootHdPath: TAPROOT_HD_PATH,
+        },
       })
 
       if (taprootResponse) {
@@ -185,16 +189,18 @@ export async function runCLI() {
       }
 
       const segwitResponse = await tapWallet.sendBtc({
-        to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
-        from: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-        amount: 20000,
-        feeRate: 12,
-        publicKey: taprootPubkey,
-        mnemonic,
-        segwitAddress,
-        segwitHdPathWithIndex,
-        segwitPubkey,
-        taprootHdPathWithIndex,
+        options: {
+          to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
+          from: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+          amount: 20000,
+          feeRate: 12,
+          publicKey: taprootPubkey,
+          mnemonic,
+          segwitAddress,
+          segwitHdPath: 'xverse',
+          segwitPubkey,
+          taprootHdPath: TAPROOT_HD_PATH,
+        },
       })
 
       if (segwitResponse) {
