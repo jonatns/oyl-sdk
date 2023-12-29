@@ -194,6 +194,19 @@ export interface InscribeTransfer {
     isDry?: boolean;
     inscriptionId?: string;
 }
+export interface SendBtc {
+    to: string;
+    from: string;
+    amount: number;
+    feeRate: number;
+    publicKey: string;
+    mnemonic: string;
+    segwitAddress?: string;
+    segwitPubkey?: string;
+    segwitHdPath: 'xverse' | 'leather' | 'unisat' | 'testnet' | 'oyl';
+    taprootHdPath: string;
+    payFeesWithSegwit?: boolean;
+}
 export interface SwapBrcBid {
     address: String;
     auctionId: String;

@@ -173,8 +173,8 @@ export async function runCLI() {
         options: {
           to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
           from: 'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-          amount: 20000,
-          feeRate: 10,
+          amount: 500,
+          feeRate: 100,
           mnemonic,
           publicKey: taprootPubkey,
           segwitAddress,
@@ -192,8 +192,8 @@ export async function runCLI() {
         options: {
           to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
           from: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-          amount: 20000,
-          feeRate: 12,
+          amount: 500,
+          feeRate: 100,
           publicKey: taprootPubkey,
           mnemonic,
           segwitAddress,

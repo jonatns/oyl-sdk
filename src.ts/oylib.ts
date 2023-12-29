@@ -587,7 +587,7 @@ export class Oyl {
       throw new Error(result['reject-reason'])
     }
 
-    await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(rawTxn)
+    // await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(rawTxn)
 
     return { txnId: txnId, rawTxn: rawTxn }
   }

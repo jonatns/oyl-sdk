@@ -68,7 +68,12 @@ const RequiredPath = [
   "m/86'/0'/0'/0", // P2TR (Taproot)
 ]
 
-const addressTypeMap = { 1: 'p2pkh', 2: 'p2sh', 3: 'p2wpkh', 4: 'p2tr' }
+const addressTypeMap = {
+  0: 'p2pkh',
+  1: 'p2tr',
+  2: 'p2sh_p2wpkh',
+  3: 'p2wpkh',
+}
 
 export const ECPair = ECPairFactory(ecc)
 
@@ -245,11 +250,9 @@ export const getWitnessDataChunk = function (
   return contentChunks
 }
 
-
 export const getSatpointFromUtxo = (utxo: IBlockchainInfoUTXO) => {
   return `${utxo.tx_hash_big_endian}:${utxo.tx_output_n}:0`
 }
-
 
 export const getInscriptionsByWalletBIS = async (
   walletAddress: string,
@@ -267,12 +270,9 @@ export const getInscriptionsByWalletBIS = async (
     .then((res) => res.data?.data)) as IBISWalletIx[]
 }
 
-
 export function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]) {
   return utxoArray?.reduce((prev, currentValue) => prev + currentValue.value, 0)
 }
-
-
 
 export const formatOptionsToSignInputs = async ({
   _psbt,
@@ -432,7 +432,7 @@ export const inscribe = async ({
     const [tpubkey, cblock] = Tap.getPubKey(pubKey, { target: tapleaf })
     const inscriberAddress = Address.p2tr.fromPubKey(tpubkey)
 
-    const psbt = new bitcoin.Psbt({network: network})
+    const psbt = new bitcoin.Psbt({ network: network })
 
     const inputs = 1
     const revealVb = calculateTaprootTxSize(inputs, 0, 1)
@@ -477,7 +477,9 @@ export const inscribe = async ({
     signedPsbt.finalizeAllInputs()
 
     const commitPsbtHash = signedPsbt.toHex()
-    const commitTxPsbt: bitcoin.Psbt = bitcoin.Psbt.fromHex(commitPsbtHash, {network: network})
+    const commitTxPsbt: bitcoin.Psbt = bitcoin.Psbt.fromHex(commitPsbtHash, {
+      network: network,
+    })
 
     const commitTxHex = commitTxPsbt.extractTransaction().toHex()
     let commitTxId: string
@@ -818,7 +820,7 @@ export const sendCollectible = async ({
 }) => {
   //const fastestFee = await getRecommendedBTCFeesMempool()
   try {
-    const psbt = new bitcoin.Psbt({network: network})
+    const psbt = new bitcoin.Psbt({ network: network })
 
     const utxosToSend = await insertCollectibleUtxo({
       taprootUtxos: taprootUtxos,
@@ -1037,11 +1039,15 @@ const addBTCUtxo = async ({
         },
       })
     }
-    psbtTx.addOutput({
-      address: toAddress,
-      value: Math.floor(utxosTosend.change),
-    })
   }
+  psbtTx.addOutput({
+    address: toAddress,
+    value: Math.floor(amount),
+  })
+  psbtTx.addOutput({
+    address: fromAddress,
+    value: Math.floor(utxosTosend.change),
+  })
   return utxosTosend.selectedUtxos
 }
 
@@ -1079,14 +1085,14 @@ export const createBtcTx = async ({
   taprootUtxos: Utxo[]
 }) => {
   try {
-    const psbt = new bitcoin.Psbt({network: network})
+    const psbt = new bitcoin.Psbt({ network: network })
 
     const inputAddressType = addressTypeMap[getAddressType(inputAddress)]
 
     const isSentFromSegwit =
-      addressTypeToName[inputAddressType] === 'nested-segwit' || 'segwit'
-        ? true
-        : false
+      addressTypeToName[inputAddressType] === 'nested-segwit' ||
+      addressTypeToName[inputAddressType] === 'segwit'
+
     const utxosToSend = await insertBtcUtxo({
       taprootUtxos: taprootUtxos,
       segwitUtxos: segwitUtxos,
