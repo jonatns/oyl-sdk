@@ -23,7 +23,7 @@ export declare class Oyl {
     /**
      * Initializes a new instance of the Wallet class.
      */
-    constructor(options?: NetworkOptions);
+    constructor(opts?: NetworkOptions);
     /**
      * Connects to a given blockchain RPC client.
      * @param {BcoinRpc} provider - The blockchain RPC client to connect to.
@@ -79,14 +79,14 @@ export declare class Oyl {
      * @returns {Promise<any>} A promise that resolves to the recovered wallet payload.
      * @throws {Error} Throws an error if recovery fails.
      */
-    recoverWallet(options: RecoverAccountOptions): Promise<any>;
+    recoverWallet(options: Omit<RecoverAccountOptions, 'network'>): Promise<any>;
     /**
      * Adds a new account to the wallet using the given options.
      * @param {RecoverAccountOptions} options - Options describing the account to be added.
      * @returns {Promise<any>} A promise that resolves to the payload of the newly added account.
      * @throws {Error} Throws an error if adding the account fails.
      */
-    addAccountToWallet(options: RecoverAccountOptions): Promise<any>;
+    addAccountToWallet(options: Omit<RecoverAccountOptions, 'network'>): Promise<any>;
     /**
      * Initializes a new Oyl account with taproot & segwit HDKeyrings  within the wallet.
      * @returns {Promise<any>} A promise that resolves to the payload of the initialized accounts.

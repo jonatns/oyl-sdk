@@ -58,8 +58,16 @@ export class Oyl {
   /**
    * Initializes a new instance of the Wallet class.
    */
-  constructor(options: NetworkOptions = defaultNetworkOptions) {
-    this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg', testnet: options.network == "testnet"? true : null  })
+  constructor(opts?: NetworkOptions) {
+    const options = {
+      ...defaultNetworkOptions[opts.network],
+      ...opts,
+    }
+
+    this.apiClient = new OylApiClient({
+      host: 'https://api.oyl.gg',
+      testnet: options.network == 'testnet' ? true : null,
+    })
     const rpcUrl = `${options.baseUrl}/${options.version}/${options.projectId}`
     const provider = new Provider(rpcUrl)
     this.network = getNetwork(options.network)
@@ -206,9 +214,9 @@ export class Oyl {
    * @returns {Promise<any>} A promise that resolves to the recovered wallet payload.
    * @throws {Error} Throws an error if recovery fails.
    */
-  async recoverWallet(options: RecoverAccountOptions) {
+  async recoverWallet(options: Omit<RecoverAccountOptions, 'network'>) {
     try {
-      const wallet = new AccountManager(options)
+      const wallet = new AccountManager({ ...options, network: this.network })
       const walletPayload = await wallet.recoverAccounts()
       return walletPayload
     } catch (error) {
@@ -222,9 +230,9 @@ export class Oyl {
    * @returns {Promise<any>} A promise that resolves to the payload of the newly added account.
    * @throws {Error} Throws an error if adding the account fails.
    */
-  async addAccountToWallet(options: RecoverAccountOptions) {
+  async addAccountToWallet(options: Omit<RecoverAccountOptions, 'network'>) {
     try {
-      const wallet = new AccountManager(options)
+      const wallet = new AccountManager({ ...options, network: this.network })
       const walletPayload = await wallet.addAccount()
       return walletPayload
     } catch (error) {
@@ -239,7 +247,10 @@ export class Oyl {
    */
   async initializeWallet() {
     try {
-      const wallet = new AccountManager({ network: this.network, customPath: this.network == getNetwork('testnet') ? 'testnet' : null })
+      const wallet = new AccountManager({
+        network: this.network,
+        customPath: this.network == getNetwork('testnet') ? 'testnet' : null,
+      })
       const walletPayload = await wallet.initializeAccounts()
       return walletPayload
     } catch (error) {
@@ -368,30 +379,30 @@ export class Oyl {
     return totalMissingValue
   }
 
-  async getUtxos (address: string) {
-    
-    const utxosResponse = await this.esploraRpc.getAddressUtxo(address); 
-  
-    const formattedUtxos = [];
-  
+  async getUtxos(address: string) {
+    const utxosResponse = await this.esploraRpc.getAddressUtxo(address)
+
+    const formattedUtxos = []
+
     for (const utxo of utxosResponse) {
-      const transactionDetails = await this.esploraRpc.getTxInfo(utxo.txid);
-  
-      const voutEntry = transactionDetails.vout.find(v => v.scriptpubkey_address === address);
-      const script = voutEntry ? voutEntry.scriptpubkey : '';
-  
+      const transactionDetails = await this.esploraRpc.getTxInfo(utxo.txid)
+
+      const voutEntry = transactionDetails.vout.find(
+        (v) => v.scriptpubkey_address === address
+      )
+      const script = voutEntry ? voutEntry.scriptpubkey : ''
+
       formattedUtxos.push({
         tx_hash_big_endian: utxo.txid,
         tx_output_n: utxo.vout,
         value: utxo.value,
         confirmations: utxo.status.confirmed ? 3 : 0,
         script: script,
-        tx_index: 0
-    })
-  };
-  return {unspent_outputs: formattedUtxos};
-}
-  
+        tx_index: 0,
+      })
+    }
+    return { unspent_outputs: formattedUtxos }
+  }
 
   /**
    * Retrieves the transaction history for a given address and processes the transactions.
@@ -474,8 +485,8 @@ export class Oyl {
   }
 
   async getTotalBalance({ batch }) {
-    //deprecated 
-    return 0;
+    //deprecated
+    return 0
   }
 
   /**
@@ -698,7 +709,7 @@ export class Oyl {
       const addressType = transactions.getAddressType(address)
       if (addressType == null) throw Error('Invalid Address Type')
       const tx = new PSBTTransaction(signer, address, pubKey, addressType, fee)
-      const psbt = bitcoin.Psbt.fromHex(psbtHex, {network: this.network})
+      const psbt = bitcoin.Psbt.fromHex(psbtHex, { network: this.network })
       const signedPsbt = await tx.signPsbt(psbt)
       const signedPsbtBase64 = signedPsbt.toBase64()
       const signedPsbtHex = signedPsbt.toHex()
