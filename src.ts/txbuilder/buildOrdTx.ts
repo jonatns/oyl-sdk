@@ -22,7 +22,7 @@ export const getUtxosForFees = async ({
   segwitAddress,
   segwitPubKey,
   utxosToSend,
-  network
+  network,
 }: {
   payFeesWithSegwit: boolean
   psbtTx: bitcoin.Psbt
@@ -45,7 +45,7 @@ export const getUtxosForFees = async ({
       segwitPubKey: segwitPubKey,
       utxosToSend: utxosToSend,
       taprootAddress: taprootAddress,
-      network
+      network,
     })
     return
   } catch (error) {
@@ -62,7 +62,7 @@ const addSegwitFeeUtxo = async ({
   utxosToSend,
   taprootUtxos,
   taprootAddress,
-  network
+  network,
 }: {
   segwitUtxos: {
     txId: string
@@ -133,7 +133,7 @@ const addSegwitFeeUtxo = async ({
       try {
         const p2wpkh = bitcoin.payments.p2wpkh({
           pubkey: Buffer.from(segwitPubKey, 'hex'),
-          network: network
+          network: network,
         })
 
         const p2sh = bitcoin.payments.p2sh({
@@ -294,10 +294,10 @@ export function findUtxosForFees(utxos: Utxo[], amount: number) {
 
 const usableUtxo = async (feeUtxo: Utxo, utxosToSend: Utxo[]) => {
   if (!utxosToSend) {
-    return true
+    return false
   }
   for (let j = 0; j < utxosToSend.length; j++) {
-    if (feeUtxo.txId === utxosToSend[j].txId) return false
+    if (feeUtxo.txId !== utxosToSend[j].txId) return true
   }
 }
 
