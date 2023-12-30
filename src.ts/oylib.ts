@@ -184,12 +184,13 @@ export class Oyl {
     hdPath = RequiredPath[3],
   }) {
     try {
-      const wallet = await accounts.importMnemonic(
+      const wallet: any = await accounts.importMnemonic(
         mnemonic,
         hdPath,
         addrType,
         this.network
       )
+
       this.wallet = wallet
       const meta = await this.getUtxosArtifacts({ address: wallet['address'] })
       const data = {
@@ -587,7 +588,7 @@ export class Oyl {
       throw new Error(result['reject-reason'])
     }
 
-    // await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(rawTxn)
+    await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(rawTxn)
 
     return { txnId: txnId, rawTxn: rawTxn }
   }

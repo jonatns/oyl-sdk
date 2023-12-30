@@ -163,10 +163,12 @@ export interface oylAccounts {
   taproot: {
     taprootKeyring: any
     taprootAddresses: string[]
+    taprootPubKey: string
   }
   segwit: {
     segwitKeyring: any
     segwitAddresses: string[]
+    segwitPubKey: string
   }
   initializedFrom: string
   mnemonic: string
