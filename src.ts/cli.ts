@@ -7,7 +7,6 @@ import * as bitcoin from 'bitcoinjs-lib'
 import axios from 'axios'
 import * as ecc2 from '@bitcoinerlab/secp256k1'
 import { BuildMarketplaceTransaction } from './txbuilder/buildMarketplaceTransaction'
-import { NetworkOptions } from './shared/interface'
 import { getNetwork } from './shared/utils'
 
 bitcoin.initEccLib(ecc2)
@@ -149,8 +148,8 @@ export async function runCLI() {
   const taprootAddress =
     'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm'
   const segwitAddress = '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic'
-  const taprootHdPathWithIndex = TAPROOT_HD_PATH
-  const segwitHdPathWithIndex = NESTED_SEGWIT_HD_PATH
+  const taprootHdPath = TAPROOT_HD_PATH
+  const segwitHdPath = NESTED_SEGWIT_HD_PATH
   const taprootPubkey =
     '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be'
   const segwitPubkey =
@@ -187,18 +186,16 @@ export async function runCLI() {
       break
     case 'send':
       const taprootResponse = await tapWallet.sendBtc({
-        options: {
-          to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
-          from: 'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-          amount: 500,
-          feeRate: 100,
-          mnemonic,
-          publicKey: taprootPubkey,
-          segwitAddress,
-          segwitHdPath: 'oyl',
-          segwitPubkey,
-          taprootHdPath: TAPROOT_HD_PATH,
-        },
+        to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
+        from: 'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+        amount: 500,
+        feeRate: 100,
+        mnemonic,
+        publicKey: taprootPubkey,
+        segwitAddress,
+        segwitHdPath: 'oyl',
+        segwitPubkey,
+        taprootHdPath: TAPROOT_HD_PATH,
       })
 
       if (taprootResponse) {
@@ -206,18 +203,16 @@ export async function runCLI() {
       }
 
       const segwitResponse = await tapWallet.sendBtc({
-        options: {
-          to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
-          from: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-          amount: 500,
-          feeRate: 100,
-          publicKey: taprootPubkey,
-          mnemonic,
-          segwitAddress,
-          segwitHdPath: 'xverse',
-          segwitPubkey,
-          taprootHdPath: TAPROOT_HD_PATH,
-        },
+        to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
+        from: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+        amount: 20000,
+        feeRate: 12,
+        publicKey: taprootPubkey,
+        mnemonic,
+        segwitAddress,
+        segwitHdPath,
+        segwitPubkey,
+        taprootHdPath,
       })
 
       if (segwitResponse) {
@@ -308,19 +303,17 @@ export async function runCLI() {
       })
 
       const testnetTaprootResponse = await testWallet.sendBtc({
-        options: {
-          to: 'tb1p6l2wm54y9rh6lz3gd4z2ty8w4nftnav7g4fph399f8zy4ed6h9cskmg3le',
-          from: testnetTaprootAddress,
-          amount: 500,
-          feeRate: 10,
-          mnemonic: testnetMnemonic,
-          publicKey: testnetTaprootPubKey,
-          segwitAddress: testnetSegwitAddress,
-          segwitHdPath: 'testnet',
-          segwitPubkey:
-            '02f12478ea8f28d179245d095faf1e14d63b9465d1a5fe2d5e0a107559082f887a',
-          taprootHdPath: TAPROOT_HD_PATH,
-        },
+        to: 'tb1p6l2wm54y9rh6lz3gd4z2ty8w4nftnav7g4fph399f8zy4ed6h9cskmg3le',
+        from: testnetTaprootAddress,
+        amount: 500,
+        feeRate: 10,
+        mnemonic: testnetMnemonic,
+        publicKey: testnetTaprootPubKey,
+        segwitAddress: testnetSegwitAddress,
+        segwitHdPath: 'testnet',
+        segwitPubkey:
+          '02f12478ea8f28d179245d095faf1e14d63b9465d1a5fe2d5e0a107559082f887a',
+        taprootHdPath: TAPROOT_HD_PATH,
       })
 
       if (testnetTaprootResponse) {
@@ -328,19 +321,17 @@ export async function runCLI() {
       }
 
       const testnetSegwitResponse = await testWallet.sendBtc({
-        options: {
-          to: 'tb1qgqw2l0hqglzw020h0yfjv69tuz50aq9m99h632',
-          from: testnetSegwitAddress,
-          amount: 500,
-          feeRate: 100,
-          mnemonic: testnetMnemonic,
-          publicKey: testnetTaprootPubKey,
-          segwitAddress: testnetSegwitAddress,
-          segwitHdPath: 'testnet',
-          segwitPubkey:
-            '02f12478ea8f28d179245d095faf1e14d63b9465d1a5fe2d5e0a107559082f887a',
-          taprootHdPath: TAPROOT_HD_PATH,
-        },
+        to: 'tb1qgqw2l0hqglzw020h0yfjv69tuz50aq9m99h632',
+        from: testnetSegwitAddress,
+        amount: 500,
+        feeRate: 100,
+        mnemonic: testnetMnemonic,
+        publicKey: testnetTaprootPubKey,
+        segwitAddress: testnetSegwitAddress,
+        segwitHdPath: 'testnet',
+        segwitPubkey:
+          '02f12478ea8f28d179245d095faf1e14d63b9465d1a5fe2d5e0a107559082f887a',
+        taprootHdPath: TAPROOT_HD_PATH,
       })
 
       if (testnetSegwitResponse) {

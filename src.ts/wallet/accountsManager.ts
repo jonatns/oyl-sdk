@@ -62,7 +62,6 @@ export class AccountManager {
     this.hdPath = options?.customPath
       ? customPaths[options.customPath]
       : customPaths.oyl
-
     this.taprootKeyring = new HdKeyring({
       mnemonic: this.mnemonic,
       hdPath: this.hdPath.taprootPath,
@@ -107,7 +106,7 @@ export class AccountManager {
       },
       segwit: {
         segwitKeyring: this.segwitKeyring,
-        segwitPubKey: segwitAccounts[0].toString('hex'),
+        segwitPubKey: taprootAccounts[0].toString('hex'),
         segwitAddresses,
       },
       initializedFrom: this.hdPath.initializedFrom,
@@ -187,14 +186,12 @@ export class AccountManager {
     const ret: oylAccounts = {
       taproot: {
         taprootKeyring: this.taprootKeyring,
-        taprootPubKey:
-          this.taprootKeyring.root.PublicKey.publicKey.toString('hex'),
+        taprootPubKey: taprootAccounts[0].toString('hex'),
         taprootAddresses,
       },
       segwit: {
         segwitKeyring: this.segwitKeyring,
-        segwitPubKey:
-          this.segwitKeyring.root.PublicKey.publicKey.toString('hex'),
+        segwitPubKey: segwitAccounts[0].toString('hex'),
         segwitAddresses,
       },
       initializedFrom: this.hdPath.initializedFrom,
