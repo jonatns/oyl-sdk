@@ -85,12 +85,12 @@ export class AccountManager {
   async initializeAccounts(): Promise<oylAccounts> {
     await this.taprootKeyring.addAccounts(1)
     await this.segwitKeyring.addAccounts(1)
-    const taprootAcccounts = await this.taprootKeyring.getAccounts()
+    const taprootAccounts = await this.taprootKeyring.getAccounts()
     const segwitAccounts = await this.segwitKeyring.getAccounts()
     const taprootAddresses: string[] = []
     const segwitAddresses: string[] = []
     taprootAddresses.push(
-      publicKeyToAddress(taprootAcccounts[0], AddressType.P2TR, this.network)!
+      publicKeyToAddress(taprootAccounts[0], AddressType.P2TR, this.network)!
     )
     segwitAddresses.push(
       publicKeyToAddress(
@@ -102,7 +102,7 @@ export class AccountManager {
     const ret: oylAccounts = {
       taproot: {
         taprootKeyring: this.taprootKeyring,
-        taprootPubKey: taprootAcccounts[0].toString('hex'),
+        taprootPubKey: taprootAccounts[0].toString('hex'),
         taprootAddresses,
       },
       segwit: {
@@ -122,14 +122,14 @@ export class AccountManager {
    * @returns {Promise<oylAccounts>} A promise that resolves to an object containing the recovered accounts.
    */
   async recoverAccounts(): Promise<oylAccounts> {
-    const taprootAcccounts = await this.taprootKeyring.getAccounts()
+    const taprootAccounts = await this.taprootKeyring.getAccounts()
     const segwitAccounts = await this.segwitKeyring.getAccounts()
     const taprootAddresses: string[] = []
     const segwitAddresses: string[] = []
     let i = 0
-    while (i < taprootAcccounts.length) {
+    while (i < taprootAccounts.length) {
       taprootAddresses.push(
-        publicKeyToAddress(taprootAcccounts[i], AddressType.P2TR, this.network)!
+        publicKeyToAddress(taprootAccounts[i], AddressType.P2TR, this.network)!
       )
       segwitAddresses.push(
         publicKeyToAddress(
@@ -143,12 +143,12 @@ export class AccountManager {
     const ret: oylAccounts = {
       taproot: {
         taprootKeyring: this.taprootKeyring,
-        taprootPubKey: this.taprootKeyring.root.PublicKey.toString('hex'),
+        taprootPubKey: taprootAccounts[0].toString('hex'),
         taprootAddresses,
       },
       segwit: {
         segwitKeyring: this.segwitKeyring,
-        segwitPubKey: this.segwitKeyring.root.PublicKey.toString('hex'),
+        segwitPubKey: segwitAccounts[0].toString('hex'),
         segwitAddresses,
       },
       initializedFrom: this.hdPath.initializedFrom,
@@ -165,15 +165,15 @@ export class AccountManager {
   async addAccount(): Promise<oylAccounts> {
     await this.taprootKeyring.addAccounts(1)
     await this.segwitKeyring.addAccounts(1)
-    const taprootAcccounts = await this.taprootKeyring.getAccounts()
+    const taprootAccounts = await this.taprootKeyring.getAccounts()
     const segwitAccounts = await this.segwitKeyring.getAccounts()
-    console.log(taprootAcccounts)
+    console.log(taprootAccounts)
     const taprootAddresses: string[] = []
     const segwitAddresses: string[] = []
     let i = 0
-    while (i < taprootAcccounts.length) {
+    while (i < taprootAccounts.length) {
       taprootAddresses.push(
-        publicKeyToAddress(taprootAcccounts[i], AddressType.P2TR, this.network)!
+        publicKeyToAddress(taprootAccounts[i], AddressType.P2TR, this.network)!
       )
       segwitAddresses.push(
         publicKeyToAddress(

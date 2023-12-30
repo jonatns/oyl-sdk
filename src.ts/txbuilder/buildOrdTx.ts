@@ -119,7 +119,7 @@ const addSegwitFeeUtxo = async ({
     const addressType = getAddressType(segwitAddress)
     let redeemScript
 
-    if (addressType === 1) {
+    if (addressType === 2) {
       const p2shObj = bitcoin.payments.p2sh({
         redeem: bitcoin.payments.p2sh({
           pubkey: Buffer.from(segwitPubKey, 'hex'),
@@ -129,7 +129,7 @@ const addSegwitFeeUtxo = async ({
 
       redeemScript = p2shObj.redeem.output
     }
-    if (addressType === 2) {
+    if (addressType === 3) {
       try {
         const p2wpkh = bitcoin.payments.p2wpkh({
           pubkey: Buffer.from(segwitPubKey, 'hex'),

@@ -8,6 +8,7 @@ import axios from 'axios'
 import * as ecc2 from '@bitcoinerlab/secp256k1'
 import { BuildMarketplaceTransaction } from './txbuilder/buildMarketplaceTransaction'
 import { NetworkOptions } from './shared/interface'
+import { getNetwork } from './shared/utils'
 
 bitcoin.initEccLib(ecc2)
 
@@ -173,11 +174,11 @@ export async function runCLI() {
     'upgrade float mixed life shy bread ramp room artist road major purity'
 
   const testnetSegwitPubKey =
-    '02f12478ea8f28d179245d095faf1e14d63b9465d1a5fe2d5e0a107559082f887a'
+    '02a4a49b8efd123ecc2fb200a95d4da40dac7abd563cfb52b8aa245cbca0249c1c'
   const testnetSegwitAddress = 'tb1qsvuaztq2jltrl5pq26njcmn4gdz250325edas2'
 
   const testnetTaprootPubKey =
-    '036cbe3e4c6ece9e96ae7dabc99cfd3d9ffb3fcefc98d72e64cfc2a615ef9b8c9a'
+    '0385c264c7b6103eae8dc6ef31c5048b9f71b8c373585fe2cac943c6d262598ffc'
   const testnetTaprootAddress =
     'tb1phq6q90tnfq9xjlqf3zskeeuknsvhg954phrm6fkje7ezfrmkms7q0z4e26'
   switch (command) {
@@ -194,7 +195,7 @@ export async function runCLI() {
           mnemonic,
           publicKey: taprootPubkey,
           segwitAddress,
-          segwitHdPath: 'xverse',
+          segwitHdPath: 'oyl',
           segwitPubkey,
           taprootHdPath: TAPROOT_HD_PATH,
         },
@@ -299,12 +300,19 @@ export async function runCLI() {
       console.log(testLog)
       break
     case 'testnet-send':
+      await testWallet.recoverWallet({
+        mnemonic: testnetMnemonic,
+        network: getNetwork('testnet'),
+        activeIndexes: [0],
+        customPath: 'testnet',
+      })
+
       // const testnetTaprootResponse = await testWallet.sendBtc({
       //   options: {
       //     to: 'tb1p6l2wm54y9rh6lz3gd4z2ty8w4nftnav7g4fph399f8zy4ed6h9cskmg3le',
       //     from: testnetTaprootAddress,
       //     amount: 500,
-      //     feeRate: 100,
+      //     feeRate: 10,
       //     mnemonic: testnetMnemonic,
       //     publicKey: testnetTaprootPubKey,
       //     segwitAddress: testnetSegwitAddress,
@@ -323,12 +331,13 @@ export async function runCLI() {
           to: 'tb1qgqw2l0hqglzw020h0yfjv69tuz50aq9m99h632',
           from: testnetSegwitAddress,
           amount: 500,
-          feeRate: 1,
+          feeRate: 10,
           mnemonic: testnetMnemonic,
           publicKey: testnetTaprootPubKey,
           segwitAddress: testnetSegwitAddress,
-          segwitHdPath: 'xverse',
-          segwitPubkey: testnetSegwitPubKey,
+          segwitHdPath: 'testnet',
+          segwitPubkey:
+            '02f12478ea8f28d179245d095faf1e14d63b9465d1a5fe2d5e0a107559082f887a',
           taprootHdPath: TAPROOT_HD_PATH,
         },
       })
@@ -339,7 +348,38 @@ export async function runCLI() {
       return
     case 'gen-testnet-wallet':
       const genTestWallet = await testWallet.initializeWallet()
-      console.log(genTestWallet)
+
+      console.log({
+        mnemonic: genTestWallet.mnemonic,
+        segwit: {
+          address: genTestWallet.segwit.segwitAddresses[0],
+          publicKey:
+            genTestWallet.segwit.segwitKeyring.wallets[0].publicKey.toString(
+              'hex'
+            ),
+          privateKey:
+            genTestWallet.segwit.segwitKeyring.wallets[0].privateKey.toString(
+              'hex'
+            ),
+          signer: genTestWallet.segwit.segwitKeyring.signTransaction.bind(
+            genTestWallet.segwit.segwitKeyring
+          ),
+        },
+        taproot: {
+          address: genTestWallet.taproot.taprootAddresses[0],
+          publicKey:
+            genTestWallet.taproot.taprootKeyring.wallets[0].publicKey.toString(
+              'hex'
+            ),
+          privateKey:
+            genTestWallet.taproot.taprootKeyring.wallets[0].privateKey.toString(
+              'hex'
+            ),
+          signer: genTestWallet.taproot.taprootKeyring.signTransaction.bind(
+            genTestWallet.taproot.taprootKeyring
+          ),
+        },
+      })
       return
     default:
       return await callAPI(yargs.argv._[0], options)
