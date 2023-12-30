@@ -38,7 +38,7 @@ export const customPaths = {
     initializedFrom: 'oyl',
     segwitPath: "m/84'/1'/0'/0",
     segwitAddressType: AddressType.P2WPKH,
-  },
+  }
 }
 
 export class AccountManager {
@@ -62,7 +62,6 @@ export class AccountManager {
     this.hdPath = options?.customPath
       ? customPaths[options.customPath]
       : customPaths.oyl
-
     this.taprootKeyring = new HdKeyring({
       mnemonic: this.mnemonic,
       hdPath: this.hdPath.taprootPath,
@@ -102,12 +101,10 @@ export class AccountManager {
     const ret: oylAccounts = {
       taproot: {
         taprootKeyring: this.taprootKeyring,
-        taprootPubKey: taprootAcccounts[0].toString('hex'),
         taprootAddresses,
       },
       segwit: {
         segwitKeyring: this.segwitKeyring,
-        segwitPubKey: segwitAccounts[0].toString('hex'),
         segwitAddresses,
       },
       initializedFrom: this.hdPath.initializedFrom,
@@ -143,12 +140,10 @@ export class AccountManager {
     const ret: oylAccounts = {
       taproot: {
         taprootKeyring: this.taprootKeyring,
-        taprootPubKey: this.taprootKeyring.root.PublicKey.toString('hex'),
         taprootAddresses,
       },
       segwit: {
         segwitKeyring: this.segwitKeyring,
-        segwitPubKey: this.segwitKeyring.root.PublicKey.toString('hex'),
         segwitAddresses,
       },
       initializedFrom: this.hdPath.initializedFrom,
@@ -187,14 +182,10 @@ export class AccountManager {
     const ret: oylAccounts = {
       taproot: {
         taprootKeyring: this.taprootKeyring,
-        taprootPubKey:
-          this.taprootKeyring.root.PublicKey.publicKey.toString('hex'),
         taprootAddresses,
       },
       segwit: {
         segwitKeyring: this.segwitKeyring,
-        segwitPubKey:
-          this.segwitKeyring.root.PublicKey.publicKey.toString('hex'),
         segwitAddresses,
       },
       initializedFrom: this.hdPath.initializedFrom,

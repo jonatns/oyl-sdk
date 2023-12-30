@@ -16,6 +16,10 @@ import { addressFormats } from '../wallet/accounts'
  *
  */
 
+
+
+
+
 export const getBtcPrice = async () => {
   try {
     const response = await fetch(`https://blockchain.info/ticker`, {
@@ -82,32 +86,21 @@ export const getMetaUtxos = async (
 }
 
 export function getAddressType(address: string): AddressType | null {
-  if (
-    addressFormats.mainnet.p2pkh.test(address) ||
-    addressFormats.testnet.p2pkh.test(address) ||
-    addressFormats.regtest.p2pkh.test(address)
-  ) {
-    return AddressType.P2PKH
-  } else if (
-    addressFormats.mainnet.p2tr.test(address) ||
-    addressFormats.testnet.p2tr.test(address) ||
-    addressFormats.regtest.p2tr.test(address)
-  ) {
-    return AddressType.P2TR
-  } else if (
-    addressFormats.mainnet.p2sh.test(address) ||
-    addressFormats.testnet.p2sh.test(address) ||
-    addressFormats.regtest.p2sh.test(address)
-  ) {
-    return AddressType.P2SH_P2WPKH
-  } else if (
-    addressFormats.mainnet.p2wpkh.test(address) ||
-    addressFormats.testnet.p2wpkh.test(address) ||
-    addressFormats.regtest.p2wpkh.test(address)
-  ) {
-    return AddressType.P2WPKH
-  } else {
-    return null
+  if (addressFormats.mainnet.p2pkh.test(address) || addressFormats.testnet.p2pkh.test(address) || addressFormats.regtest.p2pkh.test(address)) {
+    return AddressType.P2PKH;
+  }
+  else if (addressFormats.mainnet.p2tr.test(address) || addressFormats.testnet.p2tr.test(address) || addressFormats.regtest.p2tr.test(address)) {
+    return AddressType.P2TR;
+  }
+  else if (addressFormats.mainnet.p2sh.test(address) || addressFormats.testnet.p2sh.test(address) || addressFormats.regtest.p2sh.test(address)) {
+    return AddressType.P2SH_P2WPKH;
+  }
+  else if (addressFormats.mainnet.p2wpkh.test(address) || addressFormats.testnet.p2wpkh.test(address) || addressFormats.regtest.p2wpkh.test(address)) {
+    return AddressType.P2WPKH;
+  }
+ 
+  else {
+    return null;
   }
 }
 
