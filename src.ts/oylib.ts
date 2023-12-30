@@ -24,6 +24,7 @@ import {
   ProviderOptions,
   Providers,
   RecoverAccountOptions,
+  SendBtc,
   TickerDetails,
 } from './shared/interface'
 import { OylApiClient } from './apiclient'
@@ -75,7 +76,6 @@ export class Oyl {
     this.esploraRpc = provider.esplora
     this.ordRpc = provider.ord
     this.fromProvider()
-    this.wallet = this.createWallet({})
   }
 
   /**
@@ -189,12 +189,13 @@ export class Oyl {
     hdPath = RequiredPath[3],
   }) {
     try {
-      const wallet = await accounts.importMnemonic(
+      const wallet: any = await accounts.importMnemonic(
         mnemonic,
         hdPath,
         addrType,
         this.network
       )
+
       this.wallet = wallet
       const meta = await this.getUtxosArtifacts({ address: wallet['address'] })
       const data = {
@@ -544,64 +545,40 @@ export class Oyl {
    * @param {string} params.publicKey - The public key associated with the transaction.
    * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
    */
-  async sendBtc({
-    to,
-    from,
-    amount,
-    feeRate,
-    publicKey,
-    mnemonic,
-    segwitAddress,
-    segwitPubkey,
-    segwitHdPathWithIndex,
-    taprootHdPathWithIndex,
-    payFeesWithSegwit = true,
-  }: {
-    to: string
-    from: string
-    amount: number
-    feeRate: number
-    publicKey: string
-    mnemonic: string
-    segwitAddress?: string
-    segwitPubkey?: string
-    segwitHdPathWithIndex: string
-    taprootHdPathWithIndex: string
-    payFeesWithSegwit?: boolean
-  }) {
-    const hdPaths = customPaths[segwitHdPathWithIndex]
+  async sendBtc({ options }: { options: SendBtc }): Promise<object> {
+    const hdPaths = customPaths[options.segwitHdPath]
     const taprootSigner = await this.createTaprootSigner({
-      mnemonic: mnemonic,
-      taprootAddress: from,
+      mnemonic: options.mnemonic,
+      taprootAddress: options.from,
       hdPathWithIndex: hdPaths['taprootPath'],
     })
 
     const segwitSigner = await this.createSegwitSigner({
-      mnemonic: mnemonic,
-      segwitAddress: segwitAddress,
+      mnemonic: options.mnemonic,
+      segwitAddress: options.segwitAddress,
       hdPathWithIndex: hdPaths['segwitPath'],
     })
 
     const taprootUtxos = await this.getUtxosArtifacts({
-      address: from,
+      address: options.from,
     })
     let segwitUtxos: any[] | undefined
-    if (segwitAddress) {
+    if (options.segwitAddress) {
       segwitUtxos = await this.getUtxosArtifacts({
-        address: segwitAddress,
+        address: options.segwitAddress,
       })
     }
 
     const { txnId, rawTxn } = await createBtcTx({
-      inputAddress: from,
-      outputAddress: to,
-      amount: amount,
-      feeRate: feeRate,
-      segwitAddress: segwitAddress,
-      segwitPublicKey: segwitPubkey,
-      taprootPublicKey: publicKey,
-      mnemonic: mnemonic,
-      payFeesWithSegwit: payFeesWithSegwit,
+      inputAddress: options.from,
+      outputAddress: options.to,
+      amount: options.amount,
+      feeRate: options.feeRate,
+      segwitAddress: options.segwitAddress,
+      segwitPublicKey: options.segwitPubkey,
+      taprootPublicKey: options.publicKey,
+      mnemonic: options.mnemonic,
+      payFeesWithSegwit: options.payFeesWithSegwit,
       taprootSigner: taprootSigner,
       segwitSigner: segwitSigner,
       network: this.network,

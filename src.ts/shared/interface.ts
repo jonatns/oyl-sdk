@@ -163,10 +163,12 @@ export interface oylAccounts {
   taproot: {
     taprootKeyring: any
     taprootAddresses: string[]
+    taprootPubKey: string
   }
   segwit: {
     segwitKeyring: any
     segwitAddresses: string[]
+    segwitPubKey: string
   }
   initializedFrom: string
   mnemonic: string
@@ -214,6 +216,20 @@ export interface InscribeTransfer {
   taprootHdPath: string
   isDry?: boolean
   inscriptionId?: string
+}
+
+export interface SendBtc {
+  to: string
+  from: string
+  amount: number
+  feeRate: number
+  publicKey: string
+  mnemonic: string
+  segwitAddress?: string
+  segwitPubkey?: string
+  segwitHdPath: 'xverse' | 'leather' | 'unisat' | 'testnet' | 'oyl'
+  taprootHdPath: string
+  payFeesWithSegwit?: boolean
 }
 
 export interface SwapBrcBid {
