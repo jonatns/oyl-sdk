@@ -178,7 +178,7 @@ export async function runCLI() {
   const testnetSegwitAddress = 'tb1qsvuaztq2jltrl5pq26njcmn4gdz250325edas2'
 
   const testnetTaprootPubKey =
-    '0385c264c7b6103eae8dc6ef31c5048b9f71b8c373585fe2cac943c6d262598ffc'
+    '036cbe3e4c6ece9e96ae7dabc99cfd3d9ffb3fcefc98d72e64cfc2a615ef9b8c9a'
   const testnetTaprootAddress =
     'tb1phq6q90tnfq9xjlqf3zskeeuknsvhg954phrm6fkje7ezfrmkms7q0z4e26'
   switch (command) {
@@ -307,31 +307,32 @@ export async function runCLI() {
         customPath: 'testnet',
       })
 
-      // const testnetTaprootResponse = await testWallet.sendBtc({
-      //   options: {
-      //     to: 'tb1p6l2wm54y9rh6lz3gd4z2ty8w4nftnav7g4fph399f8zy4ed6h9cskmg3le',
-      //     from: testnetTaprootAddress,
-      //     amount: 500,
-      //     feeRate: 10,
-      //     mnemonic: testnetMnemonic,
-      //     publicKey: testnetTaprootPubKey,
-      //     segwitAddress: testnetSegwitAddress,
-      //     segwitHdPath: 'xverse',
-      //     segwitPubkey: testnetSegwitPubKey,
-      //     taprootHdPath: TAPROOT_HD_PATH,
-      //   },
-      // })
+      const testnetTaprootResponse = await testWallet.sendBtc({
+        options: {
+          to: 'tb1p6l2wm54y9rh6lz3gd4z2ty8w4nftnav7g4fph399f8zy4ed6h9cskmg3le',
+          from: testnetTaprootAddress,
+          amount: 500,
+          feeRate: 10,
+          mnemonic: testnetMnemonic,
+          publicKey: testnetTaprootPubKey,
+          segwitAddress: testnetSegwitAddress,
+          segwitHdPath: 'testnet',
+          segwitPubkey:
+            '02f12478ea8f28d179245d095faf1e14d63b9465d1a5fe2d5e0a107559082f887a',
+          taprootHdPath: TAPROOT_HD_PATH,
+        },
+      })
 
-      // if (testnetTaprootResponse) {
-      //   console.log({ testnetTaprootResponse })
-      // }
+      if (testnetTaprootResponse) {
+        console.log({ testnetTaprootResponse })
+      }
 
       const testnetSegwitResponse = await testWallet.sendBtc({
         options: {
           to: 'tb1qgqw2l0hqglzw020h0yfjv69tuz50aq9m99h632',
           from: testnetSegwitAddress,
           amount: 500,
-          feeRate: 10,
+          feeRate: 100,
           mnemonic: testnetMnemonic,
           publicKey: testnetTaprootPubKey,
           segwitAddress: testnetSegwitAddress,

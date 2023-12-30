@@ -1001,6 +1001,17 @@ const addBTCUtxo = async ({
   let redeemScript
 
   if (addressType === 2) {
+    const p2shObj = bitcoin.payments.p2sh({
+      redeem: bitcoin.payments.p2sh({
+        pubkey: Buffer.from(segwitPubKey, 'hex'),
+        network: network,
+      }),
+    })
+
+    redeemScript = p2shObj.redeem.output
+  }
+
+  if (addressType === 3) {
     try {
       const p2wpkh = bitcoin.payments.p2wpkh({
         pubkey: Buffer.from(segwitPubKey, 'hex'),
@@ -1019,7 +1030,7 @@ const addBTCUtxo = async ({
   }
 
   for (let i = 0; i < utxosTosend.selectedUtxos.length; i++) {
-    if (addressType === 2) {
+    if (addressType === 3) {
       psbtTx.addInput({
         hash: utxosTosend.selectedUtxos[i].txId,
         index: utxosTosend.selectedUtxos[i].outputIndex,
@@ -1027,7 +1038,6 @@ const addBTCUtxo = async ({
           value: utxosTosend.selectedUtxos[i].satoshis,
           script: Buffer.from(utxosTosend.selectedUtxos[i].scriptPk, 'hex'),
         },
-        redeemScript: redeemScript,
       })
     } else {
       psbtTx.addInput({
