@@ -24,7 +24,6 @@ import {
   ProviderOptions,
   Providers,
   RecoverAccountOptions,
-  SendBtc,
   TickerDetails,
 } from './shared/interface'
 import { OylApiClient } from './apiclient'
@@ -60,10 +59,7 @@ export class Oyl {
    * Initializes a new instance of the Wallet class.
    */
   constructor(options: NetworkOptions = defaultNetworkOptions) {
-    this.apiClient = new OylApiClient({
-      host: 'https://api.oyl.gg',
-      testnet: options.network == 'testnet' ? true : null,
-    })
+    this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg', testnet: options.network == "testnet"? true : null  })
     const rpcUrl = `${options.baseUrl}/${options.version}/${options.projectId}`
     const provider = new Provider(rpcUrl)
     this.network = getNetwork(options.network)
@@ -71,6 +67,7 @@ export class Oyl {
     this.esploraRpc = provider.esplora
     this.ordRpc = provider.ord
     this.fromProvider()
+    this.wallet = this.createWallet({})
   }
 
   /**
@@ -184,13 +181,12 @@ export class Oyl {
     hdPath = RequiredPath[3],
   }) {
     try {
-      const wallet: any = await accounts.importMnemonic(
+      const wallet = await accounts.importMnemonic(
         mnemonic,
         hdPath,
         addrType,
         this.network
       )
-
       this.wallet = wallet
       const meta = await this.getUtxosArtifacts({ address: wallet['address'] })
       const data = {
@@ -243,10 +239,7 @@ export class Oyl {
    */
   async initializeWallet() {
     try {
-      const wallet = new AccountManager({
-        network: this.network,
-        customPath: this.network == getNetwork('testnet') ? 'testnet' : null,
-      })
+      const wallet = new AccountManager({ network: this.network, customPath: this.network == getNetwork('testnet') ? 'testnet' : null })
       const walletPayload = await wallet.initializeAccounts()
       return walletPayload
     } catch (error) {
@@ -375,30 +368,30 @@ export class Oyl {
     return totalMissingValue
   }
 
-  async getUtxos(address: string) {
-    const utxosResponse = await this.esploraRpc.getAddressUtxo(address)
-
-    const formattedUtxos = []
-
+  async getUtxos (address: string) {
+    
+    const utxosResponse = await this.esploraRpc.getAddressUtxo(address); 
+  
+    const formattedUtxos = [];
+  
     for (const utxo of utxosResponse) {
-      const transactionDetails = await this.esploraRpc.getTxInfo(utxo.txid)
-
-      const voutEntry = transactionDetails.vout.find(
-        (v) => v.scriptpubkey_address === address
-      )
-      const script = voutEntry ? voutEntry.scriptpubkey : ''
-
+      const transactionDetails = await this.esploraRpc.getTxInfo(utxo.txid);
+  
+      const voutEntry = transactionDetails.vout.find(v => v.scriptpubkey_address === address);
+      const script = voutEntry ? voutEntry.scriptpubkey : '';
+  
       formattedUtxos.push({
         tx_hash_big_endian: utxo.txid,
         tx_output_n: utxo.vout,
         value: utxo.value,
         confirmations: utxo.status.confirmed ? 3 : 0,
         script: script,
-        tx_index: 0,
-      })
-    }
-    return { unspent_outputs: formattedUtxos }
-  }
+        tx_index: 0
+    })
+  };
+  return {unspent_outputs: formattedUtxos};
+}
+  
 
   /**
    * Retrieves the transaction history for a given address and processes the transactions.
@@ -481,8 +474,8 @@ export class Oyl {
   }
 
   async getTotalBalance({ batch }) {
-    //deprecated
-    return 0
+    //deprecated 
+    return 0;
   }
 
   /**
@@ -540,40 +533,64 @@ export class Oyl {
    * @param {string} params.publicKey - The public key associated with the transaction.
    * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
    */
-  async sendBtc({ options }: { options: SendBtc }): Promise<object> {
-    const hdPaths = customPaths[options.segwitHdPath]
+  async sendBtc({
+    to,
+    from,
+    amount,
+    feeRate,
+    publicKey,
+    mnemonic,
+    segwitAddress,
+    segwitPubkey,
+    segwitHdPathWithIndex,
+    taprootHdPathWithIndex,
+    payFeesWithSegwit = true,
+  }: {
+    to: string
+    from: string
+    amount: number
+    feeRate: number
+    publicKey: string
+    mnemonic: string
+    segwitAddress?: string
+    segwitPubkey?: string
+    segwitHdPathWithIndex: string
+    taprootHdPathWithIndex: string
+    payFeesWithSegwit?: boolean
+  }) {
+    const hdPaths = customPaths[segwitHdPathWithIndex]
     const taprootSigner = await this.createTaprootSigner({
-      mnemonic: options.mnemonic,
-      taprootAddress: options.from,
+      mnemonic: mnemonic,
+      taprootAddress: from,
       hdPathWithIndex: hdPaths['taprootPath'],
     })
 
     const segwitSigner = await this.createSegwitSigner({
-      mnemonic: options.mnemonic,
-      segwitAddress: options.segwitAddress,
+      mnemonic: mnemonic,
+      segwitAddress: segwitAddress,
       hdPathWithIndex: hdPaths['segwitPath'],
     })
 
     const taprootUtxos = await this.getUtxosArtifacts({
-      address: options.from,
+      address: from,
     })
     let segwitUtxos: any[] | undefined
-    if (options.segwitAddress) {
+    if (segwitAddress) {
       segwitUtxos = await this.getUtxosArtifacts({
-        address: options.segwitAddress,
+        address: segwitAddress,
       })
     }
 
     const { txnId, rawTxn } = await createBtcTx({
-      inputAddress: options.from,
-      outputAddress: options.to,
-      amount: options.amount,
-      feeRate: options.feeRate,
-      segwitAddress: options.segwitAddress,
-      segwitPublicKey: options.segwitPubkey,
-      taprootPublicKey: options.publicKey,
-      mnemonic: options.mnemonic,
-      payFeesWithSegwit: options.payFeesWithSegwit,
+      inputAddress: from,
+      outputAddress: to,
+      amount: amount,
+      feeRate: feeRate,
+      segwitAddress: segwitAddress,
+      segwitPublicKey: segwitPubkey,
+      taprootPublicKey: publicKey,
+      mnemonic: mnemonic,
+      payFeesWithSegwit: payFeesWithSegwit,
       taprootSigner: taprootSigner,
       segwitSigner: segwitSigner,
       network: this.network,
@@ -681,7 +698,7 @@ export class Oyl {
       const addressType = transactions.getAddressType(address)
       if (addressType == null) throw Error('Invalid Address Type')
       const tx = new PSBTTransaction(signer, address, pubKey, addressType, fee)
-      const psbt = bitcoin.Psbt.fromHex(psbtHex, { network: this.network })
+      const psbt = bitcoin.Psbt.fromHex(psbtHex, {network: this.network})
       const signedPsbt = await tx.signPsbt(psbt)
       const signedPsbtBase64 = signedPsbt.toBase64()
       const signedPsbtHex = signedPsbt.toHex()
