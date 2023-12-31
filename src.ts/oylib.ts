@@ -698,7 +698,7 @@ export class Oyl {
       const addressType = transactions.getAddressType(address)
       if (addressType == null) throw Error('Invalid Address Type')
       const tx = new PSBTTransaction(signer, address, pubKey, addressType, fee)
-      const psbt = bitcoin.Psbt.fromHex(psbtHex)
+      const psbt = bitcoin.Psbt.fromHex(psbtHex, {network: this.network})
       const signedPsbt = await tx.signPsbt(psbt)
       const signedPsbtBase64 = signedPsbt.toBase64()
       const signedPsbtHex = signedPsbt.toHex()

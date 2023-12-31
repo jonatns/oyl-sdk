@@ -17,7 +17,7 @@ export class OGPSBTTransaction {
   private signer: any
   private address: string
   public changedAddress: string
-  private network: bitcoin.Network = bitcoin.networks.bitcoin
+  private network: bitcoin.Network 
   private feeRate: number
   private pubkey: string
   private addressType: AddressType
@@ -27,13 +27,15 @@ export class OGPSBTTransaction {
     address: string,
     pubkey: string,
     addressType: AddressType,
-    feeRate?: number
+    feeRate?: number,
+    network?: bitcoin.Network
   ) {
     this.signer = signer
     this.address = address
     this.pubkey = pubkey
     this.addressType = addressType
     this.feeRate = feeRate || 5
+    this.network = network || bitcoin.networks.bitcoin
   }
 
   setEnableRBF(enable: boolean) {
@@ -120,7 +122,7 @@ export class OGPSBTTransaction {
 
   formatOptionsToSignInputs = async (_psbt: string | bitcoin.Psbt, isRevealTx: boolean = false) => {
     let toSignInputs: ToSignInput[] = []
-    const psbtNetwork = bitcoin.networks.bitcoin
+    const psbtNetwork = this.network
 
     const psbt =
       typeof _psbt === 'string'
@@ -179,7 +181,7 @@ export class OGPSBTTransaction {
   }
 
   async signPsbt(psbt: bitcoin.Psbt, autoFinalized = true, isRevealTx: boolean = false) {
-    const psbtNetwork = bitcoin.networks.bitcoin
+    const psbtNetwork = this.network
 
     const toSignInputs: ToSignInput[] = await this.formatOptionsToSignInputs(
       psbt,

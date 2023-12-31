@@ -432,7 +432,7 @@ export const inscribe = async ({
     const [tpubkey, cblock] = Tap.getPubKey(pubKey, { target: tapleaf })
     const inscriberAddress = Address.p2tr.fromPubKey(tpubkey)
 
-    const psbt = new bitcoin.Psbt()
+    const psbt = new bitcoin.Psbt({network: network})
 
     const inputs = 1
     const revealVb = calculateTaprootTxSize(inputs, 0, 1)
@@ -477,7 +477,7 @@ export const inscribe = async ({
     signedPsbt.finalizeAllInputs()
 
     const commitPsbtHash = signedPsbt.toHex()
-    const commitTxPsbt: bitcoin.Psbt = bitcoin.Psbt.fromHex(commitPsbtHash)
+    const commitTxPsbt: bitcoin.Psbt = bitcoin.Psbt.fromHex(commitPsbtHash, {network: network})
 
     const commitTxHex = commitTxPsbt.extractTransaction().toHex()
     let commitTxId: string
@@ -818,7 +818,7 @@ export const sendCollectible = async ({
 }) => {
   //const fastestFee = await getRecommendedBTCFeesMempool()
   try {
-    const psbt = new bitcoin.Psbt()
+    const psbt = new bitcoin.Psbt({network: network})
 
     const utxosToSend = await insertCollectibleUtxo({
       taprootUtxos: taprootUtxos,
@@ -1079,7 +1079,7 @@ export const createBtcTx = async ({
   taprootUtxos: Utxo[]
 }) => {
   try {
-    const psbt = new bitcoin.Psbt()
+    const psbt = new bitcoin.Psbt({network: network})
 
     const inputAddressType = addressTypeMap[getAddressType(inputAddress)]
 
