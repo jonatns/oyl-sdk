@@ -18,6 +18,7 @@ export class OGPSBTTransaction {
   private address: string
   public changedAddress: string
   private network: bitcoin.Network
+
   private feeRate: number
   private pubkey: string
   private addressType: AddressType
@@ -29,6 +30,7 @@ export class OGPSBTTransaction {
     addressType: AddressType,
     network?: bitcoin.Network,
     feeRate?: number
+
   ) {
     this.signer = signer
     this.address = address
