@@ -683,7 +683,7 @@ export class Oyl {
    * @returns {Promise<any>} A promise that resolves to the collectible data.
    */
   async getCollectibleById(inscriptionId: string) {
-    const { data } = await this.apiClient.getCollectiblesById(inscriptionId)
+    const { data } =  await this.ordRpc.getInscriptionById(inscriptionId)
     return data
   }
 
@@ -920,7 +920,7 @@ export class Oyl {
       }
 
       const { data: collectibleData } =
-        await this.apiClient.getCollectiblesById(options.inscriptionId)
+        await this.getCollectibleById(options.inscriptionId)
 
       const metaOffset = collectibleData.satpoint.charAt(
         collectibleData.satpoint.length - 1
