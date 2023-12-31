@@ -560,7 +560,6 @@ export class Oyl {
     segwitAddress?: string
     segwitPubkey?: string
     segwitHdPath: string
-    taprootHdPath: string
     payFeesWithSegwit?: boolean
   }) {
     const hdPaths = customPaths[segwitHdPath]

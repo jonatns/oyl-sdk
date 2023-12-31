@@ -195,7 +195,6 @@ export async function runCLI() {
         segwitAddress,
         segwitHdPath: 'oyl',
         segwitPubkey,
-        taprootHdPath: TAPROOT_HD_PATH,
       })
 
       if (taprootResponse) {
@@ -212,7 +211,6 @@ export async function runCLI() {
         segwitAddress,
         segwitHdPath,
         segwitPubkey,
-        taprootHdPath,
       })
 
       if (segwitResponse) {
@@ -313,7 +311,6 @@ export async function runCLI() {
         segwitHdPath: 'testnet',
         segwitPubkey:
           '02f12478ea8f28d179245d095faf1e14d63b9465d1a5fe2d5e0a107559082f887a',
-        taprootHdPath: TAPROOT_HD_PATH,
       })
 
       if (testnetTaprootResponse) {
@@ -331,7 +328,6 @@ export async function runCLI() {
         segwitHdPath: 'testnet',
         segwitPubkey:
           '02f12478ea8f28d179245d095faf1e14d63b9465d1a5fe2d5e0a107559082f887a',
-        taprootHdPath: TAPROOT_HD_PATH,
       })
 
       if (testnetSegwitResponse) {
