@@ -1,6 +1,7 @@
 import { OylApiClient } from '../apiclient';
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew';
 import { EsploraRpc } from "../rpclient/esplora";
+import * as bitcoin from 'bitcoinjs-lib';
 import { MarketplaceBuy } from '../shared/interface';
 export declare class BuildMarketplaceTransaction {
     walletAddress: string;
@@ -13,7 +14,8 @@ export declare class BuildMarketplaceTransaction {
     sandshrewBtcClient: SandshrewBitcoinClient;
     makersAddress: string | null;
     takerScript: string;
-    constructor({ address, pubKey, feeRate, psbtBase64, price }: MarketplaceBuy);
+    network: bitcoin.Network;
+    constructor({ address, pubKey, feeRate, psbtBase64, price, network }: MarketplaceBuy);
     getUTXOsToCoverAmount(amountNeeded: number, inscriptionLocs?: string[]): Promise<any>;
     psbtBuilder(): Promise<{
         psbtHex: string;

@@ -6,7 +6,6 @@ import { Aggregator } from './PSBTAggregator'
 import * as bitcoin from 'bitcoinjs-lib'
 import axios from 'axios'
 import * as ecc2 from '@bitcoinerlab/secp256k1'
-import { BuildMarketplaceTransaction } from './txbuilder/buildMarketplaceTransaction'
 import { NetworkOptions } from './shared/interface'
 
 bitcoin.initEccLib(ecc2)
@@ -21,18 +20,18 @@ export async function loadRpc(options) {
   }
 }
 
-export async function testMarketplaceBuy() {
-  const options = {
-    address: process.env.TAPROOT_ADDRESS,
-    pubKey: process.env.TAPROOT_PUBKEY,
-    feeRate: parseFloat(process.env.FEE_RATE),
-    psbtBase64: process.env.PSBT_BASE64,
-    price: 0.001,
-  }
-  const intent = new BuildMarketplaceTransaction(options)
-  const builder = await intent.psbtBuilder()
-  console.log(builder)
-}
+// export async function testMarketplaceBuy() {
+//   const options = {
+//     address: process.env.TAPROOT_ADDRESS,
+//     pubKey: process.env.TAPROOT_PUBKEY,
+//     feeRate: parseFloat(process.env.FEE_RATE),
+//     psbtBase64: process.env.PSBT_BASE64,
+//     price: 0.001,
+//   }
+//   const intent = new BuildMarketplaceTransaction(options)
+//   const builder = await intent.psbtBuilder()
+//   console.log(builder)
+// }
 
 export async function testAggregator() {
   const aggregator = new Aggregator()
@@ -250,9 +249,9 @@ export async function runCLI() {
     case 'view':
       return await viewPsbt()
       break
-    case 'market':
-      return await testMarketplaceBuy()
-      break
+    // case 'market':
+    //   return await testMarketplaceBuy()
+    //   break
     case 'convert':
       return await convertPsbt()
       break
