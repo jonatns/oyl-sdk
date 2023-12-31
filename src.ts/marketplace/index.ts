@@ -133,7 +133,7 @@ class Marketplace {
         signedPsbt.toBase64()
       );
     const [broadcast] =
-      await this.wallet.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([result.hex])
+      await this.wallet.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([result.hex]);
 
     if (!broadcast.allowed) {
       throw new Error(result['reject-reason'])
