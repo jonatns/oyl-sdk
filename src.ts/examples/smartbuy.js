@@ -27,7 +27,7 @@ export async function swapFlow() {
   const pubKey = process.env.TAPROOT_PUBKEY
 
   const psbt = bitcoin.Psbt.fromHex(process.env.PSBT_HEX, {
-    network: bitcoin.networks.bitcoin,
+    network: bitcoin.networks??,
   })
 
   

@@ -1132,6 +1132,8 @@ export const createBtcTx = async ({
       network,
     })
 
+    await psbt.setMaximumFeeRate(feeRate)
+
     const signedPsbt = await signInputs(
       psbt,
       toSignInputs,

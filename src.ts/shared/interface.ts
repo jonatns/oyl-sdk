@@ -138,6 +138,14 @@ export interface MarketplaceOffer {
   psbt: string
 }
 
+
+
+export interface MarketplaceOffers {
+  offerId: string
+  marketplace: string
+  ticker: string
+}
+
 export interface ProviderOptions {
   network: String
   host: String
@@ -184,8 +192,8 @@ export interface FeeEstimatorOptions {
 export interface MarketplaceBuy {
   address: string
   pubKey: string
-  feeRate: number
   psbtBase64: string
+  network: bitcoin.Network
   price: number
 }
 
