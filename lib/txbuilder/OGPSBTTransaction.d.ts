@@ -12,7 +12,7 @@ export declare class OGPSBTTransaction {
     private pubkey;
     private addressType;
     private enableRBF;
-    constructor(signer: any, address: string, pubkey: string, addressType: AddressType, feeRate?: number);
+    constructor(signer: any, address: string, pubkey: string, addressType: AddressType, network?: bitcoin.Network, feeRate?: number);
     setEnableRBF(enable: boolean): void;
     setChangeAddress(address: string): void;
     addInput(utxo: UnspentOutput): void;
