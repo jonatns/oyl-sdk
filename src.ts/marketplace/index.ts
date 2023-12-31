@@ -53,7 +53,7 @@ class Marketplace {
       psbtHex: filledOutPsbtHex,
     } = await marketPlaceBuy.psbtMultiBuilder(previousOrderTxId, remainingSats);
     const tempPsbt = bitcoin.Psbt.fromHex(filledOutPsbtHex, {
-      network: bitcoin.networks.bitcoin,
+      network: this.wallet.network,
     });
     const txSigner = await this.getSigner();
     const signedPsbt = await txSigner.signPsbt(tempPsbt, false);
@@ -92,6 +92,7 @@ class Marketplace {
       this.address,
       this.publicKey,
       this.addressType,
+      this.wallet.network,
       this.feeRate
     );
     return tx;
@@ -122,7 +123,7 @@ class Marketplace {
     const { psbtBase64, remainder, psbtHex } =
       await marketPlaceBuy.psbtBuilder();
     const tempPsbt = bitcoin.Psbt.fromHex(psbtHex, {
-      network: bitcoin.networks.bitcoin,
+      network: this.wallet.network,
     });
     const txSigner = await this.getSigner();
     const signedPsbt = await txSigner.signPsbt(tempPsbt, false);
@@ -186,7 +187,7 @@ class Marketplace {
       if (!prepared) {
         const { psbtHex } = await marketPlaceBuy.prepareWallet();
         const tempPsbt = bitcoin.Psbt.fromHex(psbtHex, {
-          network: bitcoin.networks.bitcoin,
+          network: this.wallet.network,
         });
         const txSigner = await this.getSigner();
         const signedPsbt = await txSigner.signPsbt(tempPsbt, false);
