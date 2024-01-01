@@ -252,6 +252,7 @@ export class HdKeyring extends EventEmitter {
     let wallet = this.wallets.find(
       (wallet) => wallet.publicKey.toString('hex') == publicKey
     )
+
     if (!wallet) {
       throw new Error('Simple Keyring - Unable to find matching publicKey.')
     }
@@ -308,6 +309,7 @@ export class HdKeyring extends EventEmitter {
       const child = this.root!.deriveChild(i)
       const ecpair = ECPair.fromPrivateKey(child.privateKey.toBuffer())
       const address = ecpair.publicKey.toString('hex')
+
       this._index2wallet[i] = [address, ecpair]
     }
 

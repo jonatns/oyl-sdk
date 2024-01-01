@@ -190,7 +190,7 @@ export declare class Oyl {
      * @param {string} params.publicKey - The public key associated with the transaction.
      * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
      */
-    sendBtc({ to, from, amount, feeRate, publicKey, mnemonic, segwitAddress, segwitPubkey, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, }: {
+    sendBtc({ to, from, amount, feeRate, publicKey, mnemonic, segwitAddress, segwitPubkey, segwitHdPath, payFeesWithSegwit, }: {
         to: string;
         from: string;
         amount: number;
@@ -199,8 +199,7 @@ export declare class Oyl {
         mnemonic: string;
         segwitAddress?: string;
         segwitPubkey?: string;
-        segwitHdPathWithIndex: string;
-        taprootHdPathWithIndex: string;
+        segwitHdPath: string;
         payFeesWithSegwit?: boolean;
     }): Promise<{
         txnId: string;
@@ -300,7 +299,12 @@ export declare class Oyl {
         rawTxn: string;
         error?: undefined;
     } | {
-        error: any;
+        error: any; /**
+         * Fetches offers associated with a specific BRC20 ticker.
+         * @param {Object} params - The parameters containing the ticker information.
+         * @param {string} params.ticker - The ticker symbol to retrieve offers for.
+         * @returns {Promise<any>} A promise that resolves to an array of offers.
+         */
         txnId?: undefined;
         rawTxn?: undefined;
     }>;
