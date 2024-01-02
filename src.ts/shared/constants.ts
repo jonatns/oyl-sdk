@@ -31,6 +31,9 @@ export const defaultNetworkOptions: Record<Network, NetworkOptions> = {
     network: 'testnet',
   },
   regtest: {
+    baseUrl: 'http://localhost:3000',
+    version: 'v1',
+    projectId: 'regtest',
     network: 'regtest',
   },
 }
