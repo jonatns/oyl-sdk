@@ -6,8 +6,6 @@ import { Aggregator } from './PSBTAggregator'
 import * as bitcoin from 'bitcoinjs-lib'
 import axios from 'axios'
 import * as ecc2 from '@bitcoinerlab/secp256k1'
-import { BuildMarketplaceTransaction } from './txbuilder/buildMarketplaceTransaction'
-import { getNetwork } from './shared/utils'
 
 bitcoin.initEccLib(ecc2)
 
@@ -295,7 +293,6 @@ export async function runCLI() {
     case 'testnet-send':
       await testWallet.recoverWallet({
         mnemonic: testnetMnemonic,
-        network: getNetwork('testnet'),
         activeIndexes: [0],
         customPath: 'testnet',
       })
