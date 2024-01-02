@@ -39,9 +39,6 @@ ordTest: reset
 txnHistory: reset
 	$(Q)oyl-cli txn-history
 	$(Q)echo "--- test complete"
-testnetWalletGen: reset
-	$(Q)oyl-cli gen-testnet-wallet
-	$(Q)echo "--- test complete"
 testnetSend: reset
 	$(Q)oyl-cli testnet-send
 	$(Q)echo "--- test complete"

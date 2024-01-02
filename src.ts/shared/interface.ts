@@ -138,6 +138,14 @@ export interface MarketplaceOffer {
   psbt: string
 }
 
+
+
+export interface MarketplaceOffers {
+  offerId: string
+  marketplace: string
+  ticker: string
+}
+
 export interface ProviderOptions {
   network: String
   host: String
@@ -184,8 +192,8 @@ export interface FeeEstimatorOptions {
 export interface MarketplaceBuy {
   address: string
   pubKey: string
-  feeRate: number
   psbtBase64: string
+  network: bitcoin.Network
   price: number
 }
 
@@ -216,20 +224,6 @@ export interface InscribeTransfer {
   taprootHdPath: string
   isDry?: boolean
   inscriptionId?: string
-}
-
-export interface SendBtc {
-  to: string
-  from: string
-  amount: number
-  feeRate: number
-  publicKey: string
-  mnemonic: string
-  segwitAddress?: string
-  segwitPubkey?: string
-  segwitHdPath: 'xverse' | 'leather' | 'unisat' | 'testnet' | 'oyl'
-  taprootHdPath: string
-  payFeesWithSegwit?: boolean
 }
 
 export interface SwapBrcBid {

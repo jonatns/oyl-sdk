@@ -1,7 +1,7 @@
 import BcoinRpc from './rpclient';
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
-import { AddressType, InscribeTransfer, NetworkOptions, ProviderOptions, Providers, RecoverAccountOptions, SendBtc, TickerDetails } from './shared/interface';
+import { AddressType, InscribeTransfer, NetworkOptions, ProviderOptions, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
 import * as bitcoin from 'bitcoinjs-lib';
 import { OrdRpc } from './rpclient/ord';
@@ -190,9 +190,21 @@ export declare class Oyl {
      * @param {string} params.publicKey - The public key associated with the transaction.
      * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
      */
-    sendBtc({ options }: {
-        options: SendBtc;
-    }): Promise<object>;
+    sendBtc({ to, from, amount, feeRate, publicKey, mnemonic, segwitAddress, segwitPubkey, segwitHdPath, payFeesWithSegwit, }: {
+        to: string;
+        from: string;
+        amount: number;
+        feeRate: number;
+        publicKey: string;
+        mnemonic: string;
+        segwitAddress?: string;
+        segwitPubkey?: string;
+        segwitHdPath: string;
+        payFeesWithSegwit?: boolean;
+    }): Promise<{
+        txnId: string;
+        rawTxn: string;
+    }>;
     /**
      * Retrieves information about a SegWit address.
      * @param {Object} params - The parameters containing the address information.

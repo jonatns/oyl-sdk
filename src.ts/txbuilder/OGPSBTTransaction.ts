@@ -17,7 +17,8 @@ export class OGPSBTTransaction {
   private signer: any
   private address: string
   public changedAddress: string
-  private network: bitcoin.Network 
+  private network: bitcoin.Network
+
   private feeRate: number
   private pubkey: string
   private addressType: AddressType
@@ -27,15 +28,16 @@ export class OGPSBTTransaction {
     address: string,
     pubkey: string,
     addressType: AddressType,
-    feeRate?: number,
-    network?: bitcoin.Network
+    network?: bitcoin.Network,
+    feeRate?: number
+
   ) {
     this.signer = signer
     this.address = address
     this.pubkey = pubkey
     this.addressType = addressType
     this.feeRate = feeRate || 5
-    this.network = network || bitcoin.networks.bitcoin
+    this.network = network
   }
 
   setEnableRBF(enable: boolean) {
