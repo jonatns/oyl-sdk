@@ -58,7 +58,12 @@ export class Oyl {
   /**
    * Initializes a new instance of the Wallet class.
    */
-  constructor(options: NetworkOptions = defaultNetworkOptions) {
+  constructor(opts?: NetworkOptions) {
+    const options = {
+      ...defaultNetworkOptions[opts.network],
+      ...opts,
+    }
+
     this.apiClient = new OylApiClient({
       host: 'https://api.oyl.gg',
       testnet: options.network == 'testnet' ? true : null,
@@ -209,9 +214,9 @@ export class Oyl {
    * @returns {Promise<any>} A promise that resolves to the recovered wallet payload.
    * @throws {Error} Throws an error if recovery fails.
    */
-  async recoverWallet(options: RecoverAccountOptions) {
+  async recoverWallet(options: Omit<RecoverAccountOptions, 'network'>) {
     try {
-      const wallet = new AccountManager(options)
+      const wallet = new AccountManager({ ...options, network: this.network })
       const walletPayload = await wallet.recoverAccounts()
       return walletPayload
     } catch (error) {
@@ -225,9 +230,9 @@ export class Oyl {
    * @returns {Promise<any>} A promise that resolves to the payload of the newly added account.
    * @throws {Error} Throws an error if adding the account fails.
    */
-  async addAccountToWallet(options: RecoverAccountOptions) {
+  async addAccountToWallet(options: Omit<RecoverAccountOptions, 'network'>) {
     try {
-      const wallet = new AccountManager(options)
+      const wallet = new AccountManager({ ...options, network: this.network })
       const walletPayload = await wallet.addAccount()
       return walletPayload
     } catch (error) {
