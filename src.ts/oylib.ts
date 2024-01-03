@@ -616,11 +616,11 @@ export class Oyl {
     const [result] =
       await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([rawTxn])
 
-    // if (!result.allowed) {
-    //   throw new Error(result['reject-reason'])
-    // }
+    if (!result.allowed) {
+      throw new Error(result['reject-reason'])
+    }
 
-    // await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(rawTxn)
+    await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(rawTxn)
 
     return { txnId: txnId, rawTxn: rawTxn }
   }

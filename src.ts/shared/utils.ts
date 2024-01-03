@@ -896,7 +896,7 @@ const insertBtcUtxo = async ({
   fromAddress,
   psbt,
   amount,
-  sendFromSegwit,
+  useTaprootUtxos,
   segwitPubKey,
   network,
 }: {
@@ -906,13 +906,13 @@ const insertBtcUtxo = async ({
   fromAddress: string
   psbt: bitcoin.Psbt
   amount: number
-  sendFromSegwit: boolean
+  useTaprootUtxos: boolean
   segwitPubKey: string
   network: bitcoin.Network
 }) => {
   try {
     let nonMetaUtxos: any[]
-    if (sendFromSegwit) {
+    if (useTaprootUtxos) {
       nonMetaUtxos = await filterTaprootUtxos({ taprootUtxos: taprootUtxos })
     } else {
       nonMetaUtxos = segwitUtxos
@@ -1055,17 +1055,19 @@ export const createBtcTx = async ({
 
     const inputAddressType = addressTypeMap[getAddressType(inputAddress)]
 
-    const isSentFromSegwit =
-      addressTypeToName[inputAddressType] === 'nested-segwit' || 'segwit'
-        ? true
-        : false
+    const useTaprootUtxos =
+      addressTypeToName[inputAddressType] === 'nested-segwit' ||
+      addressTypeToName[inputAddressType] === 'segwit'
+        ? false
+        : true
+
     const utxosToSend = await insertBtcUtxo({
       taprootUtxos: taprootUtxos,
       segwitUtxos: segwitUtxos,
       psbt: psbt,
       toAddress: outputAddress,
       amount: amount,
-      sendFromSegwit: isSentFromSegwit,
+      useTaprootUtxos: useTaprootUtxos,
       segwitPubKey: segwitPublicKey,
       fromAddress: inputAddress,
       network,
