@@ -58,7 +58,7 @@ export class Oyl {
   /**
    * Initializes a new instance of the Wallet class.
    */
-  constructor(opts?: NetworkOptions) {
+  constructor(opts = defaultNetworkOptions.mainnet) {
     const options = {
       ...defaultNetworkOptions[opts.network],
       ...opts,
