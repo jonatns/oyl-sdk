@@ -32,30 +32,6 @@ export declare class OylApiClient {
     };
     private _call;
     /**
-     * Import an address to the Oyl API.
-     * @param address - The address to be imported.
-     */
-    importAddress({ address }: {
-        address: string;
-    }): Promise<any>;
-    /**
-     * Push a transaction.
-     * @param transactionHex - The hex of the transaction.
-     */
-    pushTx({ transactionHex }: {
-        transactionHex: string;
-    }): Promise<any>;
-    /**
-     * Get transactions by address.
-     * @param address - The address to query.
-     */
-    getTxByAddress(address: string): Promise<any>;
-    /**
-     * Get transactions by hash.
-     * @param address - The hash to query.
-     */
-    getTxByHash(hash: string): Promise<any>;
-    /**
      * Get brc20 info by ticker.
      * @param ticker - The hash to query.
      */
@@ -75,22 +51,6 @@ export declare class OylApiClient {
      * @param address - The address to query.
      */
     getCollectiblesByAddress(address: string): Promise<any>;
-    /**
-     * List wallets.
-     */
-    listWallet(): Promise<any>;
-    /**
-     * List transactions.
-     */
-    listTx(): Promise<any>;
-    /**
-     * Get raw mempool.
-     */
-    getRawMempool(): Promise<any>;
-    /**
-     * Get mempool information.
-     */
-    getMempoolInfo(): Promise<any>;
     /**
      * Get Unisat ticker offers.
      * @param _ticker - The ticker to query.
@@ -130,28 +90,4 @@ export declare class OylApiClient {
      * @param params - Parameters for the signed bid.
      */
     submitSignedBid(params: SignedBid): Promise<any>;
-    /**
-     * Get transaction fees.
-     */
-    getFees(): Promise<any>;
-    /**
-     * Subscribe for notifications.
-     * @param webhookUrl - The URL to send notifications.
-     * @param rbf - Replace-by-fee flag.
-     */
-    subscribe({ webhookUrl, rbf, }: {
-        webhookUrl: string;
-        rbf?: boolean;
-    }): Promise<any>;
-    /**
-     * Import an address and subscribe for notifications.
-     * @param address - The address to be imported.
-     * @param webhookUrl - The URL to send notifications.
-     * @param rbf - Replace-by-fee flag.
-     */
-    importSubscribe({ address, webhookUrl, rbf, }: {
-        address: string;
-        webhookUrl: string;
-        rbf?: boolean;
-    }): Promise<void>;
 }

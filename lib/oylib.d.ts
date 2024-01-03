@@ -1,7 +1,6 @@
-import BcoinRpc from './rpclient';
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
-import { AddressType, InscribeTransfer, NetworkOptions, ProviderOptions, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
+import { AddressType, InscribeTransfer, NetworkOptions, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
 import * as bitcoin from 'bitcoinjs-lib';
 import { OrdRpc } from './rpclient/ord';
@@ -17,25 +16,12 @@ export declare class Oyl {
     esploraRpc: EsploraRpc;
     ordRpc: OrdRpc;
     provider: Providers;
-    rpcClient: BcoinRpc;
     apiClient: OylApiClient;
     derivPath: String;
     /**
      * Initializes a new instance of the Wallet class.
      */
     constructor(opts?: NetworkOptions);
-    /**
-     * Connects to a given blockchain RPC client.
-     * @param {BcoinRpc} provider - The blockchain RPC client to connect to.
-     * @returns {Wallet} - The connected wallet instance.
-     */
-    static connect(provider: BcoinRpc): Oyl;
-    /**
-     * Configures the wallet class with a provider from the given options.
-     * @param {ProviderOptions} [options] - The options to configure the provider.
-     * @returns {ProviderOptions} The applied client options.
-     */
-    fromProvider(options?: ProviderOptions): {};
     /**
      * Gets a summary of the given address(es).
      * @param {string | string[]} address - A single address or an array of addresses.
@@ -127,14 +113,6 @@ export declare class Oyl {
         amount: any;
         usd_value: string;
     }>;
-    /**
-     * Calculates the total value from previous outputs for the given inputs of a transaction.
-     * @param {any[]} inputs - The inputs of a transaction which might be missing value information.
-     * @param {string} address - The address to filter the inputs.
-     * @returns {Promise<number>} A promise that resolves to the total value of the provided inputs.
-     * @throws {Error} Throws an error if it fails to retrieve previous transaction data.
-     */
-    getTxValueFromPrevOut(inputs: any[], address: string): Promise<number>;
     getUtxos(address: string): Promise<{
         unspent_outputs: any[];
     }>;
@@ -292,7 +270,6 @@ export declare class Oyl {
         fromAddress: string;
         hdPathWithIndex: string;
     }): Promise<any>;
-    signInscriptionPsbt(psbt: any, fee: any, pubKey: any, signer: any, address?: string): Promise<any>;
     sendBRC20(options: InscribeTransfer): Promise<unknown>;
     sendOrdCollectible(options: InscribeTransfer): Promise<{
         txnId: string;
