@@ -194,7 +194,7 @@ export declare class Oyl {
         to: string;
         from: string;
         amount: number;
-        feeRate: number;
+        feeRate?: number;
         publicKey: string;
         mnemonic: string;
         segwitAddress?: string;

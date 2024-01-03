@@ -140,7 +140,12 @@ export const callBTCRPCEndpoint = async (
 export async function runCLI() {
   const [command] = yargs.argv._
   const options = Object.assign({}, yargs.argv)
-  const tapWallet = new Oyl()
+  const tapWallet = new Oyl({
+    network: 'mainnet',
+    baseUrl: 'https://mainnet.sandshrew.io',
+    version: 'v1',
+    projectId: 'd6aebfed1769128379aca7d215f0b689',
+  })
   const mnemonic =
     'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
   const taprootAddress =
@@ -253,7 +258,7 @@ export async function runCLI() {
         destinationAddress:
           'bc1pkvt4pj7jgj02s95n6sn56fhgl7t7cfx5mj4dedsqyzast0whpchs7ujd7y',
         feeRate: 10,
-        payFeesWithSegwit: false,
+        payFeesWithSegwit: true,
         mnemonic:
           'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
         segwitHdPath: 'xverse',

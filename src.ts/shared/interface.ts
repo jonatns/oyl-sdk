@@ -138,8 +138,6 @@ export interface MarketplaceOffer {
   psbt: string
 }
 
-
-
 export interface MarketplaceOffers {
   offerId: string
   marketplace: string
@@ -215,7 +213,7 @@ export interface InscribeTransfer {
   segwitPubKey?: string
   segwitAddress?: string
   payFeesWithSegwit: boolean
-  feeRate: number
+  feeRate?: number
   token?: string
   mnemonic: string
   amount?: number

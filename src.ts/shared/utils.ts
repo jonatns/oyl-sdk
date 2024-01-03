@@ -245,11 +245,9 @@ export const getWitnessDataChunk = function (
   return contentChunks
 }
 
-
 export const getSatpointFromUtxo = (utxo: IBlockchainInfoUTXO) => {
   return `${utxo.tx_hash_big_endian}:${utxo.tx_output_n}:0`
 }
-
 
 export const getInscriptionsByWalletBIS = async (
   walletAddress: string,
@@ -267,12 +265,9 @@ export const getInscriptionsByWalletBIS = async (
     .then((res) => res.data?.data)) as IBISWalletIx[]
 }
 
-
 export function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]) {
   return utxoArray?.reduce((prev, currentValue) => prev + currentValue.value, 0)
 }
-
-
 
 export const formatOptionsToSignInputs = async ({
   _psbt,
@@ -400,6 +395,7 @@ export const inscribe = async ({
   network,
   segwitUtxos,
   taprootUtxos,
+  taprootPrivateKey,
 }: {
   ticker: string
   amount: number
@@ -417,11 +413,10 @@ export const inscribe = async ({
   network: bitcoin.Network
   segwitUtxos: Utxo[]
   taprootUtxos: Utxo[]
+  taprootPrivateKey: string
 }) => {
-  // const fastestFee = await getRecommendedBTCFeesMempool()
   try {
-    const secret =
-      'd84d671cbd24a08db5ed43b93102484bd9bd8beb657e784451a226cf6a6e259b'
+    const secret = taprootPrivateKey
 
     const secKey = ecc2.keys.get_seckey(String(secret))
     const pubKey = ecc2.keys.get_pubkey(String(secret), true)
@@ -432,7 +427,7 @@ export const inscribe = async ({
     const [tpubkey, cblock] = Tap.getPubKey(pubKey, { target: tapleaf })
     const inscriberAddress = Address.p2tr.fromPubKey(tpubkey)
 
-    const psbt = new bitcoin.Psbt({network: network})
+    const psbt = new bitcoin.Psbt({ network: network })
 
     const inputs = 1
     const revealVb = calculateTaprootTxSize(inputs, 0, 1)
@@ -477,7 +472,9 @@ export const inscribe = async ({
     signedPsbt.finalizeAllInputs()
 
     const commitPsbtHash = signedPsbt.toHex()
-    const commitTxPsbt: bitcoin.Psbt = bitcoin.Psbt.fromHex(commitPsbtHash, {network: network})
+    const commitTxPsbt: bitcoin.Psbt = bitcoin.Psbt.fromHex(commitPsbtHash, {
+      network: network,
+    })
 
     const commitTxHex = commitTxPsbt.extractTransaction().toHex()
     let commitTxId: string
@@ -538,24 +535,6 @@ export const inscribe = async ({
   } catch (e: any) {
     return { error: e.message }
   }
-}
-// Add option for testnet
-const getRecommendedBTCFeesMempool = async () => {
-  const gen_res = await axios
-    .post(
-      'https://mainnet.sandshrew.io/v1/6e3bc3c289591bb447c116fda149b094',
-      {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'esplora_fee-estimates',
-        params: [],
-      },
-      {
-        headers: { 'Content-Type': 'application/json' },
-      }
-    )
-    .then((res) => res.data)
-  return (await gen_res).result['1']
 }
 
 export const createInscriptionScript = (pubKey: any, content: any) => {
@@ -816,9 +795,8 @@ export const sendCollectible = async ({
   segwitUtxos: Utxo[]
   metaOutputValue: number
 }) => {
-  //const fastestFee = await getRecommendedBTCFeesMempool()
   try {
-    const psbt = new bitcoin.Psbt({network: network})
+    const psbt = new bitcoin.Psbt({ network: network })
 
     const utxosToSend = await insertCollectibleUtxo({
       taprootUtxos: taprootUtxos,
@@ -1089,7 +1067,7 @@ export const createBtcTx = async ({
   taprootUtxos: Utxo[]
 }) => {
   try {
-    const psbt = new bitcoin.Psbt({network: network})
+    const psbt = new bitcoin.Psbt({ network: network })
 
     const inputAddressType = addressTypeMap[getAddressType(inputAddress)]
 

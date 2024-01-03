@@ -58,7 +58,7 @@ export declare const formatOptionsToSignInputs: ({ _psbt, isRevealTx, pubkey, se
     network: bitcoin.Network;
 }) => Promise<ToSignInput[]>;
 export declare const signInputs: (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], taprootPubkey: string, segwitPubKey: string, segwitSigner: any, taprootSigner: any) => Promise<bitcoin.Psbt>;
-export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, network, segwitUtxos, taprootUtxos, }: {
+export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, network, segwitUtxos, taprootUtxos, taprootPrivateKey, }: {
     ticker: string;
     amount: number;
     inputAddress: string;
@@ -75,6 +75,7 @@ export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, m
     network: bitcoin.Network;
     segwitUtxos: Utxo[];
     taprootUtxos: Utxo[];
+    taprootPrivateKey: string;
 }) => Promise<{
     txnId: any;
     commitRawTxn?: undefined;
