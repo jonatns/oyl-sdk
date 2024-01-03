@@ -56,7 +56,7 @@ export class Oyl {
   /**
    * Initializes a new instance of the Wallet class.
    */
-  constructor(opts?: NetworkOptions) {
+  constructor(opts = defaultNetworkOptions.mainnet) {
     const options = {
       ...defaultNetworkOptions[opts.network],
       ...opts,
@@ -628,7 +628,7 @@ export class Oyl {
    * @returns {Promise<any>} A promise that resolves to the collectible data.
    */
   async getCollectibleById(inscriptionId: string) {
-    const { data } =  await this.ordRpc.getInscriptionById(inscriptionId)
+    const { data } = await this.ordRpc.getInscriptionById(inscriptionId)
     return data
   }
 
@@ -842,8 +842,9 @@ export class Oyl {
         })
       }
 
-      const { data: collectibleData } =
-        await this.getCollectibleById(options.inscriptionId)
+      const { data: collectibleData } = await this.getCollectibleById(
+        options.inscriptionId
+      )
 
       const metaOffset = collectibleData.satpoint.charAt(
         collectibleData.satpoint.length - 1
