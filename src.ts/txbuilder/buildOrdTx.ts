@@ -98,7 +98,7 @@ const addSegwitFeeUtxo = async ({
 
     const inputCount = psbtTx.txInputs.length === 0 ? 1 : psbtTx.txInputs.length
     const vB = inputCount * 1 * 149 + 3 * 32 + 12
-    const fee = network === getNetwork('testnet') ? 100 : vB * feeRate
+    const fee = network === getNetwork('testnet') ? vB : vB * feeRate
 
     const feeUtxos = findUtxosForFees(nonMetaSegwitUtxos, fee)
 
