@@ -1007,14 +1007,10 @@ const addBTCUtxo = async ({
     }
   }
   psbtTx.addOutput({
-    address: fromAddress,
-    value: Math.floor(utxosTosend.change),
-  })
-  psbtTx.addOutput({
     address: toAddress,
     value: Math.floor(amount),
   })
-  return utxosTosend.selectedUtxos
+  return utxosTosend
 }
 
 export const createBtcTx = async ({
@@ -1095,8 +1091,6 @@ export const createBtcTx = async ({
       taprootAddress: inputAddress,
       network,
     })
-
-    psbt.setMaximumFeeRate(feeRate)
 
     const signedPsbt = await signInputs(
       psbt,

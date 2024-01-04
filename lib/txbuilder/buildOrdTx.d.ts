@@ -18,7 +18,11 @@ export declare const getUtxosForFees: ({ payFeesWithSegwit, psbtTx, feeRate, tap
     segwitUtxos?: Utxo[];
     segwitAddress?: string;
     segwitPubKey?: string;
-    utxosToSend?: Utxo[];
+    utxosToSend?: {
+        selectedUtxos: Utxo[];
+        totalSatoshis: number;
+        change: number;
+    };
     network: bitcoin.Network;
 }) => Promise<void>;
 export declare const addInscriptionUtxo: ({ metaUtxos, inscriptionId, toAddress, psbtTx, }: {
