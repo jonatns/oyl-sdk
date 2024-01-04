@@ -59,6 +59,19 @@ export declare class OylApiClient {
         ticker: string;
     }): Promise<any>;
     /**
+     * Get Aggregated brc20 ticker offers for a limit order.
+     * @param ticker - The ticker to query.
+     * @param limitOrderAmount - The limit order amount.
+     * @param marketPrice - The limit order market price.
+     * @param testnet - mainnet/testnet network toggle.
+     */
+    getAggregatedOffers({ ticker, limitOrderAmount, marketPrice, testnet }: {
+        ticker: string;
+        limitOrderAmount: number;
+        marketPrice: number;
+        testnet?: boolean;
+    }): Promise<any>;
+    /**
      * Get Okx ticker offers.
      * @param _ticker - The ticker to query.
      */

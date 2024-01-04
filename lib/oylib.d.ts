@@ -126,19 +126,6 @@ export declare class Oyl {
     getTxHistory({ addresses }: {
         addresses: string[];
     }): Promise<{}[]>;
-    /******************************* */
-    /**
-     * Retrieves the fee rates for transactions from the mempool.
-     * @returns {Promise<{ High: number; Medium: number; Low: number }>} A promise that resolves with an object containing the fee rates for High, Medium, and Low priority transactions.
-     */
-    getFees(): Promise<{
-        High: number;
-        Medium: number;
-        Low: number;
-    }>;
-    getTotalBalance({ batch }: {
-        batch: any;
-    }): Promise<number>;
     /**
      * Retrieves a list of inscriptions for a given address.
      * @param {Object} param0 - An object containing the address property.
