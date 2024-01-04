@@ -59,42 +59,6 @@ export class OylApiClient {
   }
 
   /**
-   * Import an address to the Oyl API.
-   * @param address - The address to be imported.
-   */
-  async importAddress({ address }: { address: string }): Promise<any> {
-    return await this._call('/import-address', 'post', { address })
-  }
-
-  /**
-   * Push a transaction.
-   * @param transactionHex - The hex of the transaction.
-   */
-  async pushTx({ transactionHex }: { transactionHex: string }): Promise<any> {
-    return await this._call('/broadcast-transaction', 'post', {
-      transactionHex,
-    })
-  }
-
-  /**
-   * Get transactions by address.
-   * @param address - The address to query.
-   */
-  async getTxByAddress(address: string): Promise<any> {
-    return await this._call('/address-transactions', 'post', { address })
-  }
-
-  /**
-   * Get transactions by hash.
-   * @param address - The hash to query.
-   */
-  async getTxByHash(hash: string) {
-    return await this._call('/hash-transactions', 'post', {
-      hash: hash,
-    })
-  }
-
-  /**
    * Get brc20 info by ticker.
    * @param ticker - The hash to query.
    */
@@ -135,33 +99,6 @@ export class OylApiClient {
     })
   }
 
-  /**
-   * List wallets.
-   */
-  async listWallet(): Promise<any> {
-    return await this._call('/list-wallets', 'get')
-  }
-
-  /**
-   * List transactions.
-   */
-  async listTx(): Promise<any> {
-    return await this._call('/list-tx', 'get')
-  }
-
-  /**
-   * Get raw mempool.
-   */
-  async getRawMempool(): Promise<any> {
-    return await this._call('/mempool', 'get')
-  }
-
-  /**
-   * Get mempool information.
-   */
-  async getMempoolInfo(): Promise<any> {
-    return await this._call('/mempool-info', 'get')
-  }
 
   /**
    * Get Unisat ticker offers.
@@ -170,6 +107,24 @@ export class OylApiClient {
   async getUnisatTickerOffers({ ticker }: { ticker: string }): Promise<any> {
     const response = await this._call('/get-token-unisat-offers', 'post', {
       ticker: ticker,
+    })
+    if (response.error) throw Error(response.error)
+    return response.data.list
+  }
+
+  /**
+   * Get Aggregated brc20 ticker offers for a limit order.
+   * @param ticker - The ticker to query.
+   * @param limitOrderAmount - The limit order amount.
+   * @param marketPrice - The limit order market price.
+   * @param testnet - mainnet/testnet network toggle.
+   */
+  async getAggregatedOffers({ ticker, limitOrderAmount, marketPrice, testnet }: { ticker: string, limitOrderAmount: number, marketPrice: number, testnet?: boolean }): Promise<any> {
+    const response = await this._call('/get-brc20-aggregate-offers', 'post', {
+      ticker: ticker,
+      limitOrderAmount,
+      marketPrice,
+      testnet
     })
     if (response.error) throw Error(response.error)
     return response.data.list
@@ -232,47 +187,5 @@ export class OylApiClient {
     return await this._call('/finalize-bid', 'post', params)
   }
 
-  /**
-   * Get transaction fees.
-   */
-  async getFees(): Promise<any> {
-    return await this._call('/get-fees', 'get')
-  }
 
-  /**
-   * Subscribe for notifications.
-   * @param webhookUrl - The URL to send notifications.
-   * @param rbf - Replace-by-fee flag.
-   */
-  async subscribe({
-    webhookUrl,
-    rbf = false,
-  }: {
-    webhookUrl: string
-    rbf?: boolean
-  }): Promise<any> {
-    return await this._call('/subscribe-webhook', 'post', {
-      webhookUrl,
-      rbf,
-    })
-  }
-
-  /**
-   * Import an address and subscribe for notifications.
-   * @param address - The address to be imported.
-   * @param webhookUrl - The URL to send notifications.
-   * @param rbf - Replace-by-fee flag.
-   */
-  async importSubscribe({
-    address,
-    webhookUrl,
-    rbf,
-  }: {
-    address: string
-    webhookUrl: string
-    rbf?: boolean
-  }): Promise<void> {
-    await this.importAddress({ address })
-    await this.subscribe({ webhookUrl, rbf })
-  }
 }
