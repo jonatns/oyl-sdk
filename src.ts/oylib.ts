@@ -155,11 +155,10 @@ export class Oyl {
         addrType,
         this.network
       )
+
       this.wallet = wallet
-      const meta = await this.getUtxosArtifacts({ address: wallet['address'] })
       const data = {
         keyring: wallet,
-        assets: meta,
       }
       this.mnemonic = mnemonic
       return data
@@ -418,24 +417,27 @@ export class Oyl {
    * @returns {Promise<Array<any>>} A promise that resolves to an array of inscription details.
    */
   async getInscriptions({ address }) {
-    const artifacts = await this.apiClient.getCollectiblesByAddress(address)
-    return artifacts.data.map((item) => {
-      const { inscription_id, inscription_number, satpoint } = item
+    const inscriptions = []
+    const artifacts = (await this.apiClient.getCollectiblesByAddress(address))
+      .data
+    for (const artifact of artifacts) {
+      const { inscription_id, inscription_number, satpoint } = artifact
+      const content = await this.ordRpc.getInscriptionContent(inscription_id)
 
       const detail = {
         id: inscription_id,
-        address: item.owner_wallet_addr,
-        preview: `https://ordinals.com/preview/${inscription_id}`,
-        content: `https://ordinals.com/content/${inscription_id}`,
+        address: artifact.owner_wallet_addr,
+        content: content,
         location: satpoint,
       }
 
-      return {
+      inscriptions.push({
         id: inscription_id,
         inscription_number,
         detail,
-      }
-    })
+      })
+    }
+    return inscriptions
   }
 
   /**
@@ -481,7 +483,7 @@ export class Oyl {
     to: string
     from: string
     amount: number
-    feeRate: number
+    feeRate?: number
     publicKey: string
     mnemonic: string
     segwitAddress?: string
@@ -510,6 +512,12 @@ export class Oyl {
       segwitUtxos = await this.getUtxosArtifacts({
         address: segwitAddress,
       })
+    }
+
+    if (!feeRate) {
+      feeRate = (await this.esploraRpc.getFeeEstimates())['1']
+    } else {
+      feeRate = feeRate
     }
 
     const { txnId, rawTxn } = await createBtcTx({
@@ -614,7 +622,7 @@ export class Oyl {
    * @returns {Promise<any>} A promise that resolves to the collectible data.
    */
   async getCollectibleById(inscriptionId: string) {
-    const { data } = await this.ordRpc.getInscriptionById(inscriptionId)
+    const data = await this.ordRpc.getInscriptionById(inscriptionId)
     return data
   }
 
@@ -688,22 +696,20 @@ export class Oyl {
     segwitAddress: string
     hdPathWithIndex: string
   }) {
-    if (segwitAddress) {
-      let payload: any
-      const segwitAddressType = transactions.getAddressType(segwitAddress)
-      if (segwitAddressType == null) {
-        throw Error('Unrecognized Address Type')
-      }
-      payload = await this.fromPhrase({
-        mnemonic: mnemonic.trim(),
-        hdPath: hdPathWithIndex,
-        addrType: segwitAddressType,
-      })
-      const segwitKeyring = payload.keyring.keyring
-      const segwitSigner = segwitKeyring.signTransaction.bind(segwitKeyring)
-      return segwitSigner
+    const segwitAddressType = transactions.getAddressType(segwitAddress)
+
+    if (segwitAddressType == null) {
+      throw Error('Unrecognized Address Type')
     }
-    return undefined
+    const segwitPayload = await this.fromPhrase({
+      mnemonic: mnemonic.trim(),
+      hdPath: hdPathWithIndex,
+      addrType: segwitAddressType,
+    })
+
+    const segwitKeyring = segwitPayload.keyring.keyring
+    const segwitSigner = segwitKeyring.signTransaction.bind(segwitKeyring)
+    return segwitSigner
   }
 
   async createTaprootSigner({
@@ -753,6 +759,7 @@ export class Oyl {
     })
 
     const tapKeyring = tapPayload.keyring.keyring
+
     const taprootSigner = tapKeyring.signTransaction.bind(tapKeyring)
     return taprootSigner
   }
@@ -761,31 +768,47 @@ export class Oyl {
 
   async sendBRC20(options: InscribeTransfer) {
     await isDryDisclaimer(options.isDry)
-    const hdPaths = customPaths[options.segwitHdPath]
-
-    const taprootUtxos = await this.getUtxosArtifacts({
-      address: options.fromAddress,
-    })
-    let segwitUtxos: any[] | undefined
-    if (options.segwitAddress) {
-      segwitUtxos = await this.getUtxosArtifacts({
-        address: options.segwitAddress,
-      })
-    }
-
-    const taprootSigner = await this.createTaprootSigner({
-      mnemonic: options.mnemonic,
-      taprootAddress: options.fromAddress,
-      hdPathWithIndex: hdPaths['taprootPath'],
-    })
-
-    const segwitSigner = await this.createSegwitSigner({
-      mnemonic: options.mnemonic,
-      segwitAddress: options.segwitAddress,
-      hdPathWithIndex: hdPaths['segwitPath'],
-    })
     try {
-      // CREATE TRANSFER INSCRIPTION
+      const addressType = transactions.getAddressType(options.fromAddress)
+      if (addressType == null) {
+        throw Error('Unrecognized Address Type')
+      }
+      const hdPaths = customPaths[options.segwitHdPath]
+
+      const taprootUtxos = await this.getUtxosArtifacts({
+        address: options.fromAddress,
+      })
+      let segwitUtxos: any[] | undefined
+      if (options.segwitAddress) {
+        segwitUtxos = await this.getUtxosArtifacts({
+          address: options.segwitAddress,
+        })
+      }
+
+      const taprootSigner = await this.createTaprootSigner({
+        mnemonic: options.mnemonic,
+        taprootAddress: options.fromAddress,
+        hdPathWithIndex: hdPaths['taprootPath'],
+      })
+
+      const segwitSigner = await this.createSegwitSigner({
+        mnemonic: options.mnemonic,
+        segwitAddress: options.segwitAddress,
+        hdPathWithIndex: hdPaths['segwitPath'],
+      })
+
+      const taprootPrivateKey = await this.fromPhrase({
+        mnemonic: options.mnemonic,
+        addrType: addressType,
+        hdPath: hdPaths['taprootPath'],
+      })
+
+      let feeRate: number
+      if (!options?.feeRate) {
+        feeRate = (await this.esploraRpc.getFeeEstimates())['1']
+      } else {
+        feeRate = options.feeRate
+      }
       return await inscribe({
         ticker: options.token,
         amount: options.amount,
@@ -799,10 +822,12 @@ export class Oyl {
         payFeesWithSegwit: options.payFeesWithSegwit,
         segwitSigner: segwitSigner,
         taprootSigner: taprootSigner,
-        feeRate: options.feeRate,
+        feeRate: feeRate,
         network: this.network,
         segwitUtxos: segwitUtxos,
         taprootUtxos: taprootUtxos,
+        taprootPrivateKey:
+          taprootPrivateKey.keyring.keyring._index2wallet[0][0],
       })
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -828,7 +853,7 @@ export class Oyl {
         })
       }
 
-      const { data: collectibleData } = await this.getCollectibleById(
+      const collectibleData = await this.getCollectibleById(
         options.inscriptionId
       )
 
@@ -855,6 +880,13 @@ export class Oyl {
         hdPathWithIndex: hdPaths['segwitPath'],
       })
 
+      let feeRate: number
+      if (!options?.feeRate) {
+        feeRate = (await this.esploraRpc.getFeeEstimates())['1']
+      } else {
+        feeRate = options.feeRate
+      }
+
       return await sendCollectible({
         inscriptionId: options.inscriptionId,
         inputAddress: options.fromAddress,
@@ -867,7 +899,7 @@ export class Oyl {
         payFeesWithSegwit: options.payFeesWithSegwit,
         segwitSigner: segwitSigner,
         taprootSigner: taprootSigner,
-        feeRate: options.feeRate,
+        feeRate: feeRate,
         network: this.network,
         taprootUtxos: taprootUtxos,
         segwitUtxos: segwitUtxos,

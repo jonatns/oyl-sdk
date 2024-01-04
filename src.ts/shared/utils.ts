@@ -25,7 +25,7 @@ import {
   findUtxosForFees,
   getUtxosForFees,
 } from '../txbuilder/buildOrdTx'
-import { isTaprootInput } from 'bitcoinjs-lib/src/psbt/bip371'
+import { isTaprootInput, toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 
 export interface IBISWalletIx {
   validity: any
@@ -245,11 +245,9 @@ export const getWitnessDataChunk = function (
   return contentChunks
 }
 
-
 export const getSatpointFromUtxo = (utxo: IBlockchainInfoUTXO) => {
   return `${utxo.tx_hash_big_endian}:${utxo.tx_output_n}:0`
 }
-
 
 export const getInscriptionsByWalletBIS = async (
   walletAddress: string,
@@ -267,12 +265,9 @@ export const getInscriptionsByWalletBIS = async (
     .then((res) => res.data?.data)) as IBISWalletIx[]
 }
 
-
 export function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]) {
   return utxoArray?.reduce((prev, currentValue) => prev + currentValue.value, 0)
 }
-
-
 
 export const formatOptionsToSignInputs = async ({
   _psbt,
@@ -311,7 +306,6 @@ export const formatOptionsToSignInputs = async ({
       }
       if (!isSigned && lostInternalPubkey) {
         const address = PsbtAddress.fromOutputScript(script, psbtNetwork)
-
         if (taprootAddress === address) {
           const tapInternalKey = assertHex(Buffer.from(pubkey, 'hex'))
           const p2tr = bitcoin.payments.p2tr({
@@ -333,6 +327,7 @@ export const formatOptionsToSignInputs = async ({
           }
         }
       }
+
       if (script && !isSigned && !isTaprootInput(v)) {
         toSignInputs.push({
           index: index,
@@ -400,6 +395,7 @@ export const inscribe = async ({
   network,
   segwitUtxos,
   taprootUtxos,
+  taprootPrivateKey,
 }: {
   ticker: string
   amount: number
@@ -417,11 +413,10 @@ export const inscribe = async ({
   network: bitcoin.Network
   segwitUtxos: Utxo[]
   taprootUtxos: Utxo[]
+  taprootPrivateKey: string
 }) => {
-  // const fastestFee = await getRecommendedBTCFeesMempool()
   try {
-    const secret =
-      'd84d671cbd24a08db5ed43b93102484bd9bd8beb657e784451a226cf6a6e259b'
+    const secret = taprootPrivateKey
 
     const secKey = ecc2.keys.get_seckey(String(secret))
     const pubKey = ecc2.keys.get_pubkey(String(secret), true)
@@ -432,7 +427,7 @@ export const inscribe = async ({
     const [tpubkey, cblock] = Tap.getPubKey(pubKey, { target: tapleaf })
     const inscriberAddress = Address.p2tr.fromPubKey(tpubkey)
 
-    const psbt = new bitcoin.Psbt({network: network})
+    const psbt = new bitcoin.Psbt({ network: network })
 
     const inputs = 1
     const revealVb = calculateTaprootTxSize(inputs, 0, 1)
@@ -477,7 +472,9 @@ export const inscribe = async ({
     signedPsbt.finalizeAllInputs()
 
     const commitPsbtHash = signedPsbt.toHex()
-    const commitTxPsbt: bitcoin.Psbt = bitcoin.Psbt.fromHex(commitPsbtHash, {network: network})
+    const commitTxPsbt: bitcoin.Psbt = bitcoin.Psbt.fromHex(commitPsbtHash, {
+      network: network,
+    })
 
     const commitTxHex = commitTxPsbt.extractTransaction().toHex()
     let commitTxId: string
@@ -538,24 +535,6 @@ export const inscribe = async ({
   } catch (e: any) {
     return { error: e.message }
   }
-}
-// Add option for testnet
-const getRecommendedBTCFeesMempool = async () => {
-  const gen_res = await axios
-    .post(
-      'https://mainnet.sandshrew.io/v1/6e3bc3c289591bb447c116fda149b094',
-      {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'esplora_fee-estimates',
-        params: [],
-      },
-      {
-        headers: { 'Content-Type': 'application/json' },
-      }
-    )
-    .then((res) => res.data)
-  return (await gen_res).result['1']
 }
 
 export const createInscriptionScript = (pubKey: any, content: any) => {
@@ -816,9 +795,8 @@ export const sendCollectible = async ({
   segwitUtxos: Utxo[]
   metaOutputValue: number
 }) => {
-  //const fastestFee = await getRecommendedBTCFeesMempool()
   try {
-    const psbt = new bitcoin.Psbt({network: network})
+    const psbt = new bitcoin.Psbt({ network: network })
 
     const utxosToSend = await insertCollectibleUtxo({
       taprootUtxos: taprootUtxos,
@@ -918,7 +896,7 @@ const insertBtcUtxo = async ({
   fromAddress,
   psbt,
   amount,
-  sendFromSegwit,
+  useTaprootUtxos,
   segwitPubKey,
   network,
 }: {
@@ -928,19 +906,19 @@ const insertBtcUtxo = async ({
   fromAddress: string
   psbt: bitcoin.Psbt
   amount: number
-  sendFromSegwit: boolean
+  useTaprootUtxos: boolean
   segwitPubKey: string
   network: bitcoin.Network
 }) => {
   try {
     let nonMetaUtxos: any[]
-    if (!sendFromSegwit) {
+    if (useTaprootUtxos) {
       nonMetaUtxos = await filterTaprootUtxos({ taprootUtxos: taprootUtxos })
     } else {
       nonMetaUtxos = segwitUtxos
     }
 
-    return addBTCUtxo({
+    return await addBTCUtxo({
       utxos: nonMetaUtxos,
       toAddress: toAddress,
       psbtTx: psbt,
@@ -999,36 +977,15 @@ const addBTCUtxo = async ({
   let redeemScript
 
   if (addressType === 2) {
-    const p2shObj = bitcoin.payments.p2sh({
-      redeem: bitcoin.payments.p2sh({
-        pubkey: Buffer.from(segwitPubKey, 'hex'),
-        network: network,
-      }),
+    const p2wpkh = bitcoin.payments.p2wpkh({
+      pubkey: Buffer.from(segwitPubKey, 'hex'),
+      network: network,
     })
-
-    redeemScript = p2shObj.redeem.output
-  }
-
-  if (addressType === 3) {
-    try {
-      const p2wpkh = bitcoin.payments.p2wpkh({
-        pubkey: Buffer.from(segwitPubKey, 'hex'),
-        network: network,
-      })
-
-      const p2sh = bitcoin.payments.p2sh({
-        redeem: p2wpkh,
-        network: network,
-      })
-
-      redeemScript = p2sh.redeem.output
-    } catch (error) {
-      console.log(error)
-    }
+    redeemScript = p2wpkh.output
   }
 
   for (let i = 0; i < utxosTosend.selectedUtxos.length; i++) {
-    if (addressType === 3) {
+    if (addressType === 2) {
       psbtTx.addInput({
         hash: utxosTosend.selectedUtxos[i].txId,
         index: utxosTosend.selectedUtxos[i].outputIndex,
@@ -1036,6 +993,7 @@ const addBTCUtxo = async ({
           value: utxosTosend.selectedUtxos[i].satoshis,
           script: Buffer.from(utxosTosend.selectedUtxos[i].scriptPk, 'hex'),
         },
+        redeemScript: redeemScript,
       })
     } else {
       psbtTx.addInput({
@@ -1047,12 +1005,12 @@ const addBTCUtxo = async ({
         },
       })
     }
-    psbtTx.addOutput({
-      address: toAddress,
-      value: Math.floor(utxosTosend.change),
-    })
   }
-  return utxosTosend.selectedUtxos
+  psbtTx.addOutput({
+    address: toAddress,
+    value: Math.floor(amount),
+  })
+  return utxosTosend
 }
 
 export const createBtcTx = async ({
@@ -1089,21 +1047,23 @@ export const createBtcTx = async ({
   taprootUtxos: Utxo[]
 }) => {
   try {
-    const psbt = new bitcoin.Psbt({network: network})
+    const psbt = new bitcoin.Psbt({ network: network })
 
     const inputAddressType = addressTypeMap[getAddressType(inputAddress)]
 
-    const isSentFromSegwit =
-      addressTypeToName[inputAddressType] === 'nested-segwit' || 'segwit'
-        ? true
-        : false
+    const useTaprootUtxos =
+      addressTypeToName[inputAddressType] === 'nested-segwit' ||
+      addressTypeToName[inputAddressType] === 'segwit'
+        ? false
+        : true
+
     const utxosToSend = await insertBtcUtxo({
       taprootUtxos: taprootUtxos,
       segwitUtxos: segwitUtxos,
       psbt: psbt,
       toAddress: outputAddress,
       amount: amount,
-      sendFromSegwit: isSentFromSegwit,
+      useTaprootUtxos: useTaprootUtxos,
       segwitPubKey: segwitPublicKey,
       fromAddress: inputAddress,
       network,
@@ -1131,8 +1091,6 @@ export const createBtcTx = async ({
       taprootAddress: inputAddress,
       network,
     })
-
-    await psbt.setMaximumFeeRate(feeRate)
 
     const signedPsbt = await signInputs(
       psbt,

@@ -140,7 +140,12 @@ export const callBTCRPCEndpoint = async (
 export async function runCLI() {
   const [command] = yargs.argv._
   const options = Object.assign({}, yargs.argv)
-  const tapWallet = new Oyl()
+  const tapWallet = new Oyl({
+    network: 'mainnet',
+    baseUrl: 'https://mainnet.sandshrew.io',
+    version: 'v1',
+    projectId: 'd6aebfed1769128379aca7d215f0b689',
+  })
   const mnemonic =
     'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
   const taprootAddress =
@@ -187,11 +192,11 @@ export async function runCLI() {
         to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
         from: 'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
         amount: 500,
-        feeRate: 100,
+        feeRate: 25,
         mnemonic,
         publicKey: taprootPubkey,
         segwitAddress,
-        segwitHdPath: 'oyl',
+        segwitHdPath: 'xverse',
         segwitPubkey,
       })
 
@@ -202,12 +207,12 @@ export async function runCLI() {
       const segwitResponse = await tapWallet.sendBtc({
         to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
         from: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-        amount: 20000,
-        feeRate: 12,
+        amount: 500,
+        feeRate: 25,
         publicKey: taprootPubkey,
         mnemonic,
         segwitAddress,
-        segwitHdPath,
+        segwitHdPath: 'xverse',
         segwitPubkey,
       })
 
@@ -253,7 +258,7 @@ export async function runCLI() {
         destinationAddress:
           'bc1pkvt4pj7jgj02s95n6sn56fhgl7t7cfx5mj4dedsqyzast0whpchs7ujd7y',
         feeRate: 10,
-        payFeesWithSegwit: false,
+        payFeesWithSegwit: true,
         mnemonic:
           'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
         segwitHdPath: 'xverse',

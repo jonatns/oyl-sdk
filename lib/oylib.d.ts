@@ -134,7 +134,7 @@ export declare class Oyl {
      */
     getInscriptions({ address }: {
         address: any;
-    }): Promise<any>;
+    }): Promise<any[]>;
     /**
      * Retrieves UTXO artifacts for a given address.
      * @param {Object} param0 - An object containing the address property.
@@ -159,7 +159,7 @@ export declare class Oyl {
         to: string;
         from: string;
         amount: number;
-        feeRate: number;
+        feeRate?: number;
         publicKey: string;
         mnemonic: string;
         segwitAddress?: string;
