@@ -113,6 +113,24 @@ export class OylApiClient {
   }
 
   /**
+   * Get Aggregated brc20 ticker offers for a limit order.
+   * @param ticker - The ticker to query.
+   * @param limitOrderAmount - The limit order amount.
+   * @param marketPrice - The limit order market price.
+   * @param testnet - mainnet/testnet network toggle.
+   */
+  async getAggregatedOffers({ ticker, limitOrderAmount, marketPrice, testnet }: { ticker: string, limitOrderAmount: number, marketPrice: number, testnet?: boolean }): Promise<any> {
+    const response = await this._call('/get-brc20-aggregate-offers', 'post', {
+      ticker: ticker,
+      limitOrderAmount,
+      marketPrice,
+      testnet
+    })
+    if (response.error) throw Error(response.error)
+    return response.data.list
+  }
+
+  /**
    * Get Okx ticker offers.
    * @param _ticker - The ticker to query.
    */
