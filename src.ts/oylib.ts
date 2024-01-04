@@ -195,11 +195,10 @@ export class Oyl {
         addrType,
         this.network
       )
+
       this.wallet = wallet
-      const meta = await this.getUtxosArtifacts({ address: wallet['address'] })
       const data = {
         keyring: wallet,
-        assets: meta,
       }
       this.mnemonic = mnemonic
       return data
@@ -496,24 +495,27 @@ export class Oyl {
    * @returns {Promise<Array<any>>} A promise that resolves to an array of inscription details.
    */
   async getInscriptions({ address }) {
-    const artifacts = await this.apiClient.getCollectiblesByAddress(address)
-    return artifacts.data.map((item) => {
-      const { inscription_id, inscription_number, satpoint } = item
+    const inscriptions = []
+    const artifacts = (await this.apiClient.getCollectiblesByAddress(address))
+      .data
+    for (const artifact of artifacts) {
+      const { inscription_id, inscription_number, satpoint } = artifact
+      const content = await this.ordRpc.getInscriptionContent(inscription_id)
 
       const detail = {
         id: inscription_id,
-        address: item.owner_wallet_addr,
-        preview: `https://ordinals.com/preview/${inscription_id}`,
-        content: `https://ordinals.com/content/${inscription_id}`,
+        address: artifact.owner_wallet_addr,
+        content: content,
         location: satpoint,
       }
 
-      return {
+      inscriptions.push({
         id: inscription_id,
         inscription_number,
         detail,
-      }
-    })
+      })
+    }
+    return inscriptions
   }
 
   /**
@@ -772,22 +774,20 @@ export class Oyl {
     segwitAddress: string
     hdPathWithIndex: string
   }) {
-    if (segwitAddress) {
-      let payload: any
-      const segwitAddressType = transactions.getAddressType(segwitAddress)
-      if (segwitAddressType == null) {
-        throw Error('Unrecognized Address Type')
-      }
-      payload = await this.fromPhrase({
-        mnemonic: mnemonic.trim(),
-        hdPath: hdPathWithIndex,
-        addrType: segwitAddressType,
-      })
-      const segwitKeyring = payload.keyring.keyring
-      const segwitSigner = segwitKeyring.signTransaction.bind(segwitKeyring)
-      return segwitSigner
+    const segwitAddressType = transactions.getAddressType(segwitAddress)
+
+    if (segwitAddressType == null) {
+      throw Error('Unrecognized Address Type')
     }
-    return undefined
+    const segwitPayload = await this.fromPhrase({
+      mnemonic: mnemonic.trim(),
+      hdPath: hdPathWithIndex,
+      addrType: segwitAddressType,
+    })
+
+    const segwitKeyring = segwitPayload.keyring.keyring
+    const segwitSigner = segwitKeyring.signTransaction.bind(segwitKeyring)
+    return segwitSigner
   }
 
   async createTaprootSigner({
@@ -837,6 +837,7 @@ export class Oyl {
     })
 
     const tapKeyring = tapPayload.keyring.keyring
+
     const taprootSigner = tapKeyring.signTransaction.bind(tapKeyring)
     return taprootSigner
   }
