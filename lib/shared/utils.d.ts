@@ -36,7 +36,7 @@ export interface IBISWalletIx {
 }
 export declare const ECPair: import("ecpair").ECPairAPI;
 export declare const assertHex: (pubKey: Buffer) => Buffer;
-export declare function getNetwork(value: Network): bitcoin.networks.Network;
+export declare function getNetwork(value: Network | 'main'): bitcoin.networks.Network;
 export declare function checkPaymentType(payment: bitcoin.PaymentCreator, network: Network): (script: Buffer) => false | bitcoin.payments.Payment;
 export declare function tweakSigner(signer: bitcoin.Signer, opts?: any): bitcoin.Signer;
 export declare function satoshisToAmount(val: number): string;
@@ -72,7 +72,7 @@ export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, m
     taprootSigner: any;
     segwitSigner: any;
     payFeesWithSegwit?: boolean;
-    network: bitcoin.Network;
+    network: 'testnet' | 'main' | 'regtest';
     segwitUtxos: Utxo[];
     taprootUtxos: Utxo[];
     taprootPrivateKey: string;
@@ -93,10 +93,10 @@ export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, m
     rawTxn?: undefined;
 }>;
 export declare const createInscriptionScript: (pubKey: any, content: any) => any[];
-export declare const RPC_ADDR = "https://node.oyl.gg/v1/6e3bc3c289591bb447c116fda149b094";
-export declare const callBTCRPCEndpoint: (method: string, params: string | string[]) => Promise<any>;
-export declare function waitForTransaction(txId: string): Promise<boolean>;
-export declare function getOutputValueByVOutIndex(commitTxId: string, vOut: number): Promise<number | null>;
+export declare let RPC_ADDR: string;
+export declare const callBTCRPCEndpoint: (method: string, params: string | string[], network: string) => Promise<any>;
+export declare function waitForTransaction(txId: string, network: string): Promise<boolean>;
+export declare function getOutputValueByVOutIndex(commitTxId: string, vOut: number, network?: 'testnet' | 'mainnet' | 'regtest' | 'main'): Promise<number | null>;
 export declare function calculateTaprootTxSize(taprootInputCount: number, nonTaprootInputCount: number, outputCount: number): number;
 export declare function getRawTxnHashFromTxnId(txnId: string): Promise<any>;
 export declare const isP2PKH: (script: Buffer, network: Network) => BitcoinPaymentType;
@@ -117,7 +117,7 @@ export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddr
     segwitSigner: any;
     taprootSigner: any;
     payFeesWithSegwit?: boolean;
-    network: bitcoin.Network;
+    network: 'testnet' | 'main' | 'regtest';
     taprootUtxos: Utxo[];
     segwitUtxos: Utxo[];
     metaOutputValue: number;

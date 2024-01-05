@@ -177,12 +177,12 @@ export async function runCLI() {
 
   const testnetSegwitPubKey =
     '02a4a49b8efd123ecc2fb200a95d4da40dac7abd563cfb52b8aa245cbca0249c1c'
-  const testnetSegwitAddress = 'tb1qsvuaztq2jltrl5pq26njcmn4gdz250325edas2'
+  const testnetSegwitAddress = 'tb1qac6u4rxej8n275tmk8k4aeadxulwlxxa5vk4vs'
 
   const testnetTaprootPubKey =
-    '036cbe3e4c6ece9e96ae7dabc99cfd3d9ffb3fcefc98d72e64cfc2a615ef9b8c9a'
+    '0385c264c7b6103eae8dc6ef31c5048b9f71b8c373585fe2cac943c6d262598ffc'
   const testnetTaprootAddress =
-    'tb1phq6q90tnfq9xjlqf3zskeeuknsvhg954phrm6fkje7ezfrmkms7q0z4e26'
+    'tb1pstyemhl9n2hydg079rgrh8jhj9s7zdxh2g5u8apwk0c8yc9ge4eqp59l22'
   switch (command) {
     case 'load':
       return await loadRpc(options)
@@ -239,7 +239,6 @@ export async function runCLI() {
         amount: 40,
         payFeesWithSegwit: true,
         segwitHdPath: 'xverse',
-        taprootHdPath: TAPROOT_HD_PATH,
       })
       console.log(test0)
       break
@@ -262,7 +261,6 @@ export async function runCLI() {
         mnemonic:
           'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
         segwitHdPath: 'xverse',
-        taprootHdPath: TAPROOT_HD_PATH,
       })
       console.log(test1)
       break
@@ -337,40 +335,28 @@ export async function runCLI() {
       }
       return
     case 'gen-testnet-wallet':
-      const genTestWallet = await testWallet.initializeWallet()
-
-      console.log({
-        mnemonic: genTestWallet.mnemonic,
-        segwit: {
-          address: genTestWallet.segwit.segwitAddresses[0],
-          publicKey:
-            genTestWallet.segwit.segwitKeyring.wallets[0].publicKey.toString(
-              'hex'
-            ),
-          privateKey:
-            genTestWallet.segwit.segwitKeyring.wallets[0].privateKey.toString(
-              'hex'
-            ),
-          signer: genTestWallet.segwit.segwitKeyring.signTransaction.bind(
-            genTestWallet.segwit.segwitKeyring
-          ),
-        },
-        taproot: {
-          address: genTestWallet.taproot.taprootAddresses[0],
-          publicKey:
-            genTestWallet.taproot.taprootKeyring.wallets[0].publicKey.toString(
-              'hex'
-            ),
-          privateKey:
-            genTestWallet.taproot.taprootKeyring.wallets[0].privateKey.toString(
-              'hex'
-            ),
-          signer: genTestWallet.taproot.taprootKeyring.signTransaction.bind(
-            genTestWallet.taproot.taprootKeyring
-          ),
-        },
-      })
+      await testWallet.generateWallet(true, testnetMnemonic)
       return
+    case 'testnet-sendBRC20':
+      const testnetBrc20Send = await testWallet.sendBRC20({
+        isDry: true,
+        fromAddress: testnetTaprootAddress,
+        taprootPublicKey: testnetTaprootPubKey,
+        destinationAddress:
+          'tb1phq6q90tnfq9xjlqf3zskeeuknsvhg954phrm6fkje7ezfrmkms7q0z4e26',
+        feeRate: 2,
+        token: 'OYLZ',
+        segwitAddress: testnetSegwitAddress,
+        segwitPubKey:
+          '031d49049be7501841213c2b5fc503b67b9c4fd33e7f4b29c0e6e2d99d1c39c0c8',
+        mnemonic: testnetMnemonic,
+        amount: 40,
+        payFeesWithSegwit: true,
+        segwitHdPath: 'testnet',
+      })
+      console.log(testnetBrc20Send)
+      break
+
     default:
       return await callAPI(yargs.argv._[0], options)
       break

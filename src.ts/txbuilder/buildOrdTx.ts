@@ -19,6 +19,7 @@ export const getUtxosForFees = async ({
   feeRate,
   taprootUtxos,
   taprootAddress,
+  inscription,
   segwitUtxos,
   segwitAddress,
   segwitPubKey,
@@ -30,6 +31,7 @@ export const getUtxosForFees = async ({
   feeRate: number
   taprootUtxos: Utxo[]
   taprootAddress: string
+  inscription?: boolean
   segwitUtxos?: Utxo[]
   segwitAddress?: string
   segwitPubKey?: string
@@ -46,6 +48,7 @@ export const getUtxosForFees = async ({
       segwitPubKey: segwitPubKey,
       utxosToSend: utxosToSend,
       taprootAddress: taprootAddress,
+      inscription: inscription,
       network,
     })
     return
@@ -63,6 +66,7 @@ const addSegwitFeeUtxo = async ({
   utxosToSend,
   taprootUtxos,
   taprootAddress,
+  inscription,
   network,
 }: {
   segwitUtxos: {
@@ -81,6 +85,7 @@ const addSegwitFeeUtxo = async ({
   utxosToSend?: { selectedUtxos: Utxo[]; totalSatoshis: number; change: number }
   taprootUtxos: Utxo[]
   taprootAddress: string
+  inscription: boolean
   network: bitcoin.Network
 }) => {
   try {
@@ -98,17 +103,107 @@ const addSegwitFeeUtxo = async ({
 
     const inputCount = psbtTx.txInputs.length === 0 ? 1 : psbtTx.txInputs.length
     const vB = inputCount * 1 * 149 + 3 * 32 + 12
-    const fee = network === getNetwork('testnet') ? vB : vB * feeRate
-    if (utxosToSend.change - fee >= 0) {
-      psbtTx.addOutput({
-        address: segwitAddress,
-        value: Math.floor(utxosToSend.change - fee),
+    const fee = network === getNetwork('testnet') ? vB * feeRate : vB * feeRate
+
+    const addressType = getAddressType(segwitAddress)
+    let redeemScript
+
+    if (addressType === 2) {
+      const p2wpkh = bitcoin.payments.p2wpkh({
+        pubkey: Buffer.from(segwitPubKey, 'hex'),
+        network: network,
       })
+      redeemScript = p2wpkh.output
+    }
+    if (addressType === 3) {
+      try {
+        const p2wpkh = bitcoin.payments.p2wpkh({
+          pubkey: Buffer.from(segwitPubKey, 'hex'),
+          network: network,
+        })
+
+        const p2sh = bitcoin.payments.p2sh({
+          redeem: p2wpkh,
+          network: network,
+        })
+
+        redeemScript = p2sh.redeem.output
+      } catch (error) {
+        console.log(error)
+      }
+    }
+    if (utxosToSend) {
+      if (utxosToSend?.change - fee >= 0) {
+        return psbtTx.addOutput({
+          address: segwitAddress,
+          value: Math.floor(utxosToSend.change - fee),
+        })
+      } else {
+        const feeUtxos = findUtxosForFees(
+          nonMetaSegwitUtxos,
+          fee - utxosToSend.change
+        )
+        if (!feeUtxos) {
+          try {
+            await addTaprootFeeUtxo({
+              taprootUtxos: taprootUtxos,
+              feeRate: feeRate,
+              psbtTx: psbtTx,
+              taprootAddress: taprootAddress,
+              utxosToSend: utxosToSend,
+            })
+            return
+          } catch (error) {
+            throw new Error('No available UTXOs to pay for fees')
+          }
+        }
+
+        for (let i = 0; i < feeUtxos.selectedUtxos.length; i++) {
+          if (
+            usableUtxo(feeUtxos.selectedUtxos[i], utxosToSend.selectedUtxos)
+          ) {
+            if (addressType === 2) {
+              psbtTx.addInput({
+                hash: feeUtxos.selectedUtxos[i].txId,
+                index: feeUtxos.selectedUtxos[i].outputIndex,
+                witnessUtxo: {
+                  value: feeUtxos.selectedUtxos[i].satoshis,
+                  script: Buffer.from(
+                    feeUtxos.selectedUtxos[i].scriptPk,
+                    'hex'
+                  ),
+                },
+                redeemScript: redeemScript,
+              })
+            } else {
+              psbtTx.addInput({
+                hash: feeUtxos.selectedUtxos[i].txId,
+                index: feeUtxos.selectedUtxos[i].outputIndex,
+                witnessUtxo: {
+                  value: feeUtxos.selectedUtxos[i].satoshis,
+                  script: Buffer.from(
+                    feeUtxos.selectedUtxos[i].scriptPk,
+                    'hex'
+                  ),
+                },
+              })
+            }
+          } else {
+            return
+          }
+        }
+        psbtTx.addOutput({
+          address: segwitAddress,
+          value: Math.floor(feeUtxos.change),
+        })
+      }
     } else {
-      const feeUtxos = findUtxosForFees(
-        nonMetaSegwitUtxos,
-        fee - utxosToSend.change
-      )
+      let amountForFee: number = fee
+      if (inscription) {
+        amountForFee = fee * 2 + 546
+      }
+      const feeUtxos = findUtxosForFees(nonMetaSegwitUtxos, amountForFee)
+      console.log(feeUtxos.change)
       if (!feeUtxos) {
         try {
           await addTaprootFeeUtxo({
@@ -124,60 +219,29 @@ const addSegwitFeeUtxo = async ({
         }
       }
 
-      const addressType = getAddressType(segwitAddress)
-      let redeemScript
-
-      if (addressType === 2) {
-        const p2wpkh = bitcoin.payments.p2wpkh({
-          pubkey: Buffer.from(segwitPubKey, 'hex'),
-          network: network,
-        })
-        redeemScript = p2wpkh.output
-      }
-      if (addressType === 3) {
-        try {
-          const p2wpkh = bitcoin.payments.p2wpkh({
-            pubkey: Buffer.from(segwitPubKey, 'hex'),
-            network: network,
-          })
-
-          const p2sh = bitcoin.payments.p2sh({
-            redeem: p2wpkh,
-            network: network,
-          })
-
-          redeemScript = p2sh.redeem.output
-        } catch (error) {
-          console.log(error)
-        }
-      }
-
       for (let i = 0; i < feeUtxos.selectedUtxos.length; i++) {
-        if (usableUtxo(feeUtxos.selectedUtxos[i], utxosToSend.selectedUtxos)) {
-          if (addressType === 2) {
-            psbtTx.addInput({
-              hash: feeUtxos.selectedUtxos[i].txId,
-              index: feeUtxos.selectedUtxos[i].outputIndex,
-              witnessUtxo: {
-                value: feeUtxos.selectedUtxos[i].satoshis,
-                script: Buffer.from(feeUtxos.selectedUtxos[i].scriptPk, 'hex'),
-              },
-              redeemScript: redeemScript,
-            })
-          } else {
-            psbtTx.addInput({
-              hash: feeUtxos.selectedUtxos[i].txId,
-              index: feeUtxos.selectedUtxos[i].outputIndex,
-              witnessUtxo: {
-                value: feeUtxos.selectedUtxos[i].satoshis,
-                script: Buffer.from(feeUtxos.selectedUtxos[i].scriptPk, 'hex'),
-              },
-            })
-          }
+        if (addressType === 2) {
+          psbtTx.addInput({
+            hash: feeUtxos.selectedUtxos[i].txId,
+            index: feeUtxos.selectedUtxos[i].outputIndex,
+            witnessUtxo: {
+              value: feeUtxos.selectedUtxos[i].satoshis,
+              script: Buffer.from(feeUtxos.selectedUtxos[i].scriptPk, 'hex'),
+            },
+            redeemScript: redeemScript,
+          })
         } else {
-          return
+          psbtTx.addInput({
+            hash: feeUtxos.selectedUtxos[i].txId,
+            index: feeUtxos.selectedUtxos[i].outputIndex,
+            witnessUtxo: {
+              value: feeUtxos.selectedUtxos[i].satoshis,
+              script: Buffer.from(feeUtxos.selectedUtxos[i].scriptPk, 'hex'),
+            },
+          })
         }
       }
+
       psbtTx.addOutput({
         address: segwitAddress,
         value: Math.floor(feeUtxos.change),

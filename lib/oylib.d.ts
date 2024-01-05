@@ -20,6 +20,7 @@ export declare class Oyl {
     rpcClient: BcoinRpc;
     apiClient: OylApiClient;
     derivPath: String;
+    currentNetwork: 'testnet' | 'main' | 'regtest';
     /**
      * Initializes a new instance of the Wallet class.
      */
@@ -80,6 +81,11 @@ export declare class Oyl {
      * @throws {Error} Throws an error if recovery fails.
      */
     recoverWallet(options: Omit<RecoverAccountOptions, 'network'>): Promise<any>;
+    /**
+     *
+     * Generate a new wallet for testnet / regtest
+     */
+    generateWallet(testnet: boolean, mnemonic?: string): Promise<void>;
     /**
      * Adds a new account to the wallet using the given options.
      * @param {RecoverAccountOptions} options - Options describing the account to be added.

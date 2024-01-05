@@ -82,8 +82,8 @@ function tapTweakHash(pubKey: Buffer, h: Buffer | undefined): Buffer {
   )
 }
 
-export function getNetwork(value: Network) {
-  if (value === 'mainnet') {
+export function getNetwork(value: Network | 'main') {
+  if (value === 'mainnet' || value === 'main') {
     return bitcoin.networks['bitcoin']
   }
 
@@ -410,7 +410,7 @@ export const inscribe = async ({
   taprootSigner: any
   segwitSigner: any
   payFeesWithSegwit?: boolean
-  network: bitcoin.Network
+  network: 'testnet' | 'main' | 'regtest'
   segwitUtxos: Utxo[]
   taprootUtxos: Utxo[]
   taprootPrivateKey: string
@@ -425,16 +425,12 @@ export const inscribe = async ({
     const script = createInscriptionScript(pubKey, content)
     const tapleaf = Tap.encodeScript(script)
     const [tpubkey, cblock] = Tap.getPubKey(pubKey, { target: tapleaf })
-    const inscriberAddress = Address.p2tr.fromPubKey(tpubkey)
+    const inscriberAddress = Address.p2tr.fromPubKey(tpubkey, network)
 
-    const psbt = new bitcoin.Psbt({ network: network })
-
-    const inputs = 1
-    const revealVb = calculateTaprootTxSize(inputs, 0, 1)
-    const revealSatsNeeded = Math.floor((revealVb + 10) * feeRate)
+    const psbt = new bitcoin.Psbt({ network: getNetwork(network) })
 
     psbt.addOutput({
-      value: revealSatsNeeded,
+      value: 546,
       address: inscriberAddress,
     })
 
@@ -443,11 +439,12 @@ export const inscribe = async ({
       psbtTx: psbt,
       taprootUtxos: taprootUtxos,
       segwitUtxos: segwitUtxos,
+      inscription: true,
       segwitAddress: segwitAddress,
       feeRate: feeRate,
       taprootAddress: inputAddress,
       segwitPubKey: segwitPublicKey,
-      network,
+      network: getNetwork(network),
     })
 
     const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
@@ -457,7 +454,7 @@ export const inscribe = async ({
       segwitPubkey: segwitPublicKey,
       segwitAddress: segwitAddress,
       taprootAddress: inputAddress,
-      network,
+      network: getNetwork(network),
     })
 
     const signedPsbt = await signInputs(
@@ -473,7 +470,7 @@ export const inscribe = async ({
 
     const commitPsbtHash = signedPsbt.toHex()
     const commitTxPsbt: bitcoin.Psbt = bitcoin.Psbt.fromHex(commitPsbtHash, {
-      network: network,
+      network: getNetwork(network),
     })
 
     const commitTxHex = commitTxPsbt.extractTransaction().toHex()
@@ -483,13 +480,15 @@ export const inscribe = async ({
     } else {
       const { result } = await callBTCRPCEndpoint(
         'sendrawtransaction',
-        commitTxHex
+        commitTxHex,
+        network
       )
+      console.log(result)
       commitTxId = result
     }
 
     if (!isDry) {
-      const txResult = await waitForTransaction(commitTxId)
+      const txResult = await waitForTransaction(commitTxId, network)
       if (!txResult) {
         return { error: 'ERROR WAITING FOR COMMIT TX' }
       }
@@ -501,7 +500,7 @@ export const inscribe = async ({
           txid: commitTxId,
           vout: 0,
           prevout: {
-            value: revealSatsNeeded,
+            value: 546,
             scriptPubKey: ['OP_1', tpubkey],
           },
         },
@@ -520,10 +519,13 @@ export const inscribe = async ({
     txData.vin[0].witness = [sig, script, cblock]
 
     if (!isDry) {
-      const { result } = await callBTCRPCEndpoint(
+      const TxHex = Tx.encode(txData).hex
+      const { result, error, id } = await callBTCRPCEndpoint(
         'sendrawtransaction',
-        Tx.encode(txData).hex
+        TxHex,
+        network
       )
+      console.log(result, error, id)
       return { txnId: result }
     } else {
       return {
@@ -557,13 +559,21 @@ export const createInscriptionScript = (pubKey: any, content: any) => {
 
 const INSCRIPTION_PREPARE_SAT_AMOUNT = 4000
 
-export const RPC_ADDR =
-  'https://node.oyl.gg/v1/6e3bc3c289591bb447c116fda149b094'
+export let RPC_ADDR =
+  'https://mainnet.sandshrew.io/v1/6e3bc3c289591bb447c116fda149b094'
 
 export const callBTCRPCEndpoint = async (
   method: string,
-  params: string | string[]
+  params: string | string[],
+  network: string
 ) => {
+  if (network === 'testnet') {
+    RPC_ADDR =
+      'https://testnet.sandshrew.io/v1/6e3bc3c289591bb447c116fda149b094'
+  }
+  if (network === 'regtest') {
+    RPC_ADDR === 'http://localhost:3000/v1/regtest'
+  }
   const data = JSON.stringify({
     jsonrpc: '2.0',
     id: method,
@@ -585,7 +595,10 @@ export const callBTCRPCEndpoint = async (
     })
 }
 
-export async function waitForTransaction(txId: string): Promise<boolean> {
+export async function waitForTransaction(
+  txId: string,
+  network: string
+): Promise<boolean> {
   console.log('WAITING FOR TRANSACTION: ', txId)
   const timeout: number = 60000 // 1 minute in milliseconds
 
@@ -594,7 +607,7 @@ export async function waitForTransaction(txId: string): Promise<boolean> {
   while (true) {
     try {
       // Call the endpoint to check the transaction
-      const response = await callBTCRPCEndpoint('esplora_tx', txId)
+      const response = await callBTCRPCEndpoint('esplora_tx', txId, network)
 
       // Check if the transaction is found
       if (response && response.result) {
@@ -625,7 +638,8 @@ export async function waitForTransaction(txId: string): Promise<boolean> {
 
 export async function getOutputValueByVOutIndex(
   commitTxId: string,
-  vOut: number
+  vOut: number,
+  network: 'testnet' | 'mainnet' | 'regtest' | 'main' = 'mainnet'
 ): Promise<number | null> {
   const timeout: number = 60000 // 1 minute in milliseconds
   const startTime: number = Date.now()
@@ -633,7 +647,11 @@ export async function getOutputValueByVOutIndex(
   while (true) {
     try {
       // Call to get the transaction details
-      const txDetails = await callBTCRPCEndpoint('esplora_tx', commitTxId)
+      const txDetails = await callBTCRPCEndpoint(
+        'esplora_tx',
+        commitTxId,
+        network
+      )
 
       if (
         txDetails &&
@@ -790,13 +808,13 @@ export const sendCollectible = async ({
   segwitSigner: any
   taprootSigner: any
   payFeesWithSegwit?: boolean
-  network: bitcoin.Network
+  network: 'testnet' | 'main' | 'regtest'
   taprootUtxos: Utxo[]
   segwitUtxos: Utxo[]
   metaOutputValue: number
 }) => {
   try {
-    const psbt = new bitcoin.Psbt({ network: network })
+    const psbt = new bitcoin.Psbt({ network: getNetwork(network) })
 
     const utxosToSend = await insertCollectibleUtxo({
       taprootUtxos: taprootUtxos,
@@ -817,7 +835,7 @@ export const sendCollectible = async ({
       taprootAddress: inputAddress,
       segwitPubKey: segwitPublicKey,
       utxosToSend: utxosToSend,
-      network,
+      network: getNetwork(network),
     })
 
     const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
@@ -827,7 +845,7 @@ export const sendCollectible = async ({
       segwitPubkey: segwitPublicKey,
       segwitAddress: segwitAddress,
       taprootAddress: inputAddress,
-      network,
+      network: getNetwork(network),
     })
 
     const signedPsbt = await signInputs(
@@ -847,7 +865,11 @@ export const sendCollectible = async ({
     if (isDry) {
       return { txnId: txnId, rawTxn: rawTxn }
     } else {
-      const { result } = await callBTCRPCEndpoint('sendrawtransaction', rawTxn)
+      const { result } = await callBTCRPCEndpoint(
+        'sendrawtransaction',
+        rawTxn,
+        network
+      )
       txnId = result
       return { txnId: txnId, rawTxn: rawTxn }
     }

@@ -14,7 +14,7 @@ import { SandshrewBitcoinClient } from './rpclient/sandshrew'
 import { EsploraRpc } from './rpclient/esplora'
 import * as transactions from './transactions'
 import { publicKeyToAddress } from './wallet/accounts'
-import { accounts } from './wallet'
+import { accounts, generate } from './wallet'
 import { AccountManager, customPaths } from './wallet/accountsManager'
 
 import {
@@ -54,6 +54,7 @@ export class Oyl {
   public rpcClient: BcoinRpc
   public apiClient: OylApiClient
   public derivPath: String
+  public currentNetwork: 'testnet' | 'main' | 'regtest'
 
   /**
    * Initializes a new instance of the Wallet class.
@@ -76,6 +77,8 @@ export class Oyl {
     this.ordRpc = provider.ord
     this.fromProvider()
     this.wallet = this.createWallet({})
+    this.currentNetwork =
+      options.network === 'mainnet' ? 'main' : options.network
   }
 
   /**
@@ -220,6 +223,19 @@ export class Oyl {
       return walletPayload
     } catch (error) {
       return error
+    }
+  }
+
+  /**
+   *
+   * Generate a new wallet for testnet / regtest
+   */
+
+  async generateWallet(testnet: boolean, mnemonic?: string) {
+    try {
+      generate.generateWallet(testnet, mnemonic)
+    } catch (error) {
+      console.log(error)
     }
   }
 
@@ -924,7 +940,7 @@ export class Oyl {
         segwitSigner: segwitSigner,
         taprootSigner: taprootSigner,
         feeRate: feeRate,
-        network: this.network,
+        network: this.currentNetwork,
         segwitUtxos: segwitUtxos,
         taprootUtxos: taprootUtxos,
         taprootPrivateKey:
@@ -1001,7 +1017,7 @@ export class Oyl {
         segwitSigner: segwitSigner,
         taprootSigner: taprootSigner,
         feeRate: feeRate,
-        network: this.network,
+        network: this.currentNetwork,
         taprootUtxos: taprootUtxos,
         segwitUtxos: segwitUtxos,
         metaOutputValue: metaOutputValue,

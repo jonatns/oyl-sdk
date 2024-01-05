@@ -9,12 +9,13 @@ export type Utxo = {
     inscriptions: any[];
     confirmations: number;
 };
-export declare const getUtxosForFees: ({ payFeesWithSegwit, psbtTx, feeRate, taprootUtxos, taprootAddress, segwitUtxos, segwitAddress, segwitPubKey, utxosToSend, network, }: {
+export declare const getUtxosForFees: ({ payFeesWithSegwit, psbtTx, feeRate, taprootUtxos, taprootAddress, inscription, segwitUtxos, segwitAddress, segwitPubKey, utxosToSend, network, }: {
     payFeesWithSegwit: boolean;
     psbtTx: bitcoin.Psbt;
     feeRate: number;
     taprootUtxos: Utxo[];
     taprootAddress: string;
+    inscription?: boolean;
     segwitUtxos?: Utxo[];
     segwitAddress?: string;
     segwitPubKey?: string;

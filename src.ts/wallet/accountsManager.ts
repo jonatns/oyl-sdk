@@ -34,9 +34,9 @@ export const customPaths = {
     segwitAddressType: AddressType.P2WPKH,
   },
   testnet: {
-    taprootPath: "m/86'/1'/0'/0",
+    taprootPath: "m/86'/0'/0'/0",
     initializedFrom: 'oyl',
-    segwitPath: "m/84'/1'/0'/0",
+    segwitPath: "m/84'/0'/0'/0",
     segwitAddressType: AddressType.P2WPKH,
   },
 }
