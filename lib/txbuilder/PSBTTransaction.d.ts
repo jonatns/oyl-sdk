@@ -20,7 +20,7 @@ export declare class PSBTTransaction {
      * @param pubkey - Public key for the transaction.
      * @param feeRate - The fee rate in satoshis per byte.
      */
-    constructor(signer: any, address: any, publicKey: any, feeRate: any, segwitSigner?: any, segwitPubKey?: any);
+    constructor(signer: any, address: any, publicKey: any, feeRate: any, network: any, segwitSigner?: any, segwitPubKey?: any);
     /**
      * Sets whether to enable Replace-by-Fee for the transaction.
      * @param {boolean} enable - A boolean to enable or disable RBF.

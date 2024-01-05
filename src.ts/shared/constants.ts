@@ -1,4 +1,4 @@
-import { NetworkOptions } from './interface'
+import { Network, NetworkOptions } from './interface'
 
 export const UTXO_DUST = 546
 
@@ -17,8 +17,23 @@ export const getBrc20Data = ({
   mediaType: 'text/plain',
 })
 
-export const defaultNetworkOptions: NetworkOptions = {
-  baseUrl: 'https://mainnet.sandshrew.io',
-  version: 'v1',
-  projectId: 'd6aebfed1769128379aca7d215f0b689', // default mainnet API key
+export const defaultNetworkOptions: Record<Network, NetworkOptions> = {
+  mainnet: {
+    baseUrl: 'https://mainnet.sandshrew.io',
+    version: 'v1',
+    projectId: 'd6aebfed1769128379aca7d215f0b689', // default API key
+    network: 'mainnet',
+  },
+  testnet: {
+    baseUrl: 'https://testnet.sandshrew.io',
+    version: 'v1',
+    projectId: 'd6aebfed1769128379aca7d215f0b689', // default API key
+    network: 'testnet',
+  },
+  regtest: {
+    baseUrl: 'http://localhost:3000',
+    version: 'v1',
+    projectId: 'regtest',
+    network: 'regtest',
+  },
 }

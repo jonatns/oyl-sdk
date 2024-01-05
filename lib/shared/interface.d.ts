@@ -1,5 +1,6 @@
 /// <reference types="node" />
 import { payments, Psbt } from 'bitcoinjs-lib';
+import * as bitcoin from 'bitcoinjs-lib';
 export interface InscriptionResponse {
     address: string;
     inscriptions?: string;
@@ -123,6 +124,11 @@ export interface MarketplaceOffer {
     totalPrice: number;
     psbt: string;
 }
+export interface MarketplaceOffers {
+    offerId: string;
+    marketplace: string;
+    ticker: string;
+}
 export interface ProviderOptions {
     network: String;
     host: String;
@@ -131,9 +137,10 @@ export interface ProviderOptions {
     auth?: String;
 }
 export interface RecoverAccountOptions {
-    mnemonic: string;
-    activeIndexes: number[];
-    customPath?: 'xverse' | 'leather' | 'unisat';
+    mnemonic?: string;
+    activeIndexes?: number[];
+    customPath?: 'xverse' | 'leather' | 'unisat' | 'testnet';
+    network: bitcoin.Network;
 }
 export declare enum Providers {
     bcoin = 0,
@@ -144,10 +151,12 @@ export interface oylAccounts {
     taproot: {
         taprootKeyring: any;
         taprootAddresses: string[];
+        taprootPubKey: string;
     };
     segwit: {
         segwitKeyring: any;
         segwitAddresses: string[];
+        segwitPubKey: string;
     };
     initializedFrom: string;
     mnemonic: string;
@@ -158,13 +167,20 @@ export interface FeeEstimatorOptions {
     psbt?: Psbt;
     witness?: Buffer[];
 }
+export interface MarketplaceBuy {
+    address: string;
+    pubKey: string;
+    psbtBase64: string;
+    network: bitcoin.Network;
+    price: number;
+}
 export interface IBlockchainInfoUTXO {
     tx_hash_big_endian: string;
-    tx_hash: string;
+    tx_hash?: string;
     tx_output_n: number;
     script: string;
     value: number;
-    value_hex: string;
+    value_hex?: string;
     confirmations: number;
     tx_index: number;
 }
@@ -175,7 +191,7 @@ export interface InscribeTransfer {
     segwitPubKey?: string;
     segwitAddress?: string;
     payFeesWithSegwit: boolean;
-    feeRate: number;
+    feeRate?: number;
     token?: string;
     mnemonic: string;
     amount?: number;
@@ -229,6 +245,7 @@ export interface NetworkOptions {
      * ProjectId is used as an API key for local test servers. Defaults to mainnet API key
      */
     projectId?: string;
+    network: Network;
 }
 export interface SwapBrc {
     address: String;

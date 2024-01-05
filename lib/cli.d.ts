@@ -1,6 +1,5 @@
 import 'dotenv/config';
 export declare function loadRpc(options: any): Promise<void>;
-export declare function testMarketplaceBuy(): Promise<void>;
 export declare function testAggregator(): Promise<void>;
 export declare function viewPsbt(): Promise<void>;
 export declare function convertPsbt(): Promise<void>;

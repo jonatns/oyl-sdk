@@ -1,9 +1,12 @@
 import { HdKeyring } from './hdKeyring'
 import { publicKeyToAddress } from './accounts'
-import { AddressType, oylAccounts } from '../shared/interface'
+import {
+  AddressType,
+  RecoverAccountOptions,
+  oylAccounts,
+} from '../shared/interface'
+import * as bitcoin from 'bitcoinjs-lib'
 import Mnemonic from 'bitcore-mnemonic'
-
-const genMnemonic = new Mnemonic(Mnemonic.Words.ENGLISH).toString()
 
 export const customPaths = {
   oyl: {
@@ -30,13 +33,20 @@ export const customPaths = {
     initializedFrom: 'unisat',
     segwitAddressType: AddressType.P2WPKH,
   },
+  testnet: {
+    taprootPath: "m/86'/1'/0'/0",
+    initializedFrom: 'oyl',
+    segwitPath: "m/84'/1'/0'/0",
+    segwitAddressType: AddressType.P2WPKH,
+  },
 }
 
 export class AccountManager {
-  private mnemonic: string = genMnemonic
+  private mnemonic: string
   private taprootKeyring: any
   private segwitKeyring: any
   public activeIndexes: number[]
+  public network: bitcoin.Network
   private hdPath: any
 
   /**
@@ -44,21 +54,25 @@ export class AccountManager {
    *
    * @param options - Configuration options for the AccountManager.
    */
-  constructor(options?) {
-    this.mnemonic = options?.mnemonic
+  constructor(options: RecoverAccountOptions) {
+    this.mnemonic =
+      options?.mnemonic || new Mnemonic(Mnemonic.Words.ENGLISH).toString()
     this.activeIndexes = options?.activeIndexes
+    this.network = options.network
     this.hdPath = options?.customPath
       ? customPaths[options.customPath]
       : customPaths.oyl
     this.taprootKeyring = new HdKeyring({
-      mnemonic: this.mnemonic || genMnemonic,
+      mnemonic: this.mnemonic,
       hdPath: this.hdPath.taprootPath,
       activeIndexes: this.activeIndexes,
+      network: this.network,
     })
     this.segwitKeyring = new HdKeyring({
-      mnemonic: this.mnemonic || genMnemonic,
+      mnemonic: this.mnemonic,
       hdPath: this.hdPath.segwitPath,
       activeIndexes: this.activeIndexes,
+      network: this.network,
     })
   }
 
@@ -70,27 +84,33 @@ export class AccountManager {
   async initializeAccounts(): Promise<oylAccounts> {
     await this.taprootKeyring.addAccounts(1)
     await this.segwitKeyring.addAccounts(1)
-    const taprootAcccounts = await this.taprootKeyring.getAccounts()
+    const taprootAccounts = await this.taprootKeyring.getAccounts()
     const segwitAccounts = await this.segwitKeyring.getAccounts()
     const taprootAddresses: string[] = []
     const segwitAddresses: string[] = []
     taprootAddresses.push(
-      publicKeyToAddress(taprootAcccounts[0], AddressType.P2TR)!
+      publicKeyToAddress(taprootAccounts[0], AddressType.P2TR, this.network)!
     )
     segwitAddresses.push(
-      publicKeyToAddress(segwitAccounts[0], this.hdPath.segwitAddressType)!
+      publicKeyToAddress(
+        segwitAccounts[0],
+        this.hdPath.segwitAddressType,
+        this.network
+      )!
     )
     const ret: oylAccounts = {
       taproot: {
         taprootKeyring: this.taprootKeyring,
+        taprootPubKey: taprootAccounts[0].toString('hex'),
         taprootAddresses,
       },
       segwit: {
         segwitKeyring: this.segwitKeyring,
+        segwitPubKey: taprootAccounts[0].toString('hex'),
         segwitAddresses,
       },
       initializedFrom: this.hdPath.initializedFrom,
-      mnemonic: genMnemonic,
+      mnemonic: this.mnemonic,
     }
     return ret
   }
@@ -101,27 +121,33 @@ export class AccountManager {
    * @returns {Promise<oylAccounts>} A promise that resolves to an object containing the recovered accounts.
    */
   async recoverAccounts(): Promise<oylAccounts> {
-    const taprootAcccounts = await this.taprootKeyring.getAccounts()
+    const taprootAccounts = await this.taprootKeyring.getAccounts()
     const segwitAccounts = await this.segwitKeyring.getAccounts()
     const taprootAddresses: string[] = []
     const segwitAddresses: string[] = []
     let i = 0
-    while (i < taprootAcccounts.length) {
+    while (i < taprootAccounts.length) {
       taprootAddresses.push(
-        publicKeyToAddress(taprootAcccounts[i], AddressType.P2TR)!
+        publicKeyToAddress(taprootAccounts[i], AddressType.P2TR, this.network)!
       )
       segwitAddresses.push(
-        publicKeyToAddress(segwitAccounts[i], this.hdPath.segwitAddressType)!
+        publicKeyToAddress(
+          segwitAccounts[i],
+          this.hdPath.segwitAddressType,
+          this.network
+        )!
       )
       i++
     }
     const ret: oylAccounts = {
       taproot: {
         taprootKeyring: this.taprootKeyring,
+        taprootPubKey: taprootAccounts[0].toString('hex'),
         taprootAddresses,
       },
       segwit: {
         segwitKeyring: this.segwitKeyring,
+        segwitPubKey: segwitAccounts[0].toString('hex'),
         segwitAddresses,
       },
       initializedFrom: this.hdPath.initializedFrom,
@@ -138,28 +164,34 @@ export class AccountManager {
   async addAccount(): Promise<oylAccounts> {
     await this.taprootKeyring.addAccounts(1)
     await this.segwitKeyring.addAccounts(1)
-    const taprootAcccounts = await this.taprootKeyring.getAccounts()
+    const taprootAccounts = await this.taprootKeyring.getAccounts()
     const segwitAccounts = await this.segwitKeyring.getAccounts()
-    console.log(taprootAcccounts)
+    console.log(taprootAccounts)
     const taprootAddresses: string[] = []
     const segwitAddresses: string[] = []
     let i = 0
-    while (i < taprootAcccounts.length) {
+    while (i < taprootAccounts.length) {
       taprootAddresses.push(
-        publicKeyToAddress(taprootAcccounts[i], AddressType.P2TR)!
+        publicKeyToAddress(taprootAccounts[i], AddressType.P2TR, this.network)!
       )
       segwitAddresses.push(
-        publicKeyToAddress(segwitAccounts[i], this.hdPath.segwitAddressType)!
+        publicKeyToAddress(
+          segwitAccounts[i],
+          this.hdPath.segwitAddressType,
+          this.network
+        )!
       )
       i++
     }
     const ret: oylAccounts = {
       taproot: {
         taprootKeyring: this.taprootKeyring,
+        taprootPubKey: taprootAccounts[0].toString('hex'),
         taprootAddresses,
       },
       segwit: {
         segwitKeyring: this.segwitKeyring,
+        segwitPubKey: segwitAccounts[0].toString('hex'),
         segwitAddresses,
       },
       initializedFrom: this.hdPath.initializedFrom,

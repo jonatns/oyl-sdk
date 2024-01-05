@@ -1,8 +1,9 @@
-import BcoinRpc from './rpclient';
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
-import { AddressType, InscribeTransfer, NetworkOptions, ProviderOptions, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
+import { AddressType, InscribeTransfer, NetworkOptions, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
+import * as bitcoin from 'bitcoinjs-lib';
+import { OrdRpc } from './rpclient/ord';
 export declare const NESTED_SEGWIT_HD_PATH = "m/49'/0'/0'/0";
 export declare const TAPROOT_HD_PATH = "m/86'/0'/0'/0";
 export declare const SEGWIT_HD_PATH = "m/84'/0'/0'/0";
@@ -10,28 +11,17 @@ export declare const LEGACY_HD_PATH = "m/44'/0'/0'/0";
 export declare class Oyl {
     private mnemonic;
     private wallet;
+    network: bitcoin.Network;
     sandshrewBtcClient: SandshrewBitcoinClient;
     esploraRpc: EsploraRpc;
+    ordRpc: OrdRpc;
     provider: Providers;
-    rpcClient: BcoinRpc;
     apiClient: OylApiClient;
     derivPath: String;
     /**
      * Initializes a new instance of the Wallet class.
      */
-    constructor(options?: NetworkOptions);
-    /**
-     * Connects to a given blockchain RPC client.
-     * @param {BcoinRpc} provider - The blockchain RPC client to connect to.
-     * @returns {Wallet} - The connected wallet instance.
-     */
-    static connect(provider: BcoinRpc): Oyl;
-    /**
-     * Configures the wallet class with a provider from the given options.
-     * @param {ProviderOptions} [options] - The options to configure the provider.
-     * @returns {ProviderOptions} The applied client options.
-     */
-    fromProvider(options?: ProviderOptions): {};
+    constructor(opts?: NetworkOptions);
     /**
      * Gets a summary of the given address(es).
      * @param {string | string[]} address - A single address or an array of addresses.
@@ -75,14 +65,14 @@ export declare class Oyl {
      * @returns {Promise<any>} A promise that resolves to the recovered wallet payload.
      * @throws {Error} Throws an error if recovery fails.
      */
-    recoverWallet(options: RecoverAccountOptions): Promise<any>;
+    recoverWallet(options: Omit<RecoverAccountOptions, 'network'>): Promise<any>;
     /**
      * Adds a new account to the wallet using the given options.
      * @param {RecoverAccountOptions} options - Options describing the account to be added.
      * @returns {Promise<any>} A promise that resolves to the payload of the newly added account.
      * @throws {Error} Throws an error if adding the account fails.
      */
-    addAccountToWallet(options: RecoverAccountOptions): Promise<any>;
+    addAccountToWallet(options: Omit<RecoverAccountOptions, 'network'>): Promise<any>;
     /**
      * Initializes a new Oyl account with taproot & segwit HDKeyrings  within the wallet.
      * @returns {Promise<any>} A promise that resolves to the payload of the initialized accounts.
@@ -123,14 +113,9 @@ export declare class Oyl {
         amount: any;
         usd_value: string;
     }>;
-    /**
-     * Calculates the total value from previous outputs for the given inputs of a transaction.
-     * @param {any[]} inputs - The inputs of a transaction which might be missing value information.
-     * @param {string} address - The address to filter the inputs.
-     * @returns {Promise<number>} A promise that resolves to the total value of the provided inputs.
-     * @throws {Error} Throws an error if it fails to retrieve previous transaction data.
-     */
-    getTxValueFromPrevOut(inputs: any[], address: string): Promise<number>;
+    getUtxos(address: string): Promise<{
+        unspent_outputs: any[];
+    }>;
     /**
      * Retrieves the transaction history for a given address and processes the transactions.
      * @param {Object} param0 - An object containing the address property.
@@ -141,19 +126,6 @@ export declare class Oyl {
     getTxHistory({ addresses }: {
         addresses: string[];
     }): Promise<{}[]>;
-    /******************************* */
-    /**
-     * Retrieves the fee rates for transactions from the mempool.
-     * @returns {Promise<{ High: number; Medium: number; Low: number }>} A promise that resolves with an object containing the fee rates for High, Medium, and Low priority transactions.
-     */
-    getFees(): Promise<{
-        High: number;
-        Medium: number;
-        Low: number;
-    }>;
-    getTotalBalance({ batch }: {
-        batch: any;
-    }): Promise<number>;
     /**
      * Retrieves a list of inscriptions for a given address.
      * @param {Object} param0 - An object containing the address property.
@@ -162,7 +134,7 @@ export declare class Oyl {
      */
     getInscriptions({ address }: {
         address: any;
-    }): Promise<any>;
+    }): Promise<any[]>;
     /**
      * Retrieves UTXO artifacts for a given address.
      * @param {Object} param0 - An object containing the address property.
@@ -183,17 +155,16 @@ export declare class Oyl {
      * @param {string} params.publicKey - The public key associated with the transaction.
      * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
      */
-    sendBtc({ to, from, amount, feeRate, publicKey, mnemonic, segwitAddress, segwitPubkey, segwitHdPathWithIndex, taprootHdPathWithIndex, payFeesWithSegwit, }: {
+    sendBtc({ to, from, amount, feeRate, publicKey, mnemonic, segwitAddress, segwitPubkey, segwitHdPath, payFeesWithSegwit, }: {
         to: string;
         from: string;
         amount: number;
-        feeRate: number;
+        feeRate?: number;
         publicKey: string;
         mnemonic: string;
         segwitAddress?: string;
         segwitPubkey?: string;
-        segwitHdPathWithIndex: string;
-        taprootHdPathWithIndex: string;
+        segwitHdPath: string;
         payFeesWithSegwit?: boolean;
     }): Promise<{
         txnId: string;
@@ -271,7 +242,21 @@ export declare class Oyl {
         signedPsbtHex: string;
         signedPsbtBase64: string;
     }>;
-    signInscriptionPsbt(psbt: any, fee: any, pubKey: any, signer: any, address?: string): Promise<any>;
+    createSegwitSigner({ mnemonic, segwitAddress, hdPathWithIndex, }: {
+        mnemonic: string;
+        segwitAddress: string;
+        hdPathWithIndex: string;
+    }): Promise<any>;
+    createTaprootSigner({ mnemonic, taprootAddress, hdPathWithIndex, }: {
+        mnemonic: string;
+        taprootAddress: string;
+        hdPathWithIndex: string;
+    }): Promise<any>;
+    createSigner({ mnemonic, fromAddress, hdPathWithIndex, }: {
+        mnemonic: string;
+        fromAddress: string;
+        hdPathWithIndex: string;
+    }): Promise<any>;
     sendBRC20(options: InscribeTransfer): Promise<unknown>;
     sendOrdCollectible(options: InscribeTransfer): Promise<{
         txnId: string;

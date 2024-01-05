@@ -1,4 +1,5 @@
 import { payments, Psbt } from 'bitcoinjs-lib'
+import * as bitcoin from 'bitcoinjs-lib'
 
 export interface InscriptionResponse {
   address: string
@@ -137,6 +138,12 @@ export interface MarketplaceOffer {
   psbt: string
 }
 
+export interface MarketplaceOffers {
+  offerId: string
+  marketplace: string
+  ticker: string
+}
+
 export interface ProviderOptions {
   network: String
   host: String
@@ -146,9 +153,10 @@ export interface ProviderOptions {
 }
 
 export interface RecoverAccountOptions {
-  mnemonic: string
-  activeIndexes: number[]
-  customPath?: 'xverse' | 'leather' | 'unisat'
+  mnemonic?: string
+  activeIndexes?: number[]
+  customPath?: 'xverse' | 'leather' | 'unisat' | 'testnet'
+  network: bitcoin.Network
 }
 
 export enum Providers {
@@ -161,10 +169,12 @@ export interface oylAccounts {
   taproot: {
     taprootKeyring: any
     taprootAddresses: string[]
+    taprootPubKey: string
   }
   segwit: {
     segwitKeyring: any
     segwitAddresses: string[]
+    segwitPubKey: string
   }
   initializedFrom: string
   mnemonic: string
@@ -177,13 +187,21 @@ export interface FeeEstimatorOptions {
   witness?: Buffer[]
 }
 
+export interface MarketplaceBuy {
+  address: string
+  pubKey: string
+  psbtBase64: string
+  network: bitcoin.Network
+  price: number
+}
+
 export interface IBlockchainInfoUTXO {
   tx_hash_big_endian: string
-  tx_hash: string
+  tx_hash?: string
   tx_output_n: number
   script: string
   value: number
-  value_hex: string
+  value_hex?: string
   confirmations: number
   tx_index: number
 }
@@ -195,7 +213,7 @@ export interface InscribeTransfer {
   segwitPubKey?: string
   segwitAddress?: string
   payFeesWithSegwit: boolean
-  feeRate: number
+  feeRate?: number
   token?: string
   mnemonic: string
   amount?: number
@@ -247,18 +265,20 @@ export interface NetworkOptions {
    * Base URL of the network, may include port. Defaults to sandshrew.io "mainnet" URL.
    * Example: 'https://mainnet.sandshrew.io' or 'http://localhost:3000'
    */
-  baseUrl?: string;
+  baseUrl?: string
 
   /**
    * RPC version, allows for future upgrades. Defaults to "v1"
    * Example: 'v1'
    */
-  version?: string;
+  version?: string
 
   /**
    * ProjectId is used as an API key for local test servers. Defaults to mainnet API key
    */
-  projectId?: string;
+  projectId?: string
+
+  network: Network
 }
 
 export interface SwapBrc {

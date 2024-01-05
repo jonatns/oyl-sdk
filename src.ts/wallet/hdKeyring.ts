@@ -3,8 +3,9 @@ import { ECPairInterface } from 'ecpair'
 import bitcore from 'bitcore-lib'
 import { isTaprootInput } from 'bitcoinjs-lib/src/psbt/bip371'
 import { EventEmitter } from 'events'
-import { tweakSigner, ECPair } from '../shared/utils'
+import { tweakSigner, ECPair, getNetwork } from '../shared/utils'
 import Mnemonic from 'bitcore-mnemonic'
+import { get } from 'http'
 
 const hdPathString = "m/86'/0'/0'/0"
 
@@ -13,12 +14,13 @@ export interface HDKeyringOption {
   mnemonic?: any
   activeIndexes?: number[]
   passphrase?: string
+  network: bitcoin.Network
 }
 
 export class HdKeyring extends EventEmitter {
   mnemonic: any = null
   passphrase: string
-  network: bitcoin.Network = bitcoin.networks.bitcoin
+  network: bitcoin.Network
   hdPath: string
   root: bitcore.HDPrivateKey = null
   hdWallet?: Mnemonic
@@ -45,6 +47,7 @@ export class HdKeyring extends EventEmitter {
       activeIndexes: this.activeIndexes,
       hdPath: this.hdPath,
       passphrase: this.passphrase,
+      network: this.network,
     }
   }
 
@@ -53,7 +56,9 @@ export class HdKeyring extends EventEmitter {
    * @param {HDKeyringOption} _opts - The HDKeyring options object.
    * @returns {HdKeyring} The instance of the HDKeyring.
    */
-  deserialize(_opts: HDKeyringOption = {}): HdKeyring {
+  deserialize(
+    _opts: HDKeyringOption = { network: getNetwork('mainnet') }
+  ): HdKeyring {
     if (this.root) {
       throw new Error('Btc-Hd-Keyring: Secret recovery phrase already provided')
     }
@@ -61,6 +66,7 @@ export class HdKeyring extends EventEmitter {
     this.wallets = []
     this.mnemonic = null
     this.root = null
+    this.network = opts.network
     this.hdPath = opts.hdPath || hdPathString
 
     if (opts.passphrase) {
@@ -68,7 +74,7 @@ export class HdKeyring extends EventEmitter {
     }
 
     if (opts.mnemonic) {
-      this.initFromMnemonic(opts.mnemonic)
+      this.initFromMnemonic(opts.mnemonic, this.network)
     }
 
     if (opts.activeIndexes) {
@@ -82,7 +88,7 @@ export class HdKeyring extends EventEmitter {
    * Initializes the HD keyring from a mnemonic phrase.
    * @param {string} mnemonic - The mnemonic phrase to use for initialization.
    */
-  initFromMnemonic(mnemonic: string) {
+  initFromMnemonic(mnemonic: string, network: bitcoin.Network) {
     if (this.root) {
       throw new Error('Btc-Hd-Keyring: Secret recovery phrase already provided')
     }
@@ -92,26 +98,19 @@ export class HdKeyring extends EventEmitter {
 
     this.hdWallet = new Mnemonic(mnemonic)
     this.root = this.hdWallet
-      .toHDPrivateKey(
-        this.passphrase,
-        this.network == bitcoin.networks.bitcoin ? 'livenet' : 'testnet'
-      )
+      .toHDPrivateKey(this.passphrase, this.network == network)
       .deriveChild(this.hdPath)
-    //console.log("root", this.root)
   }
 
   /**
    * Changes the HD path used by the keyring and reinitializes accounts.
    * @param {string} hdPath - The new HD path to be used.
    */
-  changeHdPath(hdPath: string) {
+  changeHdPath(hdPath: string, network: bitcoin.Network) {
     this.hdPath = hdPath
 
     this.root = this.hdWallet
-      .toHDPrivateKey(
-        this.passphrase,
-        this.network == bitcoin.networks.bitcoin ? 'livenet' : 'testnet'
-      )
+      .toHDPrivateKey(this.passphrase, this.network == network)
       .deriveChild(this.hdPath)
 
     const indexes = this.activeIndexes
@@ -127,12 +126,9 @@ export class HdKeyring extends EventEmitter {
    * @param {number} index - The index of the account.
    * @returns {string} The account address as a string.
    */
-  getAccountByHdPath(hdPath: string, index: number) {
+  getAccountByHdPath(hdPath: string, index: number, network: bitcoin.Network) {
     const root = this.hdWallet
-      .toHDPrivateKey(
-        this.passphrase,
-        this.network == bitcoin.networks.bitcoin ? 'livenet' : 'testnet'
-      )
+      .toHDPrivateKey(this.passphrase, this.network == network)
       .deriveChild(hdPath)
     const child = root!.deriveChild(index)
     const ecpair = ECPair.fromPrivateKey(child.privateKey.toBuffer())
@@ -147,7 +143,7 @@ export class HdKeyring extends EventEmitter {
    */
   addAccounts(numberOfAccounts = 1) {
     if (!this.root) {
-      this.initFromMnemonic(new Mnemonic().toString())
+      this.initFromMnemonic(new Mnemonic().toString(), this.network)
     }
 
     let count = numberOfAccounts
@@ -249,6 +245,7 @@ export class HdKeyring extends EventEmitter {
     let wallet = this.wallets.find(
       (wallet) => wallet.publicKey.toString('hex') == publicKey
     )
+
     if (!wallet) {
       throw new Error('Simple Keyring - Unable to find matching publicKey.')
     }
@@ -305,6 +302,7 @@ export class HdKeyring extends EventEmitter {
       const child = this.root!.deriveChild(i)
       const ecpair = ECPair.fromPrivateKey(child.privateKey.toBuffer())
       const address = ecpair.publicKey.toString('hex')
+
       this._index2wallet[i] = [address, ecpair]
     }
 
