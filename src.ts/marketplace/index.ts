@@ -1,4 +1,4 @@
-import { Oyl, getAddressType, AddressType, OGPSBTTransaction, getNetwork } from "..";
+import { Oyl, getAddressType, AddressType, OGPSBTTransaction, getNetwork, timeout } from "..";
 import { BuildMarketplaceTransaction } from "./buildMarketplaceTx";
 import * as bitcoin from "bitcoinjs-lib";
 import { MarketplaceOffers } from "../shared/interface";
@@ -19,6 +19,7 @@ export class Marketplace {
       this.publicKey = options.publicKey;
       this.mnemonic = options.mnemonic;
       this.feeRate = options.feeRate;
+      this.hdPath = options.hdPath;
       const addressType = getAddressType(this.address);
       if (addressType == null) throw Error("Invalid Address Type");
       this.addressType = addressType;
@@ -83,6 +84,7 @@ export class Marketplace {
       hdPath: this.hdPath,
       addrType: this.addressType,
     });
+    console.log(payload.keyring.address)
     if (payload.keyring.address != this.address)
       throw Error("Could not get signer for this address");
     const keyring = payload.keyring.keyring;
@@ -110,6 +112,7 @@ export class Marketplace {
     });
 
     const preparedWallet = await this.prepareAddress(marketPlaceBuy)
+    await timeout(30000)
     if (!preparedWallet) {
       throw new Error("Address not prepared to buy marketplace offers")
     }
@@ -162,7 +165,9 @@ export class Marketplace {
     for (const offer of offers) {
       if (offer.marketplace == 'omnisat') {
         let newOffer = await this.wallet.apiClient.getOmnisatOfferPsbt({ offerId: offer.offerId, ticker: offer.ticker, testnet });
-
+        if (newOffer == false){
+          throw new Error ("cannot find offer")
+        }
         processedOffers.push(newOffer);
       }
     }

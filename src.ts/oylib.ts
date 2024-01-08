@@ -63,7 +63,7 @@ export class Oyl {
     }
 
     this.apiClient = new OylApiClient({
-      host: 'https://api.oyl.gg',
+      host: 'http:/localhost:3000',
       testnet: options.network == 'testnet' ? true : null,
     })
     const rpcUrl = `${options.baseUrl}/${options.version}/${options.projectId}`

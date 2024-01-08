@@ -21,7 +21,12 @@ export async function loadRpc() {
   }
   const wallet = new Oyl(initOptions)
   try {
-    const newWallet = await wallet.getAggregatedBrcOffers({ticker: "sats", limitOrderAmount: 1, marketPrice: 500})
+    const addressType = getAddressType(process.env.TESTNET_TAPROOT_ADDRESS)
+    const newWallet = await wallet.fromPhrase({
+      mnemonic: process.env.TESTNET_TAPROOT_MNEMONIC.trim(),
+      hdPath: process.env.TESTNET_TAPROOT_HDPATH,
+      addrType: addressType
+    })    
     console.log('newWallet:', JSON.stringify(newWallet))
   } catch (error) {
     console.error('Error:', error)
@@ -41,20 +46,21 @@ export async function testMarketplaceBuy() {
     address: process.env.TESTNET_TAPROOT_ADDRESS,
     publicKey: process.env.TESTNET_TAPROOT_PUBKEY,
     mnemonic: process.env.TESTNET_TAPROOT_MNEMONIC,
+    hdPath: process.env.TESTNET_TAPROOT_HDPATH,
     feeRate: parseFloat(process.env.FEE_RATE),
     wallet: wallet
   }
 
   const quotes =[
     {
-    offerId: "658f391b6af74c5ed795b182",
+    offerId: "658f39576128445df87d74d9",
     marketplace: "omnisat",
-    ticker: "piza"
+    ticker: "sats"
   },
   {
-    offerId: "658f39686128445df87d74da",
+    offerId: "658f39306128445df87d74d7",
     marketplace: "omnisat",
-    ticker: "piza"
+    ticker: "sats"
   },
 ]
   const marketplace = new Marketplace(marketplaceOptions)
