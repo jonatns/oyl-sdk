@@ -1,4 +1,4 @@
-import { Oyl, getAddressType, AddressType, OGPSBTTransaction } from "..";
+import { Oyl, getAddressType, AddressType, OGPSBTTransaction, getNetwork } from "..";
 import { BuildMarketplaceTransaction } from "./buildMarketplaceTx";
 import * as bitcoin from "bitcoinjs-lib";
 import { MarketplaceOffers } from "../shared/interface";
@@ -136,6 +136,7 @@ export class Marketplace {
       await this.wallet.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([result.hex]);
 
     if (!broadcast.allowed) {
+      console.log("in buyMarketPlaceOffers", broadcast)
       throw new Error(result['reject-reason'])
     }
     await this.wallet.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(result.hex)
@@ -157,9 +158,10 @@ export class Marketplace {
   async processAllOffers(offers: MarketplaceOffers[]) {
 
     const processedOffers = []
+    const testnet = this.wallet.network == getNetwork('testnet');
     for (const offer of offers) {
       if (offer.marketplace == 'omnisat') {
-        let newOffer = await this.wallet.apiClient.getOmnisatOfferPsbt({ offerId: offer.offerId, ticker: offer.ticker });
+        let newOffer = await this.wallet.apiClient.getOmnisatOfferPsbt({ offerId: offer.offerId, ticker: offer.ticker, testnet });
 
         processedOffers.push(newOffer);
       }
@@ -199,6 +201,7 @@ export class Marketplace {
           await this.wallet.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([result.hex])
 
         if (!broadcast.allowed) {
+          console.log("in prepareAddress", broadcast)
           throw new Error(result['reject-reason'])
         }
         await this.wallet.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(result.hex)

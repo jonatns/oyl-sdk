@@ -13,6 +13,7 @@ export class BuildMarketplaceTransaction {
     public sandshrew;
     public makersAddress: string | null;
     public takerScript: string;
+    public network: bitcoin.Network
 
     constructor({ address, pubKey, psbtBase64, price, wallet }: MarketplaceBuy) {
         this.walletAddress = address;
@@ -23,10 +24,11 @@ export class BuildMarketplaceTransaction {
         this.sandshrew = wallet.sandshrewBtcClient;
         this.psbtBase64 = psbtBase64;
         this.orderPrice = price;
+        this.network = wallet.network
         const tapInternalKey = assertHex(Buffer.from(this.pubKey, "hex"));
         const p2tr = bitcoin.payments.p2tr({
             internalPubkey: tapInternalKey,
-            network: wallet.network,
+            network: this.network,
         });
         const addressType = getAddressType(this.walletAddress);
         if (addressType == AddressType.P2TR) {
@@ -107,7 +109,7 @@ export class BuildMarketplaceTransaction {
         if (retrievedUtxos.length === 0) {
             throw Error("Not enough funds to prepare address utxos");
         }
-        const prepareTx = new bitcoin.Psbt();
+        const prepareTx = new bitcoin.Psbt({network: this.network});
         console.log("=========== Retreived Utxos to add: ", retrievedUtxos);
         for (let i = 0; i < retrievedUtxos.length; i++) {
             prepareTx.addInput({
@@ -152,7 +154,7 @@ export class BuildMarketplaceTransaction {
 
     async psbtBuilder() {
         console.log("=========== Decoding PSBT with bitcoinjs ========");
-        const marketplacePsbt = bitcoin.Psbt.fromBase64(this.psbtBase64);
+        const marketplacePsbt = bitcoin.Psbt.fromBase64(this.psbtBase64, {network: this.network});
         const costPrice = this.orderPrice;
         const requiredSatoshis = costPrice + 30000 + 546 + 1200;
         const retrievedUtxos = await this.getUTXOsToCoverAmount(requiredSatoshis);
@@ -175,7 +177,7 @@ export class BuildMarketplaceTransaction {
         }
 
         console.log("=========== Creating Inputs ========");
-        const swapPsbt = new bitcoin.Psbt();
+        const swapPsbt = new bitcoin.Psbt({network: this.network});
         console.log("=========== Adding dummy utxos ========");
 
         for (let i = 0; i < 2; i++) {
@@ -194,6 +196,7 @@ export class BuildMarketplaceTransaction {
         const decoded = await this.sandshrew.bitcoindRpc.decodePSBT(
             this.psbtBase64
         );
+        console.log("maker offer txid", decoded.tx.vin[2].txid)
         const makerInputData = marketplacePsbt.data.inputs[2];
         console.log("=========== Maker Input Data: ", makerInputData);
         swapPsbt.addInput({
@@ -266,8 +269,8 @@ export class BuildMarketplaceTransaction {
         if (!(remainingSats > requiredSatoshis)) {
             throw new Error("Not enough satoshi to complete purchase")
         }
-        const marketplacePsbt = bitcoin.Psbt.fromBase64(this.psbtBase64);
-        const swapPsbt = new bitcoin.Psbt();
+        const marketplacePsbt = bitcoin.Psbt.fromBase64(this.psbtBase64, {network: this.network});
+        const swapPsbt = new bitcoin.Psbt({network: this.network});
 
         swapPsbt.addInput({
             hash: previousOrderTxId,

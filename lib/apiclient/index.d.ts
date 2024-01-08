@@ -89,9 +89,10 @@ export declare class OylApiClient {
      * Get Omnisat offer psbt.
      * @param offerId - The offer Id to query.
      */
-    getOmnisatOfferPsbt({ offerId, ticker, }: {
+    getOmnisatOfferPsbt({ offerId, ticker, testnet }: {
         offerId: string;
         ticker: string;
+        testnet?: boolean;
     }): Promise<any>;
     /**
      * Initialize a swap bid.

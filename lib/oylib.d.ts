@@ -210,6 +210,18 @@ export declare class Oyl {
         ticker: any;
     }): Promise<any>;
     /**
+    * Fetches aggregated offers associated with a specific BRC20 ticker.
+    * @param {Object} params - The parameters containing the ticker information.
+    * @param {string} params.ticker - The ticker symbol to retrieve offers for.
+    * @param {}
+    * @returns {Promise<any>} A promise that resolves to an array of offers.
+    */
+    getAggregatedBrcOffers({ ticker, limitOrderAmount, marketPrice }: {
+        ticker: string;
+        limitOrderAmount: number;
+        marketPrice: number;
+    }): Promise<any>;
+    /**
      * Lists BRC20 tokens associated with an address.
      * @param {Object} params - The parameters containing the address information.
      * @param {string} params.address - The address to list BRC20 tokens for.
