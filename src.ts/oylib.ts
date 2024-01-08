@@ -29,6 +29,7 @@ import { OylApiClient } from './apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from './rpclient/provider'
 import { OrdRpc } from './rpclient/ord'
+import { HdKeyring } from './wallet/hdKeyring'
 
 export const NESTED_SEGWIT_HD_PATH = "m/49'/0'/0'/0"
 export const TAPROOT_HD_PATH = "m/86'/0'/0'/0"
@@ -74,9 +75,6 @@ export class Oyl {
     this.ordRpc = provider.ord
     this.wallet = this.createWallet({})
   }
-
-
-
 
   /**
    * Gets a summary of the given address(es).
@@ -313,7 +311,6 @@ export class Oyl {
     return response
   }
 
-
   async getUtxos(address: string) {
     const utxosResponse = await this.esploraRpc.getAddressUtxo(address)
 
@@ -409,7 +406,7 @@ export class Oyl {
       console.log(error)
     }
   }
- 
+
   /**
    * Retrieves a list of inscriptions for a given address.
    * @param {Object} param0 - An object containing the address property.
@@ -626,28 +623,48 @@ export class Oyl {
     return data
   }
 
-  async signPsbt(
-    psbtHex: string,
-    fee: any,
-    pubKey: any,
-    signer: any,
-    address: string
-  ) {
-    try {
-      const addressType = transactions.getAddressType(address)
-      if (addressType == null) throw Error('Invalid Address Type')
-      const tx = new PSBTTransaction(signer, address, pubKey, addressType, fee)
-      const psbt = bitcoin.Psbt.fromHex(psbtHex, { network: this.network })
-      const signedPsbt = await tx.signPsbt(psbt)
-      const signedPsbtBase64 = signedPsbt.toBase64()
-      const signedPsbtHex = signedPsbt.toHex()
+  async signPsbt({
+    psbtHex,
+    publicKey,
+    signer,
+  }: {
+    psbtHex: string
+    publicKey: string
+    signer: HdKeyring['signTransaction']
+  }) {
+    const psbt = bitcoin.Psbt.fromHex(psbtHex, { network: this.network })
+
+    const inputsToSign = psbt.txInputs.map((_, index) => {
       return {
-        signedPsbtHex: signedPsbtHex,
-        signedPsbtBase64: signedPsbtBase64,
+        index,
+        publicKey,
       }
-    } catch (e) {
-      console.log(e)
+    })
+
+    const signedPsbt = await signer(psbt, inputsToSign)
+
+    signedPsbt.finalizeAllInputs()
+
+    return {
+      psbtHex: signedPsbt.toHex(),
     }
+  }
+
+  async pushPsbt(psbtHex: string) {
+    const psbt = bitcoin.Psbt.fromHex(psbtHex, { network: this.network })
+    const txId = psbt.extractTransaction().getId()
+    const rawTx = psbt.extractTransaction().toHex()
+
+    const [result] =
+      await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([rawTx])
+
+    if (!result.allowed) {
+      throw new Error(result['reject-reason'])
+    }
+
+    await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(rawTx)
+
+    return { txId }
   }
 
   async finalizePsbtBase64(psbtBase64) {
@@ -763,8 +780,6 @@ export class Oyl {
     const taprootSigner = tapKeyring.signTransaction.bind(tapKeyring)
     return taprootSigner
   }
-
-  
 
   async sendBRC20(options: InscribeTransfer) {
     await isDryDisclaimer(options.isDry)
