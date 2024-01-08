@@ -16,7 +16,7 @@ export function createWallet(
   // Create a new instance of HdKeyring with the provided hdPathString
   const keyring = new HdKeyring({ hdPath: hdPathString, network })
   // Add a single account to the keyring
-  keyring.addAccounts(1)
+  keyring.addAccounts(1, network)
   // Get the first account public key
   const accounts = keyring.getAccounts()
   const pubkey = accounts[0]
@@ -84,13 +84,14 @@ export async function importMnemonic(
   type: AddressType,
   network: bitcoin.Network
 ) {
-  const keyring = await new HdKeyring({
+  const keyring = new HdKeyring({
     mnemonic: mnemonic,
     hdPath: path,
     network,
   })
+
   // Add a single account to the keyring
-  await keyring.addAccounts(1)
+  await keyring.addAccounts(1, network)
   // Get the first account public key
   const accounts = await keyring.getAccounts()
   const pubkey = accounts[0]

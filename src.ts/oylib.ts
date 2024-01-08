@@ -890,6 +890,7 @@ export class Oyl {
       if (addressType == null) {
         throw Error('Unrecognized Address Type')
       }
+
       const hdPaths = customPaths[options.segwitHdPath]
 
       const taprootUtxos = await this.getUtxosArtifacts({
@@ -916,8 +917,14 @@ export class Oyl {
 
       const taprootPrivateKey = await this.fromPhrase({
         mnemonic: options.mnemonic,
-        addrType: addressType,
+        addrType: transactions.getAddressType(options.fromAddress),
         hdPath: hdPaths['taprootPath'],
+      })
+
+      const segwitPrivateKey = await this.fromPhrase({
+        mnemonic: options.mnemonic,
+        addrType: transactions.getAddressType(options.segwitAddress),
+        hdPath: hdPaths['segwitPath'],
       })
 
       let feeRate: number
@@ -926,6 +933,7 @@ export class Oyl {
       } else {
         feeRate = options.feeRate
       }
+
       return await inscribe({
         ticker: options.token,
         amount: options.amount,
@@ -944,7 +952,14 @@ export class Oyl {
         segwitUtxos: segwitUtxos,
         taprootUtxos: taprootUtxos,
         taprootPrivateKey:
-          taprootPrivateKey.keyring.keyring._index2wallet[0][0],
+          taprootPrivateKey.keyring.keyring._index2wallet[0][1].privateKey.toString(
+            'hex'
+          ),
+        taprootKeyPair: taprootPrivateKey.keyring.keyring._index2wallet[0][1],
+        segwitPk:
+          segwitPrivateKey.keyring.keyring._index2wallet[0][1].privateKey.toString(
+            'hex'
+          ),
       })
     } catch (err: unknown) {
       if (err instanceof Error) {

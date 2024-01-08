@@ -1,5 +1,6 @@
 /// <reference types="node" />
 import * as bitcoin from 'bitcoinjs-lib';
+import { ECPairInterface } from 'ecpair';
 import { UnspentOutput, TxInput, IBlockchainInfoUTXO, Network, BitcoinPaymentType, ToSignInput } from '../shared/interface';
 import { Utxo } from '../txbuilder/buildOrdTx';
 export interface IBISWalletIx {
@@ -58,7 +59,7 @@ export declare const formatOptionsToSignInputs: ({ _psbt, isRevealTx, pubkey, se
     network: bitcoin.Network;
 }) => Promise<ToSignInput[]>;
 export declare const signInputs: (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], taprootPubkey: string, segwitPubKey: string, segwitSigner: any, taprootSigner: any) => Promise<bitcoin.Psbt>;
-export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, network, segwitUtxos, taprootUtxos, taprootPrivateKey, }: {
+export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, network, segwitUtxos, taprootUtxos, taprootPrivateKey, taprootKeyPair, segwitPk, }: {
     ticker: string;
     amount: number;
     inputAddress: string;
@@ -76,6 +77,8 @@ export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, m
     segwitUtxos: Utxo[];
     taprootUtxos: Utxo[];
     taprootPrivateKey: string;
+    taprootKeyPair: ECPairInterface;
+    segwitPk: string;
 }) => Promise<{
     txnId: any;
     commitRawTxn?: undefined;
@@ -92,11 +95,11 @@ export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, m
     commitRawTxn?: undefined;
     rawTxn?: undefined;
 }>;
-export declare const createInscriptionScript: (pubKey: any, content: any) => any[];
+export declare const createInscriptionScript: (pubKey: any, content: any) => string[];
 export declare let RPC_ADDR: string;
 export declare const callBTCRPCEndpoint: (method: string, params: string | string[], network: string) => Promise<any>;
-export declare function waitForTransaction(txId: string, network: string): Promise<boolean>;
-export declare function getOutputValueByVOutIndex(commitTxId: string, vOut: number, network?: 'testnet' | 'mainnet' | 'regtest' | 'main'): Promise<number | null>;
+export declare function waitForTransaction(txId: string, network: string): Promise<[boolean, any?]>;
+export declare function getOutputValueByVOutIndex(commitTxId: string, vOut: number, network?: 'testnet' | 'mainnet' | 'regtest' | 'main'): Promise<any[] | null>;
 export declare function calculateTaprootTxSize(taprootInputCount: number, nonTaprootInputCount: number, outputCount: number): number;
 export declare function getRawTxnHashFromTxnId(txnId: string): Promise<any>;
 export declare const isP2PKH: (script: Buffer, network: Network) => BitcoinPaymentType;

@@ -200,7 +200,7 @@ const addSegwitFeeUtxo = async ({
     } else {
       let amountForFee: number = fee
       if (inscription) {
-        amountForFee = fee * 2 + 546
+        amountForFee = fee + 546
       }
       const feeUtxos = findUtxosForFees(nonMetaSegwitUtxos, amountForFee)
       console.log(feeUtxos.change)

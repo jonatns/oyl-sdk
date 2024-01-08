@@ -1,5 +1,5 @@
 import * as bitcoin from 'bitcoinjs-lib'
-import ECPairFactory from 'ecpair'
+import ECPairFactory, { ECPairInterface } from 'ecpair'
 import ecc from '@bitcoinerlab/secp256k1'
 bitcoin.initEccLib(ecc)
 import {
@@ -26,6 +26,7 @@ import {
   getUtxosForFees,
 } from '../txbuilder/buildOrdTx'
 import { isTaprootInput, toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
+import { fromOutputScript } from 'bitcoinjs-lib/src/address'
 
 export interface IBISWalletIx {
   validity: any
@@ -305,26 +306,22 @@ export const formatOptionsToSignInputs = async ({
         value = output.value
       }
       if (!isSigned && lostInternalPubkey) {
-        const address = PsbtAddress.fromOutputScript(script, psbtNetwork)
-        if (taprootAddress === address) {
-          const tapInternalKey = assertHex(Buffer.from(pubkey, 'hex'))
-          const p2tr = bitcoin.payments.p2tr({
-            internalPubkey: tapInternalKey,
-            network: psbtNetwork,
+        const tapInternalKey = assertHex(Buffer.from(pubkey, 'hex'))
+        const p2tr = bitcoin.payments.p2tr({
+          internalPubkey: tapInternalKey,
+          network: psbtNetwork,
+        })
+        if (
+          v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
+        ) {
+          v.tapInternalKey = tapInternalKey
+        }
+        if (v.tapInternalKey) {
+          toSignInputs.push({
+            index: index,
+            publicKey: pubkey,
+            sighashTypes: v.sighashType ? [v.sighashType] : undefined,
           })
-          if (
-            v.witnessUtxo?.script.toString('hex') ==
-            p2tr.output?.toString('hex')
-          ) {
-            v.tapInternalKey = tapInternalKey
-          }
-          if (v.tapInternalKey) {
-            toSignInputs.push({
-              index: index,
-              publicKey: pubkey,
-              sighashTypes: v.sighashType ? [v.sighashType] : undefined,
-            })
-          }
         }
       }
 
@@ -396,6 +393,8 @@ export const inscribe = async ({
   segwitUtxos,
   taprootUtxos,
   taprootPrivateKey,
+  taprootKeyPair,
+  segwitPk,
 }: {
   ticker: string
   amount: number
@@ -414,24 +413,32 @@ export const inscribe = async ({
   segwitUtxos: Utxo[]
   taprootUtxos: Utxo[]
   taprootPrivateKey: string
+  taprootKeyPair: ECPairInterface
+  segwitPk: string
 }) => {
   try {
     const secret = taprootPrivateKey
-
-    const secKey = ecc2.keys.get_seckey(String(secret))
     const pubKey = ecc2.keys.get_pubkey(String(secret), true)
     const content = `{"p":"brc-20","op":"transfer","tick":"${ticker}","amt":"${amount}"}`
-
     const script = createInscriptionScript(pubKey, content)
     const tapleaf = Tap.encodeScript(script)
-    const [tpubkey, cblock] = Tap.getPubKey(pubKey, { target: tapleaf })
-    const inscriberAddress = Address.p2tr.fromPubKey(tpubkey, network)
+    const [tpubkey, cblock] = Tap.getPubKey(String(pubKey.hex), {
+      target: tapleaf,
+    })
+    const secKey = Tap.getSecKey(String(secret), {
+      target: tapleaf,
+    })
+
+    const script_p2tr = bitcoin.payments.p2tr({
+      pubkey: Buffer.from(tpubkey, 'hex'),
+      network: getNetwork(network),
+    })
 
     const psbt = new bitcoin.Psbt({ network: getNetwork(network) })
 
     psbt.addOutput({
       value: 546,
-      address: inscriberAddress,
+      address: script_p2tr.address,
     })
 
     await getUtxosForFees({
@@ -465,7 +472,6 @@ export const inscribe = async ({
       segwitSigner,
       taprootSigner
     )
-
     signedPsbt.finalizeAllInputs()
 
     const commitPsbtHash = signedPsbt.toHex()
@@ -483,7 +489,6 @@ export const inscribe = async ({
         commitTxHex,
         network
       )
-      console.log(result)
       commitTxId = result
     }
 
@@ -494,6 +499,27 @@ export const inscribe = async ({
       }
     }
 
+    const commitTxOutput0 = await getOutputValueByVOutIndex(
+      commitTxId,
+      0,
+      network
+    )
+    if (commitTxOutput0[0] === 0 || !commitTxOutput0) {
+      return { error: 'ERROR GETTING FIRST INPUT VALUE' }
+    }
+
+    const commitTxOutput1 = await getOutputValueByVOutIndex(
+      commitTxId,
+      1,
+      network
+    )
+    if (commitTxOutput1[0] === 0 || !commitTxOutput1) {
+      return { error: 'ERROR GETTING FIRST INPUT VALUE' }
+    }
+
+    const vB = 298 + 96 + 12
+    const fee = vB * feeRate
+
     const txData = Tx.create({
       vin: [
         {
@@ -501,7 +527,15 @@ export const inscribe = async ({
           vout: 0,
           prevout: {
             value: 546,
-            scriptPubKey: ['OP_1', tpubkey],
+            scriptPubKey: ['OP_1', commitTxOutput0[1]],
+          },
+        },
+        {
+          txid: commitTxId,
+          vout: 1,
+          prevout: {
+            value: commitTxOutput1[0],
+            scriptPubKey: ['OP_0', commitTxOutput1[1]],
           },
         },
       ],
@@ -510,19 +544,48 @@ export const inscribe = async ({
           value: 546,
           scriptPubKey: Address.toScriptPubKey(outputAddress),
         },
+        {
+          value: commitTxOutput1[0] - fee,
+          scriptPubKey: Address.toScriptPubKey(segwitAddress),
+        },
       ],
     })
 
-    const sig = Signer.taproot.sign(secKey, txData, 0, {
+    const sig = Signer.taproot.sign(secKey[0], txData, 0, {
       extension: tapleaf,
     })
     txData.vin[0].witness = [sig, script, cblock]
 
+    const segwitSig = Signer.segwit.sign(segwitPk, txData, 1)
+    txData.vin[1].witness = [segwitSig]
+
+    const isValid = Signer.taproot.verify(txData, 0, {
+      pubkey: tpubkey,
+      throws: false,
+    })
+
+    const isValid2 = Signer.segwit.verify(txData, 1, {
+      pubkey: commitTxOutput1[1],
+      throws: false,
+    })
+
+    console.log(
+      Address.toScriptPubKey(segwitAddress),
+      Address.toScriptPubKey(outputAddress),
+      commitTxOutput1[1],
+      commitTxOutput0[1],
+      isValid,
+      isValid2
+    )
+
+    const finalTx = Tx.encode(txData)
+    const finalTxHex = finalTx.hex
+    const finalTxId = finalTx.id
+
     if (!isDry) {
-      const TxHex = Tx.encode(txData).hex
       const { result, error, id } = await callBTCRPCEndpoint(
         'sendrawtransaction',
-        TxHex,
+        Tx.encode(txData).hex,
         network
       )
       console.log(result, error, id)
@@ -530,8 +593,8 @@ export const inscribe = async ({
     } else {
       return {
         commitRawTxn: commitTxHex,
-        txnId: Tx.util.getTxid(txData),
-        rawTxn: Tx.encode(txData).hex,
+        txnId: finalTxId,
+        rawTxn: finalTxHex,
       }
     }
   } catch (e: any) {
@@ -554,7 +617,7 @@ export const createInscriptionScript = (pubKey: any, content: any) => {
     'OP_0',
     textEncoder.encode(content),
     'OP_ENDIF',
-  ]
+  ] as string[]
 }
 
 const INSCRIPTION_PREPARE_SAT_AMOUNT = 4000
@@ -598,7 +661,7 @@ export const callBTCRPCEndpoint = async (
 export async function waitForTransaction(
   txId: string,
   network: string
-): Promise<boolean> {
+): Promise<[boolean, any?]> {
   console.log('WAITING FOR TRANSACTION: ', txId)
   const timeout: number = 60000 // 1 minute in milliseconds
 
@@ -612,13 +675,13 @@ export async function waitForTransaction(
       // Check if the transaction is found
       if (response && response.result) {
         console.log('Transaction found in mempool:', txId)
-        return true
+        return [true, response]
       }
 
       // Check for timeout
       if (Date.now() - startTime > timeout) {
         console.log('Timeout reached, stopping search.')
-        return false
+        return [false]
       }
 
       // Wait for 5 seconds before retrying
@@ -627,7 +690,7 @@ export async function waitForTransaction(
       // Check for timeout
       if (Date.now() - startTime > timeout) {
         console.log('Timeout reached, stopping search.')
-        return false
+        return [false]
       }
 
       // Wait for 5 seconds before retrying
@@ -640,7 +703,7 @@ export async function getOutputValueByVOutIndex(
   commitTxId: string,
   vOut: number,
   network: 'testnet' | 'mainnet' | 'regtest' | 'main' = 'mainnet'
-): Promise<number | null> {
+): Promise<any[] | null> {
   const timeout: number = 60000 // 1 minute in milliseconds
   const startTime: number = Date.now()
 
@@ -659,8 +722,10 @@ export async function getOutputValueByVOutIndex(
         txDetails.result.vout &&
         txDetails.result.vout.length > 0
       ) {
-        // Retrieve the value of the first output
-        return txDetails.result.vout[vOut].value
+        return [
+          txDetails.result.vout[vOut].value,
+          txDetails.result.vout[vOut].scriptpubkey,
+        ]
       }
 
       // Check for timeout

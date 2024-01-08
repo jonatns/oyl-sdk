@@ -339,7 +339,7 @@ export async function runCLI() {
       return
     case 'testnet-sendBRC20':
       const testnetBrc20Send = await testWallet.sendBRC20({
-        isDry: true,
+        isDry: false,
         fromAddress: testnetTaprootAddress,
         taprootPublicKey: testnetTaprootPubKey,
         destinationAddress:

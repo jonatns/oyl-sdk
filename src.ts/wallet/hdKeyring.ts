@@ -56,9 +56,7 @@ export class HdKeyring extends EventEmitter {
    * @param {HDKeyringOption} _opts - The HDKeyring options object.
    * @returns {HdKeyring} The instance of the HDKeyring.
    */
-  deserialize(
-    _opts: HDKeyringOption = { network: getNetwork('mainnet') }
-  ): HdKeyring {
+  deserialize(_opts: HDKeyringOption): HdKeyring {
     if (this.root) {
       throw new Error('Btc-Hd-Keyring: Secret recovery phrase already provided')
     }
@@ -141,9 +139,9 @@ export class HdKeyring extends EventEmitter {
    * @param {number} numberOfAccounts - The number of new accounts to add. Defaults to 1 if not specified.
    * @returns {Promise<string[]>} A promise that resolves to an array of new account addresses in hex format.
    */
-  addAccounts(numberOfAccounts = 1) {
+  addAccounts(numberOfAccounts = 1, network: bitcoin.Network) {
     if (!this.root) {
-      this.initFromMnemonic(new Mnemonic().toString(), this.network)
+      this.initFromMnemonic(new Mnemonic().toString(), network)
     }
 
     let count = numberOfAccounts
@@ -300,7 +298,9 @@ export class HdKeyring extends EventEmitter {
   private _addressFromIndex(i: number): [string, ECPairInterface] {
     if (!this._index2wallet[i]) {
       const child = this.root!.deriveChild(i)
-      const ecpair = ECPair.fromPrivateKey(child.privateKey.toBuffer())
+      const ecpair = ECPair.fromPrivateKey(child.privateKey.toBuffer(), {
+        network: this.network,
+      })
       const address = ecpair.publicKey.toString('hex')
 
       this._index2wallet[i] = [address, ecpair]
