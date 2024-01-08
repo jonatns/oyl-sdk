@@ -9,7 +9,7 @@ export declare class BuildMarketplaceTransaction {
     sandshrew: any;
     makersAddress: string | null;
     takerScript: string;
-    constructor({ address, pubKey, psbtBase64, price, network }: MarketplaceBuy);
+    constructor({ address, pubKey, psbtBase64, price, wallet }: MarketplaceBuy);
     getUTXOsToCoverAmount(amountNeeded: number, inscriptionLocs?: string[]): Promise<any>;
     isWalletPrepared(): Promise<boolean>;
     prepareWallet(): Promise<{

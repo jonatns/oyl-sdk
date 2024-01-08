@@ -3,7 +3,7 @@ import { BuildMarketplaceTransaction } from "./buildMarketplaceTx";
 import * as bitcoin from "bitcoinjs-lib";
 import { MarketplaceOffers } from "../shared/interface";
 
-class Marketplace {
+export class Marketplace {
   private wallet: Oyl;
   public address: string;
   public publicKey: string;
@@ -45,7 +45,7 @@ class Marketplace {
       pubKey: this.publicKey,
       psbtBase64: order.psbtBase64,
       price: order.price,
-      network: this.wallet.network
+      wallet: this.wallet
     });
     const {
       psbtBase64: filledOutBase64,
@@ -106,7 +106,7 @@ class Marketplace {
       pubKey: this.publicKey,
       psbtBase64: offers[0].psbtBase64,
       price: offers[0].price,
-      network: this.wallet.network
+      wallet: this.wallet
     });
 
     const preparedWallet = await this.prepareAddress(marketPlaceBuy)

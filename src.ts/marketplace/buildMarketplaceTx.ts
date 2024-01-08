@@ -1,7 +1,4 @@
 import { assertHex, getSatpointFromUtxo } from "../shared/utils";
-import { OylApiClient } from '../apiclient'
-import { SandshrewBitcoinClient } from '../rpclient/sandshrew'
-import { EsploraRpc } from "../rpclient/esplora";
 import { getAddressType } from "../transactions";
 import { MarketplaceBuy, AddressType } from "../shared/interface";
 import * as bitcoin from "bitcoinjs-lib";
@@ -17,19 +14,19 @@ export class BuildMarketplaceTransaction {
     public makersAddress: string | null;
     public takerScript: string;
 
-    constructor({ address, pubKey, psbtBase64, price, network }: MarketplaceBuy) {
+    constructor({ address, pubKey, psbtBase64, price, wallet }: MarketplaceBuy) {
         this.walletAddress = address;
         this.pubKey = pubKey;
         /** should resolve values below based on network passed */
-        this.api = new OylApiClient({ host: 'https://api.oyl.gg' })
-        this.esplora = new EsploraRpc("https://mainnet.sandshrew.io/v1/154f9aaa25a986241357836c37f8d71")
-        this.sandshrew = new SandshrewBitcoinClient("https://sandshrew.io/v1/d6aebfed1769128379aca7d215f0b689");
+        this.api = wallet.apiClient
+        this.esplora = wallet.esploraRpc
+        this.sandshrew = wallet.sandshrewBtcClient;
         this.psbtBase64 = psbtBase64;
         this.orderPrice = price;
         const tapInternalKey = assertHex(Buffer.from(this.pubKey, "hex"));
         const p2tr = bitcoin.payments.p2tr({
             internalPubkey: tapInternalKey,
-            network: network,
+            network: wallet.network,
         });
         const addressType = getAddressType(this.walletAddress);
         if (addressType == AddressType.P2TR) {

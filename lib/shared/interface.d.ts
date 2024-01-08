@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import { payments, Psbt } from 'bitcoinjs-lib';
 import * as bitcoin from 'bitcoinjs-lib';
+import { Oyl } from '../oylib';
 export interface InscriptionResponse {
     address: string;
     inscriptions?: string;
@@ -171,8 +172,8 @@ export interface MarketplaceBuy {
     address: string;
     pubKey: string;
     psbtBase64: string;
-    network: bitcoin.Network;
     price: number;
+    wallet: Oyl;
 }
 export interface IBlockchainInfoUTXO {
     tx_hash_big_endian: string;

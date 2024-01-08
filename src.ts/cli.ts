@@ -6,33 +6,67 @@ import { Aggregator } from './PSBTAggregator'
 import * as bitcoin from 'bitcoinjs-lib'
 import axios from 'axios'
 import * as ecc2 from '@bitcoinerlab/secp256k1'
+import { Marketplace } from './marketplace'
+import { Network } from './shared/interface'
+import { getAddressType } from './transactions'
 
 bitcoin.initEccLib(ecc2)
 
-export async function loadRpc(options) {
-  const wallet = new Oyl()
+export async function loadRpc() {
+  const initOptions = {
+    baseUrl: 'https://testnet.sandshrew.io',
+    version: 'v1',
+    projectId: 'd6aebfed1769128379aca7d215f0b689', // default API key
+    network: 'testnet' as Network,
+  }
+  const wallet = new Oyl(initOptions)
   try {
-    const newWallet = await wallet.getUtxosArtifacts({
-      address: 'bc1pmtkac5u6rx7vkwhcnt0gal5muejwhp8hcrmx2yhvjg8nenu7rp3syw6yp0',
+    const addressType = getAddressType(process.env.TESTNET_TAPROOT_ADDRESS)
+    const newWallet = await wallet.fromPhrase({
+      mnemonic: process.env.TESTNET_TAPROOT_MNEMONIC.trim(),
+      hdPath: process.env.TESTNET_TAPROOT_HDPATH,
+      addrType: addressType
     })
-    console.log('newWallet:', newWallet)
+    console.log('newWallet:', JSON.stringify(newWallet))
   } catch (error) {
     console.error('Error:', error)
   }
 }
 
-// export async function testMarketplaceBuy() {
-//   const options = {
-//     address: process.env.TAPROOT_ADDRESS,
-//     pubKey: process.env.TAPROOT_PUBKEY,
-//     feeRate: parseFloat(process.env.FEE_RATE),
-//     psbtBase64: process.env.PSBT_BASE64,
-//     price: 0.001,
-//   }
-//   const intent = new BuildMarketplaceTransaction(options)
-//   const builder = await intent.psbtBuilder()
-//   console.log(builder)
-// }
+export async function testMarketplaceBuy() {
+  const initOptions = {
+    baseUrl: 'https://testnet.sandshrew.io',
+    version: 'v1',
+    projectId: 'd6aebfed1769128379aca7d215f0b689', // default API key
+    network: 'testnet' as Network,
+  }
+  const wallet = new Oyl(initOptions)
+
+  const marketplaceOptions = {
+    address: process.env.TESTNET_TAPROOT_ADDRESS,
+    publicKey: process.env.TESTNET_TAPROOT_PUBKEY,
+    mnemonic: process.env.TESTNET_TAPROOT_MNEMONIC,
+    feeRate: parseFloat(process.env.FEE_RATE),
+    wallet: wallet
+  }
+
+  const quotes =[
+    {
+    offerId: "658217b8eff2a5b8b8f74413",
+    marketplace: "omnisat",
+    ticker: "piza"
+  },
+  {
+    offerId: "658217e4aa74d8b8c6d755d1",
+    marketplace: "omnisat",
+    ticker: "piza"
+  },
+]
+  const marketplace = new Marketplace(marketplaceOptions)
+  const offersToBuy = await marketplace.processAllOffers(quotes)
+  const signedTxs = await marketplace.buyMarketPlaceOffers(offersToBuy)
+  console.log(signedTxs);
+}
 
 export async function testAggregator() {
   const aggregator = new Aggregator()
@@ -185,7 +219,7 @@ export async function runCLI() {
     'tb1phq6q90tnfq9xjlqf3zskeeuknsvhg954phrm6fkje7ezfrmkms7q0z4e26'
   switch (command) {
     case 'load':
-      return await loadRpc(options)
+      return await loadRpc()
       break
     case 'send':
       const taprootResponse = await tapWallet.sendBtc({
