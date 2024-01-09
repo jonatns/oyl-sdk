@@ -234,9 +234,10 @@ export declare class Oyl {
      * @returns {Promise<any>} A promise that resolves to the collectible data.
      */
     getCollectibleById(inscriptionId: string): Promise<any>;
-    signPsbt({ psbtHex, publicKey, signer, }: {
+    signPsbt({ psbtHex, publicKey, address, signer, }: {
         psbtHex: string;
         publicKey: string;
+        address: string;
         signer: HdKeyring['signTransaction'];
     }): Promise<{
         psbtHex: string;

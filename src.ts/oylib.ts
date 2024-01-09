@@ -1,6 +1,6 @@
 import { UTXO_DUST, defaultNetworkOptions } from './shared/constants'
 
-import { PSBTTransaction } from './txbuilder'
+import { OGPSBTTransaction } from './txbuilder'
 
 import {
   delay,
@@ -30,6 +30,7 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from './rpclient/provider'
 import { OrdRpc } from './rpclient/ord'
 import { HdKeyring } from './wallet/hdKeyring'
+import { getAddressType } from './transactions'
 
 export const NESTED_SEGWIT_HD_PATH = "m/49'/0'/0'/0"
 export const TAPROOT_HD_PATH = "m/86'/0'/0'/0"
@@ -626,24 +627,27 @@ export class Oyl {
   async signPsbt({
     psbtHex,
     publicKey,
+    address,
     signer,
   }: {
     psbtHex: string
     publicKey: string
+    address: string
     signer: HdKeyring['signTransaction']
   }) {
+    const addressType = getAddressType(address)
+
+    const tx = new OGPSBTTransaction(
+      signer,
+      address,
+      publicKey,
+      addressType,
+      this.network
+    )
+
     const psbt = bitcoin.Psbt.fromHex(psbtHex, { network: this.network })
 
-    const inputsToSign = psbt.txInputs.map((_, index) => {
-      return {
-        index,
-        publicKey,
-      }
-    })
-
-    const signedPsbt = await signer(psbt, inputsToSign)
-
-    signedPsbt.finalizeAllInputs()
+    const signedPsbt = await tx.signPsbt(psbt)
 
     return {
       psbtHex: signedPsbt.toHex(),
