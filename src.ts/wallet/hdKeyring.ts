@@ -1,7 +1,7 @@
 import * as bitcoin from 'bitcoinjs-lib'
 import { ECPairInterface } from 'ecpair'
 import bitcore from 'bitcore-lib'
-import { isTaprootInput } from 'bitcoinjs-lib/src/psbt/bip371'
+import { isTaprootInput, toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { EventEmitter } from 'events'
 import { tweakSigner, ECPair, getNetwork } from '../shared/utils'
 import Mnemonic from 'bitcore-mnemonic'
@@ -272,6 +272,10 @@ export class HdKeyring extends EventEmitter {
         const tweakedSigner = tweakSigner(keyPair, {
           network: this.network,
         })
+
+        if (input.witnessUtxo?.script && !input.tapInternalKey) {
+          input.tapInternalKey = toXOnly(Buffer.from(publicKey, 'hex'))
+        }
 
         const signer =
           input.witnessUtxo?.script &&
