@@ -13,7 +13,7 @@ import { SandshrewBitcoinClient } from './rpclient/sandshrew'
 import { EsploraRpc } from './rpclient/esplora'
 import * as transactions from './transactions'
 import { publicKeyToAddress } from './wallet/accounts'
-import { accounts, generate } from './wallet'
+import { accounts } from './wallet'
 import { AccountManager, customPaths } from './wallet/accountsManager'
 
 import {
@@ -182,19 +182,6 @@ export class Oyl {
       return walletPayload
     } catch (error) {
       return error
-    }
-  }
-
-  /**
-   *
-   * Generate a new wallet for testnet / regtest
-   */
-
-  async generateWallet(testnet: boolean, mnemonic?: string) {
-    try {
-      generate.generateWallet(testnet, mnemonic)
-    } catch (error) {
-      console.log(error)
     }
   }
 
