@@ -999,9 +999,7 @@ export const filterTaprootUtxos = async ({
 }) => {
   const { nonMetaUtxos } = taprootUtxos.reduce(
     (acc, utxo) => {
-      utxo.inscriptions[0]['collectibles'].length > 0 ||
-      utxo.inscriptions[0]['brc20'].length > 0 ||
-      utxo.satoshis === 546
+      utxo.inscriptions.length > 0 || utxo.satoshis === 546
         ? acc.metaUtxos.push(utxo)
         : acc.nonMetaUtxos.push(utxo)
       return acc

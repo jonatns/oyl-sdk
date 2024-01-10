@@ -919,6 +919,7 @@ export class Oyl {
       const taprootUtxos: any[] = await this.getUtxosArtifacts({
         address: options.fromAddress,
       })
+
       let segwitUtxos: any[] | undefined
       if (options.segwitAddress) {
         segwitUtxos = await this.getUtxosArtifacts({
