@@ -25,7 +25,13 @@ export declare const customPaths: {
         initializedFrom: string;
         segwitAddressType: AddressType;
     };
-    testnet: {
+    testnetOyl: {
+        taprootPath: string;
+        initializedFrom: string;
+        segwitPath: string;
+        segwitAddressType: AddressType;
+    };
+    testnetUnisat: {
         taprootPath: string;
         initializedFrom: string;
         segwitPath: string;
