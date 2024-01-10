@@ -271,15 +271,9 @@ const addTaprootFeeUtxo = async ({
   utxosToSend?: { selectedUtxos: Utxo[]; totalSatoshis: number; change: number }
 }) => {
   try {
-    const { nonMetaTaprootUtxos } = taprootUtxos.reduce(
-      (acc, utxo) => {
-        utxo.inscriptions.length > 0 || utxo.satoshis === 546
-          ? acc.metaUtxos.push(utxo)
-          : acc.nonMetaTaprootUtxos.push(utxo)
-        return acc
-      },
-      { metaUtxos: [], nonMetaTaprootUtxos: [] }
-    )
+    const nonMetaTaprootUtxos = await filterTaprootUtxos({
+      taprootUtxos: taprootUtxos,
+    })
 
     nonMetaTaprootUtxos.sort((a, b) => b.satoshis - a.satoshis)
 
