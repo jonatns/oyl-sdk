@@ -1,10 +1,10 @@
-import BcoinRpc from './rpclient';
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
-import { AddressType, InscribeTransfer, NetworkOptions, ProviderOptions, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
+import { AddressType, InscribeTransfer, NetworkOptions, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
 import * as bitcoin from 'bitcoinjs-lib';
 import { OrdRpc } from './rpclient/ord';
+import { HdKeyring } from './wallet/hdKeyring';
 export declare const NESTED_SEGWIT_HD_PATH = "m/49'/0'/0'/0";
 export declare const TAPROOT_HD_PATH = "m/86'/0'/0'/0";
 export declare const SEGWIT_HD_PATH = "m/84'/0'/0'/0";
@@ -17,7 +17,6 @@ export declare class Oyl {
     esploraRpc: EsploraRpc;
     ordRpc: OrdRpc;
     provider: Providers;
-    rpcClient: BcoinRpc;
     apiClient: OylApiClient;
     derivPath: String;
     currentNetwork: 'testnet' | 'main' | 'regtest';
@@ -25,18 +24,6 @@ export declare class Oyl {
      * Initializes a new instance of the Wallet class.
      */
     constructor(opts?: NetworkOptions);
-    /**
-     * Connects to a given blockchain RPC client.
-     * @param {BcoinRpc} provider - The blockchain RPC client to connect to.
-     * @returns {Wallet} - The connected wallet instance.
-     */
-    static connect(provider: BcoinRpc): Oyl;
-    /**
-     * Configures the wallet class with a provider from the given options.
-     * @param {ProviderOptions} [options] - The options to configure the provider.
-     * @returns {ProviderOptions} The applied client options.
-     */
-    fromProvider(options?: ProviderOptions): {};
     /**
      * Gets a summary of the given address(es).
      * @param {string | string[]} address - A single address or an array of addresses.
@@ -133,14 +120,6 @@ export declare class Oyl {
         amount: any;
         usd_value: string;
     }>;
-    /**
-     * Calculates the total value from previous outputs for the given inputs of a transaction.
-     * @param {any[]} inputs - The inputs of a transaction which might be missing value information.
-     * @param {string} address - The address to filter the inputs.
-     * @returns {Promise<number>} A promise that resolves to the total value of the provided inputs.
-     * @throws {Error} Throws an error if it fails to retrieve previous transaction data.
-     */
-    getTxValueFromPrevOut(inputs: any[], address: string): Promise<number>;
     getUtxos(address: string): Promise<{
         unspent_outputs: any[];
     }>;
@@ -154,19 +133,6 @@ export declare class Oyl {
     getTxHistory({ addresses }: {
         addresses: string[];
     }): Promise<{}[]>;
-    /******************************* */
-    /**
-     * Retrieves the fee rates for transactions from the mempool.
-     * @returns {Promise<{ High: number; Medium: number; Low: number }>} A promise that resolves with an object containing the fee rates for High, Medium, and Low priority transactions.
-     */
-    getFees(): Promise<{
-        High: number;
-        Medium: number;
-        Low: number;
-    }>;
-    getTotalBalance({ batch }: {
-        batch: any;
-    }): Promise<number>;
     /**
      * Retrieves a list of inscriptions for a given address.
      * @param {Object} param0 - An object containing the address property.
@@ -277,9 +243,16 @@ export declare class Oyl {
      * @returns {Promise<any>} A promise that resolves to the collectible data.
      */
     getCollectibleById(inscriptionId: string): Promise<any>;
-    signPsbt(psbtHex: string, fee: any, pubKey: any, signer: any, address: string): Promise<{
-        signedPsbtHex: string;
-        signedPsbtBase64: string;
+    signPsbt({ psbtHex, publicKey, address, signer, }: {
+        psbtHex: string;
+        publicKey: string;
+        address: string;
+        signer: HdKeyring['signTransaction'];
+    }): Promise<{
+        psbtHex: string;
+    }>;
+    pushPsbt(psbtHex: string): Promise<{
+        txId: string;
     }>;
     finalizePsbtBase64(psbtBase64: any): Promise<any>;
     sendPsbt(txData: string, isDry?: boolean): Promise<{
@@ -301,7 +274,6 @@ export declare class Oyl {
         fromAddress: string;
         hdPathWithIndex: string;
     }): Promise<any>;
-    signInscriptionPsbt(psbt: any, fee: any, pubKey: any, signer: any, address?: string): Promise<any>;
     sendBRC20(options: InscribeTransfer): Promise<unknown>;
     sendOrdCollectible(options: InscribeTransfer): Promise<{
         txnId: string;

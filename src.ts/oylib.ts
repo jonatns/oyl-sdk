@@ -1,6 +1,6 @@
 import { UTXO_DUST, defaultNetworkOptions } from './shared/constants'
 
-import { PSBTTransaction } from './txbuilder'
+import { OGPSBTTransaction } from './txbuilder'
 
 import {
   delay,
@@ -9,7 +9,6 @@ import {
   createBtcTx,
   getNetwork,
 } from './shared/utils'
-import BcoinRpc from './rpclient'
 import { SandshrewBitcoinClient } from './rpclient/sandshrew'
 import { EsploraRpc } from './rpclient/esplora'
 import * as transactions from './transactions'
@@ -30,6 +29,8 @@ import { OylApiClient } from './apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from './rpclient/provider'
 import { OrdRpc } from './rpclient/ord'
+import { HdKeyring } from './wallet/hdKeyring'
+import { getAddressType } from './transactions'
 
 export const NESTED_SEGWIT_HD_PATH = "m/49'/0'/0'/0"
 export const TAPROOT_HD_PATH = "m/86'/0'/0'/0"
@@ -51,7 +52,6 @@ export class Oyl {
   public esploraRpc: EsploraRpc
   public ordRpc: OrdRpc
   public provider: Providers
-  public rpcClient: BcoinRpc
   public apiClient: OylApiClient
   public derivPath: String
   public currentNetwork: 'testnet' | 'main' | 'regtest'
@@ -75,50 +75,9 @@ export class Oyl {
     this.sandshrewBtcClient = provider.sandshrew
     this.esploraRpc = provider.esplora
     this.ordRpc = provider.ord
-    this.fromProvider()
     this.wallet = this.createWallet({})
     this.currentNetwork =
       options.network === 'mainnet' ? 'main' : options.network
-  }
-
-  /**
-   * Connects to a given blockchain RPC client.
-   * @param {BcoinRpc} provider - The blockchain RPC client to connect to.
-   * @returns {Wallet} - The connected wallet instance.
-   */
-  static connect(provider: BcoinRpc) {
-    try {
-      const wallet = new this()
-      wallet.rpcClient = provider
-      return wallet
-    } catch (e) {
-      throw Error('An error occured: ' + e)
-    }
-  }
-
-  /**
-   * Configures the wallet class with a provider from the given options.
-   * @param {ProviderOptions} [options] - The options to configure the provider.
-   * @returns {ProviderOptions} The applied client options.
-   */
-  fromProvider(options?: ProviderOptions) {
-    try {
-      const clientOptions = {}
-      clientOptions['network'] = options?.network || 'main'
-      clientOptions['port'] = options?.port || 8332
-      clientOptions['host'] = options?.host || '172.31.17.134'
-      clientOptions['apiKey'] = options?.auth || 'oylwell'
-
-      switch (options?.provider) {
-        case Providers.bcoin:
-          this.rpcClient = new BcoinRpc(clientOptions)
-        default:
-          this.rpcClient = new BcoinRpc(clientOptions)
-      }
-      return clientOptions
-    } catch (e) {
-      throw Error('An error occured: ' + e)
-    }
   }
 
   /**
@@ -369,31 +328,6 @@ export class Oyl {
     return response
   }
 
-  /**
-   * Calculates the total value from previous outputs for the given inputs of a transaction.
-   * @param {any[]} inputs - The inputs of a transaction which might be missing value information.
-   * @param {string} address - The address to filter the inputs.
-   * @returns {Promise<number>} A promise that resolves to the total value of the provided inputs.
-   * @throws {Error} Throws an error if it fails to retrieve previous transaction data.
-   */
-  async getTxValueFromPrevOut(inputs: any[], address: string): Promise<number> {
-    let totalMissingValue = 0
-    for (const input of inputs) {
-      if (!input.coin && input.address === address) {
-        try {
-          const prevTx = await this.apiClient.getTxByHash(input.prevout.hash)
-          const output = prevTx.outputs[input.prevout.index]
-          if (output && output.value) {
-            totalMissingValue += output.value
-          }
-        } catch (error) {
-          throw Error(`Error retrieving transaction`)
-        }
-      }
-    }
-    return totalMissingValue
-  }
-
   async getUtxos(address: string) {
     const utxosResponse = await this.esploraRpc.getAddressUtxo(address)
     const formattedUtxos = []
@@ -487,20 +421,6 @@ export class Oyl {
     } catch (error) {
       console.log(error)
     }
-  }
-  /******************************* */
-
-  /**
-   * Retrieves the fee rates for transactions from the mempool.
-   * @returns {Promise<{ High: number; Medium: number; Low: number }>} A promise that resolves with an object containing the fee rates for High, Medium, and Low priority transactions.
-   */
-  async getFees(): Promise<{ High: number; Medium: number; Low: number }> {
-    return await this.apiClient.getFees()
-  }
-
-  async getTotalBalance({ batch }) {
-    //deprecated
-    return 0
   }
 
   /**
@@ -744,28 +664,51 @@ export class Oyl {
     return data
   }
 
-  async signPsbt(
-    psbtHex: string,
-    fee: any,
-    pubKey: any,
-    signer: any,
+  async signPsbt({
+    psbtHex,
+    publicKey,
+    address,
+    signer,
+  }: {
+    psbtHex: string
+    publicKey: string
     address: string
-  ) {
-    try {
-      const addressType = transactions.getAddressType(address)
-      if (addressType == null) throw Error('Invalid Address Type')
-      const tx = new PSBTTransaction(signer, address, pubKey, addressType, fee)
-      const psbt = bitcoin.Psbt.fromHex(psbtHex, { network: this.network })
-      const signedPsbt = await tx.signPsbt(psbt)
-      const signedPsbtBase64 = signedPsbt.toBase64()
-      const signedPsbtHex = signedPsbt.toHex()
-      return {
-        signedPsbtHex: signedPsbtHex,
-        signedPsbtBase64: signedPsbtBase64,
-      }
-    } catch (e) {
-      console.log(e)
+    signer: HdKeyring['signTransaction']
+  }) {
+    const addressType = getAddressType(address)
+
+    const tx = new OGPSBTTransaction(
+      signer,
+      address,
+      publicKey,
+      addressType,
+      this.network
+    )
+
+    const psbt = bitcoin.Psbt.fromHex(psbtHex, { network: this.network })
+
+    const signedPsbt = await tx.signPsbt(psbt)
+
+    return {
+      psbtHex: signedPsbt.toHex(),
     }
+  }
+
+  async pushPsbt(psbtHex: string) {
+    const psbt = bitcoin.Psbt.fromHex(psbtHex, { network: this.network })
+    const txId = psbt.extractTransaction().getId()
+    const rawTx = psbt.extractTransaction().toHex()
+
+    const [result] =
+      await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([rawTx])
+
+    if (!result.allowed) {
+      throw new Error(result['reject-reason'])
+    }
+
+    await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(rawTx)
+
+    return { txId }
   }
 
   async finalizePsbtBase64(psbtBase64) {
@@ -880,31 +823,6 @@ export class Oyl {
 
     const taprootSigner = tapKeyring.signTransaction.bind(tapKeyring)
     return taprootSigner
-  }
-
-  async signInscriptionPsbt(psbt, fee, pubKey, signer, address = '') {
-    //INITIALIZE NEW PSBTTransaction INSTANCE
-    const wallet = new Oyl()
-    const addressType = transactions.getAddressType(address)
-    if (addressType == null) throw Error('Invalid Address Type')
-    const tx = new PSBTTransaction(signer, address, pubKey, addressType, fee)
-
-    //SIGN AND FINALIZE THE PSBT
-    const signedPsbt = await tx.signPsbt(psbt)
-    signedPsbt.finalizeAllInputs()
-    //@ts-ignore
-    psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = false
-
-    //EXTRACT THE RAW TX
-    const rawtx = signedPsbt.extractTransaction().toHex()
-
-    //BROADCAST THE RAW TX TO THE NETWORK
-    const result = await wallet.apiClient.pushTx({ transactionHex: rawtx })
-    //GET THE TX_HASH
-    const ready_txId = psbt.extractTransaction().getId()
-    //CONFIRM TRANSACTION IS CONFIRMED
-
-    return ready_txId
   }
 
   async sendBRC20(options: InscribeTransfer) {

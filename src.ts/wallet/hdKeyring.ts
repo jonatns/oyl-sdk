@@ -5,7 +5,6 @@ import { isTaprootInput } from 'bitcoinjs-lib/src/psbt/bip371'
 import { EventEmitter } from 'events'
 import { tweakSigner, ECPair, getNetwork } from '../shared/utils'
 import Mnemonic from 'bitcore-mnemonic'
-import { get } from 'http'
 
 const hdPathString = "m/86'/0'/0'/0"
 
