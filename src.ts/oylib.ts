@@ -75,7 +75,6 @@ export class Oyl {
     this.sandshrewBtcClient = provider.sandshrew
     this.esploraRpc = provider.esplora
     this.ordRpc = provider.ord
-    this.wallet = this.createWallet({})
     this.currentNetwork =
       options.network === 'mainnet' ? 'main' : options.network
   }

@@ -7,6 +7,7 @@ import {
 } from '../shared/interface'
 import * as bitcoin from 'bitcoinjs-lib'
 import Mnemonic from 'bitcore-mnemonic'
+import { getNetwork } from '../shared/utils'
 
 export const customPaths = {
   oyl: {
@@ -33,16 +34,10 @@ export const customPaths = {
     initializedFrom: 'unisat',
     segwitAddressType: AddressType.P2WPKH,
   },
-  testnetOyl: {
+  testnet: {
     taprootPath: "m/86'/1'/0'/0",
-    initializedFrom: 'testnetOyl',
+    initializedFrom: 'testnet',
     segwitPath: "m/84'/1'/0'/0",
-    segwitAddressType: AddressType.P2WPKH,
-  },
-  testnetUnisat: {
-    taprootPath: "m/86'/0'/0'/0",
-    initializedFrom: 'testnetUnisat',
-    segwitPath: "m/84'/0'/0'/0",
     segwitAddressType: AddressType.P2WPKH,
   },
 }
@@ -67,7 +62,10 @@ export class AccountManager {
     this.network = options.network
     this.hdPath = options?.customPath
       ? customPaths[options.customPath]
+      : this.network == getNetwork('testnet')
+      ? customPaths['testnet']
       : customPaths.oyl
+
     this.taprootKeyring = new HdKeyring({
       mnemonic: this.mnemonic,
       hdPath: this.hdPath.taprootPath,
