@@ -1,6 +1,5 @@
 /// <reference types="node" />
 import * as bitcoin from 'bitcoinjs-lib';
-import { ECPairInterface } from 'ecpair';
 import { UnspentOutput, TxInput, IBlockchainInfoUTXO, Network, BitcoinPaymentType, ToSignInput } from '../shared/interface';
 import { Utxo } from '../txbuilder/buildOrdTx';
 export interface IBISWalletIx {
@@ -59,7 +58,7 @@ export declare const formatOptionsToSignInputs: ({ _psbt, isRevealTx, pubkey, se
     network: bitcoin.Network;
 }) => Promise<ToSignInput[]>;
 export declare const signInputs: (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], taprootPubkey: string, segwitPubKey: string, segwitSigner: any, taprootSigner: any) => Promise<bitcoin.Psbt>;
-export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, network, segwitUtxos, taprootUtxos, taprootPrivateKey, taprootKeyPair, segwitPk, }: {
+export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, network, segwitUtxos, taprootUtxos, taprootPrivateKey, segwitPk, }: {
     ticker: string;
     amount: number;
     inputAddress: string;
@@ -77,7 +76,6 @@ export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, m
     segwitUtxos: Utxo[];
     taprootUtxos: Utxo[];
     taprootPrivateKey: string;
-    taprootKeyPair: ECPairInterface;
     segwitPk: string;
 }) => Promise<{
     txnId: any;
@@ -133,6 +131,9 @@ export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddr
     txnId?: undefined;
     rawTxn?: undefined;
 }>;
+export declare const filterTaprootUtxos: ({ taprootUtxos, }: {
+    taprootUtxos: any[];
+}) => Promise<any>;
 export declare const createBtcTx: ({ inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, amount, network, segwitUtxos, taprootUtxos, }: {
     inputAddress: string;
     outputAddress: string;

@@ -268,7 +268,7 @@ export class HdKeyring extends EventEmitter {
 
       if (isTaprootInput(input)) {
         const tweakedSigner = tweakSigner(keyPair, {
-          network: bitcoin.networks['bitcoin'],
+          network: this.network,
         })
 
         const signer =

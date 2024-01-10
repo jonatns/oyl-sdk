@@ -69,9 +69,14 @@ export const getMetaUtxos = async (
       inscriptions: [],
     }
 
-    for (const inscription of inscriptions) {
+    for (const inscription of inscriptions['collectibles']) {
       if (inscription.detail.location.includes(utxo.tx_hash_big_endian)) {
-        formattedUtxo.inscriptions.push(inscription.detail)
+        formattedUtxo.inscriptions.push({ collectibles: inscription.detail })
+      }
+    }
+    for (const inscription of inscriptions['brc20']) {
+      if (inscription.detail.location.includes(utxo.tx_hash_big_endian)) {
+        formattedUtxo.inscriptions.push({ brc20: inscription.detail })
       }
     }
 

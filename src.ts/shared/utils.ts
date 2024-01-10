@@ -27,6 +27,8 @@ import {
 } from '../txbuilder/buildOrdTx'
 import { isTaprootInput, toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { fromOutputScript } from 'bitcoinjs-lib/src/address'
+import BIP39Factory from 'bip39'
+import BIP32Factory from 'bip32'
 
 export interface IBISWalletIx {
   validity: any
@@ -393,7 +395,6 @@ export const inscribe = async ({
   segwitUtxos,
   taprootUtxos,
   taprootPrivateKey,
-  taprootKeyPair,
   segwitPk,
 }: {
   ticker: string
@@ -413,32 +414,25 @@ export const inscribe = async ({
   segwitUtxos: Utxo[]
   taprootUtxos: Utxo[]
   taprootPrivateKey: string
-  taprootKeyPair: ECPairInterface
   segwitPk: string
 }) => {
   try {
     const secret = taprootPrivateKey
+
+    const secKey = ecc2.keys.get_seckey(String(secret))
     const pubKey = ecc2.keys.get_pubkey(String(secret), true)
     const content = `{"p":"brc-20","op":"transfer","tick":"${ticker}","amt":"${amount}"}`
+
     const script = createInscriptionScript(pubKey, content)
     const tapleaf = Tap.encodeScript(script)
-    const [tpubkey, cblock] = Tap.getPubKey(String(pubKey.hex), {
-      target: tapleaf,
-    })
-    const secKey = Tap.getSecKey(String(secret), {
-      target: tapleaf,
-    })
-
-    const script_p2tr = bitcoin.payments.p2tr({
-      pubkey: Buffer.from(tpubkey, 'hex'),
-      network: getNetwork(network),
-    })
+    const [tpubkey, cblock] = Tap.getPubKey(pubKey, { target: tapleaf })
+    const inscriberAddress = Address.p2tr.fromPubKey(tpubkey, network)
 
     const psbt = new bitcoin.Psbt({ network: getNetwork(network) })
 
     psbt.addOutput({
       value: 546,
-      address: script_p2tr.address,
+      address: inscriberAddress,
     })
 
     await getUtxosForFees({
@@ -446,7 +440,7 @@ export const inscribe = async ({
       psbtTx: psbt,
       taprootUtxos: taprootUtxos,
       segwitUtxos: segwitUtxos,
-      inscription: true,
+      inscription: { isInscription: true, inscriberAddress: inscriberAddress },
       segwitAddress: segwitAddress,
       feeRate: feeRate,
       taprootAddress: inputAddress,
@@ -517,7 +511,7 @@ export const inscribe = async ({
       return { error: 'ERROR GETTING FIRST INPUT VALUE' }
     }
 
-    const vB = 298 + 96 + 12
+    const vB = 149 + 96 + 12
     const fee = vB * feeRate
 
     const txData = Tx.create({
@@ -527,15 +521,15 @@ export const inscribe = async ({
           vout: 0,
           prevout: {
             value: 546,
-            scriptPubKey: ['OP_1', commitTxOutput0[1]],
+            scriptPubKey: ['OP_1', tpubkey],
           },
         },
         {
           txid: commitTxId,
-          vout: 1,
+          vout: 2,
           prevout: {
-            value: commitTxOutput1[0],
-            scriptPubKey: ['OP_0', commitTxOutput1[1]],
+            value: fee,
+            scriptPubKey: ['OP_1', tpubkey],
           },
         },
       ],
@@ -544,43 +538,21 @@ export const inscribe = async ({
           value: 546,
           scriptPubKey: Address.toScriptPubKey(outputAddress),
         },
-        {
-          value: commitTxOutput1[0] - fee,
-          scriptPubKey: Address.toScriptPubKey(segwitAddress),
-        },
       ],
     })
 
-    const sig = Signer.taproot.sign(secKey[0], txData, 0, {
+    const sig = Signer.taproot.sign(secKey, txData, 0, {
       extension: tapleaf,
     })
     txData.vin[0].witness = [sig, script, cblock]
 
-    const segwitSig = Signer.segwit.sign(segwitPk, txData, 1)
-    txData.vin[1].witness = [segwitSig]
-
-    const isValid = Signer.taproot.verify(txData, 0, {
-      pubkey: tpubkey,
-      throws: false,
+    const sig2 = Signer.taproot.sign(secKey, txData, 1, {
+      extension: tapleaf,
     })
 
-    const isValid2 = Signer.segwit.verify(txData, 1, {
-      pubkey: commitTxOutput1[1],
-      throws: false,
-    })
+    txData.vin[1].witness = [sig2, script, cblock]
 
-    console.log(
-      Address.toScriptPubKey(segwitAddress),
-      Address.toScriptPubKey(outputAddress),
-      commitTxOutput1[1],
-      commitTxOutput0[1],
-      isValid,
-      isValid2
-    )
-
-    const finalTx = Tx.encode(txData)
-    const finalTxHex = finalTx.hex
-    const finalTxId = finalTx.id
+    console.log(Tx.encode(txData).hex)
 
     if (!isDry) {
       const { result, error, id } = await callBTCRPCEndpoint(
@@ -593,8 +565,8 @@ export const inscribe = async ({
     } else {
       return {
         commitRawTxn: commitTxHex,
-        txnId: finalTxId,
-        rawTxn: finalTxHex,
+        txnId: Tx.util.getTxid(txData),
+        rawTxn: Tx.encode(txData).hex,
       }
     }
   } catch (e: any) {
@@ -1020,7 +992,7 @@ const insertBtcUtxo = async ({
   }
 }
 
-const filterTaprootUtxos = async ({
+export const filterTaprootUtxos = async ({
   taprootUtxos,
 }: {
   taprootUtxos: any[]

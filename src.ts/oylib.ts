@@ -396,7 +396,6 @@ export class Oyl {
 
   async getUtxos(address: string) {
     const utxosResponse = await this.esploraRpc.getAddressUtxo(address)
-
     const formattedUtxos = []
 
     for (const utxo of utxosResponse) {
@@ -511,10 +510,16 @@ export class Oyl {
    * @returns {Promise<Array<any>>} A promise that resolves to an array of inscription details.
    */
   async getInscriptions({ address }) {
-    const inscriptions = []
-    const artifacts = (await this.apiClient.getCollectiblesByAddress(address))
-      .data
-    for (const artifact of artifacts) {
+    const collectibles = []
+    const brc20 = []
+    const allCollectibles = (
+      await this.apiClient.getCollectiblesByAddress(address)
+    ).data
+    // const allBrc20s = (
+    //   await this.apiClient.getAllInscriptionsByAddress(address)
+    // ).data
+
+    for (const artifact of allCollectibles) {
       const { inscription_id, inscription_number, satpoint } = artifact
       const content = await this.ordRpc.getInscriptionContent(inscription_id)
 
@@ -525,13 +530,32 @@ export class Oyl {
         location: satpoint,
       }
 
-      inscriptions.push({
+      collectibles.push({
         id: inscription_id,
         inscription_number,
         detail,
       })
     }
-    return inscriptions
+
+    // for (const artifact of allBrc20s) {
+    //   const { inscription_id, inscription_number, satpoint } = artifact
+    //   const content = await this.ordRpc.getInscriptionContent(inscription_id)
+
+    //   const detail = {
+    //     id: inscription_id,
+    //     address: artifact.owner_wallet_addr,
+    //     content: content,
+    //     location: satpoint,
+    //   }
+
+    //   brc20.push({
+    //     id: inscription_id,
+    //     inscription_number,
+    //     detail,
+    //   })
+    //}
+
+    return { collectibles, brc20 }
   }
 
   /**
@@ -955,7 +979,6 @@ export class Oyl {
           taprootPrivateKey.keyring.keyring._index2wallet[0][1].privateKey.toString(
             'hex'
           ),
-        taprootKeyPair: taprootPrivateKey.keyring.keyring._index2wallet[0][1],
         segwitPk:
           segwitPrivateKey.keyring.keyring._index2wallet[0][1].privateKey.toString(
             'hex'

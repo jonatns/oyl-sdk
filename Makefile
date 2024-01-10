@@ -45,6 +45,9 @@ testnetSend: reset
 testnetSendBRC20: reset
 	$(Q)oyl-cli testnet-sendBRC20
 	$(Q)echo "--- test complete"
+testnetSendCollectible: reset
+	$(Q)oyl-cli testnet-send-collectible
+	$(Q)echo "--- test complete"
 generateWallet: reset
 	$(Q)oyl-cli gen-testnet-wallet
 	$(Q)echo "--- test complete"
