@@ -311,7 +311,7 @@ export async function runCLI() {
         publicKey: testnetTaprootPubKey,
         segwitAddress: testnetSegwitAddress,
         payFeesWithSegwit: false,
-        segwitHdPath: 'testnet',
+        segwitHdPath: 'testnetUnisat',
         segwitPubkey:
           '031d49049be7501841213c2b5fc503b67b9c4fd33e7f4b29c0e6e2d99d1c39c0c8',
       })
@@ -328,7 +328,7 @@ export async function runCLI() {
         mnemonic: testnetMnemonic,
         publicKey: testnetTaprootPubKey,
         segwitAddress: testnetSegwitAddress,
-        segwitHdPath: 'testnet',
+        segwitHdPath: 'testnetUnisat',
         segwitPubkey:
           '031d49049be7501841213c2b5fc503b67b9c4fd33e7f4b29c0e6e2d99d1c39c0c8',
       })
@@ -357,7 +357,7 @@ export async function runCLI() {
         mnemonic: testnetMnemonic,
         amount: 40,
         payFeesWithSegwit: true,
-        segwitHdPath: 'testnet',
+        segwitHdPath: 'testnetUnisat',
       })
       console.log(testnetBrc20Send)
       break
@@ -377,7 +377,7 @@ export async function runCLI() {
         feeRate: 2,
         payFeesWithSegwit: true,
         mnemonic: testnetMnemonic,
-        segwitHdPath: 'testnet',
+        segwitHdPath: 'testnetUnisat',
       })
       console.log(testCollectibleSend)
       break
