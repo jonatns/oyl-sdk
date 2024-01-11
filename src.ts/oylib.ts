@@ -54,6 +54,7 @@ export class Oyl {
   public provider: Providers
   public apiClient: OylApiClient
   public derivPath: String
+  public currentNetwork: 'testnet' | 'main' | 'regtest'
 
   /**
    * Initializes a new instance of the Wallet class.
@@ -74,7 +75,8 @@ export class Oyl {
     this.sandshrewBtcClient = provider.sandshrew
     this.esploraRpc = provider.esplora
     this.ordRpc = provider.ord
-    this.wallet = this.createWallet({})
+    this.currentNetwork =
+      options.network === 'mainnet' ? 'main' : options.network
   }
 
   /**
@@ -314,7 +316,6 @@ export class Oyl {
 
   async getUtxos(address: string) {
     const utxosResponse = await this.esploraRpc.getAddressUtxo(address)
-
     const formattedUtxos = []
 
     for (const utxo of utxosResponse) {
@@ -415,10 +416,16 @@ export class Oyl {
    * @returns {Promise<Array<any>>} A promise that resolves to an array of inscription details.
    */
   async getInscriptions({ address }) {
-    const inscriptions = []
-    const artifacts = (await this.apiClient.getCollectiblesByAddress(address))
-      .data
-    for (const artifact of artifacts) {
+    const collectibles = []
+    const brc20 = []
+    const allCollectibles = (
+      await this.apiClient.getCollectiblesByAddress(address)
+    ).data
+    // const allBrc20s = (
+    //   await this.apiClient.getAllInscriptionsByAddress(address)
+    // ).data
+
+    for (const artifact of allCollectibles) {
       const { inscription_id, inscription_number, satpoint } = artifact
       const content = await this.ordRpc.getInscriptionContent(inscription_id)
 
@@ -429,13 +436,32 @@ export class Oyl {
         location: satpoint,
       }
 
-      inscriptions.push({
+      collectibles.push({
         id: inscription_id,
         inscription_number,
         detail,
       })
     }
-    return inscriptions
+
+    // for (const artifact of allBrc20s) {
+    //   const { inscription_id, inscription_number, satpoint } = artifact
+    //   const content = await this.ordRpc.getInscriptionContent(inscription_id)
+
+    //   const detail = {
+    //     id: inscription_id,
+    //     address: artifact.owner_wallet_addr,
+    //     content: content,
+    //     location: satpoint,
+    //   }
+
+    //   brc20.push({
+    //     id: inscription_id,
+    //     inscription_number,
+    //     detail,
+    //   })
+    //}
+
+    return { collectibles, brc20 }
   }
 
   /**
@@ -792,6 +818,7 @@ export class Oyl {
       if (addressType == null) {
         throw Error('Unrecognized Address Type')
       }
+
       const hdPaths = customPaths[options.segwitHdPath]
 
       const taprootUtxos = await this.getUtxosArtifacts({
@@ -818,8 +845,14 @@ export class Oyl {
 
       const taprootPrivateKey = await this.fromPhrase({
         mnemonic: options.mnemonic,
-        addrType: addressType,
+        addrType: transactions.getAddressType(options.fromAddress),
         hdPath: hdPaths['taprootPath'],
+      })
+
+      const segwitPrivateKey = await this.fromPhrase({
+        mnemonic: options.mnemonic,
+        addrType: transactions.getAddressType(options.segwitAddress),
+        hdPath: hdPaths['segwitPath'],
       })
 
       let feeRate: number
@@ -828,6 +861,7 @@ export class Oyl {
       } else {
         feeRate = options.feeRate
       }
+
       return await inscribe({
         ticker: options.token,
         amount: options.amount,
@@ -842,11 +876,17 @@ export class Oyl {
         segwitSigner: segwitSigner,
         taprootSigner: taprootSigner,
         feeRate: feeRate,
-        network: this.network,
+        network: this.currentNetwork,
         segwitUtxos: segwitUtxos,
         taprootUtxos: taprootUtxos,
         taprootPrivateKey:
-          taprootPrivateKey.keyring.keyring._index2wallet[0][0],
+          taprootPrivateKey.keyring.keyring._index2wallet[0][1].privateKey.toString(
+            'hex'
+          ),
+        segwitPk:
+          segwitPrivateKey.keyring.keyring._index2wallet[0][1].privateKey.toString(
+            'hex'
+          ),
       })
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -865,6 +905,7 @@ export class Oyl {
       const taprootUtxos: any[] = await this.getUtxosArtifacts({
         address: options.fromAddress,
       })
+
       let segwitUtxos: any[] | undefined
       if (options.segwitAddress) {
         segwitUtxos = await this.getUtxosArtifacts({
@@ -919,7 +960,7 @@ export class Oyl {
         segwitSigner: segwitSigner,
         taprootSigner: taprootSigner,
         feeRate: feeRate,
-        network: this.network,
+        network: this.currentNetwork,
         taprootUtxos: taprootUtxos,
         segwitUtxos: segwitUtxos,
         metaOutputValue: metaOutputValue,

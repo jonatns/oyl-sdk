@@ -36,7 +36,7 @@ export interface IBISWalletIx {
 }
 export declare const ECPair: import("ecpair").ECPairAPI;
 export declare const assertHex: (pubKey: Buffer) => Buffer;
-export declare function getNetwork(value: Network): bitcoin.networks.Network;
+export declare function getNetwork(value: Network | 'main'): bitcoin.networks.Network;
 export declare function checkPaymentType(payment: bitcoin.PaymentCreator, network: Network): (script: Buffer) => false | bitcoin.payments.Payment;
 export declare function tweakSigner(signer: bitcoin.Signer, opts?: any): bitcoin.Signer;
 export declare function satoshisToAmount(val: number): string;
@@ -58,7 +58,7 @@ export declare const formatOptionsToSignInputs: ({ _psbt, isRevealTx, pubkey, se
     network: bitcoin.Network;
 }) => Promise<ToSignInput[]>;
 export declare const signInputs: (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], taprootPubkey: string, segwitPubKey: string, segwitSigner: any, taprootSigner: any) => Promise<bitcoin.Psbt>;
-export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, network, segwitUtxos, taprootUtxos, taprootPrivateKey, }: {
+export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, network, segwitUtxos, taprootUtxos, taprootPrivateKey, segwitPk, }: {
     ticker: string;
     amount: number;
     inputAddress: string;
@@ -72,10 +72,11 @@ export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, m
     taprootSigner: any;
     segwitSigner: any;
     payFeesWithSegwit?: boolean;
-    network: bitcoin.Network;
+    network: 'testnet' | 'main' | 'regtest';
     segwitUtxos: Utxo[];
     taprootUtxos: Utxo[];
     taprootPrivateKey: string;
+    segwitPk: string;
 }) => Promise<{
     txnId: any;
     commitRawTxn?: undefined;
@@ -92,11 +93,11 @@ export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, m
     commitRawTxn?: undefined;
     rawTxn?: undefined;
 }>;
-export declare const createInscriptionScript: (pubKey: any, content: any) => any[];
-export declare const RPC_ADDR = "https://node.oyl.gg/v1/6e3bc3c289591bb447c116fda149b094";
-export declare const callBTCRPCEndpoint: (method: string, params: string | string[]) => Promise<any>;
-export declare function waitForTransaction(txId: string): Promise<boolean>;
-export declare function getOutputValueByVOutIndex(commitTxId: string, vOut: number): Promise<number | null>;
+export declare const createInscriptionScript: (pubKey: any, content: any) => string[];
+export declare let RPC_ADDR: string;
+export declare const callBTCRPCEndpoint: (method: string, params: string | string[], network: string) => Promise<any>;
+export declare function waitForTransaction(txId: string, network: string): Promise<[boolean, any?]>;
+export declare function getOutputValueByVOutIndex(commitTxId: string, vOut: number, network?: 'testnet' | 'mainnet' | 'regtest' | 'main'): Promise<any[] | null>;
 export declare function calculateTaprootTxSize(taprootInputCount: number, nonTaprootInputCount: number, outputCount: number): number;
 export declare function getRawTxnHashFromTxnId(txnId: string): Promise<any>;
 export declare const isP2PKH: (script: Buffer, network: Network) => BitcoinPaymentType;
@@ -117,7 +118,7 @@ export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddr
     segwitSigner: any;
     taprootSigner: any;
     payFeesWithSegwit?: boolean;
-    network: bitcoin.Network;
+    network: 'testnet' | 'main' | 'regtest';
     taprootUtxos: Utxo[];
     segwitUtxos: Utxo[];
     metaOutputValue: number;
@@ -130,6 +131,9 @@ export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddr
     txnId?: undefined;
     rawTxn?: undefined;
 }>;
+export declare const filterTaprootUtxos: ({ taprootUtxos, }: {
+    taprootUtxos: any[];
+}) => Promise<any>;
 export declare const createBtcTx: ({ inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, amount, network, segwitUtxos, taprootUtxos, }: {
     inputAddress: string;
     outputAddress: string;

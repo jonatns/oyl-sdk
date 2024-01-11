@@ -19,6 +19,7 @@ export declare class Oyl {
     provider: Providers;
     apiClient: OylApiClient;
     derivPath: String;
+    currentNetwork: 'testnet' | 'main' | 'regtest';
     /**
      * Initializes a new instance of the Wallet class.
      */
@@ -135,7 +136,10 @@ export declare class Oyl {
      */
     getInscriptions({ address }: {
         address: any;
-    }): Promise<any[]>;
+    }): Promise<{
+        collectibles: any[];
+        brc20: any[];
+    }>;
     /**
      * Retrieves UTXO artifacts for a given address.
      * @param {Object} param0 - An object containing the address property.

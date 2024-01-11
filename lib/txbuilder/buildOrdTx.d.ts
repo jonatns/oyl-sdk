@@ -9,12 +9,16 @@ export type Utxo = {
     inscriptions: any[];
     confirmations: number;
 };
-export declare const getUtxosForFees: ({ payFeesWithSegwit, psbtTx, feeRate, taprootUtxos, taprootAddress, segwitUtxos, segwitAddress, segwitPubKey, utxosToSend, network, }: {
+export declare const getUtxosForFees: ({ payFeesWithSegwit, psbtTx, feeRate, taprootUtxos, taprootAddress, inscription, segwitUtxos, segwitAddress, segwitPubKey, utxosToSend, network, }: {
     payFeesWithSegwit: boolean;
     psbtTx: bitcoin.Psbt;
     feeRate: number;
     taprootUtxos: Utxo[];
     taprootAddress: string;
+    inscription?: {
+        isInscription: boolean;
+        inscriberAddress: string;
+    };
     segwitUtxos?: Utxo[];
     segwitAddress?: string;
     segwitPubKey?: string;
@@ -24,7 +28,7 @@ export declare const getUtxosForFees: ({ payFeesWithSegwit, psbtTx, feeRate, tap
         change: number;
     };
     network: bitcoin.Network;
-}) => Promise<void>;
+}) => Promise<void | bitcoin.Psbt>;
 export declare const addInscriptionUtxo: ({ metaUtxos, inscriptionId, toAddress, psbtTx, }: {
     metaUtxos: any[];
     inscriptionId: string;
