@@ -36,7 +36,7 @@ export declare class HdKeyring extends EventEmitter {
      * @param {HDKeyringOption} _opts - The HDKeyring options object.
      * @returns {HdKeyring} The instance of the HDKeyring.
      */
-    deserialize(_opts?: HDKeyringOption): HdKeyring;
+    deserialize(_opts: HDKeyringOption): HdKeyring;
     /**
      * Initializes the HD keyring from a mnemonic phrase.
      * @param {string} mnemonic - The mnemonic phrase to use for initialization.
@@ -59,7 +59,7 @@ export declare class HdKeyring extends EventEmitter {
      * @param {number} numberOfAccounts - The number of new accounts to add. Defaults to 1 if not specified.
      * @returns {Promise<string[]>} A promise that resolves to an array of new account addresses in hex format.
      */
-    addAccounts(numberOfAccounts?: number): Promise<string[]>;
+    addAccounts(numberOfAccounts: number, network: bitcoin.Network): Promise<string[]>;
     /**
      * Activates a list of accounts by their indexes.
      * @param {number[]} indexes - An array of account indexes to activate.

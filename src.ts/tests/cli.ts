@@ -1,73 +1,39 @@
 import yargs from 'yargs'
 import { camelCase } from 'change-case'
 import 'dotenv/config'
-import { NESTED_SEGWIT_HD_PATH, Oyl, TAPROOT_HD_PATH } from './oylib'
-import { Aggregator } from './PSBTAggregator'
+import { NESTED_SEGWIT_HD_PATH, Oyl, TAPROOT_HD_PATH } from '../oylib'
+import { Aggregator } from '../PSBTAggregator'
 import * as bitcoin from 'bitcoinjs-lib'
 import axios from 'axios'
 import * as ecc2 from '@bitcoinerlab/secp256k1'
-import { Marketplace } from './marketplace'
-import { Network } from './shared/interface'
-import { getAddressType } from './transactions'
+import { generateWallet } from './genWallet'
 
 bitcoin.initEccLib(ecc2)
 
-export async function loadRpc() {
-  const initOptions = {
-    baseUrl: 'https://testnet.sandshrew.io',
-    version: 'v1',
-    projectId: 'd6aebfed1769128379aca7d215f0b689', // default API key
-    network: 'testnet' as Network,
-  }
-  const wallet = new Oyl(initOptions)
+export async function loadRpc(options) {
+  const wallet = new Oyl()
   try {
-    const addressType = getAddressType(process.env.TESTNET_TAPROOT_ADDRESS)
-    const newWallet = await wallet.fromPhrase({
-      mnemonic: process.env.TESTNET_TAPROOT_MNEMONIC.trim(),
-      hdPath: process.env.TESTNET_TAPROOT_HDPATH,
-      addrType: addressType
-    })    
-    console.log('newWallet:', JSON.stringify(newWallet))
+    const newWallet = await wallet.getUtxosArtifacts({
+      address: 'bc1pmtkac5u6rx7vkwhcnt0gal5muejwhp8hcrmx2yhvjg8nenu7rp3syw6yp0',
+    })
+    console.log('newWallet:', newWallet)
   } catch (error) {
     console.error('Error:', error)
   }
 }
 
-export async function testMarketplaceBuy() {
-  const initOptions = {
-    baseUrl: 'https://testnet.sandshrew.io',
-    version: 'v1',
-    projectId: 'd6aebfed1769128379aca7d215f0b689', // default API key
-    network: 'testnet' as Network,
-  }
-  const wallet = new Oyl(initOptions)
-
-  const marketplaceOptions = {
-    address: process.env.TESTNET_TAPROOT_ADDRESS,
-    publicKey: process.env.TESTNET_TAPROOT_PUBKEY,
-    mnemonic: process.env.TESTNET_TAPROOT_MNEMONIC,
-    hdPath: process.env.TESTNET_TAPROOT_HDPATH,
-    feeRate: parseFloat(process.env.FEE_RATE),
-    wallet: wallet
-  }
-
-  const quotes =[
-    {
-    offerId: "658f39576128445df87d74d9",
-    marketplace: "omnisat",
-    ticker: "sats"
-  },
-  {
-    offerId: "658f39306128445df87d74d7",
-    marketplace: "omnisat",
-    ticker: "sats"
-  },
-]
-  const marketplace = new Marketplace(marketplaceOptions)
-  const offersToBuy = await marketplace.processAllOffers(quotes)
-  const signedTxs = await marketplace.buyMarketPlaceOffers(offersToBuy)
-  console.log(signedTxs);
-}
+// export async function testMarketplaceBuy() {
+//   const options = {
+//     address: process.env.TAPROOT_ADDRESS,
+//     pubKey: process.env.TAPROOT_PUBKEY,
+//     feeRate: parseFloat(process.env.FEE_RATE),
+//     psbtBase64: process.env.PSBT_BASE64,
+//     price: 0.001,
+//   }
+//   const intent = new BuildMarketplaceTransaction(options)
+//   const builder = await intent.psbtBuilder()
+//   console.log(builder)
+// }
 
 export async function testAggregator() {
   const aggregator = new Aggregator()
@@ -212,15 +178,15 @@ export async function runCLI() {
 
   const testnetSegwitPubKey =
     '02a4a49b8efd123ecc2fb200a95d4da40dac7abd563cfb52b8aa245cbca0249c1c'
-  const testnetSegwitAddress = 'tb1qsvuaztq2jltrl5pq26njcmn4gdz250325edas2'
+  const testnetSegwitAddress = 'tb1qac6u4rxej8n275tmk8k4aeadxulwlxxa5vk4vs'
 
   const testnetTaprootPubKey =
-    '036cbe3e4c6ece9e96ae7dabc99cfd3d9ffb3fcefc98d72e64cfc2a615ef9b8c9a'
+    '0385c264c7b6103eae8dc6ef31c5048b9f71b8c373585fe2cac943c6d262598ffc'
   const testnetTaprootAddress =
-    'tb1phq6q90tnfq9xjlqf3zskeeuknsvhg954phrm6fkje7ezfrmkms7q0z4e26'
+    'tb1pstyemhl9n2hydg079rgrh8jhj9s7zdxh2g5u8apwk0c8yc9ge4eqp59l22'
   switch (command) {
     case 'load':
-      return await loadRpc()
+      return await loadRpc(options)
       break
     case 'send':
       const taprootResponse = await tapWallet.sendBtc({
@@ -267,6 +233,7 @@ export async function runCLI() {
           'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
         feeRate: 10,
         token: 'BONK',
+        inscriptionId: '',
         segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
         segwitPubKey:
           '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
@@ -274,7 +241,6 @@ export async function runCLI() {
         amount: 40,
         payFeesWithSegwit: true,
         segwitHdPath: 'xverse',
-        taprootHdPath: TAPROOT_HD_PATH,
       })
       console.log(test0)
       break
@@ -297,16 +263,15 @@ export async function runCLI() {
         mnemonic:
           'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
         segwitHdPath: 'xverse',
-        taprootHdPath: TAPROOT_HD_PATH,
       })
       console.log(test1)
       break
     case 'view':
       return await viewPsbt()
       break
-    case 'market':
-      return await testMarketplaceBuy()
-      break
+    // case 'market':
+    //   return await testMarketplaceBuy()
+    //   break
     case 'convert':
       return await convertPsbt()
       break
@@ -338,16 +303,17 @@ export async function runCLI() {
       })
 
       const testnetTaprootResponse = await testWallet.sendBtc({
-        to: 'tb1p6l2wm54y9rh6lz3gd4z2ty8w4nftnav7g4fph399f8zy4ed6h9cskmg3le',
+        to: 'tb1phq6q90tnfq9xjlqf3zskeeuknsvhg954phrm6fkje7ezfrmkms7q0z4e26',
         from: testnetTaprootAddress,
         amount: 500,
         feeRate: 10,
         mnemonic: testnetMnemonic,
         publicKey: testnetTaprootPubKey,
         segwitAddress: testnetSegwitAddress,
-        segwitHdPath: 'testnet',
+        payFeesWithSegwit: false,
+        segwitHdPath: 'unisat',
         segwitPubkey:
-          '02f12478ea8f28d179245d095faf1e14d63b9465d1a5fe2d5e0a107559082f887a',
+          '031d49049be7501841213c2b5fc503b67b9c4fd33e7f4b29c0e6e2d99d1c39c0c8',
       })
 
       if (testnetTaprootResponse) {
@@ -358,13 +324,13 @@ export async function runCLI() {
         to: 'tb1qgqw2l0hqglzw020h0yfjv69tuz50aq9m99h632',
         from: testnetSegwitAddress,
         amount: 500,
-        feeRate: 100,
+        feeRate: 10,
         mnemonic: testnetMnemonic,
         publicKey: testnetTaprootPubKey,
         segwitAddress: testnetSegwitAddress,
-        segwitHdPath: 'testnet',
+        segwitHdPath: 'unisat',
         segwitPubkey:
-          '02f12478ea8f28d179245d095faf1e14d63b9465d1a5fe2d5e0a107559082f887a',
+          '031d49049be7501841213c2b5fc503b67b9c4fd33e7f4b29c0e6e2d99d1c39c0c8',
       })
 
       if (testnetSegwitResponse) {
@@ -372,40 +338,50 @@ export async function runCLI() {
       }
       return
     case 'gen-testnet-wallet':
-      const genTestWallet = await testWallet.initializeWallet()
-
-      console.log({
-        mnemonic: genTestWallet.mnemonic,
-        segwit: {
-          address: genTestWallet.segwit.segwitAddresses[0],
-          publicKey:
-            genTestWallet.segwit.segwitKeyring.wallets[0].publicKey.toString(
-              'hex'
-            ),
-          privateKey:
-            genTestWallet.segwit.segwitKeyring.wallets[0].privateKey.toString(
-              'hex'
-            ),
-          signer: genTestWallet.segwit.segwitKeyring.signTransaction.bind(
-            genTestWallet.segwit.segwitKeyring
-          ),
-        },
-        taproot: {
-          address: genTestWallet.taproot.taprootAddresses[0],
-          publicKey:
-            genTestWallet.taproot.taprootKeyring.wallets[0].publicKey.toString(
-              'hex'
-            ),
-          privateKey:
-            genTestWallet.taproot.taprootKeyring.wallets[0].privateKey.toString(
-              'hex'
-            ),
-          signer: genTestWallet.taproot.taprootKeyring.signTransaction.bind(
-            genTestWallet.taproot.taprootKeyring
-          ),
-        },
-      })
+      generateWallet(true, testnetMnemonic)
       return
+    case 'testnet-sendBRC20':
+      const testnetBrc20Send = await testWallet.sendBRC20({
+        isDry: false,
+        fromAddress: testnetTaprootAddress,
+        taprootPublicKey: testnetTaprootPubKey,
+        destinationAddress:
+          'tb1phq6q90tnfq9xjlqf3zskeeuknsvhg954phrm6fkje7ezfrmkms7q0z4e26',
+        feeRate: 2,
+        token: 'OYLZ',
+        inscriptionId:
+          '46a2d0f05668cd36c64bb8e32c3670025b288885ebd2913ca03ce0288d366fdf',
+        segwitAddress: testnetSegwitAddress,
+        segwitPubKey:
+          '031d49049be7501841213c2b5fc503b67b9c4fd33e7f4b29c0e6e2d99d1c39c0c8',
+        mnemonic: testnetMnemonic,
+        amount: 40,
+        payFeesWithSegwit: true,
+        segwitHdPath: 'unisat',
+      })
+      console.log(testnetBrc20Send)
+      break
+
+    case 'testnet-send-collectible':
+      const testCollectibleSend = await testWallet.sendOrdCollectible({
+        isDry: false,
+        fromAddress: testnetTaprootAddress,
+        inscriptionId:
+          'b25dfaeea88930616332bc97b9bde3bbfcfbe62e35e763a07cc4706a2be1ed17i0',
+        taprootPublicKey: testnetTaprootPubKey,
+        segwitAddress: testnetSegwitAddress,
+        segwitPubKey:
+          '031d49049be7501841213c2b5fc503b67b9c4fd33e7f4b29c0e6e2d99d1c39c0c8',
+        destinationAddress:
+          'tb1pdz8aul7226284e57e9yn4mpyd8f52zpxc7z0gz392e6amrf0s4uq6s3sw6',
+        feeRate: 2,
+        payFeesWithSegwit: true,
+        mnemonic: testnetMnemonic,
+        segwitHdPath: 'unisat',
+      })
+      console.log(testCollectibleSend)
+      break
+
     default:
       return await callAPI(yargs.argv._[0], options)
       break

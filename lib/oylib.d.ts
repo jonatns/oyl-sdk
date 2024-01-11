@@ -4,6 +4,7 @@ import { AddressType, InscribeTransfer, NetworkOptions, Providers, RecoverAccoun
 import { OylApiClient } from './apiclient';
 import * as bitcoin from 'bitcoinjs-lib';
 import { OrdRpc } from './rpclient/ord';
+import { HdKeyring } from './wallet/hdKeyring';
 export declare const NESTED_SEGWIT_HD_PATH = "m/49'/0'/0'/0";
 export declare const TAPROOT_HD_PATH = "m/86'/0'/0'/0";
 export declare const SEGWIT_HD_PATH = "m/84'/0'/0'/0";
@@ -18,6 +19,7 @@ export declare class Oyl {
     provider: Providers;
     apiClient: OylApiClient;
     derivPath: String;
+    currentNetwork: 'testnet' | 'main' | 'regtest';
     /**
      * Initializes a new instance of the Wallet class.
      */
@@ -134,7 +136,10 @@ export declare class Oyl {
      */
     getInscriptions({ address }: {
         address: any;
-    }): Promise<any[]>;
+    }): Promise<{
+        collectibles: any[];
+        brc20: any[];
+    }>;
     /**
      * Retrieves UTXO artifacts for a given address.
      * @param {Object} param0 - An object containing the address property.
@@ -245,9 +250,16 @@ export declare class Oyl {
      * @returns {Promise<any>} A promise that resolves to the collectible data.
      */
     getCollectibleById(inscriptionId: string): Promise<any>;
-    signPsbt(psbtHex: string, fee: any, pubKey: any, signer: any, address: string): Promise<{
-        signedPsbtHex: string;
-        signedPsbtBase64: string;
+    signPsbt({ psbtHex, publicKey, address, signer, }: {
+        psbtHex: string;
+        publicKey: string;
+        address: string;
+        signer: HdKeyring['signTransaction'];
+    }): Promise<{
+        psbtHex: string;
+    }>;
+    pushPsbt(psbtHex: string): Promise<{
+        txId: string;
     }>;
     finalizePsbtBase64(psbtBase64: any): Promise<any>;
     sendPsbt(txData: string, isDry?: boolean): Promise<{

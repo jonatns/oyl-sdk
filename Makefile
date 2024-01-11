@@ -42,5 +42,14 @@ txnHistory: reset
 testnetSend: reset
 	$(Q)oyl-cli testnet-send
 	$(Q)echo "--- test complete"
+testnetSendBRC20: reset
+	$(Q)oyl-cli testnet-sendBRC20
+	$(Q)echo "--- test complete"
+testnetSendCollectible: reset
+	$(Q)oyl-cli testnet-send-collectible
+	$(Q)echo "--- test complete"
+generateWallet: reset
+	$(Q)oyl-cli gen-testnet-wallet
+	$(Q)echo "--- test complete"
 testAll: sendBRC20 sendCollectible sendBtc
 	$(Q)echo "--- test all complete"

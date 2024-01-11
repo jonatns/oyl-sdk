@@ -220,7 +220,6 @@ export interface InscribeTransfer {
   amount?: number
   postage?: number
   segwitHdPath?: string
-  taprootHdPath: string
   isDry?: boolean
   inscriptionId?: string
 }

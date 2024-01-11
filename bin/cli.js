@@ -1,9 +1,8 @@
 #!/usr/bin/env node
-'use strict';
+'use strict'
 
+const { runCLI } = require('../lib/tests/cli')
 
-const  { runCLI } = require("../lib/cli");
-
-(async () => {
-  await runCLI();
-})().catch(console.error);
+;(async () => {
+  await runCLI()
+})().catch(console.error)
