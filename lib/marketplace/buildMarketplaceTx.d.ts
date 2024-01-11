@@ -1,4 +1,5 @@
 import { MarketplaceBuy } from "../shared/interface";
+import * as bitcoin from "bitcoinjs-lib";
 export declare class BuildMarketplaceTransaction {
     walletAddress: string;
     pubKey: string;
@@ -9,7 +10,8 @@ export declare class BuildMarketplaceTransaction {
     sandshrew: any;
     makersAddress: string | null;
     takerScript: string;
-    constructor({ address, pubKey, psbtBase64, price, network }: MarketplaceBuy);
+    network: bitcoin.Network;
+    constructor({ address, pubKey, psbtBase64, price, wallet }: MarketplaceBuy);
     getUTXOsToCoverAmount(amountNeeded: number, inscriptionLocs?: string[]): Promise<any>;
     isWalletPrepared(): Promise<boolean>;
     prepareWallet(): Promise<{

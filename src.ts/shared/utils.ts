@@ -344,6 +344,9 @@ export const formatOptionsToSignInputs = async ({
   }
 }
 
+export const timeout = async (n) =>
+  await new Promise((resolve) => setTimeout(resolve, n));
+
 export const signInputs = async (
   psbt: bitcoin.Psbt,
   toSignInputs: ToSignInput[],

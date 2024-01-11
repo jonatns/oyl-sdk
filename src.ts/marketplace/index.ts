@@ -1,9 +1,9 @@
-import { Oyl, getAddressType, AddressType, OGPSBTTransaction } from "..";
+import { Oyl, getAddressType, AddressType, OGPSBTTransaction, getNetwork, timeout } from "..";
 import { BuildMarketplaceTransaction } from "./buildMarketplaceTx";
 import * as bitcoin from "bitcoinjs-lib";
 import { MarketplaceOffers } from "../shared/interface";
 
-class Marketplace {
+export class Marketplace {
   private wallet: Oyl;
   public address: string;
   public publicKey: string;
@@ -19,6 +19,7 @@ class Marketplace {
       this.publicKey = options.publicKey;
       this.mnemonic = options.mnemonic;
       this.feeRate = options.feeRate;
+      this.hdPath = options.hdPath;
       const addressType = getAddressType(this.address);
       if (addressType == null) throw Error("Invalid Address Type");
       this.addressType = addressType;
@@ -45,7 +46,7 @@ class Marketplace {
       pubKey: this.publicKey,
       psbtBase64: order.psbtBase64,
       price: order.price,
-      network: this.wallet.network
+      wallet: this.wallet
     });
     const {
       psbtBase64: filledOutBase64,
@@ -83,6 +84,7 @@ class Marketplace {
       hdPath: this.hdPath,
       addrType: this.addressType,
     });
+    console.log(payload.keyring.address)
     if (payload.keyring.address != this.address)
       throw Error("Could not get signer for this address");
     const keyring = payload.keyring.keyring;
@@ -106,10 +108,11 @@ class Marketplace {
       pubKey: this.publicKey,
       psbtBase64: offers[0].psbtBase64,
       price: offers[0].price,
-      network: this.wallet.network
+      wallet: this.wallet
     });
 
     const preparedWallet = await this.prepareAddress(marketPlaceBuy)
+    await timeout(30000)
     if (!preparedWallet) {
       throw new Error("Address not prepared to buy marketplace offers")
     }
@@ -136,6 +139,7 @@ class Marketplace {
       await this.wallet.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([result.hex]);
 
     if (!broadcast.allowed) {
+      console.log("in buyMarketPlaceOffers", broadcast)
       throw new Error(result['reject-reason'])
     }
     await this.wallet.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(result.hex)
@@ -157,10 +161,13 @@ class Marketplace {
   async processAllOffers(offers: MarketplaceOffers[]) {
 
     const processedOffers = []
+    const testnet = this.wallet.network == getNetwork('testnet');
     for (const offer of offers) {
       if (offer.marketplace == 'omnisat') {
-        let newOffer = await this.wallet.apiClient.getOmnisatOfferPsbt({ offerId: offer.offerId, ticker: offer.ticker });
-
+        let newOffer = await this.wallet.apiClient.getOmnisatOfferPsbt({ offerId: offer.offerId, ticker: offer.ticker, testnet });
+        if (newOffer == false){
+          throw new Error ("cannot find offer")
+        }
         processedOffers.push(newOffer);
       }
     }
@@ -199,6 +206,7 @@ class Marketplace {
           await this.wallet.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([result.hex])
 
         if (!broadcast.allowed) {
+          console.log("in prepareAddress", broadcast)
           throw new Error(result['reject-reason'])
         }
         await this.wallet.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(result.hex)

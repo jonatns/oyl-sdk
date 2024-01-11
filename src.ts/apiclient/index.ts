@@ -134,7 +134,7 @@ export class OylApiClient {
       testnet
     })
     if (response.error) throw Error(response.error)
-    return response.data.list
+    return response
   }
 
   /**
@@ -167,13 +167,16 @@ export class OylApiClient {
   async getOmnisatOfferPsbt({
     offerId,
     ticker,
+    testnet
   }: {
     offerId: string
     ticker: string
+    testnet?: boolean
   }): Promise<any> {
     const response = await this._call('/get-omnisat-offer-psbt', 'post', {
       offerId: offerId,
       ticker: ticker,
+      testnet
     })
     return response
   }
