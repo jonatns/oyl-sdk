@@ -60,11 +60,16 @@ export class AccountManager {
       options?.mnemonic || new Mnemonic(Mnemonic.Words.ENGLISH).toString()
     this.activeIndexes = options?.activeIndexes
     this.network = options.network
-    this.hdPath = options?.customPath
+    this.hdPath = options.customPath
       ? customPaths[options.customPath]
-      : this.network == getNetwork('testnet')
-      ? customPaths['testnet']
       : customPaths.oyl
+
+    if (this.network === bitcoin.networks.testnet) {
+      this.hdPath =
+        options.customPath === 'unisat'
+          ? customPaths.unisat
+          : customPaths.testnet
+    }
 
     this.taprootKeyring = new HdKeyring({
       mnemonic: this.mnemonic,
