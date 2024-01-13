@@ -2,6 +2,7 @@
 import * as bitcoin from 'bitcoinjs-lib';
 import { UnspentOutput, TxInput, IBlockchainInfoUTXO, Network, BitcoinPaymentType, ToSignInput } from '../shared/interface';
 import { Utxo } from '../txbuilder/buildOrdTx';
+import { SandshrewBitcoinClient } from '../rpclient/sandshrew';
 export interface IBISWalletIx {
     validity: any;
     isBrc: boolean;
@@ -106,7 +107,7 @@ export declare const isP2WPKH: (script: Buffer, network: Network) => BitcoinPaym
 export declare const isP2WSHScript: (script: Buffer, network: Network) => BitcoinPaymentType;
 export declare const isP2SHScript: (script: Buffer, network: Network) => BitcoinPaymentType;
 export declare const isP2TR: (script: Buffer, network: Network) => BitcoinPaymentType;
-export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, network, taprootUtxos, segwitUtxos, metaOutputValue, }: {
+export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, network, taprootUtxos, segwitUtxos, metaOutputValue, sandshrew, }: {
     inscriptionId: string;
     inputAddress: string;
     outputAddress: string;
@@ -123,14 +124,10 @@ export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddr
     taprootUtxos: Utxo[];
     segwitUtxos: Utxo[];
     metaOutputValue: number;
+    sandshrew: SandshrewBitcoinClient;
 }) => Promise<{
-    txnId: string;
-    rawTxn: string;
-    error?: undefined;
-} | {
-    error: any;
-    txnId?: undefined;
-    rawTxn?: undefined;
+    txId: string;
+    rawTx: string;
 }>;
 export declare const filterTaprootUtxos: ({ taprootUtxos, }: {
     taprootUtxos: any[];

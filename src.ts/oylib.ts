@@ -19,8 +19,6 @@ import { AccountManager, customPaths } from './wallet/accountsManager'
 import {
   AddressType,
   InscribeTransfer,
-  NetworkOptions,
-  ProviderOptions,
   Providers,
   RecoverAccountOptions,
   TickerDetails,
@@ -620,16 +618,29 @@ export class Oyl {
     return offers
   }
 
-   /**
+  /**
    * Fetches aggregated offers associated with a specific BRC20 ticker.
    * @param {Object} params - The parameters containing the ticker information.
    * @param {string} params.ticker - The ticker symbol to retrieve offers for.
    * @param {}
    * @returns {Promise<any>} A promise that resolves to an array of offers.
    */
-   async getAggregatedBrcOffers({ ticker, limitOrderAmount, marketPrice }: { ticker: string, limitOrderAmount: number, marketPrice: number }) {
-    const testnet = this.network == getNetwork('testnet');
-    const offers = await this.apiClient.getAggregatedOffers({ ticker, limitOrderAmount, marketPrice, testnet })
+  async getAggregatedBrcOffers({
+    ticker,
+    limitOrderAmount,
+    marketPrice,
+  }: {
+    ticker: string
+    limitOrderAmount: number
+    marketPrice: number
+  }) {
+    const testnet = this.network == getNetwork('testnet')
+    const offers = await this.apiClient.getAggregatedOffers({
+      ticker,
+      limitOrderAmount,
+      marketPrice,
+      testnet,
+    })
     return offers
   }
 
@@ -977,6 +988,7 @@ export class Oyl {
         taprootUtxos: taprootUtxos,
         segwitUtxos: segwitUtxos,
         metaOutputValue: metaOutputValue,
+        sandshrew: this.sandshrewBtcClient,
       })
     } catch (error) {
       console.log(error)
