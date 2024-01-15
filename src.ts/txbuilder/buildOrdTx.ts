@@ -203,8 +203,8 @@ const addSegwitFeeUtxo = async ({
         amountForFee = 2 * fee + 546
       }
       const feeUtxos = payFeesWithSegwit
-        ? findUtxosForFees(nonMetaSegwitUtxos, fee)
-        : findUtxosForFees(nonMetaTaprootUtxos, fee)
+        ? findUtxosForFees(nonMetaSegwitUtxos, amountForFee)
+        : findUtxosForFees(nonMetaTaprootUtxos, amountForFee)
       if (!feeUtxos) {
         return await addTaprootFeeUtxo({
           taprootUtxos: taprootUtxos,
@@ -263,12 +263,14 @@ const addTaprootFeeUtxo = async ({
   psbtTx,
   taprootAddress,
   utxosToSend,
+  inscription,
 }: {
   taprootUtxos: Utxo[]
   feeRate: number
   psbtTx: bitcoin.Psbt
   taprootAddress: string
   utxosToSend?: { selectedUtxos: Utxo[]; totalSatoshis: number; change: number }
+  inscription?: { isInscription: boolean; inscriberAddress: string }
 }) => {
   try {
     const nonMetaTaprootUtxos = await filterTaprootUtxos({
@@ -281,8 +283,12 @@ const addTaprootFeeUtxo = async ({
 
     const vB = inputCount * 149 + 3 * 32 + 12
     const fee = vB * feeRate
+    let amountForFee: number = fee
+    if (inscription['isInscription']) {
+      amountForFee = 2 * fee + 546
+    }
 
-    const feeUtxos = findUtxosForFees(nonMetaTaprootUtxos, fee)
+    const feeUtxos = findUtxosForFees(nonMetaTaprootUtxos, amountForFee)
 
     if (!feeUtxos) {
       throw new Error('No available UTXOs')
