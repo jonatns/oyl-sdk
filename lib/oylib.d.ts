@@ -1,6 +1,6 @@
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
-import { AddressType, InscribeTransfer, NetworkOptions, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
+import { AddressType, InscribeTransfer, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
 import * as bitcoin from 'bitcoinjs-lib';
 import { OrdRpc } from './rpclient/ord';
@@ -23,7 +23,7 @@ export declare class Oyl {
     /**
      * Initializes a new instance of the Wallet class.
      */
-    constructor(opts?: NetworkOptions);
+    constructor(opts?: import("./shared/interface").NetworkOptions);
     /**
      * Gets a summary of the given address(es).
      * @param {string | string[]} address - A single address or an array of addresses.
@@ -215,13 +215,13 @@ export declare class Oyl {
         ticker: any;
     }): Promise<any>;
     /**
-    * Fetches aggregated offers associated with a specific BRC20 ticker.
-    * @param {Object} params - The parameters containing the ticker information.
-    * @param {string} params.ticker - The ticker symbol to retrieve offers for.
-    * @param {}
-    * @returns {Promise<any>} A promise that resolves to an array of offers.
-    */
-    getAggregatedBrcOffers({ ticker, limitOrderAmount, marketPrice }: {
+     * Fetches aggregated offers associated with a specific BRC20 ticker.
+     * @param {Object} params - The parameters containing the ticker information.
+     * @param {string} params.ticker - The ticker symbol to retrieve offers for.
+     * @param {}
+     * @returns {Promise<any>} A promise that resolves to an array of offers.
+     */
+    getAggregatedBrcOffers({ ticker, limitOrderAmount, marketPrice, }: {
         ticker: string;
         limitOrderAmount: number;
         marketPrice: number;
@@ -283,12 +283,7 @@ export declare class Oyl {
     }): Promise<any>;
     sendBRC20(options: InscribeTransfer): Promise<unknown>;
     sendOrdCollectible(options: InscribeTransfer): Promise<{
-        txnId: string;
-        rawTxn: string;
-        error?: undefined;
-    } | {
-        error: any;
-        txnId?: undefined;
-        rawTxn?: undefined;
+        txId: string;
+        rawTx: string;
     }>;
 }
