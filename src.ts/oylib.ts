@@ -500,7 +500,7 @@ export class Oyl {
     segwitAddress,
     segwitPubkey,
     segwitHdPath,
-    payFeesWithSegwit = true,
+    payFeesWithSegwit = false,
   }: {
     to: string
     from: string
@@ -508,10 +508,10 @@ export class Oyl {
     feeRate?: number
     publicKey: string
     mnemonic: string
-    segwitAddress?: string
-    segwitPubkey?: string
+    segwitAddress: string
+    segwitPubkey: string
     segwitHdPath: string
-    payFeesWithSegwit?: boolean
+    payFeesWithSegwit: boolean
   }) {
     const hdPaths = customPaths[segwitHdPath]
     const taprootSigner = await this.createTaprootSigner({

@@ -189,15 +189,15 @@ export interface InscribeTransfer {
     fromAddress: string;
     taprootPublicKey: string;
     destinationAddress: string;
-    segwitPubKey?: string;
-    segwitAddress?: string;
+    segwitPubKey: string;
+    segwitAddress: string;
     payFeesWithSegwit: boolean;
     feeRate?: number;
     token?: string;
     mnemonic: string;
     amount?: number;
     postage?: number;
-    segwitHdPath?: string;
+    segwitHdPath: string;
     isDry?: boolean;
     inscriptionId?: string;
 }

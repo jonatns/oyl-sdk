@@ -25,6 +25,7 @@ export const getUtxosForFees = async ({
   segwitPubKey,
   utxosToSend,
   network,
+  fromAddress,
 }: {
   payFeesWithSegwit: boolean
   psbtTx: bitcoin.Psbt
@@ -37,6 +38,7 @@ export const getUtxosForFees = async ({
   segwitPubKey?: string
   utxosToSend?: { selectedUtxos: Utxo[]; totalSatoshis: number; change: number }
   network: bitcoin.Network
+  fromAddress: string
 }) => {
   try {
     return await addSegwitFeeUtxo({
@@ -51,6 +53,7 @@ export const getUtxosForFees = async ({
       inscription: inscription,
       network,
       payFeesWithSegwit: payFeesWithSegwit,
+      fromAddress: fromAddress,
     })
   } catch (error) {
     console.log(error)
@@ -69,16 +72,9 @@ const addSegwitFeeUtxo = async ({
   inscription,
   network,
   payFeesWithSegwit,
+  fromAddress,
 }: {
-  segwitUtxos: {
-    txId: string
-    outputIndex: number
-    satoshis: number
-    scriptPk: string
-    addressType: number
-    address: string
-    inscriptions: any[]
-  }[]
+  segwitUtxos: Utxo[]
   feeRate: number
   psbtTx: bitcoin.Psbt
   segwitAddress: string
@@ -89,6 +85,7 @@ const addSegwitFeeUtxo = async ({
   inscription: { isInscription: boolean; inscriberAddress: string }
   network: bitcoin.Network
   payFeesWithSegwit: boolean
+  fromAddress: string
 }) => {
   try {
     const { nonMetaSegwitUtxos } = segwitUtxos.reduce(
@@ -143,9 +140,9 @@ const addSegwitFeeUtxo = async ({
         ? findUtxosForFees(nonMetaSegwitUtxos, fee)
         : findUtxosForFees(nonMetaTaprootUtxos, fee)
       if (utxosToSend?.change) {
-        if (utxosToSend?.change - fee >= 0) {
+        if (utxosToSend.change - fee >= 0) {
           return psbtTx.addOutput({
-            address: payFeesWithSegwit ? segwitAddress : taprootAddress,
+            address: fromAddress,
             value: Math.floor(utxosToSend.change - fee),
           })
         } else {
@@ -197,6 +194,7 @@ const addSegwitFeeUtxo = async ({
         address: payFeesWithSegwit ? segwitAddress : taprootAddress,
         value: Math.floor(feeUtxos.change),
       })
+      return
     } else {
       let amountForFee: number = fee
       if (inscription['isInscription']) {

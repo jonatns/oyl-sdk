@@ -199,6 +199,7 @@ export async function runCLI() {
         segwitAddress,
         segwitHdPath: 'xverse',
         segwitPubkey,
+        payFeesWithSegwit: false,
       })
 
       if (taprootResponse) {
@@ -215,6 +216,7 @@ export async function runCLI() {
         segwitAddress,
         segwitHdPath: 'xverse',
         segwitPubkey,
+        payFeesWithSegwit: false,
       })
 
       if (segwitResponse) {
@@ -239,7 +241,7 @@ export async function runCLI() {
           '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
         mnemonic: mnemonic,
         amount: 40,
-        payFeesWithSegwit: true,
+        payFeesWithSegwit: false,
         segwitHdPath: 'xverse',
       })
       console.log(test0)
@@ -259,7 +261,7 @@ export async function runCLI() {
         destinationAddress:
           'bc1pkvt4pj7jgj02s95n6sn56fhgl7t7cfx5mj4dedsqyzast0whpchs7ujd7y',
         feeRate: 10,
-        payFeesWithSegwit: true,
+        payFeesWithSegwit: false,
         mnemonic:
           'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
         segwitHdPath: 'xverse',
@@ -299,11 +301,11 @@ export async function runCLI() {
       await testWallet.recoverWallet({
         mnemonic: testnetMnemonic,
         activeIndexes: [0],
-        customPath: 'testnet',
+        customPath: 'unisat',
       })
 
       const testnetTaprootResponse = await testWallet.sendBtc({
-        to: 'tb1phq6q90tnfq9xjlqf3zskeeuknsvhg954phrm6fkje7ezfrmkms7q0z4e26',
+        to: 'tb1pyjm845u3dwxcffyxe4mmcx8ecevvr33shknrtyc2ylgm4zvs8deqekd0s8',
         from: testnetTaprootAddress,
         amount: 500,
         feeRate: 10,
@@ -331,6 +333,7 @@ export async function runCLI() {
         segwitHdPath: 'unisat',
         segwitPubkey:
           '031d49049be7501841213c2b5fc503b67b9c4fd33e7f4b29c0e6e2d99d1c39c0c8',
+        payFeesWithSegwit: false,
       })
 
       if (testnetSegwitResponse) {
@@ -356,7 +359,7 @@ export async function runCLI() {
           '031d49049be7501841213c2b5fc503b67b9c4fd33e7f4b29c0e6e2d99d1c39c0c8',
         mnemonic: testnetMnemonic,
         amount: 40,
-        payFeesWithSegwit: true,
+        payFeesWithSegwit: false,
         segwitHdPath: 'unisat',
       })
       console.log(testnetBrc20Send)
@@ -375,7 +378,7 @@ export async function runCLI() {
         destinationAddress:
           'tb1pdz8aul7226284e57e9yn4mpyd8f52zpxc7z0gz392e6amrf0s4uq6s3sw6',
         feeRate: 2,
-        payFeesWithSegwit: true,
+        payFeesWithSegwit: false,
         mnemonic: testnetMnemonic,
         segwitHdPath: 'unisat',
       })
