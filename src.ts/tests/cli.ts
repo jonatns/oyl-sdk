@@ -10,6 +10,16 @@ import { generateWallet } from './genWallet'
 
 import { hideBin } from 'yargs/helpers'
 import { getAddressesFromPublicKey } from '@sadoprotocol/ordit-sdk'
+import { BuildMarketplaceTransaction } from '../marketplace/buildMarketplaceTx'
+import { ToSignInput } from '../shared/interface'
+import {
+  formatOptionsToSignInputs,
+  getNetwork,
+  signInputs,
+  waitForTransaction,
+} from '../shared/utils'
+import { customPaths } from '../wallet/accountsManager'
+import * as transactions from '../transactions'
 
 bitcoin.initEccLib(ecc2)
 
@@ -151,6 +161,7 @@ interface YargsArguments {
   feeRate?: number
   mnemonic?: string
   inscriptionId?: string
+  psbtBase64?: string
   isDry?: boolean
 }
 
@@ -316,11 +327,17 @@ const argv = yargs(hideBin(process.argv))
   .command('convert', 'Convert PSBT', {})
   .command('aggregate', 'Test Aggregator', {})
   .command('ord-test', 'ORD test', {})
+  .command('buy-offer', 'ORD test', (yargs) => {
+    return yargs
+      .option('psbtBase64', {
+        describe: 'offer psbt base64',
+        type: 'string',
+        demandOption: true,
+      })
+      .help().argv
+  })
   .command('txn-history', 'Transaction history', {})
-  .command('testnet-send', 'Send testnet transaction', {})
   .command('gen-testnet-wallet', 'Generate testnet wallet', {})
-  .command('testnet-sendBRC20', 'Send testnet BRC20 tokens', {})
-  .command('testnet-send-collectible', 'Send testnet collectible', {})
   .help().argv as unknown as YargsArguments
 
 export async function runCLI() {
@@ -329,7 +346,7 @@ export async function runCLI() {
   const options = Object.assign({}, yargs.argv) as YargsArguments
   const networkConfig = config[network]
   console.log({ network })
-  const { mnemonic, to, amount, feeRate, isDry, ticker } = options
+  const { mnemonic, to, amount, feeRate, isDry, ticker, psbtBase64 } = options
   switch (command) {
     case 'load':
       return await loadRpc(options)
@@ -372,6 +389,40 @@ export async function runCLI() {
         feeRate,
         isDry,
       })
+
+    case 'buy-offer':
+      const marketplace = new BuildMarketplaceTransaction({
+        address: networkConfig.taprootAddress,
+        price: 1100,
+        psbtBase64: psbtBase64,
+        pubKey: networkConfig.taprootPubkey,
+        wallet: networkConfig.wallet,
+      })
+
+      if (!(await marketplace.isWalletPrepared())) {
+        console.log('WALLET NOT PREPARED')
+        console.log('WALLET NOT PREPARED')
+        console.log('WALLET NOT PREPARED')
+        console.log('WALLET NOT PREPARED')
+        console.log('WALLET NOT PREPARED')
+        console.log('WALLET NOT PREPARED')
+        return
+      }
+
+      const { psbtHex: buildOrderHex, psbtBase64: builtOrderBase64 } =
+        await marketplace.psbtBuilder()
+      console.log({ buildOrderHex })
+      console.log({ builtOrderBase64 })
+
+      const orderFilledPsbt = bitcoin.Psbt.fromBase64(psbtBase64)
+
+      orderFilledPsbt.finalizeAllInputs()
+
+      const extractedTx = orderFilledPsbt.extractTransaction().toHex()
+
+      console.log({ extractedTx })
+
+      return extractedTx
     // case 'view':
     //   return await viewPsbt()
     // // case 'market':
