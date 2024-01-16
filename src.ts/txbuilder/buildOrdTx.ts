@@ -382,6 +382,28 @@ export function findUtxosForFees(utxos: Utxo[], amount: number) {
   }
 }
 
+export function findUtxosToCoverAmount(utxos: Utxo[], amount: number) {
+  let totalSatoshis = 0
+  const selectedUtxos: Utxo[] = []
+
+  for (const utxo of utxos) {
+    if (totalSatoshis >= amount) break
+
+    selectedUtxos.push(utxo)
+    totalSatoshis += utxo.satoshis
+  }
+
+  if (totalSatoshis >= amount) {
+    return {
+      selectedUtxos,
+      totalSatoshis,
+      change: totalSatoshis - amount,
+    }
+  } else {
+    return null
+  }
+}
+
 const usableUtxo = (feeUtxo: Utxo, utxosToSend: Utxo[]) => {
   if (!utxosToSend) {
     return true

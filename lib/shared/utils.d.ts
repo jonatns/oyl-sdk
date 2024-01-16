@@ -49,6 +49,7 @@ export declare const getWitnessDataChunk: (content: string, encodeType?: BufferE
 export declare const getSatpointFromUtxo: (utxo: IBlockchainInfoUTXO) => string;
 export declare const getInscriptionsByWalletBIS: (walletAddress: string, offset?: number) => Promise<IBISWalletIx[]>;
 export declare function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]): number;
+export declare function calculateAmountGatheredUtxo(utxoArray: Utxo[]): number;
 export declare const formatOptionsToSignInputs: ({ _psbt, isRevealTx, pubkey, segwitPubkey, segwitAddress, taprootAddress, network, }: {
     _psbt: bitcoin.Psbt;
     isRevealTx: boolean;

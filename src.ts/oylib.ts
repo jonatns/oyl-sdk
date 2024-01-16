@@ -499,8 +499,8 @@ export class Oyl {
     mnemonic,
     segwitAddress,
     segwitPubkey,
-    segwitHdPath,
-    payFeesWithSegwit = true,
+    segwitHdPath = 'oyl',
+    payFeesWithSegwit = false,
   }: {
     to: string
     from: string
@@ -510,7 +510,7 @@ export class Oyl {
     mnemonic: string
     segwitAddress?: string
     segwitPubkey?: string
-    segwitHdPath: string
+    segwitHdPath?: 'oyl' | 'xverse' | 'leather' | 'unisat' | 'testnet'
     payFeesWithSegwit?: boolean
   }) {
     const hdPaths = customPaths[segwitHdPath]
@@ -520,11 +520,15 @@ export class Oyl {
       hdPathWithIndex: hdPaths['taprootPath'],
     })
 
-    const segwitSigner = await this.createSegwitSigner({
-      mnemonic: mnemonic,
-      segwitAddress: segwitAddress,
-      hdPathWithIndex: hdPaths['segwitPath'],
-    })
+    let segwitSigner
+
+    if (segwitAddress) {
+      segwitSigner = await this.createSegwitSigner({
+        mnemonic: mnemonic,
+        segwitAddress: segwitAddress,
+        hdPathWithIndex: hdPaths['segwitPath'],
+      })
+    }
 
     const taprootUtxos = await this.getUtxosArtifacts({
       address: from,
@@ -538,8 +542,6 @@ export class Oyl {
 
     if (!feeRate) {
       feeRate = (await this.esploraRpc.getFeeEstimates())['1']
-    } else {
-      feeRate = feeRate
     }
 
     const { txnId, rawTxn } = await createBtcTx({

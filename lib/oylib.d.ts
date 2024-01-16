@@ -169,7 +169,7 @@ export declare class Oyl {
         mnemonic: string;
         segwitAddress?: string;
         segwitPubkey?: string;
-        segwitHdPath: string;
+        segwitHdPath?: 'oyl' | 'xverse' | 'leather' | 'unisat' | 'testnet';
         payFeesWithSegwit?: boolean;
     }): Promise<{
         txnId: string;
