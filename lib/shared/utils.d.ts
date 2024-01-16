@@ -61,7 +61,7 @@ export declare const formatOptionsToSignInputs: ({ _psbt, isRevealTx, pubkey, se
 }) => Promise<ToSignInput[]>;
 export declare const timeout: (n: any) => Promise<unknown>;
 export declare const signInputs: (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], taprootPubkey: string, segwitPubKey: string, segwitSigner: any, taprootSigner: any) => Promise<bitcoin.Psbt>;
-export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, network, segwitUtxos, taprootUtxos, taprootPrivateKey, segwitPk, }: {
+export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, network, segwitUtxos, taprootUtxos, taprootPrivateKey, }: {
     ticker: string;
     amount: number;
     inputAddress: string;
@@ -79,8 +79,12 @@ export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, m
     segwitUtxos: Utxo[];
     taprootUtxos: Utxo[];
     taprootPrivateKey: string;
-    segwitPk: string;
 }) => Promise<{
+    commitRawTxn: string;
+    txnId: string;
+    rawTxn?: undefined;
+    error?: undefined;
+} | {
     txnId: any;
     commitRawTxn?: undefined;
     rawTxn?: undefined;
@@ -92,8 +96,8 @@ export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, m
     error?: undefined;
 } | {
     error: any;
-    txnId?: undefined;
     commitRawTxn?: undefined;
+    txnId?: undefined;
     rawTxn?: undefined;
 }>;
 export declare const createInscriptionScript: (pubKey: any, content: any) => string[];

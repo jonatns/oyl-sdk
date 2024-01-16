@@ -838,18 +838,20 @@ export class Oyl {
   }
 
   async sendBRC20(options: InscribeTransfer) {
-    await isDryDisclaimer(options.isDry)
+    // await isDryDisclaimer(options.isDry)
     try {
       const addressType = transactions.getAddressType(options.fromAddress)
       if (addressType == null) {
         throw Error('Unrecognized Address Type')
       }
 
-      const hdPaths = customPaths[options.segwitHdPath]
+      const path = options.segwitHdPath ?? 'oyl'
+      const hdPaths = customPaths[path]
 
       const taprootUtxos = await this.getUtxosArtifacts({
         address: options.fromAddress,
       })
+
       let segwitUtxos: any[] | undefined
       if (options.segwitAddress) {
         segwitUtxos = await this.getUtxosArtifacts({
@@ -857,29 +859,31 @@ export class Oyl {
         })
       }
 
+      let segwitSigner, segwitPrivateKey
+
       const taprootSigner = await this.createTaprootSigner({
         mnemonic: options.mnemonic,
         taprootAddress: options.fromAddress,
         hdPathWithIndex: hdPaths['taprootPath'],
       })
-
-      const segwitSigner = await this.createSegwitSigner({
-        mnemonic: options.mnemonic,
-        segwitAddress: options.segwitAddress,
-        hdPathWithIndex: hdPaths['segwitPath'],
-      })
-
       const taprootPrivateKey = await this.fromPhrase({
         mnemonic: options.mnemonic,
         addrType: transactions.getAddressType(options.fromAddress),
         hdPath: hdPaths['taprootPath'],
       })
 
-      const segwitPrivateKey = await this.fromPhrase({
-        mnemonic: options.mnemonic,
-        addrType: transactions.getAddressType(options.segwitAddress),
-        hdPath: hdPaths['segwitPath'],
-      })
+      if (options.segwitAddress) {
+        segwitSigner = await this.createSegwitSigner({
+          mnemonic: options.mnemonic,
+          segwitAddress: options.segwitAddress,
+          hdPathWithIndex: hdPaths['segwitPath'],
+        })
+        segwitPrivateKey = await this.fromPhrase({
+          mnemonic: options.mnemonic,
+          addrType: transactions.getAddressType(options.segwitAddress),
+          hdPath: hdPaths['segwitPath'],
+        })
+      }
 
       let feeRate: number
       if (!options?.feeRate) {
@@ -907,10 +911,6 @@ export class Oyl {
         taprootUtxos: taprootUtxos,
         taprootPrivateKey:
           taprootPrivateKey.keyring.keyring._index2wallet[0][1].privateKey.toString(
-            'hex'
-          ),
-        segwitPk:
-          segwitPrivateKey.keyring.keyring._index2wallet[0][1].privateKey.toString(
             'hex'
           ),
       })

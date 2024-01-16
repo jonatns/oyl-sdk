@@ -396,7 +396,6 @@ export const inscribe = async ({
   segwitUtxos,
   taprootUtxos,
   taprootPrivateKey,
-  segwitPk,
 }: {
   ticker: string
   amount: number
@@ -415,11 +414,30 @@ export const inscribe = async ({
   segwitUtxos: Utxo[]
   taprootUtxos: Utxo[]
   taprootPrivateKey: string
-  segwitPk: string
 }) => {
   try {
-    const secret = taprootPrivateKey
+    const commitTxSize = calculateTaprootTxSize(3, 0, 2)
+    const feeForCommit =
+      commitTxSize * feeRate < 150 ? 200 : commitTxSize * feeRate
 
+    const revealTxSize = calculateTaprootTxSize(1, 0, 1)
+    const feeForReveal = revealTxSize * feeRate + 546 + 151
+
+    const amountNeededForInscription = feeForCommit + feeForReveal
+
+    const utxosToSend = findUtxosToCoverAmount(
+      taprootUtxos,
+      amountNeededForInscription
+    )
+    if (!utxosToSend) {
+      new Error('insufficient balance')
+    }
+
+    const amountGathered = calculateAmountGatheredUtxo(
+      utxosToSend.selectedUtxos
+    )
+
+    const secret = taprootPrivateKey
     const secKey = ecc2.keys.get_seckey(String(secret))
     const pubKey = ecc2.keys.get_pubkey(String(secret), true)
     const content = `{"p":"brc-20","op":"transfer","tick":"${ticker}","amt":"${amount}"}`
@@ -431,23 +449,30 @@ export const inscribe = async ({
 
     const psbt = new bitcoin.Psbt({ network: getNetwork(network) })
 
+    for await (const utxo of utxosToSend.selectedUtxos) {
+      psbt.addInput({
+        hash: utxo.txId,
+        index: utxo.outputIndex,
+        witnessUtxo: {
+          script: Buffer.from(utxo.scriptPk, 'hex'),
+          value: utxo.satoshis,
+        },
+      })
+    }
+
+    const reimbursementAmount = amountGathered - amountNeededForInscription
+
     psbt.addOutput({
-      value: 546,
+      value: feeForReveal,
       address: inscriberAddress,
     })
 
-    await getUtxosForFees({
-      payFeesWithSegwit: payFeesWithSegwit,
-      psbtTx: psbt,
-      taprootUtxos: taprootUtxos,
-      segwitUtxos: segwitUtxos,
-      inscription: { isInscription: true, inscriberAddress: inscriberAddress },
-      segwitAddress: segwitAddress,
-      feeRate: feeRate,
-      taprootAddress: inputAddress,
-      segwitPubKey: segwitPublicKey,
-      network: getNetwork(network),
-    })
+    if (reimbursementAmount > 546) {
+      psbt.addOutput({
+        value: reimbursementAmount,
+        address: inputAddress,
+      })
+    }
 
     const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
       _psbt: psbt,
@@ -478,6 +503,7 @@ export const inscribe = async ({
     let commitTxId: string
     if (isDry) {
       commitTxId = commitTxPsbt.extractTransaction().getId()
+      return { commitRawTxn: commitTxHex, txnId: commitTxId }
     } else {
       const { result } = await callBTCRPCEndpoint(
         'sendrawtransaction',
@@ -494,26 +520,15 @@ export const inscribe = async ({
       }
     }
 
-    const commitTxOutput0 = await getOutputValueByVOutIndex(
+    const commitTxOutput = await getOutputValueByVOutIndex(
       commitTxId,
       0,
       network
     )
-    if (commitTxOutput0[0] === 0 || !commitTxOutput0) {
+
+    if (!commitTxOutput) {
       return { error: 'ERROR GETTING FIRST INPUT VALUE' }
     }
-
-    const commitTxOutput1 = await getOutputValueByVOutIndex(
-      commitTxId,
-      1,
-      network
-    )
-    if (commitTxOutput1[0] === 0 || !commitTxOutput1) {
-      return { error: 'ERROR GETTING FIRST INPUT VALUE' }
-    }
-
-    const vB = 149 + 96 + 12
-    const fee = vB * feeRate
 
     const txData = Tx.create({
       vin: [
@@ -521,15 +536,7 @@ export const inscribe = async ({
           txid: commitTxId,
           vout: 0,
           prevout: {
-            value: 546,
-            scriptPubKey: ['OP_1', tpubkey],
-          },
-        },
-        {
-          txid: commitTxId,
-          vout: 2,
-          prevout: {
-            value: fee,
+            value: feeForReveal,
             scriptPubKey: ['OP_1', tpubkey],
           },
         },
@@ -537,7 +544,7 @@ export const inscribe = async ({
       vout: [
         {
           value: 546,
-          scriptPubKey: Address.toScriptPubKey(outputAddress),
+          scriptPubKey: Address.toScriptPubKey(inputAddress),
         },
       ],
     })
@@ -545,15 +552,8 @@ export const inscribe = async ({
     const sig = Signer.taproot.sign(secKey, txData, 0, {
       extension: tapleaf,
     })
+
     txData.vin[0].witness = [sig, script, cblock]
-
-    const sig2 = Signer.taproot.sign(secKey, txData, 1, {
-      extension: tapleaf,
-    })
-
-    txData.vin[1].witness = [sig2, script, cblock]
-
-    console.log(Tx.encode(txData).hex)
 
     if (!isDry) {
       const { result, error, id } = await callBTCRPCEndpoint(

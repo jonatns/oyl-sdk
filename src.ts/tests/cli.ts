@@ -146,10 +146,12 @@ interface YargsArguments {
   _: string[]
   network?: string
   to?: string
+  ticker?: string
   amount?: number
   feeRate?: number
   mnemonic?: string
   inscriptionId?: string
+  isDry?: boolean
 }
 
 const tapWallet = new Oyl({
@@ -240,7 +242,44 @@ const argv = yargs(hideBin(process.argv))
       })
       .help().argv
   })
-  .command('sendBRC20', 'Send BRC20 tokens', {})
+  .command('send-brc-20', 'Send BRC20 tokens', (yargs) => {
+    return yargs
+      .option('to', {
+        alias: 't',
+        describe: 'Destination address for the brc-20',
+        type: 'string',
+        default: config[yargs.argv['network']].destinationTaprootAddress,
+      })
+      .option('ticker', {
+        alias: 'tik',
+        describe: 'brc-20 ticker to send',
+        type: 'string',
+        demandOption: true,
+      })
+      .option('amount', {
+        alias: 'a',
+        describe: 'Amount of brc-20 to send',
+        type: 'number',
+        default: 5,
+      })
+      .option('feeRate', {
+        alias: 'f',
+        describe: 'Fee rate for the transaction',
+        type: 'number',
+        default: config[yargs.argv['network']].feeRate,
+      })
+      .option('mnemonic', {
+        describe: 'Mnemonic for the wallet',
+        type: 'string',
+        default: config[yargs.argv['network']].mnemonic,
+      })
+      .option('isDry', {
+        describe: 'Dry run',
+        type: 'string',
+        default: false,
+      })
+      .help().argv
+  })
   .command('send-collectible', 'Send a collectible', {})
   .command('view', 'View PSBT', {})
   .command('convert', 'Convert PSBT', {})
@@ -259,12 +298,11 @@ export async function runCLI() {
   const options = Object.assign({}, yargs.argv) as YargsArguments
   const networkConfig = config[network]
   console.log({ network })
-
+  const { mnemonic, to, amount, feeRate, isDry, ticker } = options
   switch (command) {
     case 'load':
       return await loadRpc(options)
     case 'send':
-      const { mnemonic, to, amount, feeRate } = options
       const sendResponse = await networkConfig.wallet.sendBtc({
         mnemonic,
         to,
@@ -277,24 +315,20 @@ export async function runCLI() {
       console.log(sendResponse)
       return sendResponse
 
-    case 'sendBRC20':
+    case 'send-brc-20':
       const test0 = await networkConfig.wallet.sendBRC20({
-        isDry: true,
+        mnemonic,
         fromAddress: networkConfig.taprootAddress,
         taprootPublicKey: networkConfig.taprootPubkey,
         destinationAddress: networkConfig.destinationTaprootAddress,
-        feeRate: 10,
-        token: 'BONK',
-        inscriptionId: '',
-        segwitAddress: networkConfig.segwitAddress,
-        segwitPubKey: networkConfig.segwitPubkey,
-        mnemonic: networkConfig.mnemonic,
-        amount: 40,
-        payFeesWithSegwit: true,
-        segwitHdPath: XVERSE,
+        token: ticker,
+        amount,
+        feeRate,
+        isDry,
       })
+
       console.log(test0)
-      break
+      return test0
     case 'send-collectible':
       const { inscriptionId } = options
       return await networkConfig.wallet.sendOrdCollectible({
