@@ -868,18 +868,18 @@ export const sendCollectible = async ({
 
   psbt.txOutputs[0].value = metaOutputValue
 
-  // await getUtxosForFees({
-  //   payFeesWithSegwit: payFeesWithSegwit,
-  //   psbtTx: psbt,
-  //   taprootUtxos: taprootUtxos,
-  //   segwitUtxos: segwitUtxos,
-  //   segwitAddress: segwitAddress,
-  //   feeRate: feeRate,
-  //   taprootAddress: inputAddress,
-  //   segwitPubKey: segwitPublicKey,
-  //   utxosToSend: utxosToSend,
-  //   network: getNetwork(network),
-  // })
+  await getUtxosForFees({
+    payFeesWithSegwit: payFeesWithSegwit,
+    psbtTx: psbt,
+    taprootUtxos: taprootUtxos,
+    segwitUtxos: segwitUtxos,
+    segwitAddress: segwitAddress,
+    feeRate: feeRate,
+    taprootAddress: inputAddress,
+    segwitPubKey: segwitPublicKey,
+    utxosToSend: utxosToSend,
+    network: getNetwork(network),
+  })
 
   const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
     _psbt: psbt,
@@ -929,7 +929,6 @@ const insertCollectibleUtxo = async ({
   psbt: bitcoin.Psbt
 }) => {
   try {
-    console.log({ taprootUtxos })
     const { metaUtxos } = taprootUtxos.reduce(
       (acc, utxo) => {
         utxo.inscriptions.length

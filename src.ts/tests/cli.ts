@@ -347,7 +347,7 @@ export async function runCLI() {
       return sendResponse
 
     case 'send-brc-20':
-      const test0 = await networkConfig.wallet.sendBRC20({
+      const sendBrc20Response = await networkConfig.wallet.sendBRC20({
         mnemonic,
         fromAddress: networkConfig.taprootAddress,
         taprootPublicKey: networkConfig.taprootPubkey,
@@ -358,8 +358,9 @@ export async function runCLI() {
         isDry,
       })
 
-      console.log(test0)
-      return test0
+      console.log(sendBrc20Response)
+      return sendBrc20Response
+
     case 'send-collectible':
       const { inscriptionId } = options
       return await networkConfig.wallet.sendOrdCollectible({

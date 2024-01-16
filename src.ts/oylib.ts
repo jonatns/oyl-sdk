@@ -426,6 +426,7 @@ export class Oyl {
     const allCollectibles = (
       await this.apiClient.getCollectiblesByAddress(address)
     ).data
+
     // const allBrc20s = (
     //   await this.apiClient.getAllInscriptionsByAddress(address)
     // ).data
@@ -934,23 +935,18 @@ export class Oyl {
       const utxosForTransferSendFees = await this.getUtxosArtifacts({
         address: options.fromAddress,
       })
-
       const sendTxSize = calculateTaprootTxSize(3, 0, 2)
       const feeForSend = sendTxSize * feeRate < 150 ? 200 : sendTxSize * feeRate
-
       const utxosToSend = findUtxosToCoverAmount(
         utxosForTransferSendFees,
         feeForSend
       )
-
       const amountGathered = calculateAmountGatheredUtxo(
         utxosToSend.selectedUtxos
       )
-
       const sendPsbt = new bitcoin.Psbt({
         network: getNetwork(this.currentNetwork),
       })
-
       sendPsbt.addInput({
         hash: txnId,
         index: 0,
@@ -962,7 +958,6 @@ export class Oyl {
           value: 546,
         },
       })
-
       for await (const utxo of utxosToSend.selectedUtxos) {
         sendPsbt.addInput({
           hash: utxo.txId,
@@ -973,21 +968,17 @@ export class Oyl {
           },
         })
       }
-
       sendPsbt.addOutput({
         address: options.destinationAddress,
         value: 546,
       })
-
       const reimbursementAmount = amountGathered - feeForSend
-
       if (reimbursementAmount > 546) {
         sendPsbt.addOutput({
           address: options.fromAddress,
           value: amountGathered - feeForSend,
         })
       }
-
       const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
         _psbt: sendPsbt,
         pubkey: options.taprootPublicKey,
@@ -996,7 +987,6 @@ export class Oyl {
         taprootAddress: options.fromAddress,
         network: getNetwork(this.currentNetwork),
       })
-
       const signedSendPsbt = await signInputs(
         sendPsbt,
         toSignInputs,
@@ -1005,17 +995,14 @@ export class Oyl {
         segwitSigner,
         taprootSigner
       )
-
       signedSendPsbt.finalizeAllInputs()
-
       const sendTxHex = signedSendPsbt.extractTransaction().toHex()
-
       const { result: transferSendTxId } = await callBTCRPCEndpoint(
         'sendrawtransaction',
         sendTxHex,
         this.currentNetwork
       )
-      return { txnId: transferSendTxId }
+      return { txnId: transferSendTxId, rawTxn: sendTxHex }
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error(err)
@@ -1065,13 +1052,9 @@ export class Oyl {
 
       const collectibleData = await this.getCollectibleById(inscriptionId)
 
-      console.log({ collectibleData })
-
       const metaOffset = collectibleData.satpoint.charAt(
         collectibleData.satpoint.length - 1
       )
-
-      console.log({ metaOffset })
 
       const metaOutputValue = collectibleData.output_value || 10000
 

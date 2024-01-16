@@ -91,17 +91,22 @@ const addSegwitFeeUtxo = async ({
   payFeesWithSegwit: boolean
 }) => {
   try {
-    const { nonMetaSegwitUtxos } = segwitUtxos.reduce(
-      (acc, utxo) => {
-        utxo.inscriptions.length > 0
-          ? acc.metaUtxos.push(utxo)
-          : acc.nonMetaSegwitUtxos.push(utxo)
-        return acc
-      },
-      { metaUtxos: [], nonMetaSegwitUtxos: [] }
-    )
+    console.log({ payFeesWithSegwit, segwitUtxos })
+    // const { nonMetaSegwitUtxos } = segwitUtxos?.reduce(
+    //   (acc, utxo) => {
+    //     utxo.inscriptions.length > 0
+    //       ? acc.metaUtxos.push(utxo)
+    //       : acc.nonMetaSegwitUtxos.push(utxo)
+    //     return acc
+    //   },
+    //   { metaUtxos: [], nonMetaSegwitUtxos: [] }
+    // )
 
-    nonMetaSegwitUtxos.sort((a, b) => b.satoshis - a.satoshis)
+    const nonMetaSegwitUtxos = []
+
+    if (nonMetaSegwitUtxos) {
+      nonMetaSegwitUtxos?.sort((a, b) => b.satoshis - a.satoshis)
+    }
 
     const nonMetaTaprootUtxos = await filterTaprootUtxos({
       taprootUtxos: taprootUtxos,
@@ -336,8 +341,6 @@ export const addInscriptionUtxo = async ({
       (inscription) => inscription.collectibles.id === inscriptionId
     )
   })
-
-  console.log({ metaUtxos })
 
   if (!matchedUtxo || matchedUtxo.inscriptions.length > 1) {
     throw new Error(
