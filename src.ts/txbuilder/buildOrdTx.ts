@@ -336,6 +336,9 @@ export const addInscriptionUtxo = async ({
       (inscription) => inscription.collectibles.id === inscriptionId
     )
   })
+
+  console.log({ metaUtxos })
+
   if (!matchedUtxo || matchedUtxo.inscriptions.length > 1) {
     throw new Error(
       matchedUtxo

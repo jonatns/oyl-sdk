@@ -280,7 +280,38 @@ const argv = yargs(hideBin(process.argv))
       })
       .help().argv
   })
-  .command('send-collectible', 'Send a collectible', {})
+  .command('send-collectible', 'Send a collectible', (yargs) => {
+    return yargs
+      .option('to', {
+        alias: 't',
+        describe: 'Destination address for the collectible',
+        type: 'string',
+        default: config[yargs.argv['network']].destinationTaprootAddress,
+      })
+      .option('inscriptionId', {
+        alias: 'ixId',
+        describe: 'Inscription to be sent',
+        type: 'string',
+        demandOption: true,
+      })
+      .option('feeRate', {
+        alias: 'f',
+        describe: 'Fee rate for the transaction',
+        type: 'number',
+        default: config[yargs.argv['network']].feeRate,
+      })
+      .option('mnemonic', {
+        describe: 'Mnemonic for the wallet',
+        type: 'string',
+        default: config[yargs.argv['network']].mnemonic,
+      })
+      .option('isDry', {
+        describe: 'Dry run',
+        type: 'string',
+        default: false,
+      })
+      .help().argv
+  })
   .command('view', 'View PSBT', {})
   .command('convert', 'Convert PSBT', {})
   .command('aggregate', 'Test Aggregator', {})
@@ -332,17 +363,13 @@ export async function runCLI() {
     case 'send-collectible':
       const { inscriptionId } = options
       return await networkConfig.wallet.sendOrdCollectible({
-        isDry: true,
-        fromAddress: networkConfig.taprootAddress,
-        inscriptionId: inscriptionId,
-        taprootPublicKey: networkConfig.taprootPubkey,
-        segwitAddress: networkConfig.segwitAddress,
-        segwitPubKey: networkConfig.segwitPubkey,
-        destinationAddress: networkConfig.destinationTaprootAddress,
-        feeRate: 10,
-        payFeesWithSegwit: true,
         mnemonic: networkConfig.mnemonic,
-        segwitHdPath: XVERSE,
+        fromAddress: networkConfig.taprootAddress,
+        taprootPublicKey: networkConfig.taprootPubkey,
+        destinationAddress: networkConfig.destinationTaprootAddress,
+        inscriptionId,
+        feeRate,
+        isDry,
       })
     // case 'view':
     //   return await viewPsbt()

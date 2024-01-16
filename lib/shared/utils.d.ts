@@ -60,9 +60,8 @@ export declare const formatOptionsToSignInputs: ({ _psbt, pubkey, segwitPubkey, 
 }) => Promise<ToSignInput[]>;
 export declare const timeout: (n: any) => Promise<unknown>;
 export declare const signInputs: (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], taprootPubkey: string, segwitPubKey: string, segwitSigner: any, taprootSigner: any) => Promise<bitcoin.Psbt>;
-export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, network, segwitUtxos, taprootUtxos, taprootPrivateKey, }: {
-    ticker: string;
-    amount: number;
+export declare const inscribe: ({ content, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, network, segwitUtxos, taprootUtxos, taprootPrivateKey, }: {
+    content: string;
     inputAddress: string;
     outputAddress: string;
     mnemonic: string;
@@ -78,16 +77,16 @@ export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, m
     segwitUtxos: Utxo[];
     taprootUtxos: Utxo[];
     taprootPrivateKey: string;
-}) => Promise<Error | {
+}) => Promise<{
     commitRawTxn: string;
     txnId: string;
-    rawTxn?: undefined;
     error?: undefined;
+    rawTxn?: undefined;
 } | {
     txnId: any;
+    error: any;
     commitRawTxn?: undefined;
     rawTxn?: undefined;
-    error?: undefined;
 } | {
     commitRawTxn: string;
     txnId: string;
@@ -111,7 +110,7 @@ export declare const isP2WPKH: (script: Buffer, network: Network) => BitcoinPaym
 export declare const isP2WSHScript: (script: Buffer, network: Network) => BitcoinPaymentType;
 export declare const isP2SHScript: (script: Buffer, network: Network) => BitcoinPaymentType;
 export declare const isP2TR: (script: Buffer, network: Network) => BitcoinPaymentType;
-export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, network, taprootUtxos, segwitUtxos, metaOutputValue, sandshrew, }: {
+export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddress, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, network, taprootUtxos, segwitUtxos, metaOutputValue, sandshrew, }: {
     inscriptionId: string;
     inputAddress: string;
     outputAddress: string;
