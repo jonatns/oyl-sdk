@@ -272,7 +272,6 @@ export function calculateAmountGatheredUtxo(utxoArray: Utxo[]) {
 
 export const formatOptionsToSignInputs = async ({
   _psbt,
-  isRevealTx,
   pubkey,
   segwitPubkey,
   segwitAddress,
@@ -280,7 +279,6 @@ export const formatOptionsToSignInputs = async ({
   network,
 }: {
   _psbt: bitcoin.Psbt
-  isRevealTx: boolean
   pubkey: string
   segwitPubkey: string
   segwitAddress: string
@@ -423,14 +421,22 @@ export const inscribe = async ({
     const revealTxSize = calculateTaprootTxSize(1, 0, 1)
     const feeForReveal = revealTxSize * feeRate + 546 + 151
 
-    const amountNeededForInscription = feeForCommit + feeForReveal
+    const sendTxSize = calculateTaprootTxSize(3, 0, 2)
+    const feeForSend = sendTxSize * feeRate
+
+    const amountNeededForBrc20Send = feeForCommit + feeForReveal + feeForSend
 
     const utxosToSend = findUtxosToCoverAmount(
       taprootUtxos,
-      amountNeededForInscription
+      amountNeededForBrc20Send
     )
-    if (!utxosToSend) {
-      new Error('insufficient balance')
+
+    if (
+      !utxosToSend ||
+      !utxosToSend.selectedUtxos ||
+      utxosToSend?.selectedUtxos?.length === 0
+    ) {
+      return new Error('insufficient balance')
     }
 
     const amountGathered = calculateAmountGatheredUtxo(
@@ -460,7 +466,7 @@ export const inscribe = async ({
       })
     }
 
-    const reimbursementAmount = amountGathered - amountNeededForInscription
+    const reimbursementAmount = amountGathered - amountNeededForBrc20Send
 
     psbt.addOutput({
       value: feeForReveal,
@@ -476,7 +482,6 @@ export const inscribe = async ({
 
     const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
       _psbt: psbt,
-      isRevealTx: false,
       pubkey: taprootPublicKey,
       segwitPubkey: segwitPublicKey,
       segwitAddress: segwitAddress,
@@ -525,10 +530,12 @@ export const inscribe = async ({
       0,
       network
     )
-
     if (!commitTxOutput) {
       return { error: 'ERROR GETTING FIRST INPUT VALUE' }
     }
+
+    const [commitReceiptValue, commitReceiptPubkey] =
+      await getOutputValueByVOutIndex(commitTxId, 1, network)
 
     const txData = Tx.create({
       vin: [
@@ -556,12 +563,83 @@ export const inscribe = async ({
     txData.vin[0].witness = [sig, script, cblock]
 
     if (!isDry) {
-      const { result, error, id } = await callBTCRPCEndpoint(
-        'sendrawtransaction',
-        Tx.encode(txData).hex,
+      const { result: transferInscriptionTxId, error: transferInscribeError } =
+        await callBTCRPCEndpoint(
+          'sendrawtransaction',
+          Tx.encode(txData).hex,
+          network
+        )
+
+      const txResult = await waitForTransaction(
+        transferInscriptionTxId,
         network
       )
-      console.log(result, error, id)
+      if (!txResult) {
+        return { error: 'ERROR WAITING FOR COMMIT TX' }
+      }
+
+      const sendPsbt = new bitcoin.Psbt({ network: getNetwork(network) })
+
+      sendPsbt.addInput({
+        hash: transferInscriptionTxId,
+        index: 0,
+        witnessUtxo: {
+          script: Buffer.from(commitReceiptPubkey as string, 'hex'),
+          value: 546,
+        },
+      })
+
+      sendPsbt.addInput({
+        hash: commitTxId,
+        index: 1,
+        witnessUtxo: {
+          script: Buffer.from(commitReceiptPubkey as string, 'hex'),
+          value: commitReceiptValue as number,
+        },
+      })
+
+      sendPsbt.addOutput({
+        address: outputAddress,
+        value: 546,
+      })
+
+      const reimbursementAmount = (commitReceiptValue as number) - feeForSend
+
+      if (reimbursementAmount > 546) {
+        sendPsbt.addOutput({
+          address: inputAddress,
+          value: reimbursementAmount,
+        })
+      }
+
+      const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
+        _psbt: sendPsbt,
+        pubkey: taprootPublicKey,
+        segwitPubkey: segwitPublicKey,
+        segwitAddress: segwitAddress,
+        taprootAddress: inputAddress,
+        network: getNetwork(network),
+      })
+
+      const signedSendPsbt = await signInputs(
+        sendPsbt,
+        toSignInputs,
+        taprootPublicKey,
+        segwitPublicKey,
+        segwitSigner,
+        taprootSigner
+      )
+
+      signedSendPsbt.finalizeAllInputs()
+
+      const sendTxHex = signedSendPsbt.extractTransaction().toHex()
+
+      const { result, error, id } = await callBTCRPCEndpoint(
+        'sendrawtransaction',
+        sendTxHex,
+        network
+      )
+
       return { txnId: result }
     } else {
       return {
@@ -676,7 +754,7 @@ export async function getOutputValueByVOutIndex(
   commitTxId: string,
   vOut: number,
   network: 'testnet' | 'mainnet' | 'regtest' | 'main' = 'mainnet'
-): Promise<any[] | null> {
+): Promise<(number | string)[] | null> {
   const timeout: number = 60000 // 1 minute in milliseconds
   const startTime: number = Date.now()
 
@@ -879,7 +957,6 @@ export const sendCollectible = async ({
 
   const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
     _psbt: psbt,
-    isRevealTx: false,
     pubkey: taprootPublicKey,
     segwitPubkey: segwitPublicKey,
     segwitAddress: segwitAddress,
@@ -1144,7 +1221,6 @@ export const createBtcTx = async ({
 
     const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
       _psbt: psbt,
-      isRevealTx: false,
       pubkey: taprootPublicKey,
       segwitPubkey: segwitPublicKey,
       segwitAddress: segwitAddress,

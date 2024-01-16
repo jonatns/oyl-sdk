@@ -838,7 +838,6 @@ export class Oyl {
   }
 
   async sendBRC20(options: InscribeTransfer) {
-    // await isDryDisclaimer(options.isDry)
     try {
       const addressType = transactions.getAddressType(options.fromAddress)
       if (addressType == null) {

@@ -50,9 +50,8 @@ export declare const getSatpointFromUtxo: (utxo: IBlockchainInfoUTXO) => string;
 export declare const getInscriptionsByWalletBIS: (walletAddress: string, offset?: number) => Promise<IBISWalletIx[]>;
 export declare function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]): number;
 export declare function calculateAmountGatheredUtxo(utxoArray: Utxo[]): number;
-export declare const formatOptionsToSignInputs: ({ _psbt, isRevealTx, pubkey, segwitPubkey, segwitAddress, taprootAddress, network, }: {
+export declare const formatOptionsToSignInputs: ({ _psbt, pubkey, segwitPubkey, segwitAddress, taprootAddress, network, }: {
     _psbt: bitcoin.Psbt;
-    isRevealTx: boolean;
     pubkey: string;
     segwitPubkey: string;
     segwitAddress: string;
@@ -79,7 +78,7 @@ export declare const inscribe: ({ ticker, amount, inputAddress, outputAddress, m
     segwitUtxos: Utxo[];
     taprootUtxos: Utxo[];
     taprootPrivateKey: string;
-}) => Promise<{
+}) => Promise<Error | {
     commitRawTxn: string;
     txnId: string;
     rawTxn?: undefined;
@@ -104,7 +103,7 @@ export declare const createInscriptionScript: (pubKey: any, content: any) => str
 export declare let RPC_ADDR: string;
 export declare const callBTCRPCEndpoint: (method: string, params: string | string[], network: string) => Promise<any>;
 export declare function waitForTransaction(txId: string, network: string): Promise<[boolean, any?]>;
-export declare function getOutputValueByVOutIndex(commitTxId: string, vOut: number, network?: 'testnet' | 'mainnet' | 'regtest' | 'main'): Promise<any[] | null>;
+export declare function getOutputValueByVOutIndex(commitTxId: string, vOut: number, network?: 'testnet' | 'mainnet' | 'regtest' | 'main'): Promise<(number | string)[] | null>;
 export declare function calculateTaprootTxSize(taprootInputCount: number, nonTaprootInputCount: number, outputCount: number): number;
 export declare function getRawTxnHashFromTxnId(txnId: string): Promise<any>;
 export declare const isP2PKH: (script: Buffer, network: Network) => BitcoinPaymentType;

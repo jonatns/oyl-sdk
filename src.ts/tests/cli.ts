@@ -320,7 +320,7 @@ export async function runCLI() {
         mnemonic,
         fromAddress: networkConfig.taprootAddress,
         taprootPublicKey: networkConfig.taprootPubkey,
-        destinationAddress: networkConfig.destinationTaprootAddress,
+        destinationAddress: to,
         token: ticker,
         amount,
         feeRate,
