@@ -167,8 +167,8 @@ export declare class Oyl {
         feeRate?: number;
         publicKey: string;
         mnemonic: string;
-        segwitAddress: string;
-        segwitPubkey: string;
+        segwitAddress?: string;
+        segwitPubkey?: string;
         segwitHdPath: string;
         payFeesWithSegwit: boolean;
     }): Promise<{
