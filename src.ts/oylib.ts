@@ -529,6 +529,9 @@ export class Oyl {
     segwitHdPath?: 'oyl' | 'xverse' | 'leather' | 'unisat' | 'testnet'
     payFeesWithSegwit?: boolean
   }) {
+    if (payFeesWithSegwit && (!segwitAddress || !segwitPubkey)) {
+      throw new Error('Invalid segwit information entered')
+    }
     const hdPaths = customPaths[segwitHdPath]
     const taprootSigner = await this.createTaprootSigner({
       mnemonic: mnemonic,
@@ -860,6 +863,13 @@ export class Oyl {
   }
 
   async sendBRC20(options: InscribeTransfer) {
+    await isDryDisclaimer(options.isDry)
+    if (
+      options.payFeesWithSegwit &&
+      (!options.segwitAddress || !options.segwitPubKey)
+    ) {
+      throw new Error('Invalid segwit information entered')
+    }
     try {
       const addressType = transactions.getAddressType(options.fromAddress)
       if (addressType == null) {
@@ -1027,6 +1037,7 @@ export class Oyl {
     }
   }
 
+
   async sendOrdCollectible({
     mnemonic,
     fromAddress,
@@ -1051,6 +1062,12 @@ export class Oyl {
     inscriptionId: string
   }) {
     // await isDryDisclaimer(isDry)
+    if (
+      options.payFeesWithSegwit &&
+      (!options.segwitAddress || !options.segwitPubKey)
+    ) {
+      throw new Error('Invalid segwit information entered')
+    }    
     const hdPaths = customPaths[segwitHdPath]
     try {
       const taprootUtxos: any[] = await this.getUtxosArtifacts({

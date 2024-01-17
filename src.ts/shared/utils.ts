@@ -895,6 +895,7 @@ export const sendCollectible = async ({
     segwitPubKey: segwitPublicKey,
     utxosToSend: utxosToSend,
     network: getNetwork(network),
+    fromAddress: inputAddress,
   })
 
   const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
@@ -1159,6 +1160,7 @@ export const createBtcTx = async ({
       fromAddress: inputAddress,
       feeRate,
       network,
+      fromAddress: inputAddress,
     })
 
     const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({

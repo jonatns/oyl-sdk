@@ -197,7 +197,7 @@ export interface InscribeTransfer {
     mnemonic: string;
     amount?: number;
     postage?: number;
-    segwitHdPath?: string;
+    segwitHdPath: string;
     isDry?: boolean;
     inscriptionId?: string;
 }

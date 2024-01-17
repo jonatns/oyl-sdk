@@ -568,6 +568,7 @@ export async function runCLI() {
         const orderToBeBought = bitcoin.Psbt.fromBase64(psbtBase64)
         const price = orderToBeBought.txOutputs[2].value
 
+
         const marketplace = new BuildMarketplaceTransaction({
           address: networkConfig.taprootAddress,
           price: price,
@@ -655,6 +656,7 @@ export async function runCLI() {
         console.error(error)
         return
       }
+
     // case 'view':
     //   return await viewPsbt()
     // // case 'market':
@@ -677,6 +679,7 @@ export async function runCLI() {
           nftId: offer.offerId,
           marketplace: offer.marketplace,
         }))
+
 
       console.log('Aggregated Offers')
       console.log(
