@@ -319,11 +319,19 @@ export class Oyl {
     return response
   }
 
-  async getUtxos(address: string) {
+  async getUtxos(address: string, includeInscriptions: boolean = true) {
     const utxosResponse = await this.esploraRpc.getAddressUtxo(address)
     const formattedUtxos = []
 
-    for (const utxo of utxosResponse) {
+    console.log({ utxosResponseLen: utxosResponse.length })
+    let filtered = utxosResponse
+    if (!includeInscriptions) {
+      filtered = utxosResponse.filter((utxo) => utxo.value > 546)
+    }
+
+    console.log({ filteredLen: filtered.length })
+
+    for (const utxo of filtered) {
       const transactionDetails = await this.esploraRpc.getTxInfo(utxo.txid)
 
       const voutEntry = transactionDetails.vout.find(
@@ -477,11 +485,11 @@ export class Oyl {
    * @returns A promise that resolves to the UTXO artifacts.
    */
   async getUtxosArtifacts({ address }) {
-    const utxos = await this.getUtxos(address)
+    const { unspent_outputs } = await this.getUtxos(address, false)
     const inscriptions = await this.getInscriptions({ address })
     const utxoArtifacts = await transactions.getMetaUtxos(
       address,
-      utxos.unspent_outputs,
+      unspent_outputs,
       inscriptions
     )
     return utxoArtifacts
@@ -541,6 +549,12 @@ export class Oyl {
     const taprootUtxos = await this.getUtxosArtifacts({
       address: from,
     })
+
+    console.log('IN HEREE', from)
+    console.log('IN HEREE')
+    console.log('IN HEREE')
+    console.log('IN HEREE')
+
     let segwitUtxos: any[] | undefined
     if (segwitAddress) {
       segwitUtxos = await this.getUtxosArtifacts({

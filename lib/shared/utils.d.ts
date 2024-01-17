@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import * as bitcoin from 'bitcoinjs-lib';
-import { UnspentOutput, TxInput, IBlockchainInfoUTXO, Network, BitcoinPaymentType, ToSignInput } from '../shared/interface';
+import { BitcoinPaymentType, IBlockchainInfoUTXO, Network, ToSignInput, TxInput, UnspentOutput } from '../shared/interface';
 import { Utxo } from '../txbuilder/buildOrdTx';
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew';
 export interface IBISWalletIx {
@@ -60,7 +60,7 @@ export declare const formatOptionsToSignInputs: ({ _psbt, pubkey, segwitPubkey, 
 }) => Promise<ToSignInput[]>;
 export declare const timeout: (n: any) => Promise<unknown>;
 export declare const signInputs: (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], taprootPubkey: string, segwitPubKey: string, segwitSigner: any, taprootSigner: any) => Promise<bitcoin.Psbt>;
-export declare const inscribe: ({ content, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, network, segwitUtxos, taprootUtxos, taprootPrivateKey, }: {
+export declare const inscribe: ({ content, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, feeRate, network, segwitUtxos, taprootUtxos, taprootPrivateKey, }: {
     content: string;
     inputAddress: string;
     outputAddress: string;
@@ -74,7 +74,7 @@ export declare const inscribe: ({ content, inputAddress, outputAddress, mnemonic
     segwitSigner: any;
     payFeesWithSegwit?: boolean;
     network: 'testnet' | 'main' | 'regtest';
-    segwitUtxos: Utxo[];
+    segwitUtxos?: Utxo[];
     taprootUtxos: Utxo[];
     taprootPrivateKey: string;
 }) => Promise<{

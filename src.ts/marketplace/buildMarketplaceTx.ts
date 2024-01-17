@@ -32,6 +32,7 @@ export class BuildMarketplaceTransaction {
     })
     const addressType = getAddressType(this.walletAddress)
     if (addressType == AddressType.P2TR) {
+      console.log('taker script', p2tr.output?.toString('hex'))
       this.takerScript = p2tr.output?.toString('hex')
     } else {
       throw Error('Can only get script for taproot addresses')
@@ -42,56 +43,69 @@ export class BuildMarketplaceTransaction {
     amountNeeded: number,
     inscriptionLocs?: string[]
   ) {
-    console.log(
-      '=========== Getting Unspents for address in order by value ========'
-    )
-    const unspentsOrderedByValue =
-      await this.getUnspentsForAddressInOrderByValue()
-    console.log('unspentsOrderedByValue:', unspentsOrderedByValue)
-    console.log(
-      '=========== Getting Collectibles for address ' +
-        this.walletAddress +
-        '========'
-    )
-    const retrievedIxs = (
-      await this.api.getCollectiblesByAddress(this.walletAddress)
-    ).data
-    console.log('=========== Collectibles:', retrievedIxs)
-    console.log('=========== Gotten Collectibles, splitting utxos ========')
-    const bisInscriptionLocs = retrievedIxs.map(
-      (utxo) => utxo.satpoint
-    ) as string[]
+    try {
+      console.log(
+        '=========== Getting Unspents for address in order by value ========'
+      )
+      const unspentsOrderedByValue =
+        await this.getUnspentsForAddressInOrderByValue()
+      console.log('unspentsOrderedByValue len:', unspentsOrderedByValue.length)
+      console.log(
+        '=========== Getting Collectibles for address ' +
+          this.walletAddress +
+          '========'
+      )
+      const retrievedIxs = (
+        await this.api.getCollectiblesByAddress(this.walletAddress)
+      ).data
+      console.log('=========== Collectibles:', retrievedIxs.length)
+      console.log('=========== Gotten Collectibles, splitting utxos ========')
+      const bisInscriptionLocs = retrievedIxs.map(
+        (utxo) => utxo.satpoint
+      ) as string[]
 
-    if (bisInscriptionLocs.length === 0) {
-      inscriptionLocs = []
-    } else {
-      inscriptionLocs = bisInscriptionLocs
-    }
-
-    let sum = 0
-    const result: any = []
-    console.log('=========== Available inscription utxos: ', inscriptionLocs)
-    for await (let utxo of unspentsOrderedByValue) {
-      const currentUTXO = utxo
-      const utxoSatpoint = getSatpointFromUtxo(currentUTXO)
-      if (
-        (inscriptionLocs &&
-          inscriptionLocs?.find((utxoLoc: any) => utxoLoc === utxoSatpoint)) ||
-        currentUTXO.value <= 546
-      ) {
-        continue
+      if (bisInscriptionLocs.length === 0) {
+        inscriptionLocs = []
+      } else {
+        inscriptionLocs = bisInscriptionLocs
       }
-      sum += currentUTXO.value
-      result.push(currentUTXO)
-      console.log('sum', sum)
-      console.log('amount needed', amountNeeded)
-      if (sum > amountNeeded) {
-        console.log('AMOUNT RETRIEVED: ', sum)
-        return result
-      }
-    }
 
-    return []
+      let sum = 0
+      const result: any = []
+      console.log('=========== Available inscription utxos: ', inscriptionLocs)
+      for await (let utxo of unspentsOrderedByValue) {
+        console.log('HERE')
+        console.log('HERE')
+        console.log('HERE')
+        console.log('HERE')
+        console.log('HERE')
+        const currentUTXO = utxo
+        const utxoSatpoint = getSatpointFromUtxo(currentUTXO)
+        if (
+          (inscriptionLocs &&
+            inscriptionLocs?.find(
+              (utxoLoc: any) => utxoLoc === utxoSatpoint
+            )) ||
+          currentUTXO.value <= 546
+        ) {
+          console.log('continuing')
+          continue
+        }
+        console.log('here')
+        sum += currentUTXO.value
+        result.push(currentUTXO)
+        console.log('sum', sum)
+        console.log('amount needed', amountNeeded)
+        if (sum > amountNeeded) {
+          console.log('AMOUNT RETRIEVED: ', sum)
+          return result
+        }
+      }
+
+      return []
+    } catch (e: any) {
+      throw new Error(e)
+    }
   }
 
   async isWalletPrepared() {
@@ -206,8 +220,9 @@ export class BuildMarketplaceTransaction {
         value: makerInputData?.witnessUtxo?.value,
         script: makerInputData?.witnessUtxo?.script as Buffer,
       },
-      tapInternalKey: makerInputData.tapInternalKey,
-      tapKeySig: makerInputData.tapKeySig,
+      // tapInternalKey: makerInputData.tapInternalKey,
+      // tapKeySig: makerInputData.tapKeySig,
+      finalScriptWitness: makerInputData.finalScriptWitness,
       sighashType:
         bitcoin.Transaction.SIGHASH_SINGLE |
         bitcoin.Transaction.SIGHASH_ANYONECANPAY,
@@ -358,7 +373,7 @@ export class BuildMarketplaceTransaction {
 
   async getAllUTXOsWorthASpecificValue(value: number) {
     const unspents = await this.getUnspentsForAddress()
-    console.log('=========== Confirmed/Unconfirmed Utxos', unspents)
+    console.log('=========== Confirmed/Unconfirmed Utxos Len', unspents.length)
     return unspents.filter((utxo) => utxo.value === value)
   }
 
@@ -376,12 +391,7 @@ export class BuildMarketplaceTransaction {
         ' ============'
       return await this.esplora
         .getAddressUtxo(this.walletAddress)
-        .then((unspents) =>
-          unspents?.filter(
-            (utxo) =>
-              utxo.status.confirmed == true || utxo.status.confirmed == false
-          )
-        )
+        .then((unspents) => unspents?.filter((utxo) => utxo.value > 546))
     } catch (e: any) {
       throw new Error(e)
     }
@@ -389,7 +399,7 @@ export class BuildMarketplaceTransaction {
 
   async getUnspentsForAddressInOrderByValue() {
     const unspents = await this.getUnspentsForAddress()
-    console.log('=========== Confirmed Utxos', unspents)
+    console.log('=========== Confirmed Utxos len', unspents.length)
     return unspents.sort((a, b) => b.value - a.value)
   }
 
@@ -397,10 +407,11 @@ export class BuildMarketplaceTransaction {
     const swapTx = await this.sandshrew.bitcoindRpc.decodePSBT(this.psbtBase64)
     const outputs = swapTx.tx.vout
     console.log('outputs', outputs)
-    for (var i = 0; i < outputs.length; i++) {
-      if (outputs[i].value == this.orderPrice / 100000000) {
-        this.makersAddress = outputs[i].scriptPubKey.address
-      }
-    }
+    this.makersAddress = outputs[2].scriptPubKey.address
+    // for (var i = 0; i < outputs.length; i++) {
+    //   if (outputs[i].value == this.orderPrice / 100000000) {
+    //     this.makersAddress = outputs[i].scriptPubKey.address
+    //   }
+    // }
   }
 }

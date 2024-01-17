@@ -1,32 +1,32 @@
 import * as bitcoin from 'bitcoinjs-lib'
 import ECPairFactory from 'ecpair'
 import ecc from '@bitcoinerlab/secp256k1'
-bitcoin.initEccLib(ecc)
 import {
   AddressType,
-  UnspentOutput,
-  TxInput,
+  addressTypeToName,
+  BitcoinPaymentType,
   IBlockchainInfoUTXO,
   Network,
-  BitcoinPaymentType,
   ToSignInput,
-  addressTypeToName,
+  TxInput,
+  UnspentOutput,
 } from '../shared/interface'
 import BigNumber from 'bignumber.js'
 import { maximumScriptBytes } from './constants'
 import axios from 'axios'
 import { getAddressType } from '../transactions'
-import { Tap, Address, Tx, Signer } from '@cmdcode/tapscript'
+import { Address, Signer, Tap, Tx } from '@cmdcode/tapscript'
 import * as ecc2 from '@cmdcode/crypto-utils'
 import {
-  Utxo,
   addInscriptionUtxo,
-  findUtxosForFees,
-  getUtxosForFees,
   findUtxosToCoverAmount,
+  getUtxosForFees,
+  Utxo,
 } from '../txbuilder/buildOrdTx'
-import { isTaprootInput, toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
+import { isTaprootInput } from 'bitcoinjs-lib/src/psbt/bip371'
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew'
+
+bitcoin.initEccLib(ecc)
 
 export interface IBISWalletIx {
   validity: any
@@ -288,7 +288,6 @@ export const formatOptionsToSignInputs = async ({
   network: bitcoin.Network
 }) => {
   let toSignInputs: ToSignInput[] = []
-  const psbtNetwork = network
   try {
     let index = 0
     for await (const v of _psbt.data.inputs) {
@@ -306,11 +305,18 @@ export const formatOptionsToSignInputs = async ({
         value = output.value
       }
 
+      console.log({ isSigned, lostInternalPubkey, pubkey, value })
+
       if (!isSigned || lostInternalPubkey) {
         const tapInternalKey = assertHex(Buffer.from(pubkey, 'hex'))
         const p2tr = bitcoin.payments.p2tr({
           internalPubkey: tapInternalKey,
-          network: psbtNetwork,
+          network: network,
+        })
+        console.log({
+          thing:
+            v.witnessUtxo?.script.toString('hex') ==
+            p2tr.output?.toString('hex'),
         })
         if (
           v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
@@ -358,8 +364,10 @@ export const signInputs = async (
     const taprootInputs: ToSignInput[] = []
     const segwitInputs: ToSignInput[] = []
     console.log({ toSignInputs })
-    toSignInputs.forEach(({ publicKey }, i) => {
-      if (publicKey === taprootPubkey) {
+    const inputs = psbt.data.inputs
+    toSignInputs.forEach(({ publicKey, sighashTypes }, i) => {
+      const input = inputs[i]
+      if (publicKey === taprootPubkey && !input.finalScriptWitness) {
         taprootInputs.push(toSignInputs[i])
       }
       if (segwitPubKey && segwitSigner) {
@@ -392,7 +400,6 @@ export const inscribe = async ({
   isDry,
   segwitSigner,
   taprootSigner,
-  payFeesWithSegwit = true,
   feeRate,
   network,
   segwitUtxos,
@@ -412,11 +419,12 @@ export const inscribe = async ({
   segwitSigner: any
   payFeesWithSegwit?: boolean
   network: 'testnet' | 'main' | 'regtest'
-  segwitUtxos: Utxo[]
+  segwitUtxos?: Utxo[]
   taprootUtxos: Utxo[]
   taprootPrivateKey: string
 }) => {
   try {
+    console.log({ feeRate })
     const commitTxSize = calculateTaprootTxSize(3, 0, 2)
     const feeForCommit =
       commitTxSize * feeRate < 150 ? 200 : commitTxSize * feeRate
@@ -424,15 +432,19 @@ export const inscribe = async ({
     const revealTxSize = calculateTaprootTxSize(1, 0, 1)
     const feeForReveal = revealTxSize * feeRate + 546 + 151
 
-    const sendTxSize = calculateTaprootTxSize(3, 0, 2)
-    const feeForSend = sendTxSize * feeRate
+    console.log({ feeForCommit })
+    console.log({ feeForReveal })
 
-    const amountNeededForBrc20Send = feeForCommit + feeForReveal + feeForSend
+    const amountNeededForBrc20Send = Number(feeForCommit) + Number(feeForReveal)
+
+    console.log({ amountNeededForBrc20Send })
 
     const utxosToSend = findUtxosToCoverAmount(
       taprootUtxos,
       amountNeededForBrc20Send
     )
+
+    console.log({ utxosToSend })
 
     if (
       !utxosToSend ||
@@ -536,9 +548,6 @@ export const inscribe = async ({
       return { error: 'ERROR GETTING FIRST INPUT VALUE' }
     }
 
-    const [commitReceiptValue, commitReceiptPubkey] =
-      await getOutputValueByVOutIndex(commitTxId, 1, network)
-
     const txData = Tx.create({
       vin: [
         {
@@ -565,14 +574,14 @@ export const inscribe = async ({
     txData.vin[0].witness = [sig, script, cblock]
 
     if (!isDry) {
-      const { result: transferInscriptionTxId, error: transferInscribeError } =
+      const { result: inscriptionTxId, error: inscriptionError } =
         await callBTCRPCEndpoint(
           'sendrawtransaction',
           Tx.encode(txData).hex,
           network
         )
 
-      return { txnId: transferInscriptionTxId, error: transferInscribeError }
+      return { txnId: inscriptionTxId, error: inscriptionError }
     } else {
       return {
         commitRawTxn: commitTxHex,
@@ -753,6 +762,8 @@ export function calculateTaprootTxSize(
     taprootInputCount * taprootInputSize +
     nonTaprootInputCount * nonTaprootInputSize
   const totalOutputSize = outputCount * outputSize
+
+  console.log({ baseTxSize })
 
   // Total transaction size
   return baseTxSize + totalInputSize + totalOutputSize

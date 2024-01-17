@@ -115,7 +115,7 @@ export declare class Oyl {
         amount: any;
         usd_value: string;
     }>;
-    getUtxos(address: string): Promise<{
+    getUtxos(address: string, includeInscriptions?: boolean): Promise<{
         unspent_outputs: any[];
     }>;
     /**
