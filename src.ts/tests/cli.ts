@@ -505,7 +505,7 @@ export async function runCLI() {
           price: Number(price),
         }
 
-        const OMNISAT_API_URL = 'http://localhost:3000/api'
+        const OMNISAT_API_URL = 'https://omnisat.io/api'
 
         const { psbtBase64, psbtHex } = await axios
           .post(`${OMNISAT_API_URL}/orders/create`, body, {
