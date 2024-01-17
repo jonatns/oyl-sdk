@@ -439,6 +439,7 @@ export const inscribe = async ({
       taprootAddress: inputAddress,
       segwitPubKey: segwitPublicKey,
       network: getNetwork(network),
+      fromAddress: inputAddress,
     })
 
     const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
@@ -819,7 +820,7 @@ export const sendCollectible = async ({
   isDry,
   segwitSigner,
   taprootSigner,
-  payFeesWithSegwit = true,
+  payFeesWithSegwit,
   feeRate,
   network,
   taprootUtxos,
@@ -867,6 +868,7 @@ export const sendCollectible = async ({
     segwitPubKey: segwitPublicKey,
     utxosToSend: utxosToSend,
     network: getNetwork(network),
+    fromAddress: inputAddress,
   })
 
   const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
@@ -1073,7 +1075,7 @@ export const createBtcTx = async ({
   isDry,
   segwitSigner,
   taprootSigner,
-  payFeesWithSegwit = true,
+  payFeesWithSegwit,
   feeRate,
   amount,
   network,
@@ -1130,6 +1132,7 @@ export const createBtcTx = async ({
       taprootAddress: inputAddress,
       segwitPubKey: segwitPublicKey,
       network,
+      fromAddress: inputAddress,
     })
 
     const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({

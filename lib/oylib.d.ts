@@ -170,7 +170,7 @@ export declare class Oyl {
         segwitAddress?: string;
         segwitPubkey?: string;
         segwitHdPath: string;
-        payFeesWithSegwit?: boolean;
+        payFeesWithSegwit: boolean;
     }): Promise<{
         txnId: string;
         rawTxn: string;
