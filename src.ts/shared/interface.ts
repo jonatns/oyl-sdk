@@ -211,8 +211,8 @@ export interface InscribeTransfer {
   fromAddress: string
   taprootPublicKey: string
   destinationAddress: string
-  segwitPubKey: string
-  segwitAddress: string
+  segwitPubKey?: string
+  segwitAddress?: string
   payFeesWithSegwit: boolean
   feeRate?: number
   token?: string
