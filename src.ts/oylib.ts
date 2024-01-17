@@ -1037,7 +1037,6 @@ export class Oyl {
     }
   }
 
-
   async sendOrdCollectible({
     mnemonic,
     fromAddress,
@@ -1062,12 +1061,9 @@ export class Oyl {
     inscriptionId: string
   }) {
     // await isDryDisclaimer(isDry)
-    if (
-      options.payFeesWithSegwit &&
-      (!options.segwitAddress || !options.segwitPubKey)
-    ) {
+    if (payFeesWithSegwit && (!segwitAddress || !segwitPubKey)) {
       throw new Error('Invalid segwit information entered')
-    }    
+    }
     const hdPaths = customPaths[segwitHdPath]
     try {
       const taprootUtxos: any[] = await this.getUtxosArtifacts({

@@ -1160,7 +1160,6 @@ export const createBtcTx = async ({
       fromAddress: inputAddress,
       feeRate,
       network,
-      fromAddress: inputAddress,
     })
 
     const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
