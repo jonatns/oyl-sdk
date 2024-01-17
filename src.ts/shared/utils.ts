@@ -76,7 +76,9 @@ function tapTweakHash(pubKey: Buffer, h: Buffer | undefined): Buffer {
   )
 }
 
-export function getNetwork(value: Network | 'main') {
+export function getNetwork(
+  value: Network | 'main' | 'mainnet' | 'regtest' | 'testnet'
+) {
   if (value === 'mainnet' || value === 'main') {
     return bitcoin.networks['bitcoin']
   }
@@ -303,7 +305,8 @@ export const formatOptionsToSignInputs = async ({
         script = output.script
         value = output.value
       }
-      if (!isSigned && lostInternalPubkey) {
+
+      if (!isSigned || lostInternalPubkey) {
         const tapInternalKey = assertHex(Buffer.from(pubkey, 'hex'))
         const p2tr = bitcoin.payments.p2tr({
           internalPubkey: tapInternalKey,
@@ -313,13 +316,13 @@ export const formatOptionsToSignInputs = async ({
           v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
         ) {
           v.tapInternalKey = tapInternalKey
-        }
-        if (v.tapInternalKey) {
-          toSignInputs.push({
-            index: index,
-            publicKey: pubkey,
-            sighashTypes: v.sighashType ? [v.sighashType] : undefined,
-          })
+          if (v.tapInternalKey) {
+            toSignInputs.push({
+              index: index,
+              publicKey: pubkey,
+              sighashTypes: v.sighashType ? [v.sighashType] : undefined,
+            })
+          }
         }
       }
 
@@ -354,16 +357,18 @@ export const signInputs = async (
   try {
     const taprootInputs: ToSignInput[] = []
     const segwitInputs: ToSignInput[] = []
-    toSignInputs.forEach(({ index, publicKey }) => {
+    console.log({ toSignInputs })
+    toSignInputs.forEach(({ publicKey }, i) => {
       if (publicKey === taprootPubkey) {
-        taprootInputs.push(toSignInputs[index])
+        taprootInputs.push(toSignInputs[i])
       }
       if (segwitPubKey && segwitSigner) {
         if (publicKey === segwitPubKey) {
-          segwitInputs.push(toSignInputs[index])
+          segwitInputs.push(toSignInputs[i])
         }
       }
     })
+    console.log({ taprootInputs })
     if (taprootInputs.length > 0) {
       await taprootSigner(psbt, taprootInputs)
     }

@@ -154,7 +154,7 @@ export const callBTCRPCEndpoint = async (
 // Define an interface to represent the expected structure of the arguments.
 interface YargsArguments {
   _: string[]
-  network?: string
+  network?: 'mainnet' | 'testnet' | 'regtest'
   to?: string
   ticker?: string
   amount?: number
@@ -411,15 +411,38 @@ export async function runCLI() {
 
       const { psbtHex: buildOrderHex, psbtBase64: builtOrderBase64 } =
         await marketplace.psbtBuilder()
-      console.log({ buildOrderHex })
-      console.log({ builtOrderBase64 })
+      const filledOrderPsbt = bitcoin.Psbt.fromBase64(builtOrderBase64)
 
-      const orderFilledPsbt = bitcoin.Psbt.fromBase64(psbtBase64)
+      const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
+        _psbt: filledOrderPsbt,
+        pubkey: networkConfig.taprootPubkey,
+        segwitPubkey: networkConfig.segwitPubKey,
+        segwitAddress: networkConfig.segwitAddress,
+        taprootAddress: networkConfig.fromAddress,
+        network: getNetwork(network),
+      })
 
-      orderFilledPsbt.finalizeAllInputs()
+      console.log({ len: toSignInputs.length })
 
-      const extractedTx = orderFilledPsbt.extractTransaction().toHex()
+      let segwitSigner: bitcoin.Signer
+      const taprootSigner = await tapWallet.createTaprootSigner({
+        mnemonic: networkConfig.mnemonic,
+        taprootAddress: networkConfig.taprootAddress,
+      })
 
+      const signedSendPsbt = await signInputs(
+        filledOrderPsbt,
+        toSignInputs,
+        networkConfig.taprootPubkey,
+        networkConfig.segwitPubKey,
+        segwitSigner,
+        taprootSigner
+      )
+
+      console.log({ signedSendPsbt: signedSendPsbt.toBase64() })
+
+      signedSendPsbt.finalizeAllInputs()
+      const extractedTx = signedSendPsbt.extractTransaction().toHex()
       console.log({ extractedTx })
 
       return extractedTx

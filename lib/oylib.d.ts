@@ -274,7 +274,7 @@ export declare class Oyl {
     createTaprootSigner({ mnemonic, taprootAddress, hdPathWithIndex, }: {
         mnemonic: string;
         taprootAddress: string;
-        hdPathWithIndex: string;
+        hdPathWithIndex?: string;
     }): Promise<any>;
     createSigner({ mnemonic, fromAddress, hdPathWithIndex, }: {
         mnemonic: string;

@@ -796,11 +796,11 @@ export class Oyl {
   async createTaprootSigner({
     mnemonic,
     taprootAddress,
-    hdPathWithIndex,
+    hdPathWithIndex = customPaths['oyl']['taprootPath'],
   }: {
     mnemonic: string
     taprootAddress: string
-    hdPathWithIndex: string
+    hdPathWithIndex?: string
   }) {
     const addressType = transactions.getAddressType(taprootAddress)
     if (addressType == null) {
