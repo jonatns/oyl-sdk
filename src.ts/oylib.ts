@@ -416,12 +416,13 @@ export class Oyl {
   async getInscriptions({ address }) {
     const collectibles = []
     const brc20 = []
-    const allOrdinals: [] = (
+    const allOrdinals: any[] = (
       await this.apiClient.getAllInscriptionsByAddress(address)
     ).data
 
     const allCollectibles: any[] = allOrdinals.filter(
-      (ordinal: any) => ordinal.mime_type === 'image/png'
+      (ordinal: any) =>
+        ordinal.mime_type === 'image/png' || ordinal.mime_type.includes('html')
     )
 
     const allBrc20s: any[] = allOrdinals.filter(
@@ -449,21 +450,21 @@ export class Oyl {
     for (const artifact of allBrc20s) {
       const { inscription_id, inscription_number, satpoint } = artifact
       const content = await this.ordRpc.getInscriptionContent(inscription_id)
+      if (JSON.parse(atob(content)).p === 'brc-20') {
+        const detail = {
+          id: inscription_id,
+          address: artifact.owner_wallet_addr,
+          content: content,
+          location: satpoint,
+        }
 
-      const detail = {
-        id: inscription_id,
-        address: artifact.owner_wallet_addr,
-        content: content,
-        location: satpoint,
+        brc20.push({
+          id: inscription_id,
+          inscription_number,
+          detail,
+        })
       }
-
-      brc20.push({
-        id: inscription_id,
-        inscription_number,
-        detail,
-      })
     }
-
     return { collectibles, brc20 }
   }
 
@@ -862,6 +863,7 @@ export class Oyl {
       const taprootUtxos = await this.getUtxosArtifacts({
         address: options.fromAddress,
       })
+
       let segwitUtxos: any[] | undefined
       if (options.segwitAddress) {
         segwitUtxos = await this.getUtxosArtifacts({
