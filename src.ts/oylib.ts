@@ -8,6 +8,7 @@ import {
   sendCollectible,
   createBtcTx,
   getNetwork,
+  isValidJSON,
 } from './shared/utils'
 import { SandshrewBitcoinClient } from './rpclient/sandshrew'
 import { EsploraRpc } from './rpclient/esplora'
@@ -450,7 +451,9 @@ export class Oyl {
     for (const artifact of allBrc20s) {
       const { inscription_id, inscription_number, satpoint } = artifact
       const content = await this.ordRpc.getInscriptionContent(inscription_id)
-      if (JSON.parse(atob(content)).p === 'brc-20') {
+      const decodedContent = atob(content)
+
+      if (isValidJSON(decodedContent) && JSON.parse(decodedContent)) {
         const detail = {
           id: inscription_id,
           address: artifact.owner_wallet_addr,

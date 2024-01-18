@@ -283,7 +283,11 @@ export declare class Oyl {
     }): Promise<any>;
     sendBRC20(options: InscribeTransfer): Promise<unknown>;
     sendOrdCollectible(options: InscribeTransfer): Promise<{
-        txId: string;
+        txId: string; /**
+         * Retrieves a specific inscribed collectible by its ID.
+         * @param {string} inscriptionId - The ID of the collectible to retrieve.
+         * @returns {Promise<any>} A promise that resolves to the collectible data.
+         */
         rawTx: string;
     }>;
 }

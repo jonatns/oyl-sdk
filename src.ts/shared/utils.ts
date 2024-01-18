@@ -1065,6 +1065,15 @@ const addBTCUtxo = async ({
   return utxosTosend
 }
 
+export const isValidJSON = (str: string) => {
+  try {
+    JSON.parse(str)
+    return true
+  } catch (e) {
+    return false
+  }
+}
+
 export const createBtcTx = async ({
   inputAddress,
   outputAddress,
