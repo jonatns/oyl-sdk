@@ -392,6 +392,7 @@ export async function runCLI() {
   })
 
   // const wallet = generateWallet(true, networkConfig.mnemonic)
+  // return
 
   const { mnemonic, to, amount, feeRate, isDry, ticker, psbtBase64, price } =
     options

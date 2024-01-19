@@ -323,7 +323,6 @@ export class Oyl {
     const utxosResponse = await this.esploraRpc.getAddressUtxo(address)
     const formattedUtxos = []
 
-    console.log({ utxosResponseLen: utxosResponse.length })
     let filtered = utxosResponse
     if (!includeInscriptions) {
       filtered = utxosResponse.filter((utxo) => utxo.value > 546)
@@ -559,11 +558,6 @@ export class Oyl {
     const taprootUtxos = await this.getUtxosArtifacts({
       address: from,
     })
-
-    console.log('IN HEREE', from)
-    console.log('IN HEREE')
-    console.log('IN HEREE')
-    console.log('IN HEREE')
 
     let segwitUtxos: any[] | undefined
     if (segwitAddress) {
