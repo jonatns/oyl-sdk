@@ -391,8 +391,8 @@ export async function runCLI() {
     taprootAddress: networkConfig.taprootAddress,
   })
 
-  const wallet = generateWallet(true, networkConfig.mnemonic)
-  return
+  // const wallet = generateWallet(true, networkConfig.mnemonic)
+  // return
 
   const { mnemonic, to, amount, feeRate, isDry, ticker, psbtBase64, price } =
     options
