@@ -434,9 +434,7 @@ export const inscribe = async ({
 
     console.log({ feeForCommit })
     console.log({ feeForReveal })
-
     const amountNeededForBrc20Send = Number(feeForCommit) + Number(feeForReveal)
-
     console.log({ amountNeededForBrc20Send })
 
     const utxosToSend = findUtxosToCoverAmount(

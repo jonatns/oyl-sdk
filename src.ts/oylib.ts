@@ -445,6 +445,7 @@ export class Oyl {
       (ordinal: any) => ordinal.mime_type === 'text/plain;charset=utf-8'
     )
 
+
     for (const artifact of allCollectibles) {
       const { inscription_id, inscription_number, satpoint } = artifact
       const content = await this.ordRpc.getInscriptionContent(inscription_id)
