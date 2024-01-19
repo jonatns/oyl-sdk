@@ -8,6 +8,7 @@ import {
   sendCollectible,
   createBtcTx,
   getNetwork,
+  isValidJSON,
   waitForTransaction,
   formatOptionsToSignInputs,
   signInputs,
@@ -431,13 +432,19 @@ export class Oyl {
   async getInscriptions({ address }) {
     const collectibles = []
     const brc20 = []
-    const allCollectibles = (
-      await this.apiClient.getCollectiblesByAddress(address)
+    const allOrdinals: any[] = (
+      await this.apiClient.getAllInscriptionsByAddress(address)
     ).data
 
-    // const allBrc20s = (
-    //   await this.apiClient.getAllInscriptionsByAddress(address)
-    // ).data
+    const allCollectibles: any[] = allOrdinals.filter(
+      (ordinal: any) =>
+        ordinal.mime_type === 'image/png' || ordinal.mime_type.includes('html')
+    )
+
+    const allBrc20s: any[] = allOrdinals.filter(
+      (ordinal: any) => ordinal.mime_type === 'text/plain;charset=utf-8'
+    )
+
 
     for (const artifact of allCollectibles) {
       const { inscription_id, inscription_number, satpoint } = artifact
@@ -457,24 +464,26 @@ export class Oyl {
       })
     }
 
-    // for (const artifact of allBrc20s) {
-    //   const { inscription_id, inscription_number, satpoint } = artifact
-    //   const content = await this.ordRpc.getInscriptionContent(inscription_id)
+    for (const artifact of allBrc20s) {
+      const { inscription_id, inscription_number, satpoint } = artifact
+      const content = await this.ordRpc.getInscriptionContent(inscription_id)
+      const decodedContent = atob(content)
 
-    //   const detail = {
-    //     id: inscription_id,
-    //     address: artifact.owner_wallet_addr,
-    //     content: content,
-    //     location: satpoint,
-    //   }
+      if (isValidJSON(decodedContent) && JSON.parse(decodedContent)) {
+        const detail = {
+          id: inscription_id,
+          address: artifact.owner_wallet_addr,
+          content: content,
+          location: satpoint,
+        }
 
-    //   brc20.push({
-    //     id: inscription_id,
-    //     inscription_number,
-    //     detail,
-    //   })
-    //}
-
+        brc20.push({
+          id: inscription_id,
+          inscription_number,
+          detail,
+        })
+      }
+    }
     return { collectibles, brc20 }
   }
 

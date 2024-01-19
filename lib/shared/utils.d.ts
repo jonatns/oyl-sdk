@@ -135,6 +135,7 @@ export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddr
 export declare const filterTaprootUtxos: ({ taprootUtxos, }: {
     taprootUtxos: any[];
 }) => Promise<any>;
+export declare const isValidJSON: (str: string) => boolean;
 export declare const createBtcTx: ({ inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, amount, network, segwitUtxos, taprootUtxos, }: {
     inputAddress: string;
     outputAddress: string;

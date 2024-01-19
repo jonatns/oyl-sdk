@@ -434,9 +434,7 @@ export const inscribe = async ({
 
     console.log({ feeForCommit })
     console.log({ feeForReveal })
-
     const amountNeededForBrc20Send = Number(feeForCommit) + Number(feeForReveal)
-
     console.log({ amountNeededForBrc20Send })
 
     const utxosToSend = findUtxosToCoverAmount(
@@ -1106,6 +1104,15 @@ const addBTCUtxo = async ({
   }
 
   return utxosToSend
+}
+
+export const isValidJSON = (str: string) => {
+  try {
+    JSON.parse(str)
+    return true
+  } catch (e) {
+    return false
+  }
 }
 
 export const createBtcTx = async ({
