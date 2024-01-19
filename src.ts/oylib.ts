@@ -12,7 +12,6 @@ import {
   waitForTransaction,
   formatOptionsToSignInputs,
   signInputs,
-  callBTCRPCEndpoint,
   calculateTaprootTxSize,
   calculateAmountGatheredUtxo,
 } from './shared/utils'
@@ -444,7 +443,6 @@ export class Oyl {
     const allBrc20s: any[] = allOrdinals.filter(
       (ordinal: any) => ordinal.mime_type === 'text/plain;charset=utf-8'
     )
-
 
     for (const artifact of allCollectibles) {
       const { inscription_id, inscription_number, satpoint } = artifact
@@ -934,7 +932,7 @@ export class Oyl {
 
       const content = `{"p":"brc-20","op":"transfer","tick":"${options.token}","amt":"${options.amount}"}`
 
-      const { txnId, error: inscribeError } = await inscribe({
+      const { txId, error: inscribeError } = await inscribe({
         content,
         inputAddress: options.fromAddress,
         outputAddress: options.destinationAddress,
@@ -954,13 +952,18 @@ export class Oyl {
           taprootPrivateKey.keyring.keyring._index2wallet[0][1].privateKey.toString(
             'hex'
           ),
+        sandshrewBtcClient: this.sandshrewBtcClient,
+        esploraRpc: this.esploraRpc,
       })
 
       if (inscribeError) {
         return { error: inscribeError }
       }
 
-      const txResult = await waitForTransaction(txnId, this.currentNetwork)
+      const txResult = await waitForTransaction({
+        txId,
+        sandshrewBtcClient: this.sandshrewBtcClient,
+      })
       if (!txResult) {
         return { error: 'ERROR WAITING FOR COMMIT TX' }
       }
@@ -981,7 +984,7 @@ export class Oyl {
         network: getNetwork(this.currentNetwork),
       })
       sendPsbt.addInput({
-        hash: txnId,
+        hash: txId,
         index: 0,
         witnessUtxo: {
           script: Buffer.from(
@@ -1029,20 +1032,23 @@ export class Oyl {
         taprootSigner
       )
       signedSendPsbt.finalizeAllInputs()
+
       const sendTxHex = signedSendPsbt.extractTransaction().toHex()
-      const { result: transferSendTxId } = await callBTCRPCEndpoint(
-        'sendrawtransaction',
-        sendTxHex,
-        this.currentNetwork
-      )
-      return { txnId: transferSendTxId, rawTxn: sendTxHex }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        console.error(err)
-        return Error(`Things exploded (${err.message})`)
+      const sendTxId = signedSendPsbt.extractTransaction().getId()
+
+      const [result] =
+        await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([sendTxHex])
+
+      if (!result.allowed) {
+        throw new Error(result['reject-reason'])
       }
+
+      await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(sendTxHex)
+
+      return { txId: sendTxId, rawTxn: sendTxHex }
+    } catch (err) {
       console.error(err)
-      return err
+      throw err
     }
   }
 
@@ -1069,12 +1075,13 @@ export class Oyl {
     segwitHdPath?: string
     inscriptionId: string
   }) {
-    // await isDryDisclaimer(isDry)
-    if (payFeesWithSegwit && (!segwitAddress || !segwitPubKey)) {
-      throw new Error('Invalid segwit information entered')
-    }
-    const hdPaths = customPaths[segwitHdPath]
     try {
+      // await isDryDisclaimer(isDry)
+      if (payFeesWithSegwit && (!segwitAddress || !segwitPubKey)) {
+        throw new Error('Invalid segwit information entered')
+      }
+      const hdPaths = customPaths[segwitHdPath]
+
       const taprootUtxos: any[] = await this.getUtxosArtifacts({
         address: fromAddress,
       })
@@ -1134,10 +1141,11 @@ export class Oyl {
         taprootUtxos: taprootUtxos,
         segwitUtxos: segwitUtxos,
         metaOutputValue: metaOutputValue,
-        sandshrew: this.sandshrewBtcClient,
+        sandshrewBtcClient: this.sandshrewBtcClient,
       })
-    } catch (error) {
-      console.log(error)
+    } catch (err) {
+      console.error(err)
+      throw err
     }
   }
 }
