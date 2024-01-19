@@ -1,6 +1,6 @@
 import { UTXO_DUST, defaultNetworkOptions } from './shared/constants'
 
-import { OGPSBTTransaction } from './txbuilder'
+import { findUtxosToCoverAmount, OGPSBTTransaction } from './txbuilder'
 
 import {
   delay,
@@ -9,6 +9,12 @@ import {
   createBtcTx,
   getNetwork,
   isValidJSON,
+  waitForTransaction,
+  formatOptionsToSignInputs,
+  signInputs,
+  callBTCRPCEndpoint,
+  calculateTaprootTxSize,
+  calculateAmountGatheredUtxo,
 } from './shared/utils'
 import { SandshrewBitcoinClient } from './rpclient/sandshrew'
 import { EsploraRpc } from './rpclient/esplora'
@@ -23,6 +29,7 @@ import {
   Providers,
   RecoverAccountOptions,
   TickerDetails,
+  ToSignInput,
 } from './shared/interface'
 import { OylApiClient } from './apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
@@ -313,11 +320,19 @@ export class Oyl {
     return response
   }
 
-  async getUtxos(address: string) {
+  async getUtxos(address: string, includeInscriptions: boolean = true) {
     const utxosResponse = await this.esploraRpc.getAddressUtxo(address)
     const formattedUtxos = []
 
-    for (const utxo of utxosResponse) {
+    console.log({ utxosResponseLen: utxosResponse.length })
+    let filtered = utxosResponse
+    if (!includeInscriptions) {
+      filtered = utxosResponse.filter((utxo) => utxo.value > 546)
+    }
+
+    console.log({ filteredLen: filtered.length })
+
+    for (const utxo of filtered) {
       const transactionDetails = await this.esploraRpc.getTxInfo(utxo.txid)
 
       const voutEntry = transactionDetails.vout.find(
@@ -478,11 +493,11 @@ export class Oyl {
    * @returns A promise that resolves to the UTXO artifacts.
    */
   async getUtxosArtifacts({ address }) {
-    const utxos = await this.getUtxos(address)
+    const { unspent_outputs } = await this.getUtxos(address, false)
     const inscriptions = await this.getInscriptions({ address })
     const utxoArtifacts = await transactions.getMetaUtxos(
       address,
-      utxos.unspent_outputs,
+      unspent_outputs,
       inscriptions
     )
     return utxoArtifacts
@@ -508,7 +523,7 @@ export class Oyl {
     mnemonic,
     segwitAddress,
     segwitPubkey,
-    segwitHdPath,
+    segwitHdPath = 'oyl',
     payFeesWithSegwit = false,
   }: {
     to: string
@@ -519,8 +534,8 @@ export class Oyl {
     mnemonic: string
     segwitAddress?: string
     segwitPubkey?: string
-    segwitHdPath: string
-    payFeesWithSegwit: boolean
+    segwitHdPath?: 'oyl' | 'xverse' | 'leather' | 'unisat' | 'testnet'
+    payFeesWithSegwit?: boolean
   }) {
     if (payFeesWithSegwit && (!segwitAddress || !segwitPubkey)) {
       throw new Error('Invalid segwit information entered')
@@ -532,15 +547,25 @@ export class Oyl {
       hdPathWithIndex: hdPaths['taprootPath'],
     })
 
-    const segwitSigner = await this.createSegwitSigner({
-      mnemonic: mnemonic,
-      segwitAddress: segwitAddress,
-      hdPathWithIndex: hdPaths['segwitPath'],
-    })
+    let segwitSigner
+
+    if (segwitAddress) {
+      segwitSigner = await this.createSegwitSigner({
+        mnemonic: mnemonic,
+        segwitAddress: segwitAddress,
+        hdPathWithIndex: hdPaths['segwitPath'],
+      })
+    }
 
     const taprootUtxos = await this.getUtxosArtifacts({
       address: from,
     })
+
+    console.log('IN HEREE', from)
+    console.log('IN HEREE')
+    console.log('IN HEREE')
+    console.log('IN HEREE')
+
     let segwitUtxos: any[] | undefined
     if (segwitAddress) {
       segwitUtxos = await this.getUtxosArtifacts({
@@ -550,8 +575,6 @@ export class Oyl {
 
     if (!feeRate) {
       feeRate = (await this.esploraRpc.getFeeEstimates())['1']
-    } else {
-      feeRate = feeRate
     }
 
     const { txnId, rawTxn } = await createBtcTx({
@@ -798,11 +821,11 @@ export class Oyl {
   async createTaprootSigner({
     mnemonic,
     taprootAddress,
-    hdPathWithIndex,
+    hdPathWithIndex = customPaths['oyl']['taprootPath'],
   }: {
     mnemonic: string
     taprootAddress: string
-    hdPathWithIndex: string
+    hdPathWithIndex?: string
   }) {
     const addressType = transactions.getAddressType(taprootAddress)
     if (addressType == null) {
@@ -861,7 +884,8 @@ export class Oyl {
         throw Error('Unrecognized Address Type')
       }
 
-      const hdPaths = customPaths[options.segwitHdPath]
+      const path = options.segwitHdPath ?? 'oyl'
+      const hdPaths = customPaths[path]
 
       const taprootUtxos = await this.getUtxosArtifacts({
         address: options.fromAddress,
@@ -874,29 +898,31 @@ export class Oyl {
         })
       }
 
+      let segwitSigner, segwitPrivateKey
+
       const taprootSigner = await this.createTaprootSigner({
         mnemonic: options.mnemonic,
         taprootAddress: options.fromAddress,
         hdPathWithIndex: hdPaths['taprootPath'],
       })
-
-      const segwitSigner = await this.createSegwitSigner({
-        mnemonic: options.mnemonic,
-        segwitAddress: options.segwitAddress,
-        hdPathWithIndex: hdPaths['segwitPath'],
-      })
-
       const taprootPrivateKey = await this.fromPhrase({
         mnemonic: options.mnemonic,
         addrType: transactions.getAddressType(options.fromAddress),
         hdPath: hdPaths['taprootPath'],
       })
 
-      const segwitPrivateKey = await this.fromPhrase({
-        mnemonic: options.mnemonic,
-        addrType: transactions.getAddressType(options.segwitAddress),
-        hdPath: hdPaths['segwitPath'],
-      })
+      if (options.segwitAddress) {
+        segwitSigner = await this.createSegwitSigner({
+          mnemonic: options.mnemonic,
+          segwitAddress: options.segwitAddress,
+          hdPathWithIndex: hdPaths['segwitPath'],
+        })
+        segwitPrivateKey = await this.fromPhrase({
+          mnemonic: options.mnemonic,
+          addrType: transactions.getAddressType(options.segwitAddress),
+          hdPath: hdPaths['segwitPath'],
+        })
+      }
 
       let feeRate: number
       if (!options?.feeRate) {
@@ -905,9 +931,10 @@ export class Oyl {
         feeRate = options.feeRate
       }
 
-      return await inscribe({
-        ticker: options.token,
-        amount: options.amount,
+      const content = `{"p":"brc-20","op":"transfer","tick":"${options.token}","amt":"${options.amount}"}`
+
+      const { txnId, error: inscribeError } = await inscribe({
+        content,
         inputAddress: options.fromAddress,
         outputAddress: options.destinationAddress,
         mnemonic: options.mnemonic,
@@ -926,11 +953,88 @@ export class Oyl {
           taprootPrivateKey.keyring.keyring._index2wallet[0][1].privateKey.toString(
             'hex'
           ),
-        segwitPk:
-          segwitPrivateKey.keyring.keyring._index2wallet[0][1].privateKey.toString(
+      })
+
+      if (inscribeError) {
+        return { error: inscribeError }
+      }
+
+      const txResult = await waitForTransaction(txnId, this.currentNetwork)
+      if (!txResult) {
+        return { error: 'ERROR WAITING FOR COMMIT TX' }
+      }
+
+      const utxosForTransferSendFees = await this.getUtxosArtifacts({
+        address: options.fromAddress,
+      })
+      const sendTxSize = calculateTaprootTxSize(3, 0, 2)
+      const feeForSend = sendTxSize * feeRate < 150 ? 200 : sendTxSize * feeRate
+      const utxosToSend = findUtxosToCoverAmount(
+        utxosForTransferSendFees,
+        feeForSend
+      )
+      const amountGathered = calculateAmountGatheredUtxo(
+        utxosToSend.selectedUtxos
+      )
+      const sendPsbt = new bitcoin.Psbt({
+        network: getNetwork(this.currentNetwork),
+      })
+      sendPsbt.addInput({
+        hash: txnId,
+        index: 0,
+        witnessUtxo: {
+          script: Buffer.from(
+            utxosToSend.selectedUtxos[0].scriptPk as string,
             'hex'
           ),
+          value: 546,
+        },
       })
+      for await (const utxo of utxosToSend.selectedUtxos) {
+        sendPsbt.addInput({
+          hash: utxo.txId,
+          index: utxo.outputIndex,
+          witnessUtxo: {
+            script: Buffer.from(utxo.scriptPk, 'hex'),
+            value: utxo.satoshis,
+          },
+        })
+      }
+      sendPsbt.addOutput({
+        address: options.destinationAddress,
+        value: 546,
+      })
+      const reimbursementAmount = amountGathered - feeForSend
+      if (reimbursementAmount > 546) {
+        sendPsbt.addOutput({
+          address: options.fromAddress,
+          value: amountGathered - feeForSend,
+        })
+      }
+      const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
+        _psbt: sendPsbt,
+        pubkey: options.taprootPublicKey,
+        segwitPubkey: options.segwitPubKey,
+        segwitAddress: options.segwitAddress,
+        taprootAddress: options.fromAddress,
+        network: getNetwork(this.currentNetwork),
+      })
+      const signedSendPsbt = await signInputs(
+        sendPsbt,
+        toSignInputs,
+        options.taprootPublicKey,
+        options.segwitPubKey,
+        segwitSigner,
+        taprootSigner
+      )
+      signedSendPsbt.finalizeAllInputs()
+      const sendTxHex = signedSendPsbt.extractTransaction().toHex()
+      const { result: transferSendTxId } = await callBTCRPCEndpoint(
+        'sendrawtransaction',
+        sendTxHex,
+        this.currentNetwork
+      )
+      return { txnId: transferSendTxId, rawTxn: sendTxHex }
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error(err)
@@ -941,30 +1045,47 @@ export class Oyl {
     }
   }
 
-  async sendOrdCollectible(options: InscribeTransfer) {
-    await isDryDisclaimer(options.isDry)
-    if (
-      options.payFeesWithSegwit &&
-      (!options.segwitAddress || !options.segwitPubKey)
-    ) {
+  async sendOrdCollectible({
+    mnemonic,
+    fromAddress,
+    taprootPublicKey,
+    destinationAddress,
+    segwitPubKey,
+    segwitAddress,
+    payFeesWithSegwit,
+    feeRate,
+    inscriptionId,
+    segwitHdPath = 'oyl',
+  }: {
+    fromAddress: string
+    taprootPublicKey: string
+    destinationAddress: string
+    segwitPubKey?: string
+    segwitAddress?: string
+    payFeesWithSegwit?: boolean
+    feeRate?: number
+    mnemonic: string
+    segwitHdPath?: string
+    inscriptionId: string
+  }) {
+    // await isDryDisclaimer(isDry)
+    if (payFeesWithSegwit && (!segwitAddress || !segwitPubKey)) {
       throw new Error('Invalid segwit information entered')
     }
-    const hdPaths = customPaths[options.segwitHdPath]
+    const hdPaths = customPaths[segwitHdPath]
     try {
       const taprootUtxos: any[] = await this.getUtxosArtifacts({
-        address: options.fromAddress,
+        address: fromAddress,
       })
 
       let segwitUtxos: any[] | undefined
-      if (options.segwitAddress) {
+      if (segwitAddress) {
         segwitUtxos = await this.getUtxosArtifacts({
-          address: options.segwitAddress,
+          address: segwitAddress,
         })
       }
 
-      const collectibleData = await this.getCollectibleById(
-        options.inscriptionId
-      )
+      const collectibleData = await this.getCollectibleById(inscriptionId)
 
       const metaOffset = collectibleData.satpoint.charAt(
         collectibleData.satpoint.length - 1
@@ -978,34 +1099,33 @@ export class Oyl {
       }
 
       const taprootSigner = await this.createTaprootSigner({
-        mnemonic: options.mnemonic,
-        taprootAddress: options.fromAddress,
+        mnemonic: mnemonic,
+        taprootAddress: fromAddress,
         hdPathWithIndex: hdPaths['taprootPath'],
       })
 
-      const segwitSigner = await this.createSegwitSigner({
-        mnemonic: options.mnemonic,
-        segwitAddress: options.segwitAddress,
-        hdPathWithIndex: hdPaths['segwitPath'],
-      })
+      let segwitSigner
+      if (segwitAddress) {
+        segwitSigner = await this.createSegwitSigner({
+          mnemonic: mnemonic,
+          segwitAddress: segwitAddress,
+          hdPathWithIndex: hdPaths['segwitPath'],
+        })
+      }
 
-      let feeRate: number
-      if (!options?.feeRate) {
+      if (!feeRate) {
         feeRate = (await this.esploraRpc.getFeeEstimates())['1']
-      } else {
-        feeRate = options.feeRate
       }
 
       return await sendCollectible({
-        inscriptionId: options.inscriptionId,
-        inputAddress: options.fromAddress,
-        outputAddress: options.destinationAddress,
-        mnemonic: options.mnemonic,
-        taprootPublicKey: options.taprootPublicKey,
-        segwitPublicKey: options.segwitPubKey,
-        segwitAddress: options.segwitAddress,
-        isDry: options.isDry,
-        payFeesWithSegwit: options.payFeesWithSegwit,
+        inscriptionId: inscriptionId,
+        inputAddress: fromAddress,
+        outputAddress: destinationAddress,
+        mnemonic: mnemonic,
+        taprootPublicKey: taprootPublicKey,
+        segwitPublicKey: segwitPubKey,
+        segwitAddress: segwitAddress,
+        payFeesWithSegwit: payFeesWithSegwit,
         segwitSigner: segwitSigner,
         taprootSigner: taprootSigner,
         feeRate: feeRate,

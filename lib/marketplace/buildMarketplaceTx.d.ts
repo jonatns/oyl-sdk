@@ -1,5 +1,5 @@
-import { MarketplaceBuy } from "../shared/interface";
-import * as bitcoin from "bitcoinjs-lib";
+import { MarketplaceBuy } from '../shared/interface';
+import * as bitcoin from 'bitcoinjs-lib';
 export declare class BuildMarketplaceTransaction {
     walletAddress: string;
     pubKey: string;

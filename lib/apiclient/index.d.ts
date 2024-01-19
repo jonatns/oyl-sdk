@@ -66,7 +66,7 @@ export declare class OylApiClient {
      * @param marketPrice - The limit order market price.
      * @param testnet - mainnet/testnet network toggle.
      */
-    getAggregatedOffers({ ticker, limitOrderAmount, marketPrice, testnet }: {
+    getAggregatedOffers({ ticker, limitOrderAmount, marketPrice, testnet, }: {
         ticker: string;
         limitOrderAmount: number;
         marketPrice: number;
@@ -90,7 +90,7 @@ export declare class OylApiClient {
      * Get Omnisat offer psbt.
      * @param offerId - The offer Id to query.
      */
-    getOmnisatOfferPsbt({ offerId, ticker, testnet }: {
+    getOmnisatOfferPsbt({ offerId, ticker, testnet, }: {
         offerId: string;
         ticker: string;
         testnet?: boolean;

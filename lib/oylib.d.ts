@@ -115,7 +115,7 @@ export declare class Oyl {
         amount: any;
         usd_value: string;
     }>;
-    getUtxos(address: string): Promise<{
+    getUtxos(address: string, includeInscriptions?: boolean): Promise<{
         unspent_outputs: any[];
     }>;
     /**
@@ -169,8 +169,8 @@ export declare class Oyl {
         mnemonic: string;
         segwitAddress?: string;
         segwitPubkey?: string;
-        segwitHdPath: string;
-        payFeesWithSegwit: boolean;
+        segwitHdPath?: 'oyl' | 'xverse' | 'leather' | 'unisat' | 'testnet';
+        payFeesWithSegwit?: boolean;
     }): Promise<{
         txnId: string;
         rawTxn: string;
@@ -274,7 +274,7 @@ export declare class Oyl {
     createTaprootSigner({ mnemonic, taprootAddress, hdPathWithIndex, }: {
         mnemonic: string;
         taprootAddress: string;
-        hdPathWithIndex: string;
+        hdPathWithIndex?: string;
     }): Promise<any>;
     createSigner({ mnemonic, fromAddress, hdPathWithIndex, }: {
         mnemonic: string;
@@ -282,12 +282,19 @@ export declare class Oyl {
         hdPathWithIndex: string;
     }): Promise<any>;
     sendBRC20(options: InscribeTransfer): Promise<unknown>;
-    sendOrdCollectible(options: InscribeTransfer): Promise<{
-        txId: string; /**
-         * Retrieves a specific inscribed collectible by its ID.
-         * @param {string} inscriptionId - The ID of the collectible to retrieve.
-         * @returns {Promise<any>} A promise that resolves to the collectible data.
-         */
+    sendOrdCollectible({ mnemonic, fromAddress, taprootPublicKey, destinationAddress, segwitPubKey, segwitAddress, payFeesWithSegwit, feeRate, inscriptionId, segwitHdPath, }: {
+        fromAddress: string;
+        taprootPublicKey: string;
+        destinationAddress: string;
+        segwitPubKey?: string;
+        segwitAddress?: string;
+        payFeesWithSegwit?: boolean;
+        feeRate?: number;
+        mnemonic: string;
+        segwitHdPath?: string;
+        inscriptionId: string;
+    }): Promise<{
+        txId: string;
         rawTx: string;
     }>;
 }

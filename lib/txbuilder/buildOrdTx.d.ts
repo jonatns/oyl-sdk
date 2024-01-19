@@ -41,3 +41,8 @@ export declare function findUtxosForFees(utxos: Utxo[], amount: number): {
     totalSatoshis: number;
     change: number;
 };
+export declare function findUtxosToCoverAmount(utxos: Utxo[], amount: number): {
+    selectedUtxos: Utxo[];
+    totalSatoshis: number;
+    change: number;
+};
