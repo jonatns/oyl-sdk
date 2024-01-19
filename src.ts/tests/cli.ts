@@ -391,7 +391,8 @@ export async function runCLI() {
     taprootAddress: networkConfig.taprootAddress,
   })
 
-  // const wallet = generateWallet(true, networkConfig.mnemonic)
+  const wallet = generateWallet(true, networkConfig.mnemonic)
+  return
 
   const { mnemonic, to, amount, feeRate, isDry, ticker, psbtBase64, price } =
     options
@@ -568,7 +569,6 @@ export async function runCLI() {
         const orderToBeBought = bitcoin.Psbt.fromBase64(psbtBase64)
         const price = orderToBeBought.txOutputs[2].value
 
-
         const marketplace = new BuildMarketplaceTransaction({
           address: networkConfig.taprootAddress,
           price: price,
@@ -679,7 +679,6 @@ export async function runCLI() {
           nftId: offer.offerId,
           marketplace: offer.marketplace,
         }))
-
 
       console.log('Aggregated Offers')
       console.log(

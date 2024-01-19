@@ -95,15 +95,12 @@ const addSegwitFeeUtxo = async ({
     //       ? acc.metaUtxos.push(utxo)
     //       : acc.nonMetaSegwitUtxos.push(utxo)
     //     return acc
+    //     return acc
     //   },
     //   { metaUtxos: [], nonMetaSegwitUtxos: [] }
     // )
 
     const nonMetaSegwitUtxos = []
-
-    if (nonMetaSegwitUtxos) {
-      nonMetaSegwitUtxos?.sort((a, b) => b.satoshis - a.satoshis)
-    }
 
     const nonMetaTaprootUtxos = await filterTaprootUtxos({
       taprootUtxos: taprootUtxos,
