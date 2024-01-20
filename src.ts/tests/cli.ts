@@ -383,7 +383,6 @@ export async function runCLI() {
   const { _, network = TESTNET } = yargs.argv as YargsArguments
   const options = Object.assign({}, yargs.argv) as YargsArguments
   const networkConfig = config[network]
-  console.log({ network })
 
   let segwitSigner: bitcoin.Signer
   const taprootSigner = await tapWallet.createTaprootSigner({
@@ -701,6 +700,12 @@ export async function runCLI() {
     //   return await test.getTxHistory({
     //     addresses: [networkConfig.taprootAddress, networkConfig.segwitAddress],
     //   })
+    case 'taproot-txn-history':
+      return console.log(
+        await networkConfig.wallet.getTaprootTxHistory({
+          taprootAddress: networkConfig.taprootAddress,
+        })
+      )
     default:
       return await callAPI(argv._[0], options)
   }
