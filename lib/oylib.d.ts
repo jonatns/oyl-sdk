@@ -284,7 +284,15 @@ export declare class Oyl {
         fromAddress: string;
         hdPathWithIndex: string;
     }): Promise<any>;
-    sendBRC20(options: InscribeTransfer): Promise<unknown>;
+    sendBRC20(options: InscribeTransfer): Promise<{
+        error: string;
+        txId?: undefined;
+        rawTxn?: undefined;
+    } | {
+        txId: string;
+        rawTxn: string;
+        error?: undefined;
+    }>;
     sendOrdCollectible({ mnemonic, fromAddress, taprootPublicKey, destinationAddress, segwitPubKey, segwitAddress, payFeesWithSegwit, feeRate, inscriptionId, segwitHdPath, }: {
         fromAddress: string;
         taprootPublicKey: string;

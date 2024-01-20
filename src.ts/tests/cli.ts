@@ -391,6 +391,7 @@ export async function runCLI() {
   })
 
   // const wallet = generateWallet(true, networkConfig.mnemonic)
+  // return
 
   const { mnemonic, to, amount, feeRate, isDry, ticker, psbtBase64, price } =
     options
@@ -452,7 +453,7 @@ export async function runCLI() {
         })
 
         const content = `{"p":"brc-20","op":"transfer","tick":"${ticker}","amt":"${amount}"}`
-        const { txnId, error: inscribeError } = await inscribe({
+        const { txId, error: inscribeError } = await inscribe({
           content,
           inputAddress: networkConfig.taprootAddress,
           outputAddress: networkConfig.taprootAddress,
@@ -470,6 +471,8 @@ export async function runCLI() {
             taprootPrivateKey.keyring.keyring._index2wallet[0][1].privateKey.toString(
               'hex'
             ),
+          sandshrewBtcClient: (networkConfig.wallet as Oyl).sandshrewBtcClient,
+          esploraRpc: (networkConfig.wallet as Oyl).esploraRpc,
         })
 
         if (inscribeError) {
@@ -477,7 +480,7 @@ export async function runCLI() {
           return { error: inscribeError }
         }
 
-        console.log({ txnId })
+        console.log({ txId })
 
         console.log("WAITING FOR UNISAT TO INDEX THE INSCRIPTION'S UTXO")
         await delay(10000)
@@ -488,12 +491,12 @@ export async function runCLI() {
           ticker,
           amount: amount.toString(),
           transferableInscription: {
-            inscription_id: `${txnId}i0`,
+            inscription_id: `${txId}i0`,
             ticker,
             transfer_amount: amount.toString(),
             is_valid: true,
             is_used: false,
-            satpoint: `${txnId}:0:0`,
+            satpoint: `${txId}:0:0`,
             min_price: null,
             min_unit_price: null,
             ordinalswallet_price: null,
@@ -544,7 +547,7 @@ export async function runCLI() {
         const updateBody = {
           psbtBase64: signedSendPsbt.toBase64(),
           psbtHex: signedSendPsbt.toHex(),
-          satpoint: txnId + ':0:0',
+          satpoint: txId + ':0:0',
         }
 
         const updateResponse = await axios

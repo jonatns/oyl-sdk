@@ -72,13 +72,7 @@ export class BuildMarketplaceTransaction {
 
       let sum = 0
       const result: any = []
-      console.log('=========== Available inscription utxos: ', inscriptionLocs)
       for await (let utxo of unspentsOrderedByValue) {
-        console.log('HERE')
-        console.log('HERE')
-        console.log('HERE')
-        console.log('HERE')
-        console.log('HERE')
         const currentUTXO = utxo
         const utxoSatpoint = getSatpointFromUtxo(currentUTXO)
         if (
@@ -88,14 +82,10 @@ export class BuildMarketplaceTransaction {
             )) ||
           currentUTXO.value <= 546
         ) {
-          console.log('continuing')
           continue
         }
-        console.log('here')
         sum += currentUTXO.value
         result.push(currentUTXO)
-        console.log('sum', sum)
-        console.log('amount needed', amountNeeded)
         if (sum > amountNeeded) {
           console.log('AMOUNT RETRIEVED: ', sum)
           return result
@@ -110,7 +100,6 @@ export class BuildMarketplaceTransaction {
 
   async isWalletPrepared() {
     const allUtxosWorth600 = await this.getAllUTXOsWorthASpecificValue(600)
-    console.log('=========== UTXOs worth 600 sats: ', allUtxosWorth600)
     if (allUtxosWorth600.length < 2) {
       return false
     }
