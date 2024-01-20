@@ -423,6 +423,98 @@ export class Oyl {
     }
   }
 
+  async getTaprootTxHistory({ taprootAddress }: { taprootAddress: string }) {
+    const addressType = getAddressType(taprootAddress)
+
+    if (addressType === 1) {
+      const txns = await this.esploraRpc._call('esplora_address::txs', [
+        taprootAddress,
+      ])
+
+      const currentBlock = await this.esploraRpc._call(
+        'esplora_blocks:tip:height',
+        []
+      )
+      const lastTenTxns: any[] = txns.slice(0, 10)
+      let isCollectible = false
+
+      const processedTxns = lastTenTxns.map(async (tx) => {
+        const { txid, vout, size, vin, status, fee } = tx
+        let inscriptionsOnTx: any[] =
+          await this.apiClient.getInscriptionsForTxn(txid)
+        const symbols = []
+        if (inscriptionsOnTx.length > 0) {
+          for await (const inscription of inscriptionsOnTx) {
+            const inscriptionsOnTxContent =
+              await this.ordRpc.getInscriptionContent(
+                inscription['inscription_id']
+              )
+            isCollectible =
+              (
+                await this.ordRpc.getInscriptionById(
+                  inscription['inscription_id']
+                )
+              ).content_type === 'image/png'
+            try {
+              let jsonObj = JSON.parse(atob(inscriptionsOnTxContent))
+              const symbolToAdd = jsonObj.tick as string
+              symbols.push(symbolToAdd)
+            } catch (error) {}
+          }
+        }
+
+        const blockDelta = currentBlock - status.block_height
+        const confirmations = blockDelta > 0 ? blockDelta : 0
+        let inputAddress = false
+
+        let vinSum = 0
+        let voutSum = 0
+
+        for (let input of vin) {
+          if (taprootAddress === input.prevout.scriptpubkey_address) {
+            inputAddress = true
+            vinSum += input.prevout.value
+          }
+        }
+        for (let output of vout) {
+          if (taprootAddress === output.scriptpubkey_address) {
+            voutSum += output.value
+          }
+        }
+
+        const inscriptionType =
+          symbols.length > 0 ? 'brc-20' : isCollectible ? 'collectible' : 'N/A'
+
+        const txDetails = {}
+        txDetails['txId'] = txid
+        txDetails['confirmations'] = confirmations
+        txDetails['type'] =
+          inputAddress && symbols.length === 0
+            ? 'sent'
+            : inputAddress && symbols.length > 1
+            ? 'swap'
+            : inscriptionType === 'N/A' ||
+              (!inputAddress && symbols.length >= 1)
+            ? 'received'
+            : 'inscribed'
+        txDetails['blockTime'] = status.block_time
+        txDetails['blockHeight'] = status.block_height
+        txDetails['fee'] = fee
+        txDetails['feeRate'] = Math.floor(fee / size)
+        txDetails['vinSum'] = vinSum
+        txDetails['voutSum'] = voutSum
+        txDetails['amount'] = inputAddress ? vinSum - voutSum - fee : voutSum
+        txDetails['symbol'] = symbols.length > 0 ? symbols : ['btc']
+        txDetails['inscriptionType'] = inscriptionType
+
+        return txDetails
+      })
+      return await Promise.all(processedTxns)
+    } else {
+      throw Error('Invalid address type')
+    }
+  }
+
   /**
    * Retrieves a list of inscriptions for a given address.
    * @param {Object} param0 - An object containing the address property.

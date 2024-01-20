@@ -83,7 +83,18 @@ export class OylApiClient {
     return await this._call('/get-inscriptions', 'post', {
       address: address,
       exclude_brc20: false,
+      count: 20,
+      order: 'desc',
     })
+  }
+
+  async getInscriptionsForTxn(txn_id: string): Promise<any> {
+    const res = await this._call('/get-inscriptions-for-txn', 'post', {
+      tx_id: txn_id,
+      testnet: this.testnet,
+    })
+
+    return res.data
   }
 
   /**

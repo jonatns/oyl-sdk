@@ -128,6 +128,9 @@ export declare class Oyl {
     getTxHistory({ addresses }: {
         addresses: string[];
     }): Promise<{}[]>;
+    getTaprootTxHistory({ taprootAddress }: {
+        taprootAddress: string;
+    }): Promise<{}[]>;
     /**
      * Retrieves a list of inscriptions for a given address.
      * @param {Object} param0 - An object containing the address property.
