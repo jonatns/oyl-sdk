@@ -252,7 +252,24 @@ export declare class Oyl {
      * @param {string} inscriptionId - The ID of the collectible to retrieve.
      * @returns {Promise<any>} A promise that resolves to the collectible data.
      */
-    getCollectibleById(inscriptionId: string): Promise<any>;
+    getCollectibleById(inscriptionId: string): Promise<{
+        address: string;
+        children: any[];
+        content_length: number;
+        content_type: string;
+        genesis_fee: number;
+        genesis_height: number;
+        inscription_id: string;
+        inscription_number: number;
+        next: string;
+        output_value: number;
+        parent: any;
+        previous: string;
+        rune: any;
+        sat: number;
+        satpoint: string;
+        timestamp: number;
+    }>;
     signPsbt({ psbtHex, publicKey, address, signer, }: {
         psbtHex: string;
         publicKey: string;
@@ -306,6 +323,6 @@ export declare class Oyl {
         inscriptionId: string;
     }): Promise<{
         txId: string;
-        rawTx: string;
+        rawTxn: string;
     }>;
 }

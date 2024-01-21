@@ -306,8 +306,6 @@ export const formatOptionsToSignInputs = async ({
         value = output.value
       }
 
-      console.log({ isSigned, lostInternalPubkey, pubkey, value })
-
       if (!isSigned || lostInternalPubkey) {
         const tapInternalKey = assertHex(Buffer.from(pubkey, 'hex'))
         const p2tr = bitcoin.payments.p2tr({
@@ -359,7 +357,6 @@ export const signInputs = async (
   try {
     const taprootInputs: ToSignInput[] = []
     const segwitInputs: ToSignInput[] = []
-    console.log({ toSignInputs })
     const inputs = psbt.data.inputs
     toSignInputs.forEach(({ publicKey, sighashTypes }, i) => {
       const input = inputs[i]
@@ -372,7 +369,6 @@ export const signInputs = async (
         }
       }
     })
-    console.log({ taprootInputs })
     if (taprootInputs.length > 0) {
       await taprootSigner(psbt, taprootInputs)
     }
@@ -746,18 +742,13 @@ export function calculateTaprootTxSize(
   const taprootInputSize = 57 // Average size of a Taproot input (can vary)
   const nonTaprootInputSize = 41 // Average size of a non-Taproot input (can vary)
 
-  // Size contributions from outputs
   const outputSize = 34 // Average size of an output (can vary)
 
-  // Calculate total input and output sizes
   const totalInputSize =
     taprootInputCount * taprootInputSize +
     nonTaprootInputCount * nonTaprootInputSize
   const totalOutputSize = outputCount * outputSize
 
-  console.log({ baseTxSize })
-
-  // Total transaction size
   return baseTxSize + totalInputSize + totalOutputSize
 }
 
@@ -866,6 +857,8 @@ export const sendCollectible = async ({
   sandshrewBtcClient: SandshrewBitcoinClient
 }) => {
   const psbt = new bitcoin.Psbt({ network: getNetwork(network) })
+
+  console.log({ taprootUtxosLen: taprootUtxos.length })
 
   const utxosToSend = await insertCollectibleUtxo({
     taprootUtxos: taprootUtxos,

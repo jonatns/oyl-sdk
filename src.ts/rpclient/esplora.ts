@@ -42,7 +42,43 @@ export class EsploraRpc {
   }
 
   async getTxInfo(txid: string) {
-    return await this._call('esplora_tx', [txid])
+    return (await this._call('esplora_tx', [txid])) as {
+      txid: string
+      version: number
+      locktime: number
+      vin: Array<{
+        txid: string
+        vout: number
+        prevout: {
+          scriptpubkey: string
+          scriptpubkey_asm: string
+          scriptpubkey_type: string
+          scriptpubkey_address: string
+          value: number
+        }
+        scriptsig: string
+        scriptsig_asm: string
+        witness: Array<string>
+        is_coinbase: boolean
+        sequence: number
+      }>
+      vout: Array<{
+        scriptpubkey: string
+        scriptpubkey_asm: string
+        scriptpubkey_type: string
+        scriptpubkey_address: string
+        value: number
+      }>
+      size: number
+      weight: number
+      fee: number
+      status: {
+        confirmed: boolean
+        block_height: number
+        block_hash: string
+        block_time: number
+      }
+    }
   }
 
   async getTxStatus(txid: string) {
@@ -58,7 +94,9 @@ export class EsploraRpc {
   }
 
   async getTxOutspends(txid: string) {
-    return await this._call('esplora_tx::outspends', [txid])
+    return (await this._call('esplora_tx::outspends', [txid])) as Array<{
+      spent: boolean
+    }>
   }
 
   async getAddressTx(address: string) {

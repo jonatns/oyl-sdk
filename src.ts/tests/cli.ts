@@ -428,15 +428,19 @@ export async function runCLI() {
 
     case 'send-collectible':
       const { inscriptionId } = options
-      return await networkConfig.wallet.sendOrdCollectible({
-        mnemonic: networkConfig.mnemonic,
-        fromAddress: networkConfig.taprootAddress,
-        taprootPublicKey: networkConfig.taprootPubkey,
-        destinationAddress: networkConfig.destinationTaprootAddress,
-        inscriptionId,
-        feeRate,
-        isDry,
-      })
+      const sendInscriptionResponse =
+        await networkConfig.wallet.sendOrdCollectible({
+          mnemonic: networkConfig.mnemonic,
+          fromAddress: networkConfig.taprootAddress,
+          taprootPublicKey: networkConfig.taprootPubkey,
+          destinationAddress: networkConfig.destinationTaprootAddress,
+          inscriptionId,
+          feeRate,
+          isDry,
+        })
+
+      console.log(sendInscriptionResponse)
+      return sendInscriptionResponse
 
     case 'create-offer':
       try {

@@ -328,22 +328,19 @@ export class Oyl {
       filtered = utxosResponse.filter((utxo) => utxo.value > 546)
     }
 
-    console.log({ filteredLen: filtered.length })
-
     for (const utxo of filtered) {
       const transactionDetails = await this.esploraRpc.getTxInfo(utxo.txid)
 
       const voutEntry = transactionDetails.vout.find(
         (v) => v.scriptpubkey_address === address
       )
-      const script = voutEntry ? voutEntry.scriptpubkey : ''
 
       formattedUtxos.push({
         tx_hash_big_endian: utxo.txid,
         tx_output_n: utxo.vout,
         value: utxo.value,
         confirmations: utxo.status.confirmed ? 3 : 0,
-        script: script,
+        script: voutEntry.scriptpubkey,
         tx_index: 0,
       })
     }
@@ -791,7 +788,24 @@ export class Oyl {
    */
   async getCollectibleById(inscriptionId: string) {
     const data = await this.ordRpc.getInscriptionById(inscriptionId)
-    return data
+    return data as {
+      address: string
+      children: any[]
+      content_length: number
+      content_type: string
+      genesis_fee: number
+      genesis_height: number
+      inscription_id: string
+      inscription_number: number
+      next: string
+      output_value: number
+      parent: any
+      previous: string
+      rune: any
+      sat: number
+      satpoint: string
+      timestamp: number
+    }
   }
 
   async signPsbt({
@@ -1168,28 +1182,24 @@ export class Oyl {
       }
       const hdPaths = customPaths[segwitHdPath]
 
-      const taprootUtxos: any[] = await this.getUtxosArtifacts({
-        address: fromAddress,
-      })
-
-      let segwitUtxos: any[] | undefined
-      if (segwitAddress) {
-        segwitUtxos = await this.getUtxosArtifacts({
-          address: segwitAddress,
-        })
-      }
-
       const collectibleData = await this.getCollectibleById(inscriptionId)
 
-      const metaOffset = collectibleData.satpoint.charAt(
-        collectibleData.satpoint.length - 1
+      if (collectibleData.address !== fromAddress) {
+        throw new Error('Inscription does not belong to fromAddress')
+      }
+
+      const inscriptionTxId = collectibleData.satpoint.split(':')[0]
+      const inscriptionTxVOut = collectibleData.satpoint.split(':')[1]
+      const inscriptionUtxoDetails = await this.esploraRpc.getTxInfo(
+        inscriptionTxId
       )
 
-      const metaOutputValue = collectibleData.output_value || 10000
+      console.log({ inscriptionUtxoDetails })
 
-      const minOrdOutputValue = Math.max(metaOffset, UTXO_DUST)
-      if (metaOutputValue < minOrdOutputValue) {
-        throw Error(`OutputValue must be at least ${minOrdOutputValue}`)
+      const isSpentArray = await this.esploraRpc.getTxOutspends(inscriptionTxId)
+      const isSpent = isSpentArray[inscriptionTxVOut]
+      if (isSpent.spent) {
+        throw new Error('Inscription is missing')
       }
 
       const taprootSigner = await this.createTaprootSigner({
@@ -1211,24 +1221,88 @@ export class Oyl {
         feeRate = (await this.esploraRpc.getFeeEstimates())['1']
       }
 
-      return await sendCollectible({
-        inscriptionId: inscriptionId,
-        inputAddress: fromAddress,
-        outputAddress: destinationAddress,
-        mnemonic: mnemonic,
-        taprootPublicKey: taprootPublicKey,
-        segwitPublicKey: segwitPubKey,
-        segwitAddress: segwitAddress,
-        payFeesWithSegwit: payFeesWithSegwit,
-        segwitSigner: segwitSigner,
-        taprootSigner: taprootSigner,
-        feeRate: feeRate,
-        network: this.currentNetwork,
-        taprootUtxos: taprootUtxos,
-        segwitUtxos: segwitUtxos,
-        metaOutputValue: metaOutputValue,
-        sandshrewBtcClient: this.sandshrewBtcClient,
+      const utxosForTransferSendFees = await this.getUtxosArtifacts({
+        address: fromAddress,
       })
+      const sendTxSize = calculateTaprootTxSize(3, 0, 2)
+      const feeForSend = sendTxSize * feeRate < 150 ? 200 : sendTxSize * feeRate
+      const utxosToSend = findUtxosToCoverAmount(
+        utxosForTransferSendFees,
+        feeForSend
+      )
+      const amountGathered = calculateAmountGatheredUtxo(
+        utxosToSend.selectedUtxos
+      )
+      const sendPsbt = new bitcoin.Psbt({
+        network: getNetwork(this.currentNetwork),
+      })
+
+      sendPsbt.addInput({
+        hash: inscriptionTxId,
+        index: 0,
+        witnessUtxo: {
+          script: Buffer.from(
+            utxosToSend.selectedUtxos[0].scriptPk as string,
+            'hex'
+          ),
+          value: 546,
+        },
+      })
+
+      for await (const utxo of utxosToSend.selectedUtxos) {
+        console.log({ utxo })
+        sendPsbt.addInput({
+          hash: utxo.txId,
+          index: utxo.outputIndex,
+          witnessUtxo: {
+            script: Buffer.from(utxo.scriptPk, 'hex'),
+            value: utxo.satoshis,
+          },
+        })
+      }
+      sendPsbt.addOutput({
+        address: destinationAddress,
+        value: 546,
+      })
+      const reimbursementAmount = amountGathered - feeForSend
+      if (reimbursementAmount > 546) {
+        sendPsbt.addOutput({
+          address: fromAddress,
+          value: amountGathered - feeForSend,
+        })
+      }
+
+      const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
+        _psbt: sendPsbt,
+        pubkey: taprootPublicKey,
+        segwitPubkey: segwitPubKey,
+        segwitAddress: segwitAddress,
+        taprootAddress: fromAddress,
+        network: getNetwork(this.currentNetwork),
+      })
+      const signedSendPsbt = await signInputs(
+        sendPsbt,
+        toSignInputs,
+        taprootPublicKey,
+        segwitPubKey,
+        segwitSigner,
+        taprootSigner
+      )
+      signedSendPsbt.finalizeAllInputs()
+
+      const sendTxHex = signedSendPsbt.extractTransaction().toHex()
+      const sendTxId = signedSendPsbt.extractTransaction().getId()
+
+      const [result] =
+        await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([sendTxHex])
+
+      if (!result.allowed) {
+        throw new Error(result['reject-reason'])
+      }
+
+      await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(sendTxHex)
+
+      return { txId: sendTxId, rawTxn: sendTxHex }
     } catch (err) {
       console.error(err)
       throw err
