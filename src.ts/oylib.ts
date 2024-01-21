@@ -956,7 +956,7 @@ export class Oyl {
   }
 
   async sendBRC20(options: InscribeTransfer) {
-    await isDryDisclaimer(options.isDry)
+    // await isDryDisclaimer(options.isDry)
     if (
       options.payFeesWithSegwit &&
       (!options.segwitAddress || !options.segwitPubKey)

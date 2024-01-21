@@ -82,11 +82,9 @@ export declare const inscribe: ({ content, inputAddress, outputAddress, mnemonic
     esploraRpc: EsploraRpc;
 }) => Promise<{
     error: string;
-    commitTxHex?: undefined;
     txId?: undefined;
     rawTx?: undefined;
 } | {
-    commitTxHex: string;
     txId: string;
     rawTx: string;
     error?: undefined;

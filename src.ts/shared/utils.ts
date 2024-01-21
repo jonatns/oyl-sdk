@@ -314,11 +314,6 @@ export const formatOptionsToSignInputs = async ({
           internalPubkey: tapInternalKey,
           network: network,
         })
-        console.log({
-          thing:
-            v.witnessUtxo?.script.toString('hex') ==
-            p2tr.output?.toString('hex'),
-        })
         if (
           v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
         ) {
@@ -586,14 +581,16 @@ export const inscribe = async ({
     throw new Error(inscriptionResult['reject-reason'])
   }
 
+  let revealTxId = ''
   if (!isDry) {
-    await sandshrewBtcClient.bitcoindRpc.sendRawTransaction(inscriptionTxHex)
+    revealTxId = await sandshrewBtcClient.bitcoindRpc.sendRawTransaction(
+      inscriptionTxHex
+    )
   }
 
   return {
-    commitTxHex,
-    txId: commitTxId,
-    rawTx: commitTxHex,
+    txId: revealTxId,
+    rawTx: inscriptionTxHex,
   }
 }
 
