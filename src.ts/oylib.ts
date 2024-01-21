@@ -1189,15 +1189,15 @@ export class Oyl {
       }
 
       const inscriptionTxId = collectibleData.satpoint.split(':')[0]
-      const inscriptionTxVOut = collectibleData.satpoint.split(':')[1]
+      const inscriptionTxVOutIndex = collectibleData.satpoint.split(':')[1]
       const inscriptionUtxoDetails = await this.esploraRpc.getTxInfo(
         inscriptionTxId
       )
-
-      console.log({ inscriptionUtxoDetails })
+      const inscriptionUtxoData =
+        inscriptionUtxoDetails.vout[inscriptionTxVOutIndex]
 
       const isSpentArray = await this.esploraRpc.getTxOutspends(inscriptionTxId)
-      const isSpent = isSpentArray[inscriptionTxVOut]
+      const isSpent = isSpentArray[inscriptionTxVOutIndex]
       if (isSpent.spent) {
         throw new Error('Inscription is missing')
       }
@@ -1239,18 +1239,17 @@ export class Oyl {
 
       sendPsbt.addInput({
         hash: inscriptionTxId,
-        index: 0,
+        index: parseInt(inscriptionTxVOutIndex),
         witnessUtxo: {
           script: Buffer.from(
             utxosToSend.selectedUtxos[0].scriptPk as string,
             'hex'
           ),
-          value: 546,
+          value: inscriptionUtxoData.value,
         },
       })
 
       for await (const utxo of utxosToSend.selectedUtxos) {
-        console.log({ utxo })
         sendPsbt.addInput({
           hash: utxo.txId,
           index: utxo.outputIndex,
@@ -1262,7 +1261,7 @@ export class Oyl {
       }
       sendPsbt.addOutput({
         address: destinationAddress,
-        value: 546,
+        value: inscriptionUtxoData.value,
       })
       const reimbursementAmount = amountGathered - feeForSend
       if (reimbursementAmount > 546) {
