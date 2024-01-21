@@ -1,6 +1,6 @@
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
-import { AddressType, InscribeTransfer, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
+import { AddressType, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
 import * as bitcoin from 'bitcoinjs-lib';
 import { OrdRpc } from './rpclient/ord';
@@ -252,7 +252,24 @@ export declare class Oyl {
      * @param {string} inscriptionId - The ID of the collectible to retrieve.
      * @returns {Promise<any>} A promise that resolves to the collectible data.
      */
-    getCollectibleById(inscriptionId: string): Promise<any>;
+    getCollectibleById(inscriptionId: string): Promise<{
+        address: string;
+        children: any[];
+        content_length: number;
+        content_type: string;
+        genesis_fee: number;
+        genesis_height: number;
+        inscription_id: string;
+        inscription_number: number;
+        next: string;
+        output_value: number;
+        parent: any;
+        previous: string;
+        rune: any;
+        sat: number;
+        satpoint: string;
+        timestamp: number;
+    }>;
     signPsbt({ psbtHex, publicKey, address, signer, }: {
         psbtHex: string;
         publicKey: string;
@@ -284,7 +301,22 @@ export declare class Oyl {
         fromAddress: string;
         hdPathWithIndex: string;
     }): Promise<any>;
-    sendBRC20(options: InscribeTransfer): Promise<{
+    sendBRC20(options: {
+        mnemonic: string;
+        fromAddress: string;
+        taprootPublicKey: string;
+        destinationAddress: string;
+        segwitHdPath: string;
+        segwitPubKey?: string;
+        segwitAddress?: string;
+        payFeesWithSegwit?: boolean;
+        feeRate?: number;
+        token?: string;
+        amount?: number;
+        postage?: number;
+        isDry?: boolean;
+        inscriptionId?: string;
+    }): Promise<{
         error: string;
         txId?: undefined;
         rawTxn?: undefined;
@@ -293,19 +325,20 @@ export declare class Oyl {
         rawTxn: string;
         error?: undefined;
     }>;
-    sendOrdCollectible({ mnemonic, fromAddress, taprootPublicKey, destinationAddress, segwitPubKey, segwitAddress, payFeesWithSegwit, feeRate, inscriptionId, segwitHdPath, }: {
+    sendOrdCollectible({ mnemonic, fromAddress, taprootPublicKey, destinationAddress, segwitPubKey, segwitAddress, payFeesWithSegwit, feeRate, isDry, inscriptionId, segwitHdPath, }: {
         fromAddress: string;
         taprootPublicKey: string;
         destinationAddress: string;
         segwitPubKey?: string;
         segwitAddress?: string;
         payFeesWithSegwit?: boolean;
+        isDry?: boolean;
         feeRate?: number;
         mnemonic: string;
         segwitHdPath?: string;
         inscriptionId: string;
     }): Promise<{
         txId: string;
-        rawTx: string;
+        rawTxn: string;
     }>;
 }

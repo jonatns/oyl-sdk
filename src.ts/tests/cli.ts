@@ -298,7 +298,7 @@ const argv = yargs(hideBin(process.argv))
       })
       .option('isDry', {
         describe: 'Dry run',
-        type: 'string',
+        type: 'boolean',
         default: false,
       })
       .help().argv
@@ -306,7 +306,6 @@ const argv = yargs(hideBin(process.argv))
   .command('view', 'View PSBT', {})
   .command('convert', 'Convert PSBT', {})
   .command('aggregate', 'Test Aggregator', {})
-  .command('ord-test', 'ORD test', {})
   .command(
     'create-offer',
     'create an offer in the omnisat offers api',
@@ -428,15 +427,19 @@ export async function runCLI() {
 
     case 'send-collectible':
       const { inscriptionId } = options
-      return await networkConfig.wallet.sendOrdCollectible({
-        mnemonic: networkConfig.mnemonic,
-        fromAddress: networkConfig.taprootAddress,
-        taprootPublicKey: networkConfig.taprootPubkey,
-        destinationAddress: networkConfig.destinationTaprootAddress,
-        inscriptionId,
-        feeRate,
-        isDry,
-      })
+      const sendInscriptionResponse =
+        await networkConfig.wallet.sendOrdCollectible({
+          mnemonic: networkConfig.mnemonic,
+          fromAddress: networkConfig.taprootAddress,
+          taprootPublicKey: networkConfig.taprootPubkey,
+          destinationAddress: networkConfig.destinationTaprootAddress,
+          inscriptionId,
+          feeRate,
+          isDry,
+        })
+
+      console.log(sendInscriptionResponse)
+      return sendInscriptionResponse
 
     case 'create-offer':
       try {
