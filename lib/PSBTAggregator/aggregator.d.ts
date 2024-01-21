@@ -1,4 +1,4 @@
-import { MarketplaceOffer } from "../shared/interface";
+import { MarketplaceOffer } from '../shared/interface';
 export declare class Aggregator {
     apiClient: any;
     offers: any;

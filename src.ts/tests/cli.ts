@@ -8,6 +8,26 @@ import axios from 'axios'
 import * as ecc2 from '@bitcoinerlab/secp256k1'
 import { generateWallet } from './genWallet'
 
+import { hideBin } from 'yargs/helpers'
+import { getAddressesFromPublicKey } from '@sadoprotocol/ordit-sdk'
+import { BuildMarketplaceTransaction } from '../marketplace/buildMarketplaceTx'
+import { ToSignInput } from '../shared/interface'
+import {
+  calculateTaprootTxSize,
+  callBTCRPCEndpoint,
+  delay,
+  formatOptionsToSignInputs,
+  getNetwork,
+  inscribe,
+  signInputs,
+  waitForTransaction,
+} from '../shared/utils'
+import { customPaths } from '../wallet/accountsManager'
+import * as transactions from '../transactions'
+import { findUtxosToCoverAmount } from '../txbuilder'
+import * as net from 'net'
+import { Tx } from '@cmdcode/tapscript'
+
 bitcoin.initEccLib(ecc2)
 
 export async function loadRpc(options) {
@@ -30,7 +50,7 @@ export async function loadRpc(options) {
 //     psbtBase64: process.env.PSBT_BASE64,
 //     price: 0.001,
 //   }
-//   const intent = new BuildMarketplaceTransaction(options)
+//   const intent = new (options)
 //   const builder = await intent.psbtBuilder()
 //   console.log(builder)
 // }
@@ -110,283 +130,583 @@ export const createInscriptionScript = (pubKey: any, content: any) => {
 
 const INSCRIPTION_PREPARE_SAT_AMOUNT = 4000
 
-export const RPC_ADDR =
-  'https://node.oyl.gg/v1/6e3bc3c289591bb447c116fda149b094'
-
-export const callBTCRPCEndpoint = async (
-  method: string,
-  params: string | string[]
-) => {
-  const data = JSON.stringify({
-    jsonrpc: '2.0',
-    id: method,
-    method: method,
-    params: [params],
-  })
-
-  // @ts-ignore
-  return await axios
-    .post(RPC_ADDR, data, {
-      headers: {
-        'content-type': 'application/json',
-      },
-    })
-    .then((res) => res.data)
-    .catch((e) => {
-      console.error(e.response)
-      throw e
-    })
+// Define an interface to represent the expected structure of the arguments.
+interface YargsArguments {
+  _: string[]
+  network?: 'testnet' | 'regtest'
+  to?: string
+  ticker?: string
+  amount?: number
+  feeRate?: number
+  price?: number
+  mnemonic?: string
+  inscriptionId?: string
+  psbtBase64?: string
+  isDry?: boolean
 }
 
+const tapWallet = new Oyl({
+  network: 'mainnet',
+  baseUrl: 'https://mainnet.sandshrew.io',
+  version: 'v1',
+  projectId: 'd6aebfed1769128379aca7d215f0b689',
+})
+
+const testWallet = new Oyl({
+  network: 'testnet',
+  baseUrl: 'https://testnet.sandshrew.io',
+  version: 'v1',
+  projectId: 'd6aebfed1769128379aca7d215f0b689',
+})
+
+const XVERSE = 'xverse'
+const UNISAT = 'unisat'
+const MAINNET = 'mainnet'
+const TESTNET = 'testnet'
+
+const config = {
+  [MAINNET]: {
+    mnemonic:
+      'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
+    wallet: tapWallet as Oyl,
+    taprootAddress:
+      'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
+    taprootPubkey:
+      '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
+    segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+    segwitPubKey:
+      '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
+    destinationTaprootAddress:
+      'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
+    feeRate: 25,
+  },
+  [TESTNET]: {
+    mnemonic:
+      'dad wall sand scissors evil second elbow possible hour elbow recipe dinosaur',
+    wallet: testWallet as Oyl,
+    taprootAddress:
+      'tb1p7ncck66wthnjl2clcry46f2uxjcn8naw95e6r8ag0x9zremx00lqmpzpkk',
+    taprootPubkey:
+      '021953423299016db2541eea62268f5461fadbaa904b22955dd9b12322e920db33',
+    segwitAddress: 'tb1q9fflqu0ll6qnkcvlyc4dp4lpa4806gunlsvcnc',
+    segwitPubKey:
+      '031cee6c58c8f2bc98cfddb4fa182b03603503b5b5d121170d28a5f3e250123343',
+    destinationTaprootAddress:
+      'tb1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqs77dhfz',
+    feeRate: 1,
+  },
+}
+
+const argv = yargs(hideBin(process.argv))
+  .usage('Usage: $0 <command> [options]')
+  .option('network', {
+    alias: 'n',
+    describe: 'Choose network type',
+    choices: ['mainnet', 'testnet'],
+    default: 'testnet',
+  })
+  .command('load', 'Load RPC command', {})
+  .command('send', 'Send btc', (yargs) => {
+    return yargs
+      .option('to', {
+        alias: 't',
+        describe: 'Destination address for the transaction',
+        type: 'string',
+        default: config[yargs.argv['network']].destinationTaprootAddress,
+      })
+      .option('amount', {
+        alias: 'a',
+        describe: 'Amount of currency to send',
+        type: 'number',
+        default: 600,
+      })
+      .option('feeRate', {
+        alias: 'f',
+        describe: 'Fee rate for the transaction',
+        type: 'number',
+        default: config[yargs.argv['network']].feeRate,
+      })
+      .option('mnemonic', {
+        describe: 'Mnemonic for the wallet',
+        type: 'string',
+        default: config[yargs.argv['network']].mnemonic,
+      })
+      .help().argv
+  })
+  .command('send-brc-20', 'Send BRC20 tokens', (yargs) => {
+    return yargs
+      .option('to', {
+        alias: 't',
+        describe: 'Destination address for the brc-20',
+        type: 'string',
+        default: config[yargs.argv['network']].destinationTaprootAddress,
+      })
+      .option('ticker', {
+        alias: 'tik',
+        describe: 'brc-20 ticker to send',
+        type: 'string',
+        demandOption: true,
+      })
+      .option('amount', {
+        alias: 'a',
+        describe: 'Amount of brc-20 to send',
+        type: 'number',
+        default: 5,
+      })
+      .option('feeRate', {
+        alias: 'f',
+        describe: 'Fee rate for the transaction',
+        type: 'number',
+        default: config[yargs.argv['network']].feeRate,
+      })
+      .option('mnemonic', {
+        describe: 'Mnemonic for the wallet',
+        type: 'string',
+        default: config[yargs.argv['network']].mnemonic,
+      })
+      .option('isDry', {
+        describe: 'Dry run',
+        type: 'string',
+        default: false,
+      })
+      .help().argv
+  })
+  .command('send-collectible', 'Send a collectible', (yargs) => {
+    return yargs
+      .option('to', {
+        alias: 't',
+        describe: 'Destination address for the collectible',
+        type: 'string',
+        default: config[yargs.argv['network']].destinationTaprootAddress,
+      })
+      .option('inscriptionId', {
+        alias: 'ixId',
+        describe: 'Inscription to be sent',
+        type: 'string',
+        demandOption: true,
+      })
+      .option('feeRate', {
+        alias: 'f',
+        describe: 'Fee rate for the transaction',
+        type: 'number',
+        default: config[yargs.argv['network']].feeRate,
+      })
+      .option('mnemonic', {
+        describe: 'Mnemonic for the wallet',
+        type: 'string',
+        default: config[yargs.argv['network']].mnemonic,
+      })
+      .option('isDry', {
+        describe: 'Dry run',
+        type: 'string',
+        default: false,
+      })
+      .help().argv
+  })
+  .command('view', 'View PSBT', {})
+  .command('convert', 'Convert PSBT', {})
+  .command('aggregate', 'Test Aggregator', {})
+  .command('ord-test', 'ORD test', {})
+  .command(
+    'create-offer',
+    'create an offer in the omnisat offers api',
+    (yargs) => {
+      return yargs
+        .option('ticker', {
+          describe: "ticker of brc-20 you'd like to sell",
+          alias: 't',
+          type: 'string',
+          demandOption: true,
+        })
+        .option('amount', {
+          describe: "the number of brc-20 tokens you're selling",
+          type: 'number',
+          demandOption: true,
+        })
+        .option('feeRate', {
+          alias: 'f',
+          describe: 'Fee rate for the transaction',
+          type: 'number',
+          default: config[yargs.argv['network']].feeRate,
+        })
+        .option('price', {
+          describe: 'the price of the offer in sats',
+          type: 'number',
+          // demandOption: true,
+        })
+        .help().argv
+    }
+  )
+  .command('buy-offer', 'ORD test', (yargs) => {
+    return yargs
+      .option('psbtBase64', {
+        describe: 'offer psbt base64',
+        alias: 'p',
+        type: 'string',
+        demandOption: true,
+      })
+      .option('feeRate', {
+        alias: 'f',
+        describe: 'Fee rate for the transaction',
+        type: 'number',
+        default: config[yargs.argv['network']].feeRate,
+      })
+      .help().argv
+  })
+  .command('aggregate', 'aggregate offers based on ticker', (yargs) => {
+    return yargs
+      .option('ticker', {
+        describe: "ticker of brc-20 you'd like to sell",
+        alias: 't',
+        type: 'string',
+        demandOption: true,
+      })
+      .option('feeRate', {
+        alias: 'f',
+        describe: 'Fee rate for the transaction',
+        type: 'number',
+        default: config[yargs.argv['network']].feeRate,
+      })
+      .option('price', {
+        describe: 'the price of the offer in sats',
+        type: 'number',
+        // demandOption: true,
+      })
+      .help().argv
+  })
+  .command('txn-history', 'Transaction history', {})
+  .command('gen-testnet-wallet', 'Generate testnet wallet', {})
+  .help().argv as unknown as YargsArguments
+
 export async function runCLI() {
-  const [command] = yargs.argv._
-  const options = Object.assign({}, yargs.argv)
-  const tapWallet = new Oyl({
-    network: 'mainnet',
-    baseUrl: 'https://mainnet.sandshrew.io',
-    version: 'v1',
-    projectId: 'd6aebfed1769128379aca7d215f0b689',
-  })
-  const mnemonic =
-    'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
-  const taprootAddress =
-    'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm'
-  const segwitAddress = '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic'
-  const taprootHdPath = TAPROOT_HD_PATH
-  const segwitHdPath = NESTED_SEGWIT_HD_PATH
-  const taprootPubkey =
-    '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be'
-  const segwitPubkey =
-    '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b'
+  const [command] = argv._
+  const { _, network = TESTNET } = yargs.argv as YargsArguments
+  const options = Object.assign({}, yargs.argv) as YargsArguments
+  const networkConfig = config[network]
 
-  const psbtsForTaprootAddressEndingDTM = {
-    psbtHex:
-      '70736274ff0100890200000001578ad7f2a593f9447a8ef0f790a9b1abfc81a6b2796920db573595a6c24c747a0100000000ffffffff02f420000000000000225120a8304c4cab8e15810e0a7d58741b3dcb3520339af31ecf3b264a1f5267cf1cc301100000000000002251200d89d702fafc100ab8eae890cbaf40b3547d6f1429564cf5d5f8d517f4caa390000000000001012b235e0000000000002251200d89d702fafc100ab8eae890cbaf40b3547d6f1429564cf5d5f8d517f4caa390000000',
-    psbtBase64:
-      'cHNidP8BAIkCAAAAAVeK1/Klk/lEeo7w95Cpsav8gaayeWkg21c1labCTHR6AQAAAAD/////AvQgAAAAAAAAIlEgqDBMTKuOFYEOCn1YdBs9yzUgM5rzHs87JkofUmfPHMMBEAAAAAAAACJRIA2J1wL6/BAKuOrokMuvQLNUfW8UKVZM9dX41Rf0yqOQAAAAAAABASsjXgAAAAAAACJRIA2J1wL6/BAKuOrokMuvQLNUfW8UKVZM9dX41Rf0yqOQAAAA',
-  }
-
-  const testWallet = new Oyl({
-    network: 'testnet',
-    baseUrl: 'https://testnet.sandshrew.io',
-    version: 'v1',
-    projectId: 'd6aebfed1769128379aca7d215f0b689',
+  let segwitSigner: bitcoin.Signer
+  const taprootSigner = await tapWallet.createTaprootSigner({
+    mnemonic: networkConfig.mnemonic,
+    taprootAddress: networkConfig.taprootAddress,
   })
 
-  const testnetMnemonic =
-    'upgrade float mixed life shy bread ramp room artist road major purity'
+  // const wallet = generateWallet(true, networkConfig.mnemonic)
+  // return
 
-  const testnetSegwitPubKey =
-    '02a4a49b8efd123ecc2fb200a95d4da40dac7abd563cfb52b8aa245cbca0249c1c'
-  const testnetSegwitAddress = 'tb1qac6u4rxej8n275tmk8k4aeadxulwlxxa5vk4vs'
-
-  const testnetTaprootPubKey =
-    '0385c264c7b6103eae8dc6ef31c5048b9f71b8c373585fe2cac943c6d262598ffc'
-  const testnetTaprootAddress =
-    'tb1pstyemhl9n2hydg079rgrh8jhj9s7zdxh2g5u8apwk0c8yc9ge4eqp59l22'
+  const { mnemonic, to, amount, feeRate, isDry, ticker, psbtBase64, price } =
+    options
   switch (command) {
     case 'load':
       return await loadRpc(options)
-      break
     case 'send':
-      const taprootResponse = await tapWallet.sendBtc({
-        to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
-        from: 'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-        amount: 500,
-        feeRate: 25,
+      const sendResponse = await networkConfig.wallet.sendBtc({
         mnemonic,
-        publicKey: taprootPubkey,
-        segwitAddress,
-        segwitHdPath: 'xverse',
-        segwitPubkey,
-        payFeesWithSegwit: false,
+        to,
+        from: networkConfig.taprootAddress,
+        publicKey: networkConfig.taprootPubkey,
+        amount,
+        feeRate,
       })
 
-      if (taprootResponse) {
-        console.log({ taprootResponse })
-      }
+      console.log(sendResponse)
+      return sendResponse
 
-      const segwitResponse = await tapWallet.sendBtc({
-        to: 'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
-        from: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-        amount: 500,
-        feeRate: 25,
-        publicKey: taprootPubkey,
+    case 'send-brc-20':
+      const sendBrc20Response = await networkConfig.wallet.sendBRC20({
         mnemonic,
-        segwitAddress,
-        segwitHdPath: 'xverse',
-        segwitPubkey,
-        payFeesWithSegwit: false,
+        fromAddress: networkConfig.taprootAddress,
+        taprootPublicKey: networkConfig.taprootPubkey,
+        destinationAddress: to,
+        token: ticker,
+        amount,
+        feeRate,
+        isDry,
       })
 
-      if (segwitResponse) {
-        console.log({ segwitResponse })
-      }
+      console.log(sendBrc20Response)
+      return sendBrc20Response
 
-      return
-    case 'sendBRC20':
-      const test0 = await tapWallet.sendBRC20({
-        isDry: true,
-        fromAddress:
-          'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-        taprootPublicKey:
-          '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
-        destinationAddress:
-          'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
-        feeRate: 10,
-        token: 'BONK',
-        inscriptionId: '',
-        segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-        segwitPubKey:
-          '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
-        mnemonic: mnemonic,
-        amount: 40,
-        payFeesWithSegwit: false,
-        segwitHdPath: 'xverse',
-      })
-      console.log(test0)
-      break
     case 'send-collectible':
-      const test1 = await tapWallet.sendOrdCollectible({
-        isDry: true,
-        fromAddress:
-          'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-        inscriptionId:
-          '68069fc341a462cd9a01ef4808b0bda0db7c0c6ea5dfffdc35b8992450cecb5bi0',
-        taprootPublicKey:
-          '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
-        segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-        segwitPubKey:
-          '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
-        destinationAddress:
-          'bc1pkvt4pj7jgj02s95n6sn56fhgl7t7cfx5mj4dedsqyzast0whpchs7ujd7y',
-        feeRate: 10,
-        payFeesWithSegwit: false,
-        mnemonic:
-          'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
-        segwitHdPath: 'xverse',
+      const { inscriptionId } = options
+      return await networkConfig.wallet.sendOrdCollectible({
+        mnemonic: networkConfig.mnemonic,
+        fromAddress: networkConfig.taprootAddress,
+        taprootPublicKey: networkConfig.taprootPubkey,
+        destinationAddress: networkConfig.destinationTaprootAddress,
+        inscriptionId,
+        feeRate,
+        isDry,
       })
-      console.log(test1)
-      break
-    case 'view':
-      return await viewPsbt()
-      break
-    // case 'market':
-    //   return await testMarketplaceBuy()
-    //   break
-    case 'convert':
-      return await convertPsbt()
-      break
+
+    case 'create-offer':
+      try {
+        const taprootUtxos = await networkConfig.wallet.getUtxosArtifacts({
+          address: networkConfig.taprootAddress,
+        })
+
+        const path = networkConfig.segwitHdPath ?? 'oyl'
+        const hdPaths = customPaths[path]
+        const taprootPrivateKey = await networkConfig.wallet.fromPhrase({
+          mnemonic: networkConfig.mnemonic,
+          addrType: transactions.getAddressType(networkConfig.taprootAddress),
+          hdPath: hdPaths['taprootPath'],
+        })
+
+        const content = `{"p":"brc-20","op":"transfer","tick":"${ticker}","amt":"${amount}"}`
+        const { txId, error: inscribeError } = await inscribe({
+          content,
+          inputAddress: networkConfig.taprootAddress,
+          outputAddress: networkConfig.taprootAddress,
+          mnemonic: networkConfig.mnemonic,
+          taprootPublicKey: networkConfig.taprootPubkey,
+          segwitPublicKey: networkConfig.segwitPubKey,
+          segwitAddress: networkConfig.segwitAddress,
+          isDry: networkConfig.isDry,
+          segwitSigner: segwitSigner,
+          taprootSigner: taprootSigner,
+          feeRate: feeRate,
+          network: network,
+          taprootUtxos: taprootUtxos,
+          taprootPrivateKey:
+            taprootPrivateKey.keyring.keyring._index2wallet[0][1].privateKey.toString(
+              'hex'
+            ),
+          sandshrewBtcClient: (networkConfig.wallet as Oyl).sandshrewBtcClient,
+          esploraRpc: (networkConfig.wallet as Oyl).esploraRpc,
+        })
+
+        if (inscribeError) {
+          console.error(inscribeError)
+          return { error: inscribeError }
+        }
+
+        console.log({ txId })
+
+        console.log("WAITING FOR UNISAT TO INDEX THE INSCRIPTION'S UTXO")
+        await delay(10000)
+        console.log('DONE WAITING')
+
+        const body = {
+          address: networkConfig.taprootAddress,
+          ticker,
+          amount: amount.toString(),
+          transferableInscription: {
+            inscription_id: `${txId}i0`,
+            ticker,
+            transfer_amount: amount.toString(),
+            is_valid: true,
+            is_used: false,
+            satpoint: `${txId}:0:0`,
+            min_price: null,
+            min_unit_price: null,
+            ordinalswallet_price: null,
+            ordinalswallet_unit_price: null,
+            unisat_price: null,
+            unisat_unit_price: null,
+          },
+          price: Number(price),
+        }
+
+        const OMNISAT_API_URL = 'https://omnisat.io/api'
+
+        const { psbtBase64, psbtHex } = await axios
+          .post(`${OMNISAT_API_URL}/orders/create`, body, {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          })
+          .then((res) => res.data)
+          .catch((error) => console.error('Error:', error))
+
+        const psbtToSign = bitcoin.Psbt.fromBase64(psbtBase64)
+        const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
+          _psbt: psbtToSign,
+          pubkey: networkConfig.taprootPubkey,
+          segwitPubkey: networkConfig.segwitPubKey,
+          segwitAddress: networkConfig.segwitAddress,
+          taprootAddress: networkConfig.taprootAddress,
+          network: getNetwork(network),
+        })
+
+        const signedSendPsbt = await signInputs(
+          psbtToSign,
+          toSignInputs,
+          networkConfig.taprootPubkey,
+          networkConfig.segwitPubKey,
+          segwitSigner,
+          taprootSigner
+        )
+
+        signedSendPsbt.finalizeInput(2)
+
+        console.log({
+          signedSendPsbt: signedSendPsbt.toBase64(),
+          signedSendPsbtHex: signedSendPsbt.toHex(),
+        })
+
+        const updateBody = {
+          psbtBase64: signedSendPsbt.toBase64(),
+          psbtHex: signedSendPsbt.toHex(),
+          satpoint: txId + ':0:0',
+        }
+
+        const updateResponse = await axios
+          .put(`${OMNISAT_API_URL}/orders/create`, updateBody, {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          })
+          .then((res) => res.data)
+          .catch((error) => console.error('Error:', error))
+        console.log({ updateResponse })
+
+        return updateResponse
+      } catch (error) {
+        console.error(error)
+        return
+      }
+    case 'buy-offer':
+      try {
+        const orderToBeBought = bitcoin.Psbt.fromBase64(psbtBase64)
+        const price = orderToBeBought.txOutputs[2].value
+
+        const marketplace = new BuildMarketplaceTransaction({
+          address: networkConfig.taprootAddress,
+          price: price,
+          psbtBase64: psbtBase64,
+          pubKey: networkConfig.taprootPubkey,
+          wallet: networkConfig.wallet,
+        })
+
+        if (!(await marketplace.isWalletPrepared())) {
+          console.log('WALLET NOT PREPARED')
+          const { psbtBase64: preparedPsbtBase64 } =
+            await marketplace.prepareWallet()
+          const preparationUtxo = bitcoin.Psbt.fromBase64(preparedPsbtBase64)
+          const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
+            _psbt: preparationUtxo,
+            pubkey: networkConfig.taprootPubkey,
+            segwitPubkey: networkConfig.segwitPubKey,
+            segwitAddress: networkConfig.segwitAddress,
+            taprootAddress: networkConfig.fromAddress,
+            network: getNetwork(network),
+          })
+
+          const signedSendPsbt = await signInputs(
+            preparationUtxo,
+            toSignInputs,
+            networkConfig.taprootPubkey,
+            networkConfig.segwitPubKey,
+            segwitSigner,
+            taprootSigner
+          )
+          signedSendPsbt.finalizeAllInputs()
+
+          const extractedTx = signedSendPsbt.extractTransaction().toHex()
+
+          console.log({ extractedTx })
+          return
+        } else {
+          console.log('WALLET PREPARED')
+          console.log('WALLET PREPARED')
+          console.log('WALLET PREPARED')
+          console.log('WALLET PREPARED')
+          console.log('WALLET PREPARED')
+        }
+
+        const { psbtHex: buildOrderHex, psbtBase64: builtOrderBase64 } =
+          await marketplace.psbtBuilder()
+
+        console.log({ builtOrderBase64 })
+
+        const filledOrderPsbt = bitcoin.Psbt.fromBase64(builtOrderBase64)
+        const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
+          _psbt: filledOrderPsbt,
+          pubkey: networkConfig.taprootPubkey,
+          segwitPubkey: networkConfig.segwitPubKey,
+          segwitAddress: networkConfig.segwitAddress,
+          taprootAddress: networkConfig.taprootAddress,
+          network: getNetwork(network),
+        })
+
+        const signedSendPsbt = await signInputs(
+          filledOrderPsbt,
+          toSignInputs,
+          networkConfig.taprootPubkey,
+          networkConfig.segwitPubKey,
+          segwitSigner,
+          taprootSigner
+        )
+
+        signedSendPsbt.finalizeInput(0)
+        signedSendPsbt.finalizeInput(1)
+        signedSendPsbt.finalizeInput(3)
+
+        const extractedTx = signedSendPsbt.extractTransaction().toHex()
+
+        console.log({ signedSendPsbt: signedSendPsbt.toBase64() })
+        console.log({ extractedTx })
+
+        const { result: offerBuyTxId, error: inscriptionError } =
+          await callBTCRPCEndpoint('sendrawtransaction', extractedTx, network)
+
+        console.log({ offerBuyTxId })
+
+        return offerBuyTxId
+      } catch (error) {
+        console.error(error)
+        return
+      }
+
+    // case 'view':
+    //   return await viewPsbt()
+    // // case 'market':
+    // //   return await testMarketplaceBuy()
+    // //   break
+    // case 'convert':
+    //   return await convertPsbt()
     case 'aggregate':
-      return await testAggregator()
-      break
-    case 'ord-test':
-      const testCase = await tapWallet.ordRpc.getInscriptionContent(
-        '6c51990395726ddbd922a3318b5713bb318da8be6aa199ee79cf9bdb6c91e37ai0'
+      const aggregator = new Aggregator()
+      const aggregated = await aggregator.fetchAndAggregateOffers(
+        ticker,
+        20,
+        1000
       )
-      console.log(testCase)
+
+      const formatOffers = (offers) =>
+        offers.map((offer) => ({
+          amount: offer.amount,
+          unitPrice: offer.unitPrice,
+          nftId: offer.offerId,
+          marketplace: offer.marketplace,
+        }))
+
+      console.log('Aggregated Offers')
+      console.log(
+        'Best Price Offers:',
+        formatOffers(aggregated.bestPrice.offers)
+      )
+      console.log(
+        'Closest Match Offers:',
+        formatOffers(aggregated.closestMatch.offers)
+      )
       return
-      break
-    case 'txn-history':
-      const test = new Oyl()
-      const testLog = await test.getTxHistory({
-        addresses: [
-          'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-          '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
-        ],
-      })
-      console.log(testLog)
-      break
-    case 'testnet-send':
-      await testWallet.recoverWallet({
-        mnemonic: testnetMnemonic,
-        activeIndexes: [0],
-        customPath: 'unisat',
-      })
-
-      const testnetTaprootResponse = await testWallet.sendBtc({
-        to: 'tb1pyjm845u3dwxcffyxe4mmcx8ecevvr33shknrtyc2ylgm4zvs8deqekd0s8',
-        from: testnetTaprootAddress,
-        amount: 500,
-        feeRate: 10,
-        mnemonic: testnetMnemonic,
-        publicKey: testnetTaprootPubKey,
-        segwitAddress: testnetSegwitAddress,
-        payFeesWithSegwit: false,
-        segwitHdPath: 'unisat',
-        segwitPubkey:
-          '031d49049be7501841213c2b5fc503b67b9c4fd33e7f4b29c0e6e2d99d1c39c0c8',
-      })
-
-      if (testnetTaprootResponse) {
-        console.log({ testnetTaprootResponse })
-      }
-
-      const testnetSegwitResponse = await testWallet.sendBtc({
-        to: 'tb1qgqw2l0hqglzw020h0yfjv69tuz50aq9m99h632',
-        from: testnetSegwitAddress,
-        amount: 500,
-        feeRate: 10,
-        mnemonic: testnetMnemonic,
-        publicKey: testnetTaprootPubKey,
-        segwitAddress: testnetSegwitAddress,
-        segwitHdPath: 'unisat',
-        segwitPubkey:
-          '031d49049be7501841213c2b5fc503b67b9c4fd33e7f4b29c0e6e2d99d1c39c0c8',
-        payFeesWithSegwit: false,
-      })
-
-      if (testnetSegwitResponse) {
-        console.log({ testnetSegwitResponse })
-      }
-      return
-    case 'gen-testnet-wallet':
-      generateWallet(true, testnetMnemonic)
-      return
-    case 'testnet-sendBRC20':
-      const testnetBrc20Send = await testWallet.sendBRC20({
-        isDry: false,
-        fromAddress: testnetTaprootAddress,
-        taprootPublicKey: testnetTaprootPubKey,
-        destinationAddress:
-          'tb1phq6q90tnfq9xjlqf3zskeeuknsvhg954phrm6fkje7ezfrmkms7q0z4e26',
-        feeRate: 2,
-        token: 'OYLZ',
-        inscriptionId:
-          '46a2d0f05668cd36c64bb8e32c3670025b288885ebd2913ca03ce0288d366fdf',
-        segwitAddress: testnetSegwitAddress,
-        segwitPubKey:
-          '031d49049be7501841213c2b5fc503b67b9c4fd33e7f4b29c0e6e2d99d1c39c0c8',
-        mnemonic: testnetMnemonic,
-        amount: 40,
-        payFeesWithSegwit: false,
-        segwitHdPath: 'unisat',
-      })
-      console.log(testnetBrc20Send)
-      break
-
-    case 'testnet-send-collectible':
-      const testCollectibleSend = await testWallet.sendOrdCollectible({
-        isDry: false,
-        fromAddress: testnetTaprootAddress,
-        inscriptionId:
-          'b25dfaeea88930616332bc97b9bde3bbfcfbe62e35e763a07cc4706a2be1ed17i0',
-        taprootPublicKey: testnetTaprootPubKey,
-        segwitAddress: testnetSegwitAddress,
-        segwitPubKey:
-          '031d49049be7501841213c2b5fc503b67b9c4fd33e7f4b29c0e6e2d99d1c39c0c8',
-        destinationAddress:
-          'tb1pyjm845u3dwxcffyxe4mmcx8ecevvr33shknrtyc2ylgm4zvs8deqekd0s8',
-        feeRate: 2,
-        payFeesWithSegwit: false,
-        mnemonic: testnetMnemonic,
-        segwitHdPath: 'unisat',
-      })
-      console.log(testCollectibleSend)
-      break
-
+    // case 'ord-test':
+    //   return await networkConfig.wallet.ordRpc.getInscriptionContent(
+    //     inscriptionId2
+    //   )
+    // case 'txn-history':
+    //   const test = new Oyl()
+    //   return await test.getTxHistory({
+    //     addresses: [networkConfig.taprootAddress, networkConfig.segwitAddress],
+    //   })
+    case 'taproot-txn-history':
+      return console.log(
+        await networkConfig.wallet.getTaprootTxHistory({
+          taprootAddress: networkConfig.taprootAddress,
+        })
+      )
     default:
-      return await callAPI(yargs.argv._[0], options)
-      break
+      return await callAPI(argv._[0], options)
   }
 }

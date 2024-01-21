@@ -115,7 +115,7 @@ export declare class Oyl {
         amount: any;
         usd_value: string;
     }>;
-    getUtxos(address: string): Promise<{
+    getUtxos(address: string, includeInscriptions?: boolean): Promise<{
         unspent_outputs: any[];
     }>;
     /**
@@ -127,6 +127,9 @@ export declare class Oyl {
      */
     getTxHistory({ addresses }: {
         addresses: string[];
+    }): Promise<{}[]>;
+    getTaprootTxHistory({ taprootAddress }: {
+        taprootAddress: string;
     }): Promise<{}[]>;
     /**
      * Retrieves a list of inscriptions for a given address.
@@ -169,8 +172,8 @@ export declare class Oyl {
         mnemonic: string;
         segwitAddress?: string;
         segwitPubkey?: string;
-        segwitHdPath: string;
-        payFeesWithSegwit: boolean;
+        segwitHdPath?: 'oyl' | 'xverse' | 'leather' | 'unisat' | 'testnet';
+        payFeesWithSegwit?: boolean;
     }): Promise<{
         txnId: string;
         rawTxn: string;
@@ -274,15 +277,34 @@ export declare class Oyl {
     createTaprootSigner({ mnemonic, taprootAddress, hdPathWithIndex, }: {
         mnemonic: string;
         taprootAddress: string;
-        hdPathWithIndex: string;
+        hdPathWithIndex?: string;
     }): Promise<any>;
     createSigner({ mnemonic, fromAddress, hdPathWithIndex, }: {
         mnemonic: string;
         fromAddress: string;
         hdPathWithIndex: string;
     }): Promise<any>;
-    sendBRC20(options: InscribeTransfer): Promise<unknown>;
-    sendOrdCollectible(options: InscribeTransfer): Promise<{
+    sendBRC20(options: InscribeTransfer): Promise<{
+        error: string;
+        txId?: undefined;
+        rawTxn?: undefined;
+    } | {
+        txId: string;
+        rawTxn: string;
+        error?: undefined;
+    }>;
+    sendOrdCollectible({ mnemonic, fromAddress, taprootPublicKey, destinationAddress, segwitPubKey, segwitAddress, payFeesWithSegwit, feeRate, inscriptionId, segwitHdPath, }: {
+        fromAddress: string;
+        taprootPublicKey: string;
+        destinationAddress: string;
+        segwitPubKey?: string;
+        segwitAddress?: string;
+        payFeesWithSegwit?: boolean;
+        feeRate?: number;
+        mnemonic: string;
+        segwitHdPath?: string;
+        inscriptionId: string;
+    }): Promise<{
         txId: string;
         rawTx: string;
     }>;

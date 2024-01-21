@@ -42,6 +42,7 @@ export declare class OylApiClient {
      */
     getBrc20sByAddress(address: string): Promise<any>;
     getAllInscriptionsByAddress(address: string): Promise<any>;
+    getInscriptionsForTxn(txn_id: string): Promise<any>;
     /**
      * Get collectible by ID.
      * @param id - The ID of the collectible.
@@ -66,7 +67,7 @@ export declare class OylApiClient {
      * @param marketPrice - The limit order market price.
      * @param testnet - mainnet/testnet network toggle.
      */
-    getAggregatedOffers({ ticker, limitOrderAmount, marketPrice, testnet }: {
+    getAggregatedOffers({ ticker, limitOrderAmount, marketPrice, testnet, }: {
         ticker: string;
         limitOrderAmount: number;
         marketPrice: number;
@@ -90,7 +91,7 @@ export declare class OylApiClient {
      * Get Omnisat offer psbt.
      * @param offerId - The offer Id to query.
      */
-    getOmnisatOfferPsbt({ offerId, ticker, testnet }: {
+    getOmnisatOfferPsbt({ offerId, ticker, testnet, }: {
         offerId: string;
         ticker: string;
         testnet?: boolean;

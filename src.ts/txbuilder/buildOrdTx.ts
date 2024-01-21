@@ -88,17 +88,19 @@ const addSegwitFeeUtxo = async ({
   fromAddress: string
 }) => {
   try {
-    const { nonMetaSegwitUtxos } = segwitUtxos.reduce(
-      (acc, utxo) => {
-        utxo.inscriptions.length > 0
-          ? acc.metaUtxos.push(utxo)
-          : acc.nonMetaSegwitUtxos.push(utxo)
-        return acc
-      },
-      { metaUtxos: [], nonMetaSegwitUtxos: [] }
-    )
+    console.log({ payFeesWithSegwit, segwitUtxos })
+    // const { nonMetaSegwitUtxos } = segwitUtxos?.reduce(
+    //   (acc, utxo) => {
+    //     utxo.inscriptions.length > 0
+    //       ? acc.metaUtxos.push(utxo)
+    //       : acc.nonMetaSegwitUtxos.push(utxo)
+    //     return acc
+    //     return acc
+    //   },
+    //   { metaUtxos: [], nonMetaSegwitUtxos: [] }
+    // )
 
-    nonMetaSegwitUtxos.sort((a, b) => b.satoshis - a.satoshis)
+    const nonMetaSegwitUtxos = []
 
     const nonMetaTaprootUtxos = await filterTaprootUtxos({
       taprootUtxos: taprootUtxos,
@@ -334,6 +336,7 @@ export const addInscriptionUtxo = async ({
       (inscription) => inscription.collectibles.id === inscriptionId
     )
   })
+
   if (!matchedUtxo || matchedUtxo.inscriptions.length > 1) {
     throw new Error(
       matchedUtxo
@@ -364,6 +367,28 @@ export function findUtxosForFees(utxos: Utxo[], amount: number) {
   for (const utxo of utxos) {
     if (totalSatoshis >= amount) break
     if (utxo.confirmations <= 0) continue
+
+    selectedUtxos.push(utxo)
+    totalSatoshis += utxo.satoshis
+  }
+
+  if (totalSatoshis >= amount) {
+    return {
+      selectedUtxos,
+      totalSatoshis,
+      change: totalSatoshis - amount,
+    }
+  } else {
+    return null
+  }
+}
+
+export function findUtxosToCoverAmount(utxos: Utxo[], amount: number) {
+  let totalSatoshis = 0
+  const selectedUtxos: Utxo[] = []
+
+  for (const utxo of utxos) {
+    if (totalSatoshis >= amount) break
 
     selectedUtxos.push(utxo)
     totalSatoshis += utxo.satoshis

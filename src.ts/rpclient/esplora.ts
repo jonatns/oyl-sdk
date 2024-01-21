@@ -22,6 +22,7 @@ export class EsploraRpc {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestData),
+      cache: 'no-cache',
     }
 
     try {

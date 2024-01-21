@@ -21,6 +21,11 @@ install:
 	$(Q)yarn
 	$(Q)echo "--- Dependencies installed"
 
+rebuild:
+	$(Q)npm run build
+	$(Q)npm install -g .
+	$(Q)echo "--- CLI reinstalled"
+
 reset:
 	$(Q)rm -rf lib
 	$(Q)yarn build

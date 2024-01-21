@@ -213,7 +213,7 @@ export interface InscribeTransfer {
   destinationAddress: string
   segwitPubKey?: string
   segwitAddress?: string
-  payFeesWithSegwit: boolean
+  payFeesWithSegwit?: boolean
   feeRate?: number
   token?: string
   mnemonic: string

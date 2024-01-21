@@ -42,6 +42,7 @@ export class OylApiClient {
       const options: RequestInit = {
         method: method,
         headers: { 'Content-Type': 'application/json' },
+        cache: 'no-cache',
       }
       if (this.testnet) {
         data['testnet'] = this.testnet
@@ -82,7 +83,18 @@ export class OylApiClient {
     return await this._call('/get-inscriptions', 'post', {
       address: address,
       exclude_brc20: false,
+      count: 20,
+      order: 'desc',
     })
+  }
+
+  async getInscriptionsForTxn(txn_id: string): Promise<any> {
+    const res = await this._call('/get-inscriptions-for-txn', 'post', {
+      tx_id: txn_id,
+      testnet: this.testnet,
+    })
+
+    return res.data
   }
 
   /**
@@ -102,10 +114,9 @@ export class OylApiClient {
   async getCollectiblesByAddress(address: string): Promise<any> {
     return await this._call('/get-inscriptions', 'post', {
       address: address,
-      exclude_brc20: true,
+      exclude_brc20: false,
     })
   }
-
 
   /**
    * Get Unisat ticker offers.
@@ -126,12 +137,22 @@ export class OylApiClient {
    * @param marketPrice - The limit order market price.
    * @param testnet - mainnet/testnet network toggle.
    */
-  async getAggregatedOffers({ ticker, limitOrderAmount, marketPrice, testnet }: { ticker: string, limitOrderAmount: number, marketPrice: number, testnet?: boolean }): Promise<any> {
+  async getAggregatedOffers({
+    ticker,
+    limitOrderAmount,
+    marketPrice,
+    testnet,
+  }: {
+    ticker: string
+    limitOrderAmount: number
+    marketPrice: number
+    testnet?: boolean
+  }): Promise<any> {
     const response = await this._call('/get-brc20-aggregate-offers', 'post', {
       ticker: ticker,
       limitOrderAmount,
       marketPrice,
-      testnet
+      testnet,
     })
     if (response.error) throw Error(response.error)
     return response
@@ -167,7 +188,7 @@ export class OylApiClient {
   async getOmnisatOfferPsbt({
     offerId,
     ticker,
-    testnet
+    testnet,
   }: {
     offerId: string
     ticker: string
@@ -176,7 +197,7 @@ export class OylApiClient {
     const response = await this._call('/get-omnisat-offer-psbt', 'post', {
       offerId: offerId,
       ticker: ticker,
-      testnet
+      testnet,
     })
     return response
   }
@@ -196,6 +217,4 @@ export class OylApiClient {
   async submitSignedBid(params: SignedBid): Promise<any> {
     return await this._call('/finalize-bid', 'post', params)
   }
-
-
 }
