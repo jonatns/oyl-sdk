@@ -969,7 +969,22 @@ export class Oyl {
     return taprootSigner
   }
 
-  async sendBRC20(options: InscribeTransfer) {
+  async sendBRC20(options: {
+    mnemonic: string
+    fromAddress: string
+    taprootPublicKey: string
+    destinationAddress: string
+    segwitHdPath: string
+    segwitPubKey?: string
+    segwitAddress?: string
+    payFeesWithSegwit?: boolean
+    feeRate?: number
+    token?: string
+    amount?: number
+    postage?: number
+    isDry?: boolean
+    inscriptionId?: string
+  }) {
     // await isDryDisclaimer(options.isDry)
     if (
       options.payFeesWithSegwit &&

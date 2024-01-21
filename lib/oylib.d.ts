@@ -1,6 +1,6 @@
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
-import { AddressType, InscribeTransfer, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
+import { AddressType, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
 import * as bitcoin from 'bitcoinjs-lib';
 import { OrdRpc } from './rpclient/ord';
@@ -301,7 +301,22 @@ export declare class Oyl {
         fromAddress: string;
         hdPathWithIndex: string;
     }): Promise<any>;
-    sendBRC20(options: InscribeTransfer): Promise<{
+    sendBRC20(options: {
+        mnemonic: string;
+        fromAddress: string;
+        taprootPublicKey: string;
+        destinationAddress: string;
+        segwitHdPath: string;
+        segwitPubKey?: string;
+        segwitAddress?: string;
+        payFeesWithSegwit?: boolean;
+        feeRate?: number;
+        token?: string;
+        amount?: number;
+        postage?: number;
+        isDry?: boolean;
+        inscriptionId?: string;
+    }): Promise<{
         error: string;
         txId?: undefined;
         rawTxn?: undefined;
