@@ -325,13 +325,14 @@ export declare class Oyl {
         rawTxn: string;
         error?: undefined;
     }>;
-    sendOrdCollectible({ mnemonic, fromAddress, taprootPublicKey, destinationAddress, segwitPubKey, segwitAddress, payFeesWithSegwit, feeRate, inscriptionId, segwitHdPath, }: {
+    sendOrdCollectible({ mnemonic, fromAddress, taprootPublicKey, destinationAddress, segwitPubKey, segwitAddress, payFeesWithSegwit, feeRate, isDry, inscriptionId, segwitHdPath, }: {
         fromAddress: string;
         taprootPublicKey: string;
         destinationAddress: string;
         segwitPubKey?: string;
         segwitAddress?: string;
         payFeesWithSegwit?: boolean;
+        isDry?: boolean;
         feeRate?: number;
         mnemonic: string;
         segwitHdPath?: string;

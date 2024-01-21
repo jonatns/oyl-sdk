@@ -1176,6 +1176,7 @@ export class Oyl {
     segwitAddress,
     payFeesWithSegwit,
     feeRate,
+    isDry,
     inscriptionId,
     segwitHdPath = 'oyl',
   }: {
@@ -1185,6 +1186,7 @@ export class Oyl {
     segwitPubKey?: string
     segwitAddress?: string
     payFeesWithSegwit?: boolean
+    isDry?: boolean
     feeRate?: number
     mnemonic: string
     segwitHdPath?: string
@@ -1306,6 +1308,10 @@ export class Oyl {
 
       const sendTxHex = signedSendPsbt.extractTransaction().toHex()
       const sendTxId = signedSendPsbt.extractTransaction().getId()
+
+      if (isDry) {
+        return { txId: sendTxId, rawTxn: sendTxHex }
+      }
 
       const [result] =
         await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([sendTxHex])

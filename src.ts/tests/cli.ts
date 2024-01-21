@@ -298,7 +298,7 @@ const argv = yargs(hideBin(process.argv))
       })
       .option('isDry', {
         describe: 'Dry run',
-        type: 'string',
+        type: 'boolean',
         default: false,
       })
       .help().argv
@@ -306,7 +306,6 @@ const argv = yargs(hideBin(process.argv))
   .command('view', 'View PSBT', {})
   .command('convert', 'Convert PSBT', {})
   .command('aggregate', 'Test Aggregator', {})
-  .command('ord-test', 'ORD test', {})
   .command(
     'create-offer',
     'create an offer in the omnisat offers api',
