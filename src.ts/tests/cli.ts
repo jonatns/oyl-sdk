@@ -486,7 +486,7 @@ export async function runCLI() {
         console.log({ txId })
 
         console.log("WAITING FOR UNISAT TO INDEX THE INSCRIPTION'S UTXO")
-        await delay(10000)
+        await delay(15000)
         console.log('DONE WAITING')
 
         const body = {
