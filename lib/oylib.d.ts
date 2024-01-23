@@ -29,8 +29,9 @@ export declare class Oyl {
      * @param {string | string[]} address - A single address or an array of addresses.
      * @returns {Promise<Object[]>} A promise that resolves to an array of address summaries.
      */
-    getAddressSummary({ address }: {
-        address: any;
+    getAddressSummary({ address, includeInscriptions, }: {
+        address: string;
+        includeInscriptions?: boolean;
     }): Promise<any[]>;
     /**
      * Derives a Taproot address from the given public key.

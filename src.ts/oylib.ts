@@ -5,7 +5,6 @@ import { findUtxosToCoverAmount, OGPSBTTransaction } from './txbuilder'
 import {
   delay,
   inscribe,
-  sendCollectible,
   createBtcTx,
   getNetwork,
   isValidJSON,
@@ -24,7 +23,6 @@ import { AccountManager, customPaths } from './wallet/accountsManager'
 
 import {
   AddressType,
-  InscribeTransfer,
   Providers,
   RecoverAccountOptions,
   TickerDetails,
@@ -89,13 +87,16 @@ export class Oyl {
    * @param {string | string[]} address - A single address or an array of addresses.
    * @returns {Promise<Object[]>} A promise that resolves to an array of address summaries.
    */
-  async getAddressSummary({ address }) {
-    if (typeof address === 'string') {
-      address = [address]
-    }
+  async getAddressSummary({
+    address,
+    includeInscriptions,
+  }: {
+    address: string
+    includeInscriptions?: boolean
+  }) {
     const addressesUtxo = []
     for (let i = 0; i < address.length; i++) {
-      let utxos = await this.getUtxos(address[i])
+      let utxos = await this.getUtxos([address][i], includeInscriptions)
       addressesUtxo[i] = {}
       addressesUtxo[i]['utxo'] = utxos.unspent_outputs
       addressesUtxo[i]['balance'] = transactions.calculateBalance(
@@ -437,29 +438,6 @@ export class Oyl {
         const { txid, vout, size, vin, status, fee } = tx
         let inscriptionsOnTx: any[] =
           await this.apiClient.getInscriptionsForTxn(txid)
-        const symbols = []
-        if (inscriptionsOnTx.length > 0) {
-          for await (const inscription of inscriptionsOnTx) {
-            const inscriptionsOnTxContent =
-              await this.ordRpc.getInscriptionContent(
-                inscription['inscription_id']
-              )
-            isCollectible =
-              (
-                await this.ordRpc.getInscriptionById(
-                  inscription['inscription_id']
-                )
-              ).content_type === 'image/png'
-            try {
-              let jsonObj = JSON.parse(atob(inscriptionsOnTxContent))
-              const symbolToAdd = jsonObj.tick as string
-              symbols.push(symbolToAdd)
-            } catch (error) {}
-          }
-        }
-
-        const blockDelta = currentBlock - status.block_height
-        const confirmations = blockDelta > 0 ? blockDelta : 0
         let inputAddress = false
 
         let vinSum = 0
@@ -477,21 +455,37 @@ export class Oyl {
           }
         }
 
+        const symbols = []
+        if (inscriptionsOnTx.length > 0) {
+          for await (const inscription of inscriptionsOnTx) {
+            const inscriptionsOnTxContent =
+              await this.ordRpc.getInscriptionContent(
+                inscription['inscription_id']
+              )
+            const inscriptionDetails = await this.ordRpc.getInscriptionById(
+              inscription['inscription_id']
+            )
+            isCollectible = inscriptionDetails.content_type === 'image/png'
+
+            let jsonObj = JSON.parse(atob(inscriptionsOnTxContent))
+
+            const symbolToAdd = jsonObj.tick as string
+            symbols.push({
+              amount: jsonObj.amt,
+              ticker: symbolToAdd,
+            })
+          }
+        }
+
+        const blockDelta = currentBlock - status.block_height
+        const confirmations = blockDelta > 0 ? blockDelta : 0
+
         const inscriptionType =
           symbols.length > 0 ? 'brc-20' : isCollectible ? 'collectible' : 'N/A'
 
         const txDetails = {}
         txDetails['txId'] = txid
         txDetails['confirmations'] = confirmations
-        txDetails['type'] =
-          inputAddress && symbols.length === 0
-            ? 'sent'
-            : inputAddress && symbols.length > 1
-            ? 'swap'
-            : inscriptionType === 'N/A' ||
-              (!inputAddress && symbols.length >= 1)
-            ? 'received'
-            : 'inscribed'
         txDetails['blockTime'] = status.block_time
         txDetails['blockHeight'] = status.block_height
         txDetails['fee'] = fee
@@ -499,9 +493,9 @@ export class Oyl {
         txDetails['vinSum'] = vinSum
         txDetails['voutSum'] = voutSum
         txDetails['amount'] = inputAddress ? vinSum - voutSum - fee : voutSum
-        txDetails['symbol'] = symbols.length > 0 ? symbols : ['btc']
+        txDetails['inscriptionDetails'] =
+          inscriptionType === 'brc-20' ? symbols : [{ tick: 'btc' }]
         txDetails['inscriptionType'] = inscriptionType
-
         return txDetails
       })
       return await Promise.all(processedTxns)
@@ -702,7 +696,9 @@ export class Oyl {
     if (!isValid) {
       return { isValid, summary: null }
     }
-    const summary = await this.getAddressSummary({ address })
+    const summary = await this.getAddressSummary({
+      address,
+    })
     return { isValid, summary }
   }
 
@@ -715,12 +711,15 @@ export class Oyl {
   async getTaprootAddressInfo({ address }) {
     const isValid = transactions.validateTaprootAddress({
       address,
-      type: 'segwit',
+      type: 'taproot',
     })
     if (!isValid) {
       return { isValid, summary: null }
     }
-    const summary = await this.getAddressSummary({ address })
+    const summary = await this.getAddressSummary({
+      address,
+      includeInscriptions: false,
+    })
     return { isValid, summary }
   }
 
@@ -1086,6 +1085,7 @@ export class Oyl {
       const utxosForTransferSendFees = await this.getUtxosArtifacts({
         address: options.fromAddress,
       })
+
       const sendTxSize = calculateTaprootTxSize(3, 0, 2)
       const feeForSend = sendTxSize * feeRate < 150 ? 200 : sendTxSize * feeRate
       const utxosToSend = findUtxosToCoverAmount(
