@@ -486,7 +486,7 @@ export async function runCLI() {
         console.log({ txId })
 
         console.log("WAITING FOR UNISAT TO INDEX THE INSCRIPTION'S UTXO")
-        await delay(10000)
+        await delay(15000)
         console.log('DONE WAITING')
 
         const body = {
@@ -510,7 +510,10 @@ export async function runCLI() {
           price: Number(price),
         }
 
-        const OMNISAT_API_URL = 'https://omnisat.io/api'
+        const OMNISAT_API_URL =
+          'https://omnisat-fe-git-testnet-omnisat-foundation.vercel.app/api'
+
+        console.log({ body })
 
         const { psbtBase64, psbtHex } = await axios
           .post(`${OMNISAT_API_URL}/orders/create`, body, {
