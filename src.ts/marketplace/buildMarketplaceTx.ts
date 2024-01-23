@@ -209,9 +209,9 @@ export class BuildMarketplaceTransaction {
         value: makerInputData?.witnessUtxo?.value,
         script: makerInputData?.witnessUtxo?.script as Buffer,
       },
-      // tapInternalKey: makerInputData.tapInternalKey,
-      // tapKeySig: makerInputData.tapKeySig,
-      finalScriptWitness: makerInputData.finalScriptWitness,
+      tapInternalKey: makerInputData.tapInternalKey,
+      tapKeySig: makerInputData.tapKeySig,
+      //finalScriptWitness: makerInputData.finalScriptWitness,
       sighashType:
         bitcoin.Transaction.SIGHASH_SINGLE |
         bitcoin.Transaction.SIGHASH_ANYONECANPAY,

@@ -11,7 +11,7 @@ import { generateWallet } from './genWallet'
 import { hideBin } from 'yargs/helpers'
 import { getAddressesFromPublicKey } from '@sadoprotocol/ordit-sdk'
 import { BuildMarketplaceTransaction } from '../marketplace/buildMarketplaceTx'
-import { ToSignInput } from '../shared/interface'
+import { Network, ToSignInput } from '../shared/interface'
 import {
   calculateTaprootTxSize,
   callBTCRPCEndpoint,
@@ -27,6 +27,7 @@ import * as transactions from '../transactions'
 import { findUtxosToCoverAmount } from '../txbuilder'
 import * as net from 'net'
 import { Tx } from '@cmdcode/tapscript'
+import { Marketplace } from '../marketplace'
 
 bitcoin.initEccLib(ecc2)
 
@@ -42,19 +43,46 @@ export async function loadRpc(options) {
   }
 }
 
-// export async function testMarketplaceBuy() {
-//   const options = {
-//     address: process.env.TAPROOT_ADDRESS,
-//     pubKey: process.env.TAPROOT_PUBKEY,
-//     feeRate: parseFloat(process.env.FEE_RATE),
-//     psbtBase64: process.env.PSBT_BASE64,
-//     price: 0.001,
-//   }
-//   const intent = new (options)
-//   const builder = await intent.psbtBuilder()
-//   console.log(builder)
-// }
+export async function testMarketplaceBuy() {
+  const initOptions = {
+    baseUrl: 'https://testnet.sandshrew.io',
+    version: 'v1',
+    projectId: 'd6aebfed1769128379aca7d215f0b689', // default API key
+    network: 'testnet' as Network,
+  }
+  const wallet = new Oyl(initOptions)
 
+  const marketplaceOptions = {
+    address: process.env.TESTNET_TAPROOT_ADDRESS,
+    publicKey: process.env.TESTNET_TAPROOT_PUBKEY,
+    mnemonic: process.env.TESTNET_TAPROOT_MNEMONIC,
+    hdPath: process.env.TESTNET_TAPROOT_HDPATH,
+    feeRate: parseFloat(process.env.FEE_RATE),
+    wallet: wallet
+  }
+
+  const quotes =[
+    {
+    offerId: "658f39306128445df87d74d7",
+    marketplace: "omnisat",
+    ticker: "sats"
+  },
+  {
+    offerId: "658f393f6128445df87d74d8",
+    marketplace: "omnisat",
+    ticker: "sats"
+  },
+  {
+    offerId: "658f39686128445df87d74da",
+    marketplace: "omnisat",
+    ticker: "sats"
+  },
+]
+  const marketplace = new Marketplace(marketplaceOptions)
+  const offersToBuy = await marketplace.processAllOffers(quotes)
+  const signedTxs = await marketplace.buyMarketPlaceOffers(offersToBuy)
+  console.log(signedTxs);
+}
 export async function testAggregator() {
   const aggregator = new Aggregator()
   const aggregated = await aggregator.fetchAndAggregateOffers(
@@ -397,6 +425,8 @@ export async function runCLI() {
   switch (command) {
     case 'load':
       return await loadRpc(options)
+    case 'buy':
+      return await testMarketplaceBuy()
     case 'send':
       const sendResponse = await networkConfig.wallet.sendBtc({
         mnemonic,
