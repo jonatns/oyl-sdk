@@ -374,7 +374,7 @@ export class Oyl {
       const finalCombinedHistory = Array.from(removedDuplicatesArray.values())
       const processedTxns = finalCombinedHistory.map((tx) => {
         const { txid, vout, size, vin, status, fee } = tx
-        const blockDelta = currentBlock - status.block_height
+        const blockDelta = currentBlock - status.block_height + 1
         const confirmations = blockDelta > 0 ? blockDelta : 0
         const inputAddress = vin.find(
           ({ prevout }) =>
@@ -458,7 +458,7 @@ export class Oyl {
           }
         }
 
-        const blockDelta = currentBlock - status.block_height
+        const blockDelta = currentBlock - status.block_height + 1
         const confirmations = blockDelta > 0 ? blockDelta : 0
         let inputAddress = false
 
