@@ -513,8 +513,6 @@ export async function runCLI() {
         const OMNISAT_API_URL =
           'https://omnisat-fe-git-testnet-omnisat-foundation.vercel.app/api'
 
-        console.log({ body })
-
         const { psbtBase64, psbtHex } = await axios
           .post(`${OMNISAT_API_URL}/orders/create`, body, {
             headers: {
@@ -656,7 +654,7 @@ export async function runCLI() {
         const { result: offerBuyTxId, error: inscriptionError } =
           await callBTCRPCEndpoint('sendrawtransaction', extractedTx, network)
 
-        console.log({ offerBuyTxId })
+        console.log({ offerBuyTxId, inscriptionError })
 
         return offerBuyTxId
       } catch (error) {

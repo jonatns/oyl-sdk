@@ -55,6 +55,17 @@ export class Aggregator {
       const omnisatOffers = await this.apiClient.getOmnisatTickerOffers({
         ticker,
       })
+      for (const offer of omnisatOffers) {
+        allOffers.push({
+          ticker: offer.tick,
+          offerId: offer._id,
+          amount: offer.amount.toString(),
+          address: offer.ownerAddress,
+          marketplace: 'omnisat',
+          unitPrice: offer.amount / offer.price,
+          totalPrice: offer.price,
+        })
+      }
 
       this.offers = allOffers
       return allOffers
