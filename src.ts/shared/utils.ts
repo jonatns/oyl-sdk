@@ -437,8 +437,6 @@ export const inscribe = async ({
     amountNeededForInscribe
   )
 
-  console.log({ amountNeededForInscribe })
-
   if (
     !utxosToSend ||
     !utxosToSend.selectedUtxos ||
