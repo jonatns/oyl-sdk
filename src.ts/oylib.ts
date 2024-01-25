@@ -461,6 +461,7 @@ export class Oyl {
         const blockDelta = currentBlock - status.block_height + 1
         const confirmations = blockDelta > 0 ? blockDelta : 0
         let inputAddress = false
+        let fromAddress: string
 
         let vinSum = 0
         let voutSum = 0
@@ -469,6 +470,9 @@ export class Oyl {
           if (taprootAddress === input.prevout.scriptpubkey_address) {
             inputAddress = true
             vinSum += input.prevout.value
+          }
+          if (taprootAddress !== input.prevout.scriptpubkey_address) {
+            fromAddress = input.prevout.scriptpubkey_address
           }
         }
         for (let output of vout) {
@@ -497,6 +501,7 @@ export class Oyl {
         txDetails['fee'] = fee
         txDetails['feeRate'] = Math.floor(fee / size)
         txDetails['vinSum'] = vinSum
+        txDetails['from'] = fromAddress
         txDetails['voutSum'] = voutSum
         txDetails['amount'] = inputAddress ? vinSum - voutSum - fee : voutSum
         txDetails['symbol'] = symbols.length > 0 ? symbols : ['btc']
