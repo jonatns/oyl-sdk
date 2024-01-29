@@ -331,7 +331,7 @@ const argv = yargs(hideBin(process.argv))
         .option('price', {
           describe: 'the price of the offer in sats',
           type: 'number',
-          // demandOption: true,
+          demandOption: true,
         })
         .help().argv
     }
@@ -375,6 +375,7 @@ const argv = yargs(hideBin(process.argv))
   })
   .command('txn-history', 'Transaction history', {})
   .command('gen-testnet-wallet', 'Generate testnet wallet', {})
+  .demandCommand(1, 'You need at least one command before moving on')
   .help().argv as unknown as YargsArguments
 
 export async function runCLI() {
