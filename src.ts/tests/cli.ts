@@ -42,7 +42,7 @@ export async function loadRpc(options) {
   }
 }
 
-// export async function testMarketplaceBuy() {
+export async function testMarketplaceBuy() {
 //   const options = {
 //     address: process.env.TAPROOT_ADDRESS,
 //     pubKey: process.env.TAPROOT_PUBKEY,
