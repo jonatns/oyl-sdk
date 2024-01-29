@@ -100,7 +100,7 @@ export class BuildMarketplaceTransaction {
 
   async isWalletPrepared() {
     const allUtxosWorth600 = await this.getAllUTXOsWorthASpecificValue(600)
-    if (allUtxosWorth600.length < 8) {
+    if (allUtxosWorth600.length < 2) {
       return false
     }
     return true
