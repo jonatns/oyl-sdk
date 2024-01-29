@@ -354,27 +354,31 @@ const argv = yargs(hideBin(process.argv))
         .option('price', {
           describe: 'the price of the offer in sats',
           type: 'number',
-          // demandOption: true,
+          demandOption: true,
         })
         .help().argv
     }
   )
-  .command('buy-offer', 'ORD test', (yargs) => {
-    return yargs
-      .option('psbtBase64', {
-        describe: 'offer psbt base64',
-        alias: 'p',
-        type: 'string',
-        demandOption: true,
-      })
-      .option('feeRate', {
-        alias: 'f',
-        describe: 'Fee rate for the transaction',
-        type: 'number',
-        default: config[yargs.argv['network']].feeRate,
-      })
-      .help().argv
-  })
+  .command(
+    'buy-offer',
+    'buy and offer from the omnisat offers api',
+    (yargs) => {
+      return yargs
+        .option('psbtBase64', {
+          describe: 'offer psbt base64',
+          alias: 'p',
+          type: 'string',
+          demandOption: true,
+        })
+        .option('feeRate', {
+          alias: 'f',
+          describe: 'Fee rate for the transaction',
+          type: 'number',
+          default: config[yargs.argv['network']].feeRate,
+        })
+        .help().argv
+    }
+  )
   .command('aggregate', 'aggregate offers based on ticker', (yargs) => {
     return yargs
       .option('ticker', {
@@ -398,6 +402,7 @@ const argv = yargs(hideBin(process.argv))
   })
   .command('txn-history', 'Transaction history', {})
   .command('gen-testnet-wallet', 'Generate testnet wallet', {})
+  .demandCommand(1, 'You need at least one command before moving on')
   .help().argv as unknown as YargsArguments
 
 export async function runCLI() {
@@ -511,7 +516,7 @@ export async function runCLI() {
         console.log({ txId })
 
         console.log("WAITING FOR UNISAT TO INDEX THE INSCRIPTION'S UTXO")
-        await delay(10000)
+        await delay(15000)
         console.log('DONE WAITING')
 
         const body = {
@@ -535,7 +540,8 @@ export async function runCLI() {
           price: Number(price),
         }
 
-        const OMNISAT_API_URL = 'https://omnisat.io/api'
+        const OMNISAT_API_URL =
+          'https://omnisat-fe-git-testnet-omnisat-foundation.vercel.app/api'
 
         const { psbtBase64, psbtHex } = await axios
           .post(`${OMNISAT_API_URL}/orders/create`, body, {
@@ -678,7 +684,7 @@ export async function runCLI() {
         const { result: offerBuyTxId, error: inscriptionError } =
           await callBTCRPCEndpoint('sendrawtransaction', extractedTx, network)
 
-        console.log({ offerBuyTxId })
+        console.log({ offerBuyTxId, inscriptionError })
 
         return offerBuyTxId
       } catch (error) {
