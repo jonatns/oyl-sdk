@@ -55,6 +55,23 @@ export async function loadRpc(options) {
 //   console.log(builder)
 // }
 
+  const quotes =[
+    {
+    offerId: "65afed54d45a352ea5a48ec0",
+    marketplace: "omnisat",
+    ticker: "xing"
+  },
+  {
+    offerId: "65b1560b3a76022313d73a40",
+    marketplace: "omnisat",
+    ticker: "xing"
+  }
+]
+  const marketplace = new Marketplace(marketplaceOptions)
+  const offersToBuy = await marketplace.processAllOffers(quotes)
+  const signedTxs = await marketplace.buyMarketPlaceOffers(offersToBuy)
+  console.log(signedTxs)
+}
 export async function testAggregator() {
   const aggregator = new Aggregator()
   const aggregated = await aggregator.fetchAndAggregateOffers(
