@@ -597,7 +597,23 @@ export class Oyl {
       unspent_outputs,
       inscriptions
     )
-    return utxoArtifacts
+    return utxoArtifacts as Array<{
+      txId: string
+      outputIndex: number
+      satoshis: number
+      scriptPk: string
+      confirmations: number
+      addressType: number
+      address: string
+      inscriptions: Array<{
+        brc20: {
+          id: string
+          address: string
+          content: string
+          location: string
+        }
+      }>
+    }>
   }
 
   /**
@@ -1015,11 +1031,44 @@ export class Oyl {
         address: options.fromAddress,
       })
 
+      console.log({ taprootUtxosStr: JSON.stringify(taprootUtxos) })
+
       let segwitUtxos: any[] | undefined
       if (options.segwitAddress) {
         segwitUtxos = await this.getUtxosArtifacts({
           address: options.segwitAddress,
         })
+      }
+
+      const commitTxSize = calculateTaprootTxSize(3, 0, 2)
+      const feeForCommit =
+        commitTxSize * options.feeRate < 150
+          ? 200
+          : commitTxSize * options.feeRate
+
+      const revealTxSize = calculateTaprootTxSize(1, 0, 1)
+      const feeForReveal =
+        revealTxSize * options.feeRate < 150
+          ? 200
+          : revealTxSize * options.feeRate
+
+      const brcSendSize = calculateTaprootTxSize(2, 0, 2)
+      const feeForBrcSend =
+        brcSendSize * options.feeRate < 150
+          ? 200
+          : brcSendSize * options.feeRate
+
+      const inscriptionSats = 546
+      const amountNeededForInscribeAndSend =
+        Number(feeForCommit) +
+        Number(feeForReveal) +
+        inscriptionSats +
+        feeForBrcSend
+
+      const amountGatheredForSend = calculateAmountGatheredUtxo(taprootUtxos)
+
+      if (amountGatheredForSend < amountNeededForInscribeAndSend) {
+        return { error: 'INSUFFICIENT FUNDS' }
       }
 
       let segwitSigner, segwitPrivateKey

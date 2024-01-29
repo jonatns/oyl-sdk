@@ -419,7 +419,6 @@ export const inscribe = async ({
   sandshrewBtcClient: SandshrewBitcoinClient
   esploraRpc: EsploraRpc
 }) => {
-  console.log({ feeRate })
   const commitTxSize = calculateTaprootTxSize(3, 0, 2)
   const feeForCommit =
     commitTxSize * feeRate < 150 ? 200 : commitTxSize * feeRate
