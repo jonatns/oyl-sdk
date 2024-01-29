@@ -359,22 +359,26 @@ const argv = yargs(hideBin(process.argv))
         .help().argv
     }
   )
-  .command('buy-offer', 'ORD test', (yargs) => {
-    return yargs
-      .option('psbtBase64', {
-        describe: 'offer psbt base64',
-        alias: 'p',
-        type: 'string',
-        demandOption: true,
-      })
-      .option('feeRate', {
-        alias: 'f',
-        describe: 'Fee rate for the transaction',
-        type: 'number',
-        default: config[yargs.argv['network']].feeRate,
-      })
-      .help().argv
-  })
+  .command(
+    'buy-offer',
+    'buy and offer from the omnisat offers api',
+    (yargs) => {
+      return yargs
+        .option('psbtBase64', {
+          describe: 'offer psbt base64',
+          alias: 'p',
+          type: 'string',
+          demandOption: true,
+        })
+        .option('feeRate', {
+          alias: 'f',
+          describe: 'Fee rate for the transaction',
+          type: 'number',
+          default: config[yargs.argv['network']].feeRate,
+        })
+        .help().argv
+    }
+  )
   .command('aggregate', 'aggregate offers based on ticker', (yargs) => {
     return yargs
       .option('ticker', {
