@@ -299,8 +299,8 @@ export declare class Oyl {
     }>;
     finalizePsbtBase64(psbtBase64: any): Promise<any>;
     sendPsbt(txData: string, isDry?: boolean): Promise<{
-        signedPsbtHex: string;
-        signedPsbtBase64: string;
+        sentPsbt: any;
+        sentPsbtBase64: string;
     }>;
     createSegwitSigner({ mnemonic, segwitAddress, hdPathWithIndex, }: {
         mnemonic: string;
