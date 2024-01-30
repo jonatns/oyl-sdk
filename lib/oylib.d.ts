@@ -151,7 +151,23 @@ export declare class Oyl {
      */
     getUtxosArtifacts({ address }: {
         address: any;
-    }): Promise<any[]>;
+    }): Promise<{
+        txId: string;
+        outputIndex: number;
+        satoshis: number;
+        scriptPk: string;
+        confirmations: number;
+        addressType: number;
+        address: string;
+        inscriptions: Array<{
+            brc20: {
+                id: string;
+                address: string;
+                content: string;
+                location: string;
+            };
+        }>;
+    }[]>;
     /**
      * Creates a Partially Signed Bitcoin Transaction (PSBT) to send regular satoshis, signs and broadcasts it.
      * @param {Object} params - The parameters for creating the PSBT.
