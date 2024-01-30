@@ -415,6 +415,7 @@ export class Oyl {
       return processedTxns
     } catch (error) {
       console.log(error)
+      throw new Error('Error fetching txn history')
     }
   }
 
@@ -516,7 +517,7 @@ export class Oyl {
       })
       return await Promise.all(processedTxns)
     } else {
-      throw Error('Invalid address type')
+      throw new Error('Invalid address type')
     }
   }
 
@@ -875,7 +876,7 @@ export class Oyl {
       return finalizedPsbtHex
     } catch (e) {
       console.log(e)
-      return ''
+      throw new Error(e)
     }
   }
   async sendPsbt(txData: string, isDry?: boolean) {
@@ -891,14 +892,15 @@ export class Oyl {
           'btc_sendrawtransaction',
           [`${txData}`]
         )
-      }
 
-      return {
-        signedPsbtHex: '',
-        signedPsbtBase64: '',
+        return {
+          sentPsbt: txHex,
+          sentPsbtBase64: Buffer.from(txHex, 'hex').toString('base64'),
+        }
       }
     } catch (e) {
       console.log(e)
+      throw new Error(e)
     }
   }
 
@@ -1005,7 +1007,7 @@ export class Oyl {
     try {
       const addressType = transactions.getAddressType(options.fromAddress)
       if (addressType == null) {
-        throw Error('Unrecognized Address Type')
+        throw new Error('Unrecognized Address Type')
       }
 
       const path = options.segwitHdPath ?? 'oyl'
@@ -1057,7 +1059,7 @@ export class Oyl {
 
       const content = `{"p":"brc-20","op":"transfer","tick":"${options.token}","amt":"${options.amount}"}`
 
-      const { txId, error: inscribeError } = await inscribe({
+      const { txId } = await inscribe({
         content,
         inputAddress: options.fromAddress,
         outputAddress: options.destinationAddress,
@@ -1081,16 +1083,12 @@ export class Oyl {
         esploraRpc: this.esploraRpc,
       })
 
-      if (inscribeError) {
-        return { error: inscribeError }
-      }
-
       const txResult = await waitForTransaction({
         txId,
         sandshrewBtcClient: this.sandshrewBtcClient,
       })
       if (!txResult) {
-        return { error: 'ERROR WAITING FOR COMMIT TX' }
+        throw new Error('ERROR WAITING FOR COMMIT TX')
       }
 
       const utxosForTransferSendFees = await this.getUtxosArtifacts({
@@ -1173,7 +1171,7 @@ export class Oyl {
       return { txId: sendTxId, rawTxn: sendTxHex }
     } catch (err) {
       console.error(err)
-      throw err
+      throw new Error(err)
     }
   }
 
@@ -1203,7 +1201,6 @@ export class Oyl {
     inscriptionId: string
   }) {
     try {
-      // await isDryDisclaimer(isDry)
       if (payFeesWithSegwit && (!segwitAddress || !segwitPubKey)) {
         throw new Error('Invalid segwit information entered')
       }
@@ -1333,9 +1330,9 @@ export class Oyl {
       await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(sendTxHex)
 
       return { txId: sendTxId, rawTxn: sendTxHex }
-    } catch (err) {
-      console.error(err)
-      throw err
+    } catch (error) {
+      console.error(error)
+      throw new Error(error)
     }
   }
 }

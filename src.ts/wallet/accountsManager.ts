@@ -7,7 +7,6 @@ import {
 } from '../shared/interface'
 import * as bitcoin from 'bitcoinjs-lib'
 import Mnemonic from 'bitcore-mnemonic'
-import { getNetwork } from '../shared/utils'
 
 export const customPaths = {
   oyl: {
