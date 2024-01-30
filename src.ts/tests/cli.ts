@@ -58,21 +58,21 @@ export async function testMarketplaceBuy() {
     mnemonic: process.env.TESTNET_TAPROOT_MNEMONIC,
     hdPath: process.env.TESTNET_TAPROOT_HDPATH,
     feeRate: parseFloat(process.env.FEE_RATE),
-    wallet: wallet
+    wallet: wallet,
   }
 
-  const quotes =[
+  const quotes = [
     {
-    offerId: "65afed54d45a352ea5a48ec0",
-    marketplace: "omnisat",
-    ticker: "xing"
-  },
-  {
-    offerId: "65b1560b3a76022313d73a40",
-    marketplace: "omnisat",
-    ticker: "xing"
-  }
-]
+      offerId: '65afed54d45a352ea5a48ec0',
+      marketplace: 'omnisat',
+      ticker: 'xing',
+    },
+    {
+      offerId: '65b1560b3a76022313d73a40',
+      marketplace: 'omnisat',
+      ticker: 'xing',
+    },
+  ]
   const marketplace = new Marketplace(marketplaceOptions)
   const offersToBuy = await marketplace.processAllOffers(quotes)
   const signedTxs = await marketplace.buyMarketPlaceOffers(offersToBuy)
@@ -275,6 +275,7 @@ const argv = yargs(hideBin(process.argv))
         describe: 'Amount of brc-20 to send',
         type: 'number',
         default: 5,
+        demandOption: true,
       })
       .option('feeRate', {
         alias: 'f',

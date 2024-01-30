@@ -416,13 +416,16 @@ export const inscribe = async ({
     commitTxSize * feeRate < 150 ? 200 : commitTxSize * feeRate
 
   const revealTxSize = calculateTaprootTxSize(1, 0, 1)
-  const feeForReveal = revealTxSize * feeRate + 546 + 151
+  const feeForReveal =
+    revealTxSize * feeRate < 150 ? 200 : revealTxSize * feeRate
 
-  const amountNeededForBrc20Send = Number(feeForCommit) + Number(feeForReveal)
+  const inscriptionSats = 546
+  const amountNeededForInscribe =
+    Number(feeForCommit) + Number(feeForReveal) + inscriptionSats
 
   const utxosToSend = findUtxosToCoverAmount(
     taprootUtxos,
-    amountNeededForBrc20Send
+    amountNeededForInscribe
   )
 
   if (
@@ -457,14 +460,16 @@ export const inscribe = async ({
     })
   }
 
-  const reimbursementAmount = amountGathered - amountNeededForBrc20Send
+  const revealSats = feeForReveal + inscriptionSats
+  const reimbursementAmount =
+    amountGathered - feeForCommit - feeForReveal - inscriptionSats
 
   psbt.addOutput({
-    value: feeForReveal,
+    value: Number(feeForReveal) + inscriptionSats,
     address: inscriberAddress,
   })
 
-  if (reimbursementAmount > 546) {
+  if (reimbursementAmount > inscriptionSats) {
     psbt.addOutput({
       value: reimbursementAmount,
       address: inputAddress,
@@ -535,7 +540,7 @@ export const inscribe = async ({
         txid: commitTxId,
         vout: 0,
         prevout: {
-          value: feeForReveal,
+          value: revealSats,
           scriptPubKey: ['OP_1', tpubkey],
         },
       },
