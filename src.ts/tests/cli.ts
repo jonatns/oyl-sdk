@@ -11,7 +11,7 @@ import { generateWallet } from './genWallet'
 import { hideBin } from 'yargs/helpers'
 import { getAddressesFromPublicKey } from '@sadoprotocol/ordit-sdk'
 import { BuildMarketplaceTransaction } from '../marketplace/buildMarketplaceTx'
-import { ToSignInput } from '../shared/interface'
+import { Network, ToSignInput } from '../shared/interface'
 import {
   calculateTaprootTxSize,
   callBTCRPCEndpoint,
@@ -27,6 +27,7 @@ import * as transactions from '../transactions'
 import { findUtxosToCoverAmount } from '../txbuilder'
 import * as net from 'net'
 import { Tx } from '@cmdcode/tapscript'
+import { Marketplace } from '../marketplace'
 
 bitcoin.initEccLib(ecc2)
 
@@ -42,19 +43,41 @@ export async function loadRpc(options) {
   }
 }
 
-// export async function testMarketplaceBuy() {
-//   const options = {
-//     address: process.env.TAPROOT_ADDRESS,
-//     pubKey: process.env.TAPROOT_PUBKEY,
-//     feeRate: parseFloat(process.env.FEE_RATE),
-//     psbtBase64: process.env.PSBT_BASE64,
-//     price: 0.001,
-//   }
-//   const intent = new (options)
-//   const builder = await intent.psbtBuilder()
-//   console.log(builder)
-// }
+export async function testMarketplaceBuy() {
+  const initOptions = {
+    baseUrl: 'https://testnet.sandshrew.io',
+    version: 'v1',
+    projectId: 'd6aebfed1769128379aca7d215f0b689', // default API key
+    network: 'testnet' as Network,
+  }
+  const wallet = new Oyl(initOptions)
 
+  const marketplaceOptions = {
+    address: process.env.TESTNET_TAPROOT_ADDRESS,
+    publicKey: process.env.TESTNET_TAPROOT_PUBKEY,
+    mnemonic: process.env.TESTNET_TAPROOT_MNEMONIC,
+    hdPath: process.env.TESTNET_TAPROOT_HDPATH,
+    feeRate: parseFloat(process.env.FEE_RATE),
+    wallet: wallet,
+  }
+
+  const quotes = [
+    {
+      offerId: '65afed54d45a352ea5a48ec0',
+      marketplace: 'omnisat',
+      ticker: 'xing',
+    },
+    {
+      offerId: '65b1560b3a76022313d73a40',
+      marketplace: 'omnisat',
+      ticker: 'xing',
+    },
+  ]
+  const marketplace = new Marketplace(marketplaceOptions)
+  const offersToBuy = await marketplace.processAllOffers(quotes)
+  const signedTxs = await marketplace.buyMarketPlaceOffers(offersToBuy)
+  console.log(signedTxs)
+}
 export async function testAggregator() {
   const aggregator = new Aggregator()
   const aggregated = await aggregator.fetchAndAggregateOffers(
@@ -252,6 +275,7 @@ const argv = yargs(hideBin(process.argv))
         describe: 'Amount of brc-20 to send',
         type: 'number',
         default: 5,
+        demandOption: true,
       })
       .option('feeRate', {
         alias: 'f',
@@ -331,27 +355,31 @@ const argv = yargs(hideBin(process.argv))
         .option('price', {
           describe: 'the price of the offer in sats',
           type: 'number',
-          // demandOption: true,
+          demandOption: true,
         })
         .help().argv
     }
   )
-  .command('buy-offer', 'ORD test', (yargs) => {
-    return yargs
-      .option('psbtBase64', {
-        describe: 'offer psbt base64',
-        alias: 'p',
-        type: 'string',
-        demandOption: true,
-      })
-      .option('feeRate', {
-        alias: 'f',
-        describe: 'Fee rate for the transaction',
-        type: 'number',
-        default: config[yargs.argv['network']].feeRate,
-      })
-      .help().argv
-  })
+  .command(
+    'buy-offer',
+    'buy and offer from the omnisat offers api',
+    (yargs) => {
+      return yargs
+        .option('psbtBase64', {
+          describe: 'offer psbt base64',
+          alias: 'p',
+          type: 'string',
+          demandOption: true,
+        })
+        .option('feeRate', {
+          alias: 'f',
+          describe: 'Fee rate for the transaction',
+          type: 'number',
+          default: config[yargs.argv['network']].feeRate,
+        })
+        .help().argv
+    }
+  )
   .command('aggregate', 'aggregate offers based on ticker', (yargs) => {
     return yargs
       .option('ticker', {
@@ -375,6 +403,7 @@ const argv = yargs(hideBin(process.argv))
   })
   .command('txn-history', 'Transaction history', {})
   .command('gen-testnet-wallet', 'Generate testnet wallet', {})
+  .demandCommand(1, 'You need at least one command before moving on')
   .help().argv as unknown as YargsArguments
 
 export async function runCLI() {
@@ -397,6 +426,8 @@ export async function runCLI() {
   switch (command) {
     case 'load':
       return await loadRpc(options)
+    case 'buy':
+      return await testMarketplaceBuy()
     case 'send':
       const sendResponse = await networkConfig.wallet.sendBtc({
         mnemonic,
@@ -510,7 +541,8 @@ export async function runCLI() {
           price: Number(price),
         }
 
-        const OMNISAT_API_URL = 'https://omnisat.io/api'
+        const OMNISAT_API_URL =
+          'https://omnisat-fe-git-testnet-omnisat-foundation.vercel.app/api'
 
         const { psbtBase64, psbtHex } = await axios
           .post(`${OMNISAT_API_URL}/orders/create`, body, {
@@ -653,7 +685,7 @@ export async function runCLI() {
         const { result: offerBuyTxId, error: inscriptionError } =
           await callBTCRPCEndpoint('sendrawtransaction', extractedTx, network)
 
-        console.log({ offerBuyTxId })
+        console.log({ offerBuyTxId, inscriptionError })
 
         return offerBuyTxId
       } catch (error) {

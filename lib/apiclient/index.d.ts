@@ -88,6 +88,37 @@ export declare class OylApiClient {
         offerId: number;
     }): Promise<any>;
     /**
+     * Get Omnisat ticker offers.
+     * @param _ticker - The ticker to query.
+     */
+    getOmnisatTickerOffers({ ticker }: {
+        ticker: string;
+    }): Promise<Array<{
+        _id: string;
+        ownerAddress: string;
+        amount: string;
+        price: number;
+        psbtBase64: string;
+        psbtHex: string;
+        ticker: string;
+        transferableInscription: {
+            inscription_id: string;
+            ticker: string;
+            transfer_amount: string;
+            is_valid: boolean;
+            is_used: boolean;
+            satpoint: string;
+            min_price: any;
+            min_unit_price: any;
+            ordinalswallet_price: any;
+            ordinalswallet_unit_price: any;
+            unisat_price: any;
+            unisat_unit_price: any;
+        };
+        createdAt: number;
+        updatedAt: string;
+    }>>;
+    /**
      * Get Omnisat offer psbt.
      * @param offerId - The offer Id to query.
      */

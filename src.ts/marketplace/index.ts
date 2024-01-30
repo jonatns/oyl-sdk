@@ -58,7 +58,9 @@ export class Marketplace {
     });
     const txSigner = await this.getSigner();
     const signedPsbt = await txSigner.signPsbt(tempPsbt, false);
-    signedPsbt.finalizeAllInputs();
+    signedPsbt.finalizeInput(0)
+    signedPsbt.finalizeInput(1)
+    signedPsbt.finalizeInput(3)
     psbtBase64s.push(signedPsbt.toBase64());
     const result =
       await this.wallet.sandshrewBtcClient.bitcoindRpc.finalizePSBT(
@@ -102,7 +104,7 @@ export class Marketplace {
 
   async buyMarketPlaceOffers(offers) {
     if (offers.length < 1) throw Error("No offers to buy");
-  
+
     const marketPlaceBuy = new BuildMarketplaceTransaction({
       address: this.address,
       pubKey: this.publicKey,
@@ -116,11 +118,11 @@ export class Marketplace {
     if (!preparedWallet) {
       throw new Error("Address not prepared to buy marketplace offers")
     }
-    
+
     const estimatedCost = await this.getOffersCostEstimate(offers)
     const validateAffordability = await marketPlaceBuy.checkAffordability(estimatedCost)
-    if (!validateAffordability){
-      throw new Error("Address not have enough sats to buy marketplace offers, needs  "+ estimatedCost + " sats")
+    if (!validateAffordability) {
+      throw new Error("Address not have enough sats to buy marketplace offers, needs  " + estimatedCost + " sats")
     }
 
     const { psbtBase64, remainder, psbtHex } =
@@ -130,7 +132,9 @@ export class Marketplace {
     });
     const txSigner = await this.getSigner();
     const signedPsbt = await txSigner.signPsbt(tempPsbt, false);
-    signedPsbt.finalizeAllInputs();
+    signedPsbt.finalizeInput(0)
+    signedPsbt.finalizeInput(1)
+    signedPsbt.finalizeInput(3)
     const result =
       await this.wallet.sandshrewBtcClient.bitcoindRpc.finalizePSBT(
         signedPsbt.toBase64()
@@ -152,6 +156,16 @@ export class Marketplace {
       remainingSats,
       1
     );
+    for (let i = 0; i < multipleBuys.psbtHexs.length; i++) {
+      await timeout(30000)
+      const [broadcast] =
+        await this.wallet.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([multipleBuys.psbtHexs[i]])
+      if (!broadcast.allowed) {
+        console.log("in broadcasting multiple buys", broadcast)
+        throw new Error(result['reject-reason'])
+      }
+      await this.wallet.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(multipleBuys.psbtHexs[i])
+    }
     return {
       rootTx: txId,
       multipleBuys
@@ -165,8 +179,8 @@ export class Marketplace {
     for (const offer of offers) {
       if (offer.marketplace == 'omnisat') {
         let newOffer = await this.wallet.apiClient.getOmnisatOfferPsbt({ offerId: offer.offerId, ticker: offer.ticker, testnet });
-        if (newOffer == false){
-          throw new Error ("cannot find offer")
+        if (newOffer == false) {
+          throw new Error("cannot find offer")
         }
         processedOffers.push(newOffer);
       }
@@ -179,16 +193,16 @@ export class Marketplace {
     should make request to the api (and force a refetch of the orderId
   **/
   async checkIfOfferIsValid(offer): Promise<Boolean> {
-    
+
     return false;
   }
 
-   /**
-    * Should regularize an address in the event an address doesn't have
-    required utxos for a psbt atomic swap
-    */
+  /**
+   * Should regularize an address in the event an address doesn't have
+   required utxos for a psbt atomic swap
+   */
   async prepareAddress(marketPlaceBuy: BuildMarketplaceTransaction): Promise<Boolean> {
-   
+
     try {
       const prepared = await marketPlaceBuy.isWalletPrepared();
       if (!prepared) {
@@ -234,7 +248,7 @@ export class Marketplace {
   /**
    * Should validate the txid is in the mempool
    **/
-  async validateTxidInMempool(txid: string){
+  async validateTxidInMempool(txid: string) {
 
   }
 }

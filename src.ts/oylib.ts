@@ -439,6 +439,8 @@ export class Oyl {
         let inscriptionsOnTx: any[] =
           await this.apiClient.getInscriptionsForTxn(txid)
         let inputAddress = false
+        let fromAddress: string
+        let toAddress: string
 
         let vinSum = 0
         let voutSum = 0
@@ -448,10 +450,16 @@ export class Oyl {
             inputAddress = true
             vinSum += input.prevout.value
           }
+          if (taprootAddress !== input.prevout.scriptpubkey_address) {
+            fromAddress = input.prevout.scriptpubkey_address
+          }
         }
         for (let output of vout) {
           if (taprootAddress === output.scriptpubkey_address) {
             voutSum += output.value
+          }
+          if (taprootAddress !== output.scriptpubkey_address) {
+            toAddress = output.scriptpubkey_address
           }
         }
 
@@ -491,6 +499,8 @@ export class Oyl {
         txDetails['fee'] = fee
         txDetails['feeRate'] = Math.floor(fee / size)
         txDetails['vinSum'] = vinSum
+        txDetails['from'] = fromAddress
+        txDetails['to'] = toAddress
         txDetails['voutSum'] = voutSum
         txDetails['amount'] = inputAddress ? vinSum - voutSum - fee : voutSum
         txDetails['inscriptionDetails'] =
@@ -581,7 +591,23 @@ export class Oyl {
       unspent_outputs,
       inscriptions
     )
-    return utxoArtifacts
+    return utxoArtifacts as Array<{
+      txId: string
+      outputIndex: number
+      satoshis: number
+      scriptPk: string
+      confirmations: number
+      addressType: number
+      address: string
+      inscriptions: Array<{
+        brc20: {
+          id: string
+          address: string
+          content: string
+          location: string
+        }
+      }>
+    }>
   }
 
   /**
@@ -1004,11 +1030,44 @@ export class Oyl {
         address: options.fromAddress,
       })
 
+      console.log({ taprootUtxosStr: JSON.stringify(taprootUtxos) })
+
       let segwitUtxos: any[] | undefined
       if (options.segwitAddress) {
         segwitUtxos = await this.getUtxosArtifacts({
           address: options.segwitAddress,
         })
+      }
+
+      const commitTxSize = calculateTaprootTxSize(3, 0, 2)
+      const feeForCommit =
+        commitTxSize * options.feeRate < 150
+          ? 200
+          : commitTxSize * options.feeRate
+
+      const revealTxSize = calculateTaprootTxSize(1, 0, 1)
+      const feeForReveal =
+        revealTxSize * options.feeRate < 150
+          ? 200
+          : revealTxSize * options.feeRate
+
+      const brcSendSize = calculateTaprootTxSize(2, 0, 2)
+      const feeForBrcSend =
+        brcSendSize * options.feeRate < 150
+          ? 200
+          : brcSendSize * options.feeRate
+
+      const inscriptionSats = 546
+      const amountNeededForInscribeAndSend =
+        Number(feeForCommit) +
+        Number(feeForReveal) +
+        inscriptionSats +
+        feeForBrcSend
+
+      const amountGatheredForSend = calculateAmountGatheredUtxo(taprootUtxos)
+
+      if (amountGatheredForSend < amountNeededForInscribeAndSend) {
+        return { error: 'INSUFFICIENT FUNDS' }
       }
 
       let segwitSigner, segwitPrivateKey

@@ -114,7 +114,7 @@ export class OylApiClient {
   async getCollectiblesByAddress(address: string): Promise<any> {
     return await this._call('/get-inscriptions', 'post', {
       address: address,
-      exclude_brc20: false,
+      exclude_brc20: true,
     })
   }
 
@@ -179,6 +179,68 @@ export class OylApiClient {
       offerId: offerId,
     })
     return response
+  }
+
+  /**
+   * Get Omnisat ticker offers.
+   * @param _ticker - The ticker to query.
+   */
+  async getOmnisatTickerOffers({ ticker }: { ticker: string }): Promise<
+    Array<{
+      _id: string
+      ownerAddress: string
+      amount: string
+      price: number
+      psbtBase64: string
+      psbtHex: string
+      ticker: string
+      transferableInscription: {
+        inscription_id: string
+        ticker: string
+        transfer_amount: string
+        is_valid: boolean
+        is_used: boolean
+        satpoint: string
+        min_price: any
+        min_unit_price: any
+        ordinalswallet_price: any
+        ordinalswallet_unit_price: any
+        unisat_price: any
+        unisat_unit_price: any
+      }
+      createdAt: number
+      updatedAt: string
+    }>
+  > {
+    const response = await this._call('/get-token-omnisat-offers', 'post', {
+      ticker: ticker,
+    })
+    if (response.error) throw Error(response.error)
+    return response.data as Array<{
+      _id: string
+      ownerAddress: string
+      amount: string
+      price: number
+      psbtBase64: string
+      psbtHex: string
+      ticker: string
+      transferableInscription: {
+        inscription_id: string
+        ticker: string
+        transfer_amount: string
+        is_valid: boolean
+        is_used: boolean
+        satpoint: string
+        min_price: any
+        min_unit_price: any
+        ordinalswallet_price: any
+        ordinalswallet_unit_price: any
+        unisat_price: any
+        unisat_unit_price: any
+      }
+      createdAt: number
+      updatedAt: string
+    }>
   }
 
   /**
