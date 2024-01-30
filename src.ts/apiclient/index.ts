@@ -114,7 +114,7 @@ export class OylApiClient {
   async getCollectiblesByAddress(address: string): Promise<any> {
     return await this._call('/get-inscriptions', 'post', {
       address: address,
-      exclude_brc20: false,
+      exclude_brc20: true,
     })
   }
 
