@@ -14,6 +14,7 @@ import {
   signInputs,
   calculateTaprootTxSize,
   calculateAmountGatheredUtxo,
+  filterTaprootUtxos,
 } from './shared/utils'
 import { SandshrewBitcoinClient } from './rpclient/sandshrew'
 import { EsploraRpc } from './rpclient/esplora'
@@ -24,6 +25,7 @@ import { AccountManager, customPaths } from './wallet/accountsManager'
 
 import {
   AddressType,
+  IBlockchainInfoUTXO,
   InscribeTransfer,
   Providers,
   RecoverAccountOptions,
@@ -319,9 +321,34 @@ export class Oyl {
     return response
   }
 
+  async getTaprootBtcBalance({ address }) {
+    const { unspent_outputs }: { unspent_outputs: IBlockchainInfoUTXO[] } =
+      await this.getUtxos(address, false)
+
+    let confirmedAmount = 0
+    let pendingAmount = 0
+
+    for (const utxo of unspent_outputs) {
+      if (utxo.confirmations > 0) confirmedAmount += utxo.value / 1e8
+      if (utxo.confirmations === 0) pendingAmount += utxo.value / 1e8
+    }
+
+    const amount = confirmedAmount + pendingAmount
+
+    const usdValue = await transactions.convertUsdValue(amount)
+
+    const response = {
+      confirmed_amount: confirmedAmount.toFixed(8),
+      pending_amount: pendingAmount.toFixed(8),
+      amount: amount.toFixed(8),
+      usd_value: usdValue,
+    }
+    return response
+  }
+
   async getUtxos(address: string, includeInscriptions: boolean = true) {
-    const utxosResponse = await this.esploraRpc.getAddressUtxo(address)
-    const formattedUtxos = []
+    const utxosResponse: any[] = await this.esploraRpc.getAddressUtxo(address)
+    const formattedUtxos: IBlockchainInfoUTXO[] = []
 
     let filtered = utxosResponse
     if (!includeInscriptions) {

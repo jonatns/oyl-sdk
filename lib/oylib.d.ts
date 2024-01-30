@@ -1,6 +1,6 @@
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
-import { AddressType, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
+import { AddressType, IBlockchainInfoUTXO, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
 import * as bitcoin from 'bitcoinjs-lib';
 import { OrdRpc } from './rpclient/ord';
@@ -115,8 +115,16 @@ export declare class Oyl {
         amount: any;
         usd_value: string;
     }>;
+    getTaprootBtcBalance({ address }: {
+        address: any;
+    }): Promise<{
+        confirmed_amount: string;
+        pending_amount: string;
+        amount: string;
+        usd_value: string;
+    }>;
     getUtxos(address: string, includeInscriptions?: boolean): Promise<{
-        unspent_outputs: any[];
+        unspent_outputs: IBlockchainInfoUTXO[];
     }>;
     /**
      * Retrieves the transaction history for a given address and processes the transactions.
