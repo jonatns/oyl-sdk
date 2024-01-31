@@ -1,6 +1,6 @@
 import * as bitcoin from 'bitcoinjs-lib'
 import { getAddressType } from '../transactions'
-import { filterTaprootUtxos, getNetwork } from '../shared/utils'
+import { filterTaprootUtxos } from '../shared/utils'
 
 export type Utxo = {
   txId: string
@@ -40,24 +40,20 @@ export const getUtxosForFees = async ({
   network: bitcoin.Network
   fromAddress: string
 }) => {
-  try {
-    return await addSegwitFeeUtxo({
-      taprootUtxos: taprootUtxos,
-      segwitUtxos: segwitUtxos,
-      feeRate: feeRate,
-      psbtTx: psbtTx,
-      segwitAddress: segwitAddress,
-      segwitPubKey: segwitPubKey,
-      utxosToSend: utxosToSend,
-      taprootAddress: taprootAddress,
-      inscription: inscription,
-      network,
-      payFeesWithSegwit: payFeesWithSegwit,
-      fromAddress: fromAddress,
-    })
-  } catch (error) {
-    console.log(error)
-  }
+  return await addSegwitFeeUtxo({
+    taprootUtxos: taprootUtxos,
+    segwitUtxos: segwitUtxos,
+    feeRate: feeRate,
+    psbtTx: psbtTx,
+    segwitAddress: segwitAddress,
+    segwitPubKey: segwitPubKey,
+    utxosToSend: utxosToSend,
+    taprootAddress: taprootAddress,
+    inscription: inscription,
+    network,
+    payFeesWithSegwit: payFeesWithSegwit,
+    fromAddress: fromAddress,
+  })
 }
 
 const addSegwitFeeUtxo = async ({
@@ -87,173 +83,151 @@ const addSegwitFeeUtxo = async ({
   payFeesWithSegwit: boolean
   fromAddress: string
 }) => {
-  try {
-    console.log({ payFeesWithSegwit, segwitUtxos })
-    // const { nonMetaSegwitUtxos } = segwitUtxos?.reduce(
-    //   (acc, utxo) => {
-    //     utxo.inscriptions.length > 0
-    //       ? acc.metaUtxos.push(utxo)
-    //       : acc.nonMetaSegwitUtxos.push(utxo)
-    //     return acc
-    //     return acc
-    //   },
-    //   { metaUtxos: [], nonMetaSegwitUtxos: [] }
-    // )
+  const nonMetaTaprootUtxos = await filterTaprootUtxos({
+    taprootUtxos: taprootUtxos,
+  })
 
-    const nonMetaSegwitUtxos = []
+  const inputCount = psbtTx.txInputs.length === 0 ? 1 : psbtTx.txInputs.length
+  const vB = inputCount * 1 * 149 + 3 * 32 + 12
+  const fee = vB * feeRate
 
-    const nonMetaTaprootUtxos = await filterTaprootUtxos({
-      taprootUtxos: taprootUtxos,
+  const addressType = getAddressType(segwitAddress)
+  let redeemScript
+
+  if (addressType === 2) {
+    const p2wpkh = bitcoin.payments.p2wpkh({
+      pubkey: Buffer.from(segwitPubKey, 'hex'),
+      network: network,
+    })
+    redeemScript = p2wpkh.output
+  }
+  if (addressType === 3) {
+    const p2wpkh = bitcoin.payments.p2wpkh({
+      pubkey: Buffer.from(segwitPubKey, 'hex'),
+      network: network,
     })
 
-    const inputCount = psbtTx.txInputs.length === 0 ? 1 : psbtTx.txInputs.length
-    const vB = inputCount * 1 * 149 + 3 * 32 + 12
-    const fee = vB * feeRate
+    const p2sh = bitcoin.payments.p2sh({
+      redeem: p2wpkh,
+      network: network,
+    })
 
-    const addressType = getAddressType(segwitAddress)
-    let redeemScript
-
-    if (addressType === 2) {
-      const p2wpkh = bitcoin.payments.p2wpkh({
-        pubkey: Buffer.from(segwitPubKey, 'hex'),
-        network: network,
-      })
-      redeemScript = p2wpkh.output
-    }
-    if (addressType === 3) {
-      try {
-        const p2wpkh = bitcoin.payments.p2wpkh({
-          pubkey: Buffer.from(segwitPubKey, 'hex'),
-          network: network,
+    redeemScript = p2sh.redeem.output
+  }
+  if (utxosToSend) {
+    let feeUtxos = payFeesWithSegwit
+      ? findUtxosForFees(segwitUtxos, fee)
+      : findUtxosForFees(nonMetaTaprootUtxos, fee)
+    if (utxosToSend?.change) {
+      if (utxosToSend.change - fee >= 0) {
+        return psbtTx.addOutput({
+          address: fromAddress,
+          value: Math.floor(utxosToSend.change - fee),
         })
-
-        const p2sh = bitcoin.payments.p2sh({
-          redeem: p2wpkh,
-          network: network,
-        })
-
-        redeemScript = p2sh.redeem.output
-      } catch (error) {
-        console.log(error)
+      } else {
+        feeUtxos = payFeesWithSegwit
+          ? findUtxosForFees(segwitUtxos, fee - utxosToSend.change)
+          : findUtxosForFees(nonMetaTaprootUtxos, fee - utxosToSend.change)
       }
     }
-    if (utxosToSend) {
-      let feeUtxos = payFeesWithSegwit
-        ? findUtxosForFees(nonMetaSegwitUtxos, fee)
-        : findUtxosForFees(nonMetaTaprootUtxos, fee)
-      if (utxosToSend?.change) {
-        if (utxosToSend.change - fee >= 0) {
-          return psbtTx.addOutput({
-            address: fromAddress,
-            value: Math.floor(utxosToSend.change - fee),
+    if (!feeUtxos) {
+      return await addTaprootFeeUtxo({
+        taprootUtxos: taprootUtxos,
+        feeRate: feeRate,
+        psbtTx: psbtTx,
+        taprootAddress: taprootAddress,
+        utxosToSend: utxosToSend,
+      })
+    }
+
+    for (let i = 0; i < feeUtxos.selectedUtxos.length; i++) {
+      if (
+        usableUtxo(feeUtxos.selectedUtxos[i], utxosToSend?.selectedUtxos) &&
+        confirmedUtxo(feeUtxos.selectedUtxos[i])
+      ) {
+        if (addressType === 2) {
+          psbtTx.addInput({
+            hash: feeUtxos.selectedUtxos[i].txId,
+            index: feeUtxos.selectedUtxos[i].outputIndex,
+            witnessUtxo: {
+              value: feeUtxos.selectedUtxos[i].satoshis,
+              script: Buffer.from(feeUtxos.selectedUtxos[i].scriptPk, 'hex'),
+            },
+            redeemScript: redeemScript,
           })
         } else {
-          feeUtxos = payFeesWithSegwit
-            ? findUtxosForFees(nonMetaSegwitUtxos, fee - utxosToSend.change)
-            : findUtxosForFees(nonMetaTaprootUtxos, fee - utxosToSend.change)
+          psbtTx.addInput({
+            hash: feeUtxos.selectedUtxos[i].txId,
+            index: feeUtxos.selectedUtxos[i].outputIndex,
+            witnessUtxo: {
+              value: feeUtxos.selectedUtxos[i].satoshis,
+              script: Buffer.from(feeUtxos.selectedUtxos[i].scriptPk, 'hex'),
+            },
+          })
         }
+      } else {
+        return
       }
-      if (!feeUtxos) {
-        return await addTaprootFeeUtxo({
-          taprootUtxos: taprootUtxos,
-          feeRate: feeRate,
-          psbtTx: psbtTx,
-          taprootAddress: taprootAddress,
-          utxosToSend: utxosToSend,
-        })
-      }
-
-      for (let i = 0; i < feeUtxos.selectedUtxos.length; i++) {
-        if (
-          usableUtxo(feeUtxos.selectedUtxos[i], utxosToSend?.selectedUtxos) &&
-          confirmedUtxo(feeUtxos.selectedUtxos[i])
-        ) {
-          if (addressType === 2) {
-            psbtTx.addInput({
-              hash: feeUtxos.selectedUtxos[i].txId,
-              index: feeUtxos.selectedUtxos[i].outputIndex,
-              witnessUtxo: {
-                value: feeUtxos.selectedUtxos[i].satoshis,
-                script: Buffer.from(feeUtxos.selectedUtxos[i].scriptPk, 'hex'),
-              },
-              redeemScript: redeemScript,
-            })
-          } else {
-            psbtTx.addInput({
-              hash: feeUtxos.selectedUtxos[i].txId,
-              index: feeUtxos.selectedUtxos[i].outputIndex,
-              witnessUtxo: {
-                value: feeUtxos.selectedUtxos[i].satoshis,
-                script: Buffer.from(feeUtxos.selectedUtxos[i].scriptPk, 'hex'),
-              },
-            })
-          }
-        } else {
-          return
-        }
-      }
-      psbtTx.addOutput({
-        address: payFeesWithSegwit ? segwitAddress : taprootAddress,
-        value: Math.floor(feeUtxos.change),
-      })
-      return
-    } else {
-      let amountForFee: number = fee
-      if (inscription['isInscription']) {
-        amountForFee = 2 * fee + 546
-      }
-      const feeUtxos = payFeesWithSegwit
-        ? findUtxosForFees(nonMetaSegwitUtxos, amountForFee)
-        : findUtxosForFees(nonMetaTaprootUtxos, amountForFee)
-      if (!feeUtxos) {
-        return await addTaprootFeeUtxo({
-          taprootUtxos: taprootUtxos,
-          feeRate: feeRate,
-          psbtTx: psbtTx,
-          taprootAddress: taprootAddress,
-          utxosToSend: utxosToSend,
-        })
-      }
-      for (let i = 0; i < feeUtxos.selectedUtxos.length; i++) {
-        if (
-          usableUtxo(feeUtxos.selectedUtxos[i], utxosToSend?.selectedUtxos) &&
-          confirmedUtxo(feeUtxos.selectedUtxos[i])
-        ) {
-          if (addressType === 2) {
-            psbtTx.addInput({
-              hash: feeUtxos.selectedUtxos[i].txId,
-              index: feeUtxos.selectedUtxos[i].outputIndex,
-              witnessUtxo: {
-                value: feeUtxos.selectedUtxos[i].satoshis,
-                script: Buffer.from(feeUtxos.selectedUtxos[i].scriptPk, 'hex'),
-              },
-              redeemScript: redeemScript,
-            })
-          } else {
-            psbtTx.addInput({
-              hash: feeUtxos.selectedUtxos[i].txId,
-              index: feeUtxos.selectedUtxos[i].outputIndex,
-              witnessUtxo: {
-                value: feeUtxos.selectedUtxos[i].satoshis,
-                script: Buffer.from(feeUtxos.selectedUtxos[i].scriptPk, 'hex'),
-              },
-            })
-          }
-        }
-      }
-
-      psbtTx.addOutput({
-        address: payFeesWithSegwit ? segwitAddress : taprootAddress,
-        value: Math.floor(feeUtxos.change),
-      })
-
-      psbtTx.addOutput({
-        address: inscription['inscriberAddress'],
-        value: Math.floor(fee),
+    }
+    psbtTx.addOutput({
+      address: payFeesWithSegwit ? segwitAddress : taprootAddress,
+      value: Math.floor(feeUtxos.change),
+    })
+    return
+  } else {
+    let amountForFee: number = fee
+    if (inscription['isInscription']) {
+      amountForFee = 2 * fee + 546
+    }
+    const feeUtxos = payFeesWithSegwit
+      ? findUtxosForFees(segwitUtxos, amountForFee)
+      : findUtxosForFees(nonMetaTaprootUtxos, amountForFee)
+    if (!feeUtxos) {
+      return await addTaprootFeeUtxo({
+        taprootUtxos: taprootUtxos,
+        feeRate: feeRate,
+        psbtTx: psbtTx,
+        taprootAddress: taprootAddress,
+        utxosToSend: utxosToSend,
       })
     }
-  } catch (e) {
-    console.error(e)
+    for (let i = 0; i < feeUtxos.selectedUtxos.length; i++) {
+      if (
+        usableUtxo(feeUtxos.selectedUtxos[i], utxosToSend?.selectedUtxos) &&
+        confirmedUtxo(feeUtxos.selectedUtxos[i])
+      ) {
+        if (addressType === 2) {
+          psbtTx.addInput({
+            hash: feeUtxos.selectedUtxos[i].txId,
+            index: feeUtxos.selectedUtxos[i].outputIndex,
+            witnessUtxo: {
+              value: feeUtxos.selectedUtxos[i].satoshis,
+              script: Buffer.from(feeUtxos.selectedUtxos[i].scriptPk, 'hex'),
+            },
+            redeemScript: redeemScript,
+          })
+        } else {
+          psbtTx.addInput({
+            hash: feeUtxos.selectedUtxos[i].txId,
+            index: feeUtxos.selectedUtxos[i].outputIndex,
+            witnessUtxo: {
+              value: feeUtxos.selectedUtxos[i].satoshis,
+              script: Buffer.from(feeUtxos.selectedUtxos[i].scriptPk, 'hex'),
+            },
+          })
+        }
+      }
+    }
+
+    psbtTx.addOutput({
+      address: payFeesWithSegwit ? segwitAddress : taprootAddress,
+      value: Math.floor(feeUtxos.change),
+    })
+
+    psbtTx.addOutput({
+      address: inscription['inscriberAddress'],
+      value: Math.floor(fee),
+    })
   }
 }
 
@@ -272,51 +246,47 @@ const addTaprootFeeUtxo = async ({
   utxosToSend?: { selectedUtxos: Utxo[]; totalSatoshis: number; change: number }
   inscription?: { isInscription: boolean; inscriberAddress: string }
 }) => {
-  try {
-    const nonMetaTaprootUtxos = await filterTaprootUtxos({
-      taprootUtxos: taprootUtxos,
-    })
+  const nonMetaTaprootUtxos = await filterTaprootUtxos({
+    taprootUtxos: taprootUtxos,
+  })
 
-    nonMetaTaprootUtxos.sort((a, b) => b.satoshis - a.satoshis)
+  nonMetaTaprootUtxos.sort((a, b) => b.satoshis - a.satoshis)
 
-    const inputCount = psbtTx.txInputs.length === 0 ? 1 : psbtTx.txInputs.length
+  const inputCount = psbtTx.txInputs.length === 0 ? 1 : psbtTx.txInputs.length
 
-    const vB = inputCount * 149 + 3 * 32 + 12
-    const fee = vB * feeRate
-    let amountForFee: number = fee
-    if (inscription['isInscription']) {
-      amountForFee = 2 * fee + 546
+  const vB = inputCount * 149 + 3 * 32 + 12
+  const fee = vB * feeRate
+  let amountForFee: number = fee
+  if (inscription['isInscription']) {
+    amountForFee = 2 * fee + 546
+  }
+
+  const feeUtxos = findUtxosForFees(nonMetaTaprootUtxos, amountForFee)
+
+  if (!feeUtxos) {
+    throw new Error('No available UTXOs')
+  }
+
+  for (let i = 0; i < feeUtxos.selectedUtxos.length; i++) {
+    if (
+      usableUtxo(feeUtxos.selectedUtxos[i], utxosToSend.selectedUtxos) &&
+      confirmedUtxo(feeUtxos.selectedUtxos[i])
+    ) {
+      psbtTx.addInput({
+        hash: feeUtxos.selectedUtxos[i].txId,
+        index: feeUtxos.selectedUtxos[i].outputIndex,
+        witnessUtxo: {
+          value: feeUtxos.selectedUtxos[i].satoshis,
+          script: Buffer.from(feeUtxos.selectedUtxos[i].scriptPk, 'hex'),
+        },
+      })
+      psbtTx.addOutput({
+        address: taprootAddress,
+        value: Math.floor(feeUtxos.change),
+      })
     }
 
-    const feeUtxos = findUtxosForFees(nonMetaTaprootUtxos, amountForFee)
-
-    if (!feeUtxos) {
-      throw new Error('No available UTXOs')
-    }
-
-    for (let i = 0; i < feeUtxos.selectedUtxos.length; i++) {
-      if (
-        usableUtxo(feeUtxos.selectedUtxos[i], utxosToSend.selectedUtxos) &&
-        confirmedUtxo(feeUtxos.selectedUtxos[i])
-      ) {
-        psbtTx.addInput({
-          hash: feeUtxos.selectedUtxos[i].txId,
-          index: feeUtxos.selectedUtxos[i].outputIndex,
-          witnessUtxo: {
-            value: feeUtxos.selectedUtxos[i].satoshis,
-            script: Buffer.from(feeUtxos.selectedUtxos[i].scriptPk, 'hex'),
-          },
-        })
-        psbtTx.addOutput({
-          address: taprootAddress,
-          value: Math.floor(feeUtxos.change),
-        })
-      }
-
-      return
-    }
-  } catch (error) {
-    throw new Error('No available UTXOs to pay for fees')
+    return
   }
 }
 
