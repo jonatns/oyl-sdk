@@ -540,7 +540,7 @@ export class Oyl {
         txDetails['blockTime'] = status.block_time
         txDetails['blockHeight'] = status.block_height
         txDetails['fee'] = fee
-        txDetails['feeRate'] = Math.floor(fee / size)
+        txDetails['feeRate'] = Number((size / fee).toFixed(2))
         txDetails['vinSum'] = vinSum
         txDetails['from'] = fromAddress
         txDetails['to'] = toAddress

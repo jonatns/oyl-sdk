@@ -487,7 +487,7 @@ export async function runCLI() {
         })
 
         const content = `{"p":"brc-20","op":"transfer","tick":"${ticker}","amt":"${amount}"}`
-        const { txId, error: inscribeError } = await inscribe({
+        const { txId } = await inscribe({
           content,
           inputAddress: networkConfig.taprootAddress,
           outputAddress: networkConfig.taprootAddress,
@@ -508,11 +508,6 @@ export async function runCLI() {
           sandshrewBtcClient: (networkConfig.wallet as Oyl).sandshrewBtcClient,
           esploraRpc: (networkConfig.wallet as Oyl).esploraRpc,
         })
-
-        if (inscribeError) {
-          console.error(inscribeError)
-          return { error: inscribeError }
-        }
 
         console.log({ txId })
 
@@ -737,8 +732,8 @@ export async function runCLI() {
     //   })
     case 'taproot-txn-history':
       return console.log(
-        await networkConfig.wallet.getTaprootBtcBalance({
-          address: networkConfig.taprootAddress,
+        await networkConfig.wallet.getTaprootTxHistory({
+          taprootAddress: networkConfig.taprootAddress,
         })
       )
     default:
