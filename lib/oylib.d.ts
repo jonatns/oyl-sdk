@@ -110,14 +110,6 @@ export declare class Oyl {
     getMetaBalance({ address }: {
         address: any;
     }): Promise<{
-        confirm_amount: any;
-        pending_amount: any;
-        amount: any;
-        usd_value: string;
-    }>;
-    getTaprootBtcBalance({ address }: {
-        address: any;
-    }): Promise<{
         confirmed_amount: string;
         pending_amount: string;
         amount: string;

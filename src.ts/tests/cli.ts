@@ -732,8 +732,8 @@ export async function runCLI() {
     //   })
     case 'taproot-txn-history':
       return console.log(
-        await networkConfig.wallet.getTaprootTxHistory({
-          taprootAddress: networkConfig.taprootAddress,
+        await networkConfig.wallet.getMetaBalance({
+          address: networkConfig.taprootAddress,
         })
       )
     default:

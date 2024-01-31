@@ -289,39 +289,6 @@ export class Oyl {
    * @throws {Error} Throws an error if the balance retrieval fails.
    */
   async getMetaBalance({ address }) {
-    const addressSummary = await this.getAddressSummary({ address })
-    const confirmAmount = addressSummary.reduce((total, addr) => {
-      const confirmedUtxos = addr.utxo.filter((utxo) => utxo.confirmations > 0)
-      return (
-        total + confirmedUtxos.reduce((sum, utxo) => sum + utxo.value / 1e8, 0)
-      )
-    }, 0)
-
-    const pendingAmount = addressSummary.reduce((total, addr) => {
-      const unconfirmedUtxos = addr.utxo.filter(
-        (utxo) => utxo.confirmations === 0
-      )
-      return (
-        total +
-        unconfirmedUtxos.reduce((sum, utxo) => sum + utxo.value / 1e8, 0)
-      )
-    }, 0)
-
-    const amount = confirmAmount + pendingAmount
-
-    const usdValue = await transactions.convertUsdValue(amount)
-
-    const response = {
-      confirm_amount: confirmAmount.toFixed(8),
-      pending_amount: pendingAmount.toFixed(8),
-      amount: amount.toFixed(8),
-      usd_value: usdValue,
-    }
-
-    return response
-  }
-
-  async getTaprootBtcBalance({ address }) {
     const addressType = getAddressType(address)
 
     if (addressType !== 1) {
@@ -333,11 +300,11 @@ export class Oyl {
     let pendingAmount = 0
 
     for (const utxo of txns) {
-      const { txid, status } = utxo
-      let inscriptionsOnTx: any[] = await this.apiClient.getInscriptionsForTxn(
-        txid
+      const { txid, status, vout } = utxo
+      let inscriptionsOnTx: any = await this.ordRpc.getTxOutput(
+        `${txid}:${vout}`
       )
-      if (inscriptionsOnTx.length === 0) {
+      if (inscriptionsOnTx.inscriptions.length === 0) {
         if (status.confirmed) confirmedAmount += utxo.value / 1e8
         if (!status.confirmed) pendingAmount += utxo.value / 1e8
       }
