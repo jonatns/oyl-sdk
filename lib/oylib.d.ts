@@ -107,13 +107,13 @@ export declare class Oyl {
      * @returns {Promise<any>} A promise that resolves to an object containing balance and its USD value.
      * @throws {Error} Throws an error if the balance retrieval fails.
      */
-    getMetaBalance({ address }: {
+    getTaprootBalance({ address }: {
         address: any;
     }): Promise<{
-        confirmed_amount: string;
-        pending_amount: string;
+        confirmedAmount: string;
+        pendingAmount: string;
         amount: string;
-        usd_value: string;
+        usdValue: string;
     }>;
     getUtxos(address: string, includeInscriptions?: boolean): Promise<{
         unspent_outputs: IBlockchainInfoUTXO[];

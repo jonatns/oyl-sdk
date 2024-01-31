@@ -288,7 +288,7 @@ export class Oyl {
    * @returns {Promise<any>} A promise that resolves to an object containing balance and its USD value.
    * @throws {Error} Throws an error if the balance retrieval fails.
    */
-  async getMetaBalance({ address }) {
+  async getTaprootBalance({ address }) {
     const addressType = getAddressType(address)
 
     if (addressType !== 1) {
@@ -315,10 +315,10 @@ export class Oyl {
     const usdValue = await transactions.convertUsdValue(amount)
 
     const response = {
-      confirmed_amount: confirmedAmount.toFixed(8),
-      pending_amount: pendingAmount.toFixed(8),
+      confirmedAmount: confirmedAmount.toFixed(8),
+      pendingAmount: pendingAmount.toFixed(8),
       amount: amount.toFixed(8),
-      usd_value: usdValue,
+      usdValue: usdValue,
     }
     return response
   }
@@ -439,7 +439,7 @@ export class Oyl {
       let isCollectible = false
 
       const processedTxns = lastTenTxns.map(async (tx) => {
-        const { txid, vout, size, vin, status, fee } = tx
+        const { txid, vout, weight, vin, status, fee } = tx
         let inscriptionsOnTx: any[] =
           await this.apiClient.getInscriptionsForTxn(txid)
         const symbols = []
@@ -508,7 +508,7 @@ export class Oyl {
         txDetails['blockTime'] = status.block_time
         txDetails['blockHeight'] = status.block_height
         txDetails['fee'] = fee
-        txDetails['feeRate'] = Number((size / fee).toFixed(2))
+        txDetails['feeRate'] = Number((fee / (weight / 4)).toFixed(2))
         txDetails['vinSum'] = vinSum
         txDetails['from'] = fromAddress
         txDetails['to'] = toAddress
