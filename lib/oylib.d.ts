@@ -1,6 +1,6 @@
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
-import { AddressType, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
+import { AddressType, IBlockchainInfoUTXO, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
 import * as bitcoin from 'bitcoinjs-lib';
 import { OrdRpc } from './rpclient/ord';
@@ -107,16 +107,16 @@ export declare class Oyl {
      * @returns {Promise<any>} A promise that resolves to an object containing balance and its USD value.
      * @throws {Error} Throws an error if the balance retrieval fails.
      */
-    getMetaBalance({ address }: {
+    getTaprootBalance({ address }: {
         address: any;
     }): Promise<{
-        confirm_amount: any;
-        pending_amount: any;
-        amount: any;
-        usd_value: string;
+        confirmedAmount: string;
+        pendingAmount: string;
+        amount: string;
+        usdValue: string;
     }>;
     getUtxos(address: string, includeInscriptions?: boolean): Promise<{
-        unspent_outputs: any[];
+        unspent_outputs: IBlockchainInfoUTXO[];
     }>;
     /**
      * Retrieves the transaction history for a given address and processes the transactions.

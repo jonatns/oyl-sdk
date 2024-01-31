@@ -42,7 +42,7 @@ ordTest: reset
 	$(Q)oyl-cli ord-test
 	$(Q)echo "--- test complete"
 txnHistory: reset
-	$(Q)oyl-cli txn-history
+	$(Q)oyl-cli taproot-txn-history
 	$(Q)echo "--- test complete"
 testnetSend: reset
 	$(Q)oyl-cli testnet-send
