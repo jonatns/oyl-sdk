@@ -289,58 +289,54 @@ export const formatOptionsToSignInputs = async ({
   network: bitcoin.Network
 }) => {
   let toSignInputs: ToSignInput[] = []
-  try {
-    let index = 0
-    for await (const v of _psbt.data.inputs) {
-      let script: any = null
-      let value = 0
-      const isSigned = v.finalScriptSig || v.finalScriptWitness
-      const lostInternalPubkey = !v.tapInternalKey
-      if (v.witnessUtxo) {
-        script = v.witnessUtxo.script
-        value = v.witnessUtxo.value
-      } else if (v.nonWitnessUtxo) {
-        const tx = bitcoin.Transaction.fromBuffer(v.nonWitnessUtxo)
-        const output = tx.outs[_psbt.txInputs[index].index]
-        script = output.script
-        value = output.value
-      }
-
-      if (!isSigned || lostInternalPubkey) {
-        const tapInternalKey = assertHex(Buffer.from(pubkey, 'hex'))
-        const p2tr = bitcoin.payments.p2tr({
-          internalPubkey: tapInternalKey,
-          network: network,
-        })
-        if (
-          v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
-        ) {
-          v.tapInternalKey = tapInternalKey
-          if (v.tapInternalKey) {
-            toSignInputs.push({
-              index: index,
-              publicKey: pubkey,
-              sighashTypes: v.sighashType ? [v.sighashType] : undefined,
-            })
-          }
-        }
-      }
-
-      if (script && !isSigned && !isTaprootInput(v)) {
-        toSignInputs.push({
-          index: index,
-          publicKey: segwitPubkey,
-          sighashTypes: v.sighashType ? [v.sighashType] : undefined,
-        })
-      }
-
-      index++
+  let index = 0
+  for await (const v of _psbt.data.inputs) {
+    let script: any = null
+    let value = 0
+    const isSigned = v.finalScriptSig || v.finalScriptWitness
+    const lostInternalPubkey = !v.tapInternalKey
+    if (v.witnessUtxo) {
+      script = v.witnessUtxo.script
+      value = v.witnessUtxo.value
+    } else if (v.nonWitnessUtxo) {
+      const tx = bitcoin.Transaction.fromBuffer(v.nonWitnessUtxo)
+      const output = tx.outs[_psbt.txInputs[index].index]
+      script = output.script
+      value = output.value
     }
 
-    return toSignInputs
-  } catch (error) {
-    console.log(error)
+    if (!isSigned || lostInternalPubkey) {
+      const tapInternalKey = assertHex(Buffer.from(pubkey, 'hex'))
+      const p2tr = bitcoin.payments.p2tr({
+        internalPubkey: tapInternalKey,
+        network: network,
+      })
+      if (
+        v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
+      ) {
+        v.tapInternalKey = tapInternalKey
+        if (v.tapInternalKey) {
+          toSignInputs.push({
+            index: index,
+            publicKey: pubkey,
+            sighashTypes: v.sighashType ? [v.sighashType] : undefined,
+          })
+        }
+      }
+    }
+
+    if (script && !isSigned && !isTaprootInput(v)) {
+      toSignInputs.push({
+        index: index,
+        publicKey: segwitPubkey,
+        sighashTypes: v.sighashType ? [v.sighashType] : undefined,
+      })
+    }
+
+    index++
   }
+
+  return toSignInputs
 }
 
 export const timeout = async (n) =>
@@ -354,31 +350,27 @@ export const signInputs = async (
   segwitSigner: any,
   taprootSigner: any
 ) => {
-  try {
-    const taprootInputs: ToSignInput[] = []
-    const segwitInputs: ToSignInput[] = []
-    const inputs = psbt.data.inputs
-    toSignInputs.forEach(({ publicKey, sighashTypes }, i) => {
-      const input = inputs[i]
-      if (publicKey === taprootPubkey && !input.finalScriptWitness) {
-        taprootInputs.push(toSignInputs[i])
-      }
-      if (segwitPubKey && segwitSigner) {
-        if (publicKey === segwitPubKey) {
-          segwitInputs.push(toSignInputs[i])
-        }
-      }
-    })
-    if (taprootInputs.length > 0) {
-      await taprootSigner(psbt, taprootInputs)
+  const taprootInputs: ToSignInput[] = []
+  const segwitInputs: ToSignInput[] = []
+  const inputs = psbt.data.inputs
+  toSignInputs.forEach(({ publicKey }, i) => {
+    const input = inputs[i]
+    if (publicKey === taprootPubkey && !input.finalScriptWitness) {
+      taprootInputs.push(toSignInputs[i])
     }
-    if (segwitSigner && segwitInputs.length > 0) {
-      await segwitSigner(psbt, segwitInputs)
+    if (segwitPubKey && segwitSigner) {
+      if (publicKey === segwitPubKey) {
+        segwitInputs.push(toSignInputs[i])
+      }
     }
-    return psbt
-  } catch (error) {
-    console.log(error)
+  })
+  if (taprootInputs.length > 0) {
+    await taprootSigner(psbt, taprootInputs)
   }
+  if (segwitSigner && segwitInputs.length > 0) {
+    await segwitSigner(psbt, segwitInputs)
+  }
+  return psbt
 }
 
 export const inscribe = async ({
@@ -441,7 +433,7 @@ export const inscribe = async ({
     !utxosToSend.selectedUtxos ||
     utxosToSend?.selectedUtxos?.length === 0
   ) {
-    return { error: 'Insufficient balance' }
+    throw new Error('Insufficient balance')
   }
 
   const amountGathered = calculateAmountGatheredUtxo(utxosToSend.selectedUtxos)
@@ -528,7 +520,7 @@ export const inscribe = async ({
     })
 
     if (!txResult) {
-      return { error: 'ERROR WAITING FOR COMMIT TX' }
+      throw new Error('ERROR WAITING FOR COMMIT TX')
     }
   }
 
@@ -539,7 +531,7 @@ export const inscribe = async ({
   })
 
   if (!commitTxOutput) {
-    return { error: 'ERROR GETTING FIRST INPUT VALUE' }
+    throw new Error('ERROR GETTING FIRST INPUT VALUE')
   }
 
   const txData = Tx.create({
@@ -700,33 +692,19 @@ export async function getOutputValueByVOutIndex({
   const startTime: number = Date.now()
 
   while (true) {
-    try {
-      const txDetails = await esploraRpc.getTxInfo(txId)
+    const txDetails = await esploraRpc.getTxInfo(txId)
 
-      if (txDetails?.vout && txDetails.vout.length > 0) {
-        return [txDetails.vout[vOut].value, txDetails.vout[vOut].scriptpubkey]
-      }
-
-      // Check for timeout
-      if (Date.now() - startTime > timeout) {
-        console.log('Timeout reached, stopping search.')
-        return null
-      }
-
-      // Wait for 5 seconds before retrying
-      await new Promise((resolve) => setTimeout(resolve, 5000))
-    } catch (error) {
-      console.error('Error fetching transaction output value:', error)
-
-      // Check for timeout
-      if (Date.now() - startTime > timeout) {
-        console.log('Timeout reached, stopping search.')
-        return null
-      }
-
-      // Wait for 5 seconds before retrying
-      await new Promise((resolve) => setTimeout(resolve, 5000))
+    if (txDetails?.vout && txDetails.vout.length > 0) {
+      return [txDetails.vout[vOut].value, txDetails.vout[vOut].scriptpubkey]
     }
+
+    // Check for timeout
+    if (Date.now() - startTime > timeout) {
+      throw new Error('Timeout reached, stopping search.')
+    }
+
+    // Wait for 5 seconds before retrying
+    await new Promise((resolve) => setTimeout(resolve, 5000))
   }
 }
 
@@ -857,8 +835,6 @@ export const sendCollectible = async ({
 }) => {
   const psbt = new bitcoin.Psbt({ network: getNetwork(network) })
 
-  console.log({ taprootUtxosLen: taprootUtxos.length })
-
   const utxosToSend = await insertCollectibleUtxo({
     taprootUtxos: taprootUtxos,
     inscriptionId: inscriptionId,
@@ -931,26 +907,22 @@ const insertCollectibleUtxo = async ({
   toAddress: string
   psbt: bitcoin.Psbt
 }) => {
-  try {
-    const { metaUtxos } = taprootUtxos.reduce(
-      (acc, utxo) => {
-        utxo.inscriptions.length
-          ? acc.metaUtxos.push(utxo)
-          : acc.nonMetaUtxos.push(utxo)
-        return acc
-      },
-      { metaUtxos: [], nonMetaUtxos: [] }
-    )
+  const { metaUtxos } = taprootUtxos.reduce(
+    (acc, utxo) => {
+      utxo.inscriptions.length
+        ? acc.metaUtxos.push(utxo)
+        : acc.nonMetaUtxos.push(utxo)
+      return acc
+    },
+    { metaUtxos: [], nonMetaUtxos: [] }
+  )
 
-    return await addInscriptionUtxo({
-      metaUtxos: metaUtxos,
-      inscriptionId: inscriptionId,
-      toAddress: toAddress,
-      psbtTx: psbt,
-    })
-  } catch (error) {
-    console.log(error)
-  }
+  return await addInscriptionUtxo({
+    metaUtxos: metaUtxos,
+    inscriptionId: inscriptionId,
+    toAddress: toAddress,
+    psbtTx: psbt,
+  })
 }
 
 const insertBtcUtxo = async ({
@@ -976,28 +948,23 @@ const insertBtcUtxo = async ({
   segwitPubKey: string
   network: bitcoin.Network
 }) => {
-  try {
-    let nonMetaUtxos: any[]
-    if (useTaprootUtxos) {
-      nonMetaUtxos = await filterTaprootUtxos({ taprootUtxos: taprootUtxos })
-    } else {
-      nonMetaUtxos = segwitUtxos
-    }
-
-    return await addBTCUtxo({
-      utxos: nonMetaUtxos,
-      toAddress: toAddress,
-      psbtTx: psbt,
-      amount: amount,
-      fromAddress: fromAddress,
-      segwitPubKey: segwitPubKey,
-      feeRate,
-      network,
-    })
-  } catch (error) {
-    console.log(error)
-    throw error
+  let nonMetaUtxos: any[]
+  if (useTaprootUtxos) {
+    nonMetaUtxos = await filterTaprootUtxos({ taprootUtxos: taprootUtxos })
+  } else {
+    nonMetaUtxos = segwitUtxos
   }
+
+  return await addBTCUtxo({
+    utxos: nonMetaUtxos,
+    toAddress: toAddress,
+    psbtTx: psbt,
+    amount: amount,
+    fromAddress: fromAddress,
+    segwitPubKey: segwitPubKey,
+    feeRate,
+    network,
+  })
 }
 
 export const filterTaprootUtxos = async ({
@@ -1136,53 +1103,48 @@ export const createBtcTx = async ({
   segwitUtxos: Utxo[]
   taprootUtxos: Utxo[]
 }) => {
-  try {
-    const psbt = new bitcoin.Psbt({ network: network })
-    const inputAddressType = addressTypeMap[getAddressType(inputAddress)]
-    const useTaprootUtxos = !(
-      addressTypeToName[inputAddressType] === 'nested-segwit' ||
-      addressTypeToName[inputAddressType] === 'segwit'
-    )
+  const psbt = new bitcoin.Psbt({ network: network })
+  const inputAddressType = addressTypeMap[getAddressType(inputAddress)]
+  const useTaprootUtxos = !(
+    addressTypeToName[inputAddressType] === 'nested-segwit' ||
+    addressTypeToName[inputAddressType] === 'segwit'
+  )
 
-    await insertBtcUtxo({
-      taprootUtxos: taprootUtxos,
-      segwitUtxos: segwitUtxos,
-      psbt: psbt,
-      toAddress: outputAddress,
-      amount: amount,
-      useTaprootUtxos: useTaprootUtxos,
-      segwitPubKey: segwitPublicKey,
-      fromAddress: inputAddress,
-      feeRate,
-      network,
-    })
+  await insertBtcUtxo({
+    taprootUtxos: taprootUtxos,
+    segwitUtxos: segwitUtxos,
+    psbt: psbt,
+    toAddress: outputAddress,
+    amount: amount,
+    useTaprootUtxos: useTaprootUtxos,
+    segwitPubKey: segwitPublicKey,
+    fromAddress: inputAddress,
+    feeRate,
+    network,
+  })
 
-    const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
-      _psbt: psbt,
-      pubkey: taprootPublicKey,
-      segwitPubkey: segwitPublicKey,
-      segwitAddress: segwitAddress,
-      taprootAddress: inputAddress,
-      network,
-    })
+  const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
+    _psbt: psbt,
+    pubkey: taprootPublicKey,
+    segwitPubkey: segwitPublicKey,
+    segwitAddress: segwitAddress,
+    taprootAddress: inputAddress,
+    network,
+  })
 
-    const signedPsbt = await signInputs(
-      psbt,
-      toSignInputs,
-      taprootPublicKey,
-      segwitPublicKey,
-      segwitSigner,
-      taprootSigner
-    )
+  const signedPsbt = await signInputs(
+    psbt,
+    toSignInputs,
+    taprootPublicKey,
+    segwitPublicKey,
+    segwitSigner,
+    taprootSigner
+  )
 
-    signedPsbt.finalizeAllInputs()
+  signedPsbt.finalizeAllInputs()
 
-    return {
-      txnId: signedPsbt.extractTransaction().getId(),
-      rawTxn: signedPsbt.extractTransaction().toHex(),
-    }
-  } catch (error) {
-    console.error(error)
-    throw error
+  return {
+    txnId: signedPsbt.extractTransaction().getId(),
+    rawTxn: signedPsbt.extractTransaction().toHex(),
   }
 }

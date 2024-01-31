@@ -81,13 +81,8 @@ export declare const inscribe: ({ content, inputAddress, outputAddress, mnemonic
     sandshrewBtcClient: SandshrewBitcoinClient;
     esploraRpc: EsploraRpc;
 }) => Promise<{
-    error: string;
-    txId?: undefined;
-    rawTx?: undefined;
-} | {
     txId: string;
     rawTx: string;
-    error?: undefined;
 }>;
 export declare const createInscriptionScript: (pubKey: any, content: any) => string[];
 export declare let RPC_ADDR: string;
