@@ -13,6 +13,7 @@ import {
   signInputs,
   calculateTaprootTxSize,
   calculateAmountGatheredUtxo,
+  filterTaprootUtxos,
 } from './shared/utils'
 import { SandshrewBitcoinClient } from './rpclient/sandshrew'
 import { EsploraRpc } from './rpclient/esplora'
@@ -23,6 +24,7 @@ import { AccountManager, customPaths } from './wallet/accountsManager'
 
 import {
   AddressType,
+  IBlockchainInfoUTXO,
   Providers,
   RecoverAccountOptions,
   TickerDetails,
@@ -287,42 +289,44 @@ export class Oyl {
    * @returns {Promise<any>} A promise that resolves to an object containing balance and its USD value.
    * @throws {Error} Throws an error if the balance retrieval fails.
    */
-  async getMetaBalance({ address }) {
-    const addressSummary = await this.getAddressSummary({ address })
-    const confirmAmount = addressSummary.reduce((total, addr) => {
-      const confirmedUtxos = addr.utxo.filter((utxo) => utxo.confirmations > 0)
-      return (
-        total + confirmedUtxos.reduce((sum, utxo) => sum + utxo.value / 1e8, 0)
-      )
-    }, 0)
+  async getTaprootBalance({ address }) {
+    const addressType = getAddressType(address)
 
-    const pendingAmount = addressSummary.reduce((total, addr) => {
-      const unconfirmedUtxos = addr.utxo.filter(
-        (utxo) => utxo.confirmations === 0
-      )
-      return (
-        total +
-        unconfirmedUtxos.reduce((sum, utxo) => sum + utxo.value / 1e8, 0)
-      )
-    }, 0)
+    if (addressType !== 1) {
+      throw new Error('Incorrect address type')
+    }
+    const txns: any[] = await this.esploraRpc.getAddressUtxo(address)
 
-    const amount = confirmAmount + pendingAmount
+    let confirmedAmount = 0
+    let pendingAmount = 0
+
+    for (const utxo of txns) {
+      const { txid, status, vout } = utxo
+      let inscriptionsOnTx: any = await this.ordRpc.getTxOutput(
+        `${txid}:${vout}`
+      )
+      if (inscriptionsOnTx.inscriptions.length === 0) {
+        if (status.confirmed) confirmedAmount += utxo.value / 1e8
+        if (!status.confirmed) pendingAmount += utxo.value / 1e8
+      }
+    }
+
+    const amount = confirmedAmount + pendingAmount
 
     const usdValue = await transactions.convertUsdValue(amount)
 
     const response = {
-      confirm_amount: confirmAmount.toFixed(8),
-      pending_amount: pendingAmount.toFixed(8),
+      confirmedAmount: confirmedAmount.toFixed(8),
+      pendingAmount: pendingAmount.toFixed(8),
       amount: amount.toFixed(8),
-      usd_value: usdValue,
+      usdValue: usdValue,
     }
-
     return response
   }
 
   async getUtxos(address: string, includeInscriptions: boolean = true) {
-    const utxosResponse = await this.esploraRpc.getAddressUtxo(address)
-    const formattedUtxos = []
+    const utxosResponse: any[] = await this.esploraRpc.getAddressUtxo(address)
+    const formattedUtxos: IBlockchainInfoUTXO[] = []
 
     let filtered = utxosResponse
     if (!includeInscriptions) {
@@ -436,9 +440,9 @@ export class Oyl {
       let isCollectible = false
 
       const processedTxns = lastTenTxns.map(async (tx) => {
-        const { txid, vout, size, vin, status, fee } = tx
-        let inscriptionsOnTx: any[] =
-          await this.apiClient.getInscriptionsForTxn(txid)
+        const { txid, vout, weight, vin, status, fee } = tx
+
+        let inscriptionsOnTx: any = []
         let inputAddress = false
         let fromAddress: string
         let toAddress: string
@@ -455,34 +459,42 @@ export class Oyl {
             fromAddress = input.prevout.scriptpubkey_address
           }
         }
-        for (let output of vout) {
+        for (let [index, output] of vout.entries()) {
           if (taprootAddress === output.scriptpubkey_address) {
             voutSum += output.value
           }
           if (taprootAddress !== output.scriptpubkey_address) {
             toAddress = output.scriptpubkey_address
           }
+          const inscription = await this.ordRpc.getTxOutput(`${txid}:${index}`)
+
+          inscriptionsOnTx.push(inscription)
         }
 
         const symbols = []
-        if (inscriptionsOnTx.length > 0) {
-          for await (const inscription of inscriptionsOnTx) {
-            const inscriptionsOnTxContent =
-              await this.ordRpc.getInscriptionContent(
-                inscription['inscription_id']
+
+        for await (const [index, inscription] of inscriptionsOnTx.entries()) {
+          if (inscription.inscriptions.length > 0) {
+            if (inscription.inscriptions[index]) {
+              const inscriptionsOnTxContent =
+                await this.ordRpc.getInscriptionContent(
+                  inscription.inscriptions[index]
+                )
+
+              const inscriptionDetails = await this.ordRpc.getInscriptionById(
+                inscription.inscriptions[index]
               )
-            const inscriptionDetails = await this.ordRpc.getInscriptionById(
-              inscription['inscription_id']
-            )
-            isCollectible = inscriptionDetails.content_type === 'image/png'
 
-            let jsonObj = JSON.parse(atob(inscriptionsOnTxContent))
+              isCollectible = inscriptionDetails.content_type === 'image/png'
 
-            const symbolToAdd = jsonObj.tick as string
-            symbols.push({
-              amount: jsonObj.amt,
-              ticker: symbolToAdd,
-            })
+              let jsonObj = JSON.parse(atob(inscriptionsOnTxContent))
+
+              const symbolToAdd = jsonObj.tick as string
+              symbols.push({
+                amount: jsonObj.amt,
+                ticker: symbolToAdd,
+              })
+            }
           }
         }
 
@@ -498,7 +510,7 @@ export class Oyl {
         txDetails['blockTime'] = status.block_time
         txDetails['blockHeight'] = status.block_height
         txDetails['fee'] = fee
-        txDetails['feeRate'] = Math.floor(fee / size)
+        txDetails['feeRate'] = Number((fee / (weight / 4)).toFixed(2))
         txDetails['vinSum'] = vinSum
         txDetails['from'] = fromAddress
         txDetails['to'] = toAddress
