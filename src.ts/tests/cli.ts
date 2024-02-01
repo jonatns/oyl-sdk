@@ -721,10 +721,12 @@ export async function runCLI() {
         formatOffers(aggregated.closestMatch.offers)
       )
       return
-    // case 'ord-test':
-    //   return await networkConfig.wallet.ordRpc.getInscriptionContent(
-    //     inscriptionId2
-    //   )
+    case 'account-summary':
+      return console.log(
+        await networkConfig.wallet.getAddressSummary({
+          address: networkConfig.taprootAddress,
+        })
+      )
     // case 'txn-history':
     //   const test = new Oyl()
     //   return await test.getTxHistory({

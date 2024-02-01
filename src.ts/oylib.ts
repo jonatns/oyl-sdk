@@ -96,15 +96,13 @@ export class Oyl {
     address: string
     includeInscriptions?: boolean
   }) {
-    const addressesUtxo = []
-    for (let i = 0; i < address.length; i++) {
-      let utxos = await this.getUtxos([address][i], includeInscriptions)
-      addressesUtxo[i] = {}
-      addressesUtxo[i]['utxo'] = utxos.unspent_outputs
-      addressesUtxo[i]['balance'] = transactions.calculateBalance(
-        utxos.unspent_outputs
-      )
-    }
+    const addressesUtxo = {}
+    let utxos = await this.getUtxos(address, includeInscriptions)
+    addressesUtxo['utxos'] = utxos.unspent_outputs
+    addressesUtxo['balance'] = transactions.calculateBalance(
+      utxos.unspent_outputs
+    )
+
     return addressesUtxo
   }
 
@@ -334,21 +332,23 @@ export class Oyl {
     }
 
     for (const utxo of filtered) {
-      const transactionDetails = await this.esploraRpc.getTxInfo(utxo.txid)
+      if (utxo.txid) {
+        const transactionDetails = await this.esploraRpc.getTxInfo(utxo.txid)
+        const voutEntry = transactionDetails.vout.find(
+          (v) => v.scriptpubkey_address === address
+        )
 
-      const voutEntry = transactionDetails.vout.find(
-        (v) => v.scriptpubkey_address === address
-      )
-
-      formattedUtxos.push({
-        tx_hash_big_endian: utxo.txid,
-        tx_output_n: utxo.vout,
-        value: utxo.value,
-        confirmations: utxo.status.confirmed ? 3 : 0,
-        script: voutEntry.scriptpubkey,
-        tx_index: 0,
-      })
+        formattedUtxos.push({
+          tx_hash_big_endian: utxo.txid,
+          tx_output_n: utxo.vout,
+          value: utxo.value,
+          confirmations: utxo.status.confirmed ? 3 : 0,
+          script: voutEntry.scriptpubkey,
+          tx_index: 0,
+        })
+      }
     }
+
     return { unspent_outputs: formattedUtxos }
   }
 
