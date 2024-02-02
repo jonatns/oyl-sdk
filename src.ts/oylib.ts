@@ -436,7 +436,7 @@ export class Oyl {
         'esplora_blocks:tip:height',
         []
       )
-      const lastTenTxns: any[] = txns.slice(0, 10)
+      const lastTenTxns: any[] = txns.slice(0, 20)
       let isCollectible = false
 
       const processedTxns = lastTenTxns.map(async (tx) => {
@@ -473,7 +473,7 @@ export class Oyl {
 
         const symbols = []
 
-        for await (const [index, inscription] of inscriptionsOnTx.entries()) {
+        for (const [index, inscription] of inscriptionsOnTx.entries()) {
           if (inscription.inscriptions.length > 0) {
             if (inscription.inscriptions[index]) {
               const inscriptionsOnTxContent =
@@ -499,7 +499,7 @@ export class Oyl {
         }
 
         const blockDelta = currentBlock - status.block_height
-        const confirmations = blockDelta > 0 ? blockDelta : 0
+        const confirmations = blockDelta === 0 ? 1 : blockDelta
 
         const inscriptionType =
           symbols.length > 0 ? 'brc-20' : isCollectible ? 'collectible' : 'N/A'
@@ -510,6 +510,14 @@ export class Oyl {
         txDetails['blockTime'] = status.block_time
         txDetails['blockHeight'] = status.block_height
         txDetails['fee'] = fee
+        txDetails['type'] =
+          toAddress && !fromAddress
+            ? 'sent'
+            : toAddress && fromAddress
+            ? 'swap'
+            : !toAddress && fromAddress
+            ? 'received'
+            : 'unknown'
         txDetails['feeRate'] = Number((fee / (weight / 4)).toFixed(2))
         txDetails['vinSum'] = vinSum
         txDetails['from'] = fromAddress
