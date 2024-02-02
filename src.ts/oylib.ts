@@ -498,8 +498,8 @@ export class Oyl {
           }
         }
 
-        const blockDelta = currentBlock - status.block_height
-        const confirmations = blockDelta === 0 ? 1 : blockDelta
+        const blockDelta = currentBlock - status?.block_height + 1
+        const confirmations = !status.confirmed ? 0 : blockDelta
 
         const inscriptionType =
           symbols.length > 0 ? 'brc-20' : isCollectible ? 'collectible' : 'N/A'
