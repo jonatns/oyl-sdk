@@ -29,9 +29,10 @@ export declare class Oyl {
      * @param {string | string[]} address - A single address or an array of addresses.
      * @returns {Promise<Object[]>} A promise that resolves to an array of address summaries.
      */
-    getAddressSummary({ address }: {
-        address: any;
-    }): Promise<any[]>;
+    getAddressSummary({ address, includeInscriptions, }: {
+        address: string;
+        includeInscriptions?: boolean;
+    }): Promise<{}>;
     /**
      * Derives a Taproot address from the given public key.
      * @param {string} publicKey - The public key to derive the address from.
@@ -207,7 +208,7 @@ export declare class Oyl {
         summary: any;
     } | {
         isValid: true;
-        summary: any[];
+        summary: {};
     }>;
     /**
      * Retrieves information about a Taproot address.
@@ -222,7 +223,7 @@ export declare class Oyl {
         summary: any;
     } | {
         isValid: true;
-        summary: any[];
+        summary: {};
     }>;
     /**
      * Fetches offers associated with a specific BRC20 ticker.

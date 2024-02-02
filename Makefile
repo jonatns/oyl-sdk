@@ -44,6 +44,9 @@ ordTest: reset
 txnHistory: reset
 	$(Q)oyl-cli taproot-txn-history
 	$(Q)echo "--- test complete"
+accountSummary: reset
+	$(Q)oyl-cli account-summary
+	$(Q)echo "--- test complete"
 testnetSend: reset
 	$(Q)oyl-cli testnet-send
 	$(Q)echo "--- test complete"
