@@ -426,6 +426,8 @@ export type HistoryTxBrc20Inscription = {
 export type HistoryTxCollectibleInscription = {
     contentType: string;
     imageUrl: string;
+    inscriptionId: string;
+    inscriptionNumber: number;
 };
 export type HistoryBaseTx = {
     txId: string;

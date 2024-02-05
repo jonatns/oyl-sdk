@@ -485,10 +485,13 @@ export class Oyl {
                   inscription.inscriptions[index]
                 )
 
-              const { content_type: contentType } =
-                await this.ordRpc.getInscriptionById(
-                  inscription.inscriptions[index]
-                )
+              const {
+                content_type: contentType,
+                inscription_id: inscriptionId,
+                inscription_number: inscriptionNumber,
+              } = await this.ordRpc.getInscriptionById(
+                inscription.inscriptions[index]
+              )
 
               if (contentType.startsWith('image/png')) {
                 inscriptionType = 'collectible'
@@ -497,6 +500,8 @@ export class Oyl {
                   {
                     contentType,
                     imageUrl: inscriptionContent,
+                    inscriptionId,
+                    inscriptionNumber,
                   }
                 inscriptionDetails.push(collectibleInscription)
               }
