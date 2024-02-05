@@ -25,6 +25,8 @@ import { AccountManager, customPaths } from './wallet/accountsManager'
 import {
   AddressType,
   HistoryTx,
+  HistoryTxBrc20Inscription,
+  HistoryTxCollectibleInscription,
   IBlockchainInfoUTXO,
   InscriptionType,
   Providers,
@@ -490,22 +492,26 @@ export class Oyl {
 
               if (contentType.startsWith('image/png')) {
                 inscriptionType = 'collectible'
-                inscriptionDetails.push({
-                  contentType,
-                  content: inscriptionContent,
-                })
+
+                const collectibleInscription: HistoryTxCollectibleInscription =
+                  {
+                    contentType,
+                    imageUrl: inscriptionContent,
+                  }
+                inscriptionDetails.push(collectibleInscription)
               }
 
               if (contentType.startsWith('text/plain')) {
-                inscriptionType = 'brc-20'
-
                 try {
                   let { tick, amt } = JSON.parse(atob(inscriptionContent))
 
-                  inscriptionDetails.push({
+                  inscriptionType = 'brc-20'
+
+                  const brc20Inscription: HistoryTxBrc20Inscription = {
                     amount: amt,
                     ticker: tick,
-                  })
+                  }
+                  inscriptionDetails.push(brc20Inscription)
                 } catch (error) {
                   console.error(
                     'Unable to parse inscription content',

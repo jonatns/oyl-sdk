@@ -481,14 +481,14 @@ export type TxType = 'sent' | 'received' | 'swap' | 'unknown'
 
 export type InscriptionType = 'brc-20' | 'collectible'
 
-type HistoryTxBrc20Inscription = {
+export type HistoryTxBrc20Inscription = {
   ticker: string
   amount: number
 }
 
-type HistoryTxCollectibleInscription = {
-  ticker: string
-  amount: number
+export type HistoryTxCollectibleInscription = {
+  contentType: string
+  imageUrl: string
 }
 
 export type HistoryBaseTx = {
@@ -520,5 +520,9 @@ export type HistoryBrc20Tx = HistoryBaseTx & {
   inscriptionDetails: HistoryTxBrc20Inscription[]
   inscriptionType: 'brc-20'
 }
+
+export type HistoryTxInscriptionDetails =
+  | HistoryTxBrc20Inscription[]
+  | HistoryTxCollectibleInscription[]
 
 export type HistoryTx = HistoryBrc20Tx | HistoryCollectibleTx
