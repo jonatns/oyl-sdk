@@ -24,7 +24,9 @@ import { AccountManager, customPaths } from './wallet/accountsManager'
 
 import {
   AddressType,
+  HistoryTx,
   IBlockchainInfoUTXO,
+  InscriptionType,
   Providers,
   RecoverAccountOptions,
   TickerDetails,
@@ -437,11 +439,11 @@ export class Oyl {
         []
       )
       const lastTenTxns: any[] = txns.slice(0, 20)
-      let isCollectible = false
 
       const processedTxns = lastTenTxns.map(async (tx) => {
         const { txid, vout, weight, vin, status, fee } = tx
 
+        let inscriptionType: InscriptionType = null
         let inscriptionsOnTx: any = []
         let inputAddress = false
         let fromAddress: string
@@ -471,29 +473,46 @@ export class Oyl {
           inscriptionsOnTx.push(inscription)
         }
 
-        const symbols = []
+        const inscriptionDetails = []
 
         for (const [index, inscription] of inscriptionsOnTx.entries()) {
           if (inscription.inscriptions.length > 0) {
             if (inscription.inscriptions[index]) {
-              const inscriptionsOnTxContent =
+              const inscriptionContent =
                 await this.ordRpc.getInscriptionContent(
                   inscription.inscriptions[index]
                 )
 
-              const inscriptionDetails = await this.ordRpc.getInscriptionById(
-                inscription.inscriptions[index]
-              )
+              const { content_type: contentType } =
+                await this.ordRpc.getInscriptionById(
+                  inscription.inscriptions[index]
+                )
 
-              isCollectible = inscriptionDetails.content_type === 'image/png'
+              if (contentType.startsWith('image/png')) {
+                inscriptionType = 'collectible'
+                inscriptionDetails.push({
+                  contentType,
+                  content: inscriptionContent,
+                })
+              }
 
-              let jsonObj = JSON.parse(atob(inscriptionsOnTxContent))
+              if (contentType.startsWith('text/plain')) {
+                inscriptionType = 'brc-20'
 
-              const symbolToAdd = jsonObj.tick as string
-              symbols.push({
-                amount: jsonObj.amt,
-                ticker: symbolToAdd,
-              })
+                try {
+                  let { tick, amt } = JSON.parse(atob(inscriptionContent))
+
+                  inscriptionDetails.push({
+                    amount: amt,
+                    ticker: tick,
+                  })
+                } catch (error) {
+                  console.error(
+                    'Unable to parse inscription content',
+                    inscriptionContent
+                  )
+                }
+              }
             }
           }
         }
@@ -501,10 +520,7 @@ export class Oyl {
         const blockDelta = currentBlock - status?.block_height + 1
         const confirmations = !status.confirmed ? 0 : blockDelta
 
-        const inscriptionType =
-          symbols.length > 0 ? 'brc-20' : isCollectible ? 'collectible' : 'N/A'
-
-        const txDetails = {}
+        const txDetails = {} as HistoryTx
         txDetails['txId'] = txid
         txDetails['confirmations'] = confirmations
         txDetails['blockTime'] = status.block_time
@@ -524,8 +540,7 @@ export class Oyl {
         txDetails['to'] = toAddress
         txDetails['voutSum'] = voutSum
         txDetails['amount'] = inputAddress ? vinSum - voutSum - fee : voutSum
-        txDetails['inscriptionDetails'] =
-          inscriptionType === 'brc-20' ? symbols : [{ tick: 'btc' }]
+        txDetails['inscriptionDetails'] = inscriptionDetails
         txDetails['inscriptionType'] = inscriptionType
         return txDetails
       })

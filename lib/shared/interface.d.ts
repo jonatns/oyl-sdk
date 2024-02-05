@@ -417,3 +417,41 @@ export interface IRpcMethods {
     walletPassphraseChange?(): Promise<any>;
     walletProcessPSBT?(arg: string): Promise<any>;
 }
+export type TxType = 'sent' | 'received' | 'swap' | 'unknown';
+export type InscriptionType = 'brc-20' | 'collectible';
+type HistoryTxBrc20Inscription = {
+    ticker: string;
+    amount: number;
+};
+type HistoryTxCollectibleInscription = {
+    ticker: string;
+    amount: number;
+};
+export type HistoryBaseTx = {
+    txId: string;
+    confirmations: number;
+    blockTime: number;
+    blockHeight: number;
+    fee: number;
+    type: TxType;
+    feeRate: number;
+    vinSum: number;
+    to?: string;
+    from?: string;
+    voutSum: number;
+    amount: number;
+};
+export type HistoryBtcTx = HistoryBaseTx & {
+    inscriptionDetails: null;
+    inscriptionType: null;
+};
+export type HistoryCollectibleTx = HistoryBaseTx & {
+    inscriptionDetails: HistoryTxCollectibleInscription[];
+    inscriptionType: 'collectible';
+};
+export type HistoryBrc20Tx = HistoryBaseTx & {
+    inscriptionDetails: HistoryTxBrc20Inscription[];
+    inscriptionType: 'brc-20';
+};
+export type HistoryTx = HistoryBrc20Tx | HistoryCollectibleTx;
+export {};
