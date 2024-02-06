@@ -1,6 +1,6 @@
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
-import { AddressType, IBlockchainInfoUTXO, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
+import { AddressType, HistoryTx, IBlockchainInfoUTXO, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
 import * as bitcoin from 'bitcoinjs-lib';
 import { OrdRpc } from './rpclient/ord';
@@ -131,7 +131,7 @@ export declare class Oyl {
     }): Promise<{}[]>;
     getTaprootTxHistory({ taprootAddress }: {
         taprootAddress: string;
-    }): Promise<{}[]>;
+    }): Promise<HistoryTx[]>;
     /**
      * Retrieves a list of inscriptions for a given address.
      * @param {Object} param0 - An object containing the address property.

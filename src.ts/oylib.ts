@@ -24,7 +24,11 @@ import { AccountManager, customPaths } from './wallet/accountsManager'
 
 import {
   AddressType,
+  HistoryTx,
+  HistoryTxBrc20Inscription,
+  HistoryTxCollectibleInscription,
   IBlockchainInfoUTXO,
+  InscriptionType,
   Providers,
   RecoverAccountOptions,
   TickerDetails,
@@ -428,20 +432,17 @@ export class Oyl {
     const addressType = getAddressType(taprootAddress)
 
     if (addressType === 1) {
-      const txns = await this.esploraRpc._call('esplora_address::txs', [
-        taprootAddress,
+      const [txns, currentBlock] = await Promise.all([
+        this.esploraRpc._call('esplora_address::txs', [taprootAddress]),
+        this.esploraRpc._call('esplora_blocks:tip:height', []),
       ])
 
-      const currentBlock = await this.esploraRpc._call(
-        'esplora_blocks:tip:height',
-        []
-      )
       const lastTenTxns: any[] = txns.slice(0, 20)
-      let isCollectible = false
 
       const processedTxns = lastTenTxns.map(async (tx) => {
         const { txid, vout, weight, vin, status, fee } = tx
 
+        let inscriptionType: InscriptionType = null
         let inscriptionsOnTx: any = []
         let inputAddress = false
         let fromAddress: string
@@ -471,29 +472,55 @@ export class Oyl {
           inscriptionsOnTx.push(inscription)
         }
 
-        const symbols = []
+        const inscriptionDetails = []
 
         for (const [index, inscription] of inscriptionsOnTx.entries()) {
           if (inscription.inscriptions.length > 0) {
             if (inscription.inscriptions[index]) {
-              const inscriptionsOnTxContent =
+              const inscriptionContent =
                 await this.ordRpc.getInscriptionContent(
                   inscription.inscriptions[index]
                 )
 
-              const inscriptionDetails = await this.ordRpc.getInscriptionById(
+              const {
+                content_type: contentType,
+                inscription_id: inscriptionId,
+                inscription_number: inscriptionNumber,
+              } = await this.ordRpc.getInscriptionById(
                 inscription.inscriptions[index]
               )
 
-              isCollectible = inscriptionDetails.content_type === 'image/png'
+              if (contentType.startsWith('image/png')) {
+                inscriptionType = 'collectible'
 
-              let jsonObj = JSON.parse(atob(inscriptionsOnTxContent))
+                const collectibleInscription: HistoryTxCollectibleInscription =
+                  {
+                    contentType,
+                    imageUrl: inscriptionContent,
+                    inscriptionId,
+                    inscriptionNumber,
+                  }
+                inscriptionDetails.push(collectibleInscription)
+              }
 
-              const symbolToAdd = jsonObj.tick as string
-              symbols.push({
-                amount: jsonObj.amt,
-                ticker: symbolToAdd,
-              })
+              if (contentType.startsWith('text/plain')) {
+                try {
+                  let { tick, amt } = JSON.parse(atob(inscriptionContent))
+
+                  inscriptionType = 'brc-20'
+
+                  const brc20Inscription: HistoryTxBrc20Inscription = {
+                    amount: amt,
+                    ticker: tick,
+                  }
+                  inscriptionDetails.push(brc20Inscription)
+                } catch (error) {
+                  console.error(
+                    'Unable to parse inscription content',
+                    inscriptionContent
+                  )
+                }
+              }
             }
           }
         }
@@ -501,31 +528,20 @@ export class Oyl {
         const blockDelta = currentBlock - status?.block_height + 1
         const confirmations = !status.confirmed ? 0 : blockDelta
 
-        const inscriptionType =
-          symbols.length > 0 ? 'brc-20' : isCollectible ? 'collectible' : 'N/A'
-
-        const txDetails = {}
+        const txDetails = {} as HistoryTx
         txDetails['txId'] = txid
         txDetails['confirmations'] = confirmations
         txDetails['blockTime'] = status.block_time
         txDetails['blockHeight'] = status.block_height
         txDetails['fee'] = fee
-        txDetails['type'] =
-          toAddress && !fromAddress
-            ? 'sent'
-            : toAddress && fromAddress
-            ? 'swap'
-            : !toAddress && fromAddress
-            ? 'received'
-            : 'unknown'
+        txDetails['type'] = inputAddress ? 'sent' : 'received'
         txDetails['feeRate'] = Number((fee / (weight / 4)).toFixed(2))
         txDetails['vinSum'] = vinSum
         txDetails['from'] = fromAddress
         txDetails['to'] = toAddress
         txDetails['voutSum'] = voutSum
         txDetails['amount'] = inputAddress ? vinSum - voutSum - fee : voutSum
-        txDetails['inscriptionDetails'] =
-          inscriptionType === 'brc-20' ? symbols : [{ tick: 'btc' }]
+        txDetails['inscriptionDetails'] = inscriptionDetails
         txDetails['inscriptionType'] = inscriptionType
         return txDetails
       })
