@@ -432,14 +432,11 @@ export class Oyl {
     const addressType = getAddressType(taprootAddress)
 
     if (addressType === 1) {
-      const txns = await this.esploraRpc._call('esplora_address::txs', [
-        taprootAddress,
+      const [txns, currentBlock] = await Promise.all([
+        this.esploraRpc._call('esplora_address::txs', [taprootAddress]),
+        this.esploraRpc._call('esplora_blocks:tip:height', []),
       ])
 
-      const currentBlock = await this.esploraRpc._call(
-        'esplora_blocks:tip:height',
-        []
-      )
       const lastTenTxns: any[] = txns.slice(0, 20)
 
       const processedTxns = lastTenTxns.map(async (tx) => {
@@ -537,14 +534,7 @@ export class Oyl {
         txDetails['blockTime'] = status.block_time
         txDetails['blockHeight'] = status.block_height
         txDetails['fee'] = fee
-        txDetails['type'] =
-          toAddress && !fromAddress
-            ? 'sent'
-            : toAddress && fromAddress
-            ? 'swap'
-            : !toAddress && fromAddress
-            ? 'received'
-            : 'unknown'
+        txDetails['type'] = inputAddress ? 'sent' : 'received'
         txDetails['feeRate'] = Number((fee / (weight / 4)).toFixed(2))
         txDetails['vinSum'] = vinSum
         txDetails['from'] = fromAddress
