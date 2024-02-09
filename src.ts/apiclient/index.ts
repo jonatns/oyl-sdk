@@ -79,6 +79,16 @@ export class OylApiClient {
     })
   }
 
+  async getBrc20Tickers(tickerParams: {
+    sort_by?: string;
+    order?: string;
+    offset?: number;
+    count?: number;
+    minting_status?: string;
+  }) {
+    return await this._call('/get-brc20-tickers', 'post', tickerParams)
+  }
+
   async getAllInscriptionsByAddress(address: string): Promise<any> {
     return await this._call('/get-inscriptions', 'post', {
       address: address,
