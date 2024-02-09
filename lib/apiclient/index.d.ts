@@ -41,6 +41,13 @@ export declare class OylApiClient {
      * @param address - The address to query.
      */
     getBrc20sByAddress(address: string): Promise<any>;
+    getBrc20Tickers(tickerParams: {
+        sort_by?: string;
+        order?: string;
+        offset?: number;
+        count?: number;
+        minting_status?: string;
+    }): Promise<any>;
     getAllInscriptionsByAddress(address: string): Promise<any>;
     getInscriptionsForTxn(txn_id: string): Promise<any>;
     /**
