@@ -1079,19 +1079,19 @@ export class Oyl {
 
       const commitTxSize = calculateTaprootTxSize(3, 0, 2)
       const feeForCommit =
-        commitTxSize * options.feeRate < 150
+        commitTxSize * options.feeRate < 200
           ? 200
           : commitTxSize * options.feeRate
 
       const revealTxSize = calculateTaprootTxSize(1, 0, 1)
       const feeForReveal =
-        revealTxSize * options.feeRate < 150
+        revealTxSize * options.feeRate < 200
           ? 200
           : revealTxSize * options.feeRate
 
       const brcSendSize = calculateTaprootTxSize(2, 0, 2)
       const feeForBrcSend =
-        brcSendSize * options.feeRate < 150
+        brcSendSize * options.feeRate < 200
           ? 200
           : brcSendSize * options.feeRate
 
@@ -1180,7 +1180,7 @@ export class Oyl {
       })
 
       const sendTxSize = calculateTaprootTxSize(3, 0, 2)
-      const feeForSend = sendTxSize * feeRate < 150 ? 200 : sendTxSize * feeRate
+      const feeForSend = sendTxSize * feeRate < 200 ? 200 : sendTxSize * feeRate
       const utxosToSend = findUtxosToCoverAmount(
         utxosForTransferSendFees,
         feeForSend
@@ -1334,7 +1334,7 @@ export class Oyl {
         address: fromAddress,
       })
       const sendTxSize = calculateTaprootTxSize(3, 0, 2)
-      const feeForSend = sendTxSize * feeRate < 150 ? 200 : sendTxSize * feeRate
+      const feeForSend = sendTxSize * feeRate < 200 ? 200 : sendTxSize * feeRate
       const utxosToSend = findUtxosToCoverAmount(
         utxosForTransferSendFees,
         feeForSend
