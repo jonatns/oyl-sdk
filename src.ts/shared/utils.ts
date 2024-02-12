@@ -413,11 +413,11 @@ export const inscribe = async ({
 }) => {
   const commitTxSize = calculateTaprootTxSize(3, 0, 2)
   const feeForCommit =
-    commitTxSize * feeRate < 150 ? 200 : commitTxSize * feeRate
+    commitTxSize * feeRate < 200 ? 200 : commitTxSize * feeRate
 
   const revealTxSize = calculateTaprootTxSize(1, 0, 1)
   const feeForReveal =
-    revealTxSize * feeRate < 150 ? 200 : revealTxSize * feeRate
+    revealTxSize * feeRate < 200 ? 200 : revealTxSize * feeRate
 
   const inscriptionSats = 546
   const amountNeededForInscribe =
@@ -1004,7 +1004,7 @@ const addBTCUtxo = async ({
   network: bitcoin.Network
 }) => {
   const txSize = calculateTaprootTxSize(3, 0, 2)
-  const fee = txSize * feeRate < 150 ? 200 : txSize * feeRate
+  const fee = txSize * feeRate < 200 ? 200 : txSize * feeRate
 
   const utxosToSend = findUtxosToCoverAmount(utxos, amount + fee)
   if (!utxosToSend) {
