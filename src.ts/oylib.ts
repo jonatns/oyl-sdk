@@ -830,7 +830,13 @@ export class Oyl {
    * @returns {Promise<any>} A promise that resolves to an array of BRC20 tokens.
    */
   async listBrc20s({ address }: { address: string }) {
-    return await this.apiClient.getBrc20sByAddress(address)
+    const tokens = await this.apiClient.getBrc20sByAddress(address);
+    for (let i = 0; i < tokens.data.length; i++){
+      const details = await this.apiClient.getBrc20TokenDetails(tokens.data[i].ticker)
+      tokens.data[i]["details"] = details.data
+    }
+    return tokens;
+
   }
 
   /**
