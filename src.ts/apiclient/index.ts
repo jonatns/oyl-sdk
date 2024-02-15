@@ -80,11 +80,11 @@ export class OylApiClient {
   }
 
   async getBrc20Tickers(tickerParams: {
-    sort_by?: string;
-    order?: string;
-    offset?: number;
-    count?: number;
-    minting_status?: string;
+    sort_by?: string
+    order?: string
+    offset?: number
+    count?: number
+    minting_status?: string
   }) {
     return await this._call('/get-brc20-tickers', 'post', tickerParams)
   }
@@ -102,6 +102,15 @@ export class OylApiClient {
     const res = await this._call('/get-inscriptions-for-txn', 'post', {
       tx_id: txn_id,
       testnet: this.testnet,
+    })
+
+    return res.data
+  }
+
+  async getTaprootTxHistory(taprootAddress, totalTxs): Promise<any> {
+    const res = await this._call('/get-taproot-history', 'post', {
+      taprootAddress: taprootAddress,
+      totalTxs: totalTxs,
     })
 
     return res.data
