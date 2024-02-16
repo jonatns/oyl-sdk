@@ -33,9 +33,14 @@ export declare class OylApiClient {
     private _call;
     /**
      * Get brc20 info by ticker.
-     * @param ticker - The hash to query.
+     * @param ticker - The ticker to query.
      */
     getBrc20TokenInfo(ticker: string): Promise<any>;
+    /**
+    * Get brc20 details by ticker.
+    * @param ticker - The ticker to query.
+    */
+    getBrc20TokenDetails(ticker: string): Promise<any>;
     /**
      * Get Brc20 balances by address.
      * @param address - The address to query.
