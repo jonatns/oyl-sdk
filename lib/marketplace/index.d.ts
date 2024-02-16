@@ -13,8 +13,7 @@ export declare class Marketplace {
     processMultipleBuys(orders: any, previousOrderTxId: string, remainingSats: number, index?: number, psbtBase64s?: string[], psbtHexs?: any[], txIds?: any[]): any;
     getSigner(): Promise<OGPSBTTransaction>;
     buyMarketPlaceOffers(offers: any): Promise<{
-        rootTx: string;
-        multipleBuys: any;
+        marketplaceTxns: any[];
     }>;
     processAllOffers(offers: MarketplaceOffers[]): Promise<any[]>;
     /**

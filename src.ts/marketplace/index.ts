@@ -166,9 +166,14 @@ export class Marketplace {
       }
       await this.wallet.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(multipleBuys.psbtHexs[i])
     }
+    const marketplaceTxns = []
+    marketplaceTxns.push(txId);
+    const subsequentTxids = multipleBuys.txIds
+    for(let i = 0; i < subsequentTxids.length; i++){
+      marketplaceTxns.push(subsequentTxids[i]);
+    }
     return {
-      rootTx: txId,
-      multipleBuys
+      marketplaceTxns
     };
   }
 
