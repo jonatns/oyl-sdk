@@ -428,124 +428,17 @@ export class Oyl {
     }
   }
 
-  async getTaprootTxHistory({ taprootAddress }: { taprootAddress: string }) {
+  async getTaprootTxHistory({
+    taprootAddress,
+    totalTxs,
+  }: {
+    taprootAddress: string
+    totalTxs: number
+  }) {
     const addressType = getAddressType(taprootAddress)
 
     if (addressType === 1) {
-      const [txns, currentBlock] = await Promise.all([
-        this.esploraRpc._call('esplora_address::txs', [taprootAddress]),
-        this.esploraRpc._call('esplora_blocks:tip:height', []),
-      ])
-
-      const lastTenTxns: any[] = txns.slice(0, 20)
-
-      const processedTxns = lastTenTxns.map(async (tx) => {
-        const { txid, vout, weight, vin, status, fee } = tx
-
-        let inscriptionType: InscriptionType = null
-        let inscriptionsOnTx: any = []
-        let inputAddress = false
-        let fromAddress: string
-        let toAddress: string
-
-        let vinSum = 0
-        let voutSum = 0
-
-        for (let input of vin) {
-          if (taprootAddress === input.prevout.scriptpubkey_address) {
-            inputAddress = true
-            vinSum += input.prevout.value
-          }
-          if (taprootAddress !== input.prevout.scriptpubkey_address) {
-            fromAddress = input.prevout.scriptpubkey_address
-          }
-        }
-        for (let [index, output] of vout.entries()) {
-          if (taprootAddress === output.scriptpubkey_address) {
-            voutSum += output.value
-          }
-          if (taprootAddress !== output.scriptpubkey_address) {
-            toAddress = output.scriptpubkey_address
-          }
-          const inscription = await this.ordRpc.getTxOutput(`${txid}:${index}`)
-
-          inscriptionsOnTx.push(inscription)
-        }
-
-        const inscriptionDetails = []
-
-        for (const [index, inscription] of inscriptionsOnTx.entries()) {
-          if (inscription.inscriptions.length > 0) {
-            if (inscription.inscriptions[index]) {
-              const inscriptionContent =
-                await this.ordRpc.getInscriptionContent(
-                  inscription.inscriptions[index]
-                )
-
-              const {
-                content_type: contentType,
-                inscription_id: inscriptionId,
-                inscription_number: inscriptionNumber,
-              } = await this.ordRpc.getInscriptionById(
-                inscription.inscriptions[index]
-              )
-
-              if (contentType.startsWith('image/png')) {
-                inscriptionType = 'collectible'
-
-                const collectibleInscription: HistoryTxCollectibleInscription =
-                  {
-                    contentType,
-                    imageUrl: inscriptionContent,
-                    inscriptionId,
-                    inscriptionNumber,
-                  }
-                inscriptionDetails.push(collectibleInscription)
-              }
-
-              if (contentType.startsWith('text/plain')) {
-                try {
-                  let { tick, amt } = JSON.parse(atob(inscriptionContent))
-
-                  inscriptionType = 'brc-20'
-
-                  const brc20Inscription: HistoryTxBrc20Inscription = {
-                    amount: amt,
-                    ticker: tick,
-                  }
-                  inscriptionDetails.push(brc20Inscription)
-                } catch (error) {
-                  console.error(
-                    'Unable to parse inscription content',
-                    inscriptionContent
-                  )
-                }
-              }
-            }
-          }
-        }
-
-        const blockDelta = currentBlock - status?.block_height + 1
-        const confirmations = !status.confirmed ? 0 : blockDelta
-
-        const txDetails = {} as HistoryTx
-        txDetails['txId'] = txid
-        txDetails['confirmations'] = confirmations
-        txDetails['blockTime'] = status.block_time
-        txDetails['blockHeight'] = status.block_height
-        txDetails['fee'] = fee
-        txDetails['type'] = inputAddress ? 'sent' : 'received'
-        txDetails['feeRate'] = Number((fee / (weight / 4)).toFixed(2))
-        txDetails['vinSum'] = vinSum
-        txDetails['from'] = fromAddress
-        txDetails['to'] = toAddress
-        txDetails['voutSum'] = voutSum
-        txDetails['amount'] = inputAddress ? vinSum - voutSum - fee : voutSum
-        txDetails['inscriptionDetails'] = inscriptionDetails
-        txDetails['inscriptionType'] = inscriptionType
-        return txDetails
-      })
-      return await Promise.all(processedTxns)
+      return await this.apiClient.getTaprootTxHistory(taprootAddress, totalTxs)
     } else {
       throw new Error('Invalid address type')
     }
