@@ -46,6 +46,7 @@ export declare class OylApiClient {
      * @param address - The address to query.
      */
     getBrc20sByAddress(address: string): Promise<any>;
+    getBrcPrice(ticker: string): Promise<any>;
     getBrc20Tickers(tickerParams: {
         sort_by?: string;
         order?: string;
