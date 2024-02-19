@@ -55,6 +55,7 @@ export declare class OylApiClient {
     }): Promise<any>;
     getAllInscriptionsByAddress(address: string): Promise<any>;
     getInscriptionsForTxn(txn_id: string): Promise<any>;
+    getTaprootTxHistory(taprootAddress: any, totalTxs: any): Promise<any>;
     /**
      * Get collectible by ID.
      * @param id - The ID of the collectible.
