@@ -296,10 +296,11 @@ export class HdKeyring extends EventEmitter {
    */
   private _addressFromIndex(i: number): [string, ECPairInterface] {
     if (!this._index2wallet[i]) {
-      const child = this.root!.deriveChild(i).toString()
-      const ecpair = ECPair.fromPrivateKey(Buffer.from(child), {
-        network: this.network,
-      })
+      const root = this.hdWallet
+        .toHDPrivateKey(this.passphrase, this.network)
+        .deriveChild(this.hdPath)
+      const child = root!.deriveChild(i)
+      const ecpair = ECPair.fromPrivateKey(child.privateKey.toBuffer())
       const address = ecpair.publicKey.toString('hex')
 
       this._index2wallet[i] = [address, ecpair]
