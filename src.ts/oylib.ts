@@ -430,10 +430,10 @@ export class Oyl {
 
   async getTaprootTxHistory({
     taprootAddress,
-    totalTxs,
+    totalTxs = 20,
   }: {
     taprootAddress: string
-    totalTxs: number
+    totalTxs?: number
   }) {
     const addressType = getAddressType(taprootAddress)
 
@@ -723,13 +723,14 @@ export class Oyl {
    * @returns {Promise<any>} A promise that resolves to an array of BRC20 tokens.
    */
   async listBrc20s({ address }: { address: string }) {
-    const tokens = await this.apiClient.getBrc20sByAddress(address);
-    for (let i = 0; i < tokens.data.length; i++){
-      const details = await this.apiClient.getBrc20TokenDetails(tokens.data[i].ticker)
-      tokens.data[i]["details"] = details.data
+    const tokens = await this.apiClient.getBrc20sByAddress(address)
+    for (let i = 0; i < tokens.data.length; i++) {
+      const details = await this.apiClient.getBrc20TokenDetails(
+        tokens.data[i].ticker
+      )
+      tokens.data[i]['details'] = details.data
     }
-    return tokens;
-
+    return tokens
   }
 
   /**

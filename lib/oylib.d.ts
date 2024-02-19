@@ -131,7 +131,7 @@ export declare class Oyl {
     }): Promise<{}[]>;
     getTaprootTxHistory({ taprootAddress, totalTxs, }: {
         taprootAddress: string;
-        totalTxs: number;
+        totalTxs?: number;
     }): Promise<any>;
     /**
      * Retrieves a list of inscriptions for a given address.
