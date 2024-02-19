@@ -89,6 +89,12 @@ export class OylApiClient {
     })
   }
 
+  async getBrcPrice(ticker: string) {
+    return await this._call('/get-brc-price', 'post', {
+      ticker: ticker
+    })
+  }
+
   async getBrc20Tickers(tickerParams: {
     sort_by?: string
     order?: string
