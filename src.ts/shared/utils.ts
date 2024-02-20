@@ -576,6 +576,8 @@ export const inscribe = async ({
   }
 
   return {
+    commitTx: commitTxId,
+    revealTx: revealTxId,
     txId: revealTxId,
     rawTx: inscriptionTxHex,
   }
