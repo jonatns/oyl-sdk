@@ -81,6 +81,8 @@ export declare const inscribe: ({ content, inputAddress, outputAddress, mnemonic
     sandshrewBtcClient: SandshrewBitcoinClient;
     esploraRpc: EsploraRpc;
 }) => Promise<{
+    commitTx: string;
+    revealTx: string;
     txId: string;
     rawTx: string;
 }>;
