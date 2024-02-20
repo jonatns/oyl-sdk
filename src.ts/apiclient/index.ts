@@ -7,14 +7,16 @@ import { SwapBrcBid, SignedBid } from '../shared/interface'
 export class OylApiClient {
   private host: string
   private testnet: boolean
+  private apiKey: string
 
   /**
    * Create an instance of the OylApiClient.
    * @param options - Configuration object containing the API host.
    */
-  constructor(options?: { host: string; testnet?: boolean }) {
+  constructor(options?: { host: string; apiKey: string; testnet?: boolean }) {
     this.host = options?.host || ''
     this.testnet = options.testnet == true
+    this.apiKey = options.apiKey
   }
 
   /**
@@ -22,7 +24,7 @@ export class OylApiClient {
    * @param data - The data object.
    * @returns An instance of OylApiClient.
    */
-  static fromObject(data: { host: string; testnet?: boolean }): OylApiClient {
+  static fromObject(data: { host: string; testnet?: boolean; apiKey: string }): OylApiClient {
     return new this(data)
   }
 
@@ -30,10 +32,11 @@ export class OylApiClient {
    * Convert this OylApiClient instance to a plain object.
    * @returns The plain object representation.
    */
-  toObject(): { host: string; testnet: boolean } {
+  toObject(): { host: string; testnet: boolean, apiKey: string } {
     return {
       host: this.host,
       testnet: this.testnet,
+      apiKey: this.apiKey
     }
   }
 
@@ -41,7 +44,10 @@ export class OylApiClient {
     try {
       const options: RequestInit = {
         method: method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': this.apiKey
+       },
         cache: 'no-cache',
       }
       if (this.testnet) {
