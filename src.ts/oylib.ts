@@ -74,9 +74,12 @@ export class Oyl {
       ...opts,
     }
 
+    const apiKey = options.projectId
+
     this.apiClient = new OylApiClient({
       host: 'https://api.oyl.gg',
       testnet: options.network == 'testnet' ? true : null,
+      apiKey: apiKey
     })
     const rpcUrl = `${options.baseUrl}/${options.version}/${options.projectId}`
     const provider = new Provider(rpcUrl)
