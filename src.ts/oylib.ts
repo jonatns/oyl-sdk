@@ -74,9 +74,12 @@ export class Oyl {
       ...opts,
     }
 
+    const apiKey = options.projectId
+
     this.apiClient = new OylApiClient({
       host: 'https://api.oyl.gg',
       testnet: options.network == 'testnet' ? true : null,
+      apiKey: apiKey
     })
     const rpcUrl = `${options.baseUrl}/${options.version}/${options.projectId}`
     const provider = new Provider(rpcUrl)
@@ -1013,7 +1016,7 @@ export class Oyl {
 
       const content = `{"p":"brc-20","op":"transfer","tick":"${options.token}","amt":"${options.amount}"}`
 
-      const { txId } = await inscribe({
+      const { txId, commitTx, revealTx } = await inscribe({
         content,
         inputAddress: options.fromAddress,
         outputAddress: options.destinationAddress,
@@ -1123,7 +1126,7 @@ export class Oyl {
 
       await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(sendTxHex)
 
-      return { txId: sendTxId, rawTxn: sendTxHex }
+      return { txId: sendTxId, rawTxn: sendTxHex, sendBrc20Txids: [commitTx, revealTx, sendTxId] }
     } catch (err) {
       console.error(err)
       throw new Error(err)

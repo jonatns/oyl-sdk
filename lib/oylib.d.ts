@@ -333,9 +333,11 @@ export declare class Oyl {
         error: string;
         txId?: undefined;
         rawTxn?: undefined;
+        sendBrc20Txids?: undefined;
     } | {
         txId: string;
         rawTxn: string;
+        sendBrc20Txids: string[];
         error?: undefined;
     }>;
     sendOrdCollectible({ mnemonic, fromAddress, taprootPublicKey, destinationAddress, segwitPubKey, segwitAddress, payFeesWithSegwit, feeRate, isDry, inscriptionId, segwitHdPath, }: {
