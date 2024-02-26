@@ -291,39 +291,9 @@ export class Oyl {
    * @returns {Promise<any>} A promise that resolves to an object containing balance and its USD value.
    * @throws {Error} Throws an error if the balance retrieval fails.
    */
-  async getTaprootBalance({ address }) {
-    const addressType = getAddressType(address)
-
-    if (addressType !== 1) {
-      throw new Error('Incorrect address type')
-    }
-    const txns: any[] = await this.esploraRpc.getAddressUtxo(address)
-
-    let confirmedAmount = 0
-    let pendingAmount = 0
-
-    for (const utxo of txns) {
-      const { txid, status, vout } = utxo
-      let inscriptionsOnTx: any = await this.ordRpc.getTxOutput(
-        `${txid}:${vout}`
-      )
-      if (inscriptionsOnTx.inscriptions.length === 0) {
-        if (status.confirmed) confirmedAmount += utxo.value / 1e8
-        if (!status.confirmed) pendingAmount += utxo.value / 1e8
-      }
-    }
-
-    const amount = confirmedAmount + pendingAmount
-
-    const usdValue = await transactions.convertUsdValue(amount)
-
-    const response = {
-      confirmedAmount: confirmedAmount.toFixed(8),
-      pendingAmount: pendingAmount.toFixed(8),
-      amount: amount.toFixed(8),
-      usdValue: usdValue,
-    }
-    return response
+  async getTaprootBalance({ address }: {address: string}) {
+    const balance = await this.apiClient.getTaprootBalance(address);
+    return balance
   }
 
   async getUtxos(address: string, includeInscriptions: boolean = true) {

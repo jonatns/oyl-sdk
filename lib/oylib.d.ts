@@ -109,13 +109,8 @@ export declare class Oyl {
      * @throws {Error} Throws an error if the balance retrieval fails.
      */
     getTaprootBalance({ address }: {
-        address: any;
-    }): Promise<{
-        confirmedAmount: string;
-        pendingAmount: string;
-        amount: string;
-        usdValue: string;
-    }>;
+        address: string;
+    }): Promise<any>;
     getUtxos(address: string, includeInscriptions?: boolean): Promise<{
         unspent_outputs: IBlockchainInfoUTXO[];
     }>;
