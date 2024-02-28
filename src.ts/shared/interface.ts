@@ -322,7 +322,7 @@ export interface IRpcMethods {
   createWallet?(arg: string): Promise<any>
   decodePSBT?(arg: string): Promise<any>
   decodeScript?(arg: string): Promise<any>
-  decodeRawTransaction?(): Promise<any>
+  decodeRawTransaction?(arg: string): Promise<any>
   deriveAddresses?(arg: string): Promise<any>
   disconnectNode?(): Promise<any>
   dumpPrivKey?(): Promise<any>
