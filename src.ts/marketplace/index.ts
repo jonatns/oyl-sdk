@@ -58,16 +58,13 @@ export class Marketplace {
     });
     const txSigner = await this.getSigner();
     const signedPsbt = await txSigner.signPsbt(tempPsbt, false);
-    signedPsbt.finalizeInput(0)
-    signedPsbt.finalizeInput(1)
-    signedPsbt.finalizeInput(3)
-    psbtBase64s.push(signedPsbt.toBase64());
     const result =
       await this.wallet.sandshrewBtcClient.bitcoindRpc.finalizePSBT(
         signedPsbt.toBase64()
       );
     psbtHexs.push(result.hex);
-    const txId = signedPsbt.extractTransaction().getId();
+    const txPayload = await this.wallet.sandshrewBtcClient.bitcoindRpc.decodeRawTransaction(result.hex)
+    const txId = txPayload.txid;
     txIds.push(txId);
     return await this.processMultipleBuys(
       orders,
@@ -132,9 +129,6 @@ export class Marketplace {
     });
     const txSigner = await this.getSigner();
     const signedPsbt = await txSigner.signPsbt(tempPsbt, false);
-    signedPsbt.finalizeInput(0)
-    signedPsbt.finalizeInput(1)
-    signedPsbt.finalizeInput(3)
     const result =
       await this.wallet.sandshrewBtcClient.bitcoindRpc.finalizePSBT(
         signedPsbt.toBase64()
@@ -147,8 +141,8 @@ export class Marketplace {
       throw new Error(result['reject-reason'])
     }
     await this.wallet.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(result.hex)
-
-    const txId = signedPsbt.extractTransaction().getId();
+    const txPayload = await this.wallet.sandshrewBtcClient.bitcoindRpc.decodeRawTransaction(result.hex)
+    const txId = txPayload.txid;
     let remainingSats = remainder;
     const multipleBuys = await this.processMultipleBuys(
       offers,
