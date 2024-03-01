@@ -2,6 +2,7 @@ import yargs from 'yargs'
 import { camelCase } from 'change-case'
 import 'dotenv/config'
 import { NESTED_SEGWIT_HD_PATH, Oyl, TAPROOT_HD_PATH } from '../oylib'
+import { Signer, pathSegwit, pathTaproot } from '../signer'
 import { Aggregator } from '../PSBTAggregator'
 import * as bitcoin from 'bitcoinjs-lib'
 import axios from 'axios'
@@ -24,9 +25,6 @@ import {
 } from '../shared/utils'
 import { customPaths } from '../wallet/accountsManager'
 import * as transactions from '../transactions'
-import { findUtxosToCoverAmount } from '../txbuilder'
-import * as net from 'net'
-import { Tx } from '@cmdcode/tapscript'
 import { Marketplace } from '../marketplace'
 
 bitcoin.initEccLib(ecc2)
@@ -205,15 +203,21 @@ const config = {
   },
   [TESTNET]: {
     mnemonic:
-      'dad wall sand scissors evil second elbow possible hour elbow recipe dinosaur',
+      'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
     wallet: testWallet as Oyl,
+    segwitPrivateKey:
+      '60fb403231a1c9606a2207b6e43b3d1c22f04199bed4c4c96313fb4d7f40b0e0',
+    segwitHdPath: pathSegwit,
+    taprootPrivateKey:
+      'd63f19f6b4f6e1e6b9fdc9dc2cb1942f1a15409e064b73ea10176e9155c9b3c2',
+    taprootHdPath: pathTaproot,
     taprootAddress:
-      'tb1p7ncck66wthnjl2clcry46f2uxjcn8naw95e6r8ag0x9zremx00lqmpzpkk',
+      'tb1plh52zdjwmtk8ht54ldxchejg4zx077g8fvwhcjrpar7pmfpuyzdqj7rxjm',
     taprootPubkey:
-      '021953423299016db2541eea62268f5461fadbaa904b22955dd9b12322e920db33',
-    segwitAddress: 'tb1q9fflqu0ll6qnkcvlyc4dp4lpa4806gunlsvcnc',
+      '020f3ee243a0d138c26a9f3d9c193aaee79a01326bcbf3e0cfd9e2c8ae32bbbca0',
+    segwitAddress: 'tb1qrs9hy48vyzdmt6pve45v6hrf3dwvtdav3dlws6',
     segwitPubKey:
-      '031cee6c58c8f2bc98cfddb4fa182b03603503b5b5d121170d28a5f3e250123343',
+      '02058e30f3b55dac28b66ec8cfad71256f76d508cde1c727c17c8d8ead6a32d585',
     destinationTaprootAddress:
       'tb1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqs77dhfz',
     feeRate: 1,
@@ -429,7 +433,7 @@ export async function runCLI() {
     case 'buy':
       return await testMarketplaceBuy()
     case 'send':
-      const sendResponse = await networkConfig.wallet.sendBtc({
+      const { rawPsbt } = await networkConfig.wallet.sendBtc({
         mnemonic,
         to,
         from: networkConfig.taprootAddress,
@@ -438,6 +442,22 @@ export async function runCLI() {
         feeRate,
       })
 
+      const newSigner = new Signer(bitcoin.networks.testnet, [
+        {
+          privateKey: networkConfig.segwitPrivateKey,
+          hdPath: networkConfig.segwitHdPath,
+        },
+        {
+          privateKey: networkConfig.taprootPrivateKey,
+          hdPath: networkConfig.taprootHdPath,
+        },
+      ])
+      const { signedPsbt } = await newSigner.SignTaprootInput({
+        inputNumber: 0,
+        rawPsbt: rawPsbt,
+      })
+
+      const sendResponse = await testWallet.pushPsbt({ psbtBase64: signedPsbt })
       console.log(sendResponse)
       return sendResponse
 

@@ -79,7 +79,7 @@ export class Oyl {
     this.apiClient = new OylApiClient({
       host: 'https://api.oyl.gg',
       testnet: options.network == 'testnet' ? true : null,
-      apiKey: apiKey
+      apiKey: apiKey,
     })
     const rpcUrl = `${options.baseUrl}/${options.version}/${options.projectId}`
     const provider = new Provider(rpcUrl)
@@ -294,8 +294,8 @@ export class Oyl {
    * @returns {Promise<any>} A promise that resolves to an object containing balance and its USD value.
    * @throws {Error} Throws an error if the balance retrieval fails.
    */
-  async getTaprootBalance({ address }: {address: string}) {
-    const balance = await this.apiClient.getTaprootBalance(address);
+  async getTaprootBalance({ address }: { address: string }) {
+    const balance = await this.apiClient.getTaprootBalance(address)
     return balance
   }
 
@@ -533,7 +533,6 @@ export class Oyl {
     mnemonic,
     segwitAddress,
     segwitPubkey,
-    segwitHdPath = 'oyl',
     payFeesWithSegwit = false,
   }: {
     to: string
@@ -544,27 +543,10 @@ export class Oyl {
     mnemonic: string
     segwitAddress?: string
     segwitPubkey?: string
-    segwitHdPath?: 'oyl' | 'xverse' | 'leather' | 'unisat' | 'testnet'
     payFeesWithSegwit?: boolean
   }) {
     if (payFeesWithSegwit && (!segwitAddress || !segwitPubkey)) {
       throw new Error('Invalid segwit information entered')
-    }
-    const hdPaths = customPaths[segwitHdPath]
-    const taprootSigner = await this.createTaprootSigner({
-      mnemonic: mnemonic,
-      taprootAddress: from,
-      hdPathWithIndex: hdPaths['taprootPath'],
-    })
-
-    let segwitSigner
-
-    if (segwitAddress) {
-      segwitSigner = await this.createSegwitSigner({
-        mnemonic: mnemonic,
-        segwitAddress: segwitAddress,
-        hdPathWithIndex: hdPaths['segwitPath'],
-      })
     }
 
     const taprootUtxos = await this.getUtxosArtifacts({
@@ -582,7 +564,7 @@ export class Oyl {
       feeRate = (await this.esploraRpc.getFeeEstimates())['1']
     }
 
-    const { txnId, rawTxn } = await createBtcTx({
+    const { rawPsbt } = await createBtcTx({
       inputAddress: from,
       outputAddress: to,
       amount: amount,
@@ -592,23 +574,12 @@ export class Oyl {
       taprootPublicKey: publicKey,
       mnemonic: mnemonic,
       payFeesWithSegwit: payFeesWithSegwit,
-      taprootSigner: taprootSigner,
-      segwitSigner: segwitSigner,
       network: this.network,
       segwitUtxos: segwitUtxos,
       taprootUtxos: taprootUtxos,
     })
 
-    const [result] =
-      await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([rawTxn])
-
-    if (!result.allowed) {
-      throw new Error(result['reject-reason'])
-    }
-
-    await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(rawTxn)
-
-    return { txnId: txnId, rawTxn: rawTxn }
+    return { rawPsbt: rawPsbt.toBase64() }
   }
 
   /**
@@ -773,8 +744,27 @@ export class Oyl {
     }
   }
 
-  async pushPsbt(psbtHex: string) {
-    const psbt = bitcoin.Psbt.fromHex(psbtHex, { network: this.network })
+  async pushPsbt({
+    psbtHex,
+    psbtBase64,
+  }: {
+    psbtHex?: string
+    psbtBase64?: string
+  }) {
+    if (!psbtHex && !psbtBase64) {
+      throw new Error('Both cannot be undefined')
+    }
+    if (psbtHex && psbtBase64) {
+      throw new Error('Please select one format of psbt to broadcast')
+    }
+    let psbt: bitcoin.Psbt
+    if (psbtHex) {
+      psbt = bitcoin.Psbt.fromHex(psbtHex, { network: this.network })
+    }
+
+    if (psbtBase64) {
+      psbt = bitcoin.Psbt.fromBase64(psbtBase64, { network: this.network })
+    }
     const txId = psbt.extractTransaction().getId()
     const rawTx = psbt.extractTransaction().toHex()
 
@@ -1126,7 +1116,11 @@ export class Oyl {
 
       await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(sendTxHex)
 
-      return { txId: sendTxId, rawTxn: sendTxHex, sendBrc20Txids: [commitTx, revealTx, sendTxId] }
+      return {
+        txId: sendTxId,
+        rawTxn: sendTxHex,
+        sendBrc20Txids: [commitTx, revealTx, sendTxId],
+      }
     } catch (err) {
       console.error(err)
       throw new Error(err)

@@ -339,6 +339,44 @@ export const formatOptionsToSignInputs = async ({
   return toSignInputs
 }
 
+export const formatInputsToSign = async ({
+  _psbt,
+  pubkey,
+  segwitPubkey,
+  segwitAddress,
+  taprootAddress,
+  network,
+}: {
+  _psbt: bitcoin.Psbt
+  pubkey: string
+  segwitPubkey: string
+  segwitAddress: string
+  taprootAddress: string
+  network: bitcoin.Network
+}) => {
+  let index = 0
+  for await (const v of _psbt.data.inputs) {
+    const isSigned = v.finalScriptSig || v.finalScriptWitness
+    const lostInternalPubkey = !v.tapInternalKey
+
+    if (!isSigned || lostInternalPubkey) {
+      const tapInternalKey = assertHex(Buffer.from(pubkey, 'hex'))
+      const p2tr = bitcoin.payments.p2tr({
+        internalPubkey: tapInternalKey,
+        network: network,
+      })
+      if (
+        v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
+      ) {
+        v.tapInternalKey = tapInternalKey
+      }
+    }
+    index++
+  }
+
+  return _psbt
+}
+
 export const timeout = async (n) =>
   await new Promise((resolve) => setTimeout(resolve, n))
 
@@ -957,7 +995,7 @@ const insertBtcUtxo = async ({
     nonMetaUtxos = segwitUtxos
   }
 
-  return await addBTCUtxo({
+  const test = await addBTCUtxo({
     utxos: nonMetaUtxos,
     toAddress: toAddress,
     psbtTx: psbt,
@@ -967,6 +1005,7 @@ const insertBtcUtxo = async ({
     feeRate,
     network,
   })
+  return test
 }
 
 export const filterTaprootUtxos = async ({
@@ -1049,7 +1088,7 @@ const addBTCUtxo = async ({
 
   psbtTx.addOutput({
     address: toAddress,
-    value: Math.floor(amount),
+    value: amount,
   })
 
   const changeAmount = amountGathered - amount - fee
@@ -1060,7 +1099,7 @@ const addBTCUtxo = async ({
     })
   }
 
-  return utxosToSend
+  return psbtTx
 }
 
 export const isValidJSON = (str: string) => {
@@ -1080,8 +1119,6 @@ export const createBtcTx = async ({
   segwitPublicKey,
   segwitAddress,
   isDry,
-  segwitSigner,
-  taprootSigner,
   payFeesWithSegwit = false,
   feeRate,
   amount,
@@ -1097,8 +1134,6 @@ export const createBtcTx = async ({
   segwitAddress: string
   isDry?: boolean
   feeRate: number
-  segwitSigner: any
-  taprootSigner: any
   payFeesWithSegwit?: boolean
   amount: number
   network: bitcoin.Network
@@ -1112,7 +1147,7 @@ export const createBtcTx = async ({
     addressTypeToName[inputAddressType] === 'segwit'
   )
 
-  await insertBtcUtxo({
+  const updatedPsbt: bitcoin.Psbt = await insertBtcUtxo({
     taprootUtxos: taprootUtxos,
     segwitUtxos: segwitUtxos,
     psbt: psbt,
@@ -1125,8 +1160,8 @@ export const createBtcTx = async ({
     network,
   })
 
-  const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
-    _psbt: psbt,
+  const formattedInputs: bitcoin.Psbt = await formatInputsToSign({
+    _psbt: updatedPsbt,
     pubkey: taprootPublicKey,
     segwitPubkey: segwitPublicKey,
     segwitAddress: segwitAddress,
@@ -1134,19 +1169,7 @@ export const createBtcTx = async ({
     network,
   })
 
-  const signedPsbt = await signInputs(
-    psbt,
-    toSignInputs,
-    taprootPublicKey,
-    segwitPublicKey,
-    segwitSigner,
-    taprootSigner
-  )
-
-  signedPsbt.finalizeAllInputs()
-
   return {
-    txnId: signedPsbt.extractTransaction().getId(),
-    rawTxn: signedPsbt.extractTransaction().toHex(),
+    rawPsbt: formattedInputs,
   }
 }
