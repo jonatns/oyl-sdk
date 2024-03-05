@@ -767,7 +767,6 @@ export class Oyl {
     }
     const txId = psbt.extractTransaction().getId()
     const rawTx = psbt.extractTransaction().toHex()
-
     const [result] =
       await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([rawTx])
 

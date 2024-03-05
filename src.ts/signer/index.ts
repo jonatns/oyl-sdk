@@ -2,22 +2,27 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { ECPair, tweakSigner } from '../shared/utils'
 import { ECPairInterface } from 'ecpair'
 
-export const pathLegacy = "m/44'/1'/0'/0"
-export const pathSegwitNested = "m/49'/1'/0'/0/0"
-export const pathSegwit = "m/84'/1'/0'/0/0"
-export const pathTaproot = "m/86'/1'/0'/0/0"
-
-type walletInit = { privateKey: string; hdPath: string }[]
+type walletInit = {
+  segwitPrivateKey?: string
+  taprootPrivateKey?: string
+}
 
 export class Signer {
   network: bitcoin.Network
-  keyPairs: ECPairInterface[]
+  segwitKeyPair: ECPairInterface
+  taprootKeyPair: ECPairInterface
   addresses: walletInit
-  constructor(network: bitcoin.Network, addresses: walletInit) {
-    const keyPairs = addresses.map((key) =>
-      ECPair.fromPrivateKey(Buffer.from(key.privateKey, 'hex'))
-    )
-    this.keyPairs = keyPairs
+  constructor(network: bitcoin.Network, keys: walletInit) {
+    if (keys.segwitPrivateKey) {
+      this.segwitKeyPair = ECPair.fromPrivateKey(
+        Buffer.from(keys.segwitPrivateKey, 'hex')
+      )
+    }
+    if (keys.taprootPrivateKey) {
+      this.taprootKeyPair = ECPair.fromPrivateKey(
+        Buffer.from(keys.taprootPrivateKey, 'hex')
+      )
+    }
     this.network = network
   }
 
@@ -28,17 +33,20 @@ export class Signer {
     rawPsbt: string
     inputNumber: number
   }) {
+    if (!this.segwitKeyPair) {
+      throw new Error('Segwit signer was not initialized')
+    }
     let unSignedPsbt = bitcoin.Psbt.fromBase64(rawPsbt)
 
     const matchingPubKey = unSignedPsbt.inputHasPubkey(
       inputNumber,
-      Buffer.from(this.keyPairs[0].publicKey)
+      Buffer.from(this.segwitKeyPair.publicKey)
     )
     if (!matchingPubKey) {
       throw new Error('Input does not match signer type')
     }
 
-    unSignedPsbt.signInput(inputNumber, this.keyPairs[0])
+    unSignedPsbt.signInput(inputNumber, this.segwitKeyPair)
 
     const signedPsbt = unSignedPsbt.finalizeInput(inputNumber).toBase64()
 
@@ -52,10 +60,13 @@ export class Signer {
     rawPsbt: string
     inputNumber: number
   }) {
+    if (!this.taprootKeyPair) {
+      throw new Error('Taproot signer was not initialized')
+    }
     let unSignedPsbt = bitcoin.Psbt.fromBase64(rawPsbt, {
       network: this.network,
     })
-    const tweakedSigner = tweakSigner(this.keyPairs[1])
+    const tweakedSigner = tweakSigner(this.taprootKeyPair)
 
     const matchingPubKey = unSignedPsbt.inputHasPubkey(
       inputNumber,
@@ -73,8 +84,11 @@ export class Signer {
   }
 
   async SignAllTaprootInputs({ rawPsbt }: { rawPsbt: string }) {
+    if (!this.taprootKeyPair) {
+      throw new Error('Taproot signer was not initialized')
+    }
     let unSignedTxn = bitcoin.Psbt.fromBase64(rawPsbt)
-    const tweakedSigner = tweakSigner(this.keyPairs[1])
+    const tweakedSigner = tweakSigner(this.taprootKeyPair)
     unSignedTxn.signAllInputs(tweakedSigner)
     const signedPsbt = unSignedTxn.finalizeAllInputs().toBase64()
 
@@ -82,8 +96,11 @@ export class Signer {
   }
 
   async SignAllInputs({ rawPsbt }: { rawPsbt: string }) {
+    if (!this.segwitKeyPair) {
+      throw new Error('Segwit signer was not initialized')
+    }
     let unSignedTxn = bitcoin.Psbt.fromBase64(rawPsbt)
-    unSignedTxn.signAllInputs(this.keyPairs[0])
+    unSignedTxn.signAllInputs(this.segwitKeyPair)
     const signedPsbt = unSignedTxn.finalizeAllInputs().toBase64()
 
     return { signedPsbt: signedPsbt }
@@ -94,12 +111,15 @@ export class Signer {
     keyToUse,
   }: {
     messageToSign: string
-    keyToUse: number
+    keyToUse: 'segwitKeyPair' | 'taprootKeyPair'
   }) {
-    const signedMessage = this.keyPairs[keyToUse].sign(
-      Buffer.from(messageToSign)
-    )
-    console.log(signedMessage)
+    if (!this.taprootKeyPair && keyToUse === 'taprootKeyPair') {
+      throw new Error('Taproot signer was not initialized')
+    }
+    if (!this.taprootKeyPair && keyToUse === 'segwitKeyPair') {
+      throw new Error('Taproot signer was not initialized')
+    }
+    const signedMessage = this[keyToUse].sign(Buffer.from(messageToSign))
 
     return signedMessage
   }

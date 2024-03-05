@@ -1,20 +1,21 @@
 import yargs from 'yargs'
 import { camelCase } from 'change-case'
 import 'dotenv/config'
-import { NESTED_SEGWIT_HD_PATH, Oyl, TAPROOT_HD_PATH } from '../oylib'
-import { Signer, pathSegwit, pathTaproot } from '../signer'
+import {
+  NESTED_SEGWIT_HD_PATH,
+  Oyl,
+  SEGWIT_HD_PATH,
+  TAPROOT_HD_PATH,
+} from '../oylib'
+import { Signer } from '../signer'
 import { Aggregator } from '../PSBTAggregator'
 import * as bitcoin from 'bitcoinjs-lib'
 import axios from 'axios'
 import * as ecc2 from '@bitcoinerlab/secp256k1'
-import { generateWallet } from './genWallet'
-
 import { hideBin } from 'yargs/helpers'
-import { getAddressesFromPublicKey } from '@sadoprotocol/ordit-sdk'
 import { BuildMarketplaceTransaction } from '../marketplace/buildMarketplaceTx'
 import { Network, ToSignInput } from '../shared/interface'
 import {
-  calculateTaprootTxSize,
   callBTCRPCEndpoint,
   delay,
   formatOptionsToSignInputs,
@@ -207,10 +208,10 @@ const config = {
     wallet: testWallet as Oyl,
     segwitPrivateKey:
       '60fb403231a1c9606a2207b6e43b3d1c22f04199bed4c4c96313fb4d7f40b0e0',
-    segwitHdPath: pathSegwit,
+    segwitHdPath: SEGWIT_HD_PATH,
     taprootPrivateKey:
       'd63f19f6b4f6e1e6b9fdc9dc2cb1942f1a15409e064b73ea10176e9155c9b3c2',
-    taprootHdPath: pathTaproot,
+    taprootHdPath: TAPROOT_HD_PATH,
     taprootAddress:
       'tb1plh52zdjwmtk8ht54ldxchejg4zx077g8fvwhcjrpar7pmfpuyzdqj7rxjm',
     taprootPubkey:
@@ -440,24 +441,26 @@ export async function runCLI() {
         publicKey: networkConfig.taprootPubkey,
         amount,
         feeRate,
+        payFeesWithSegwit: true,
+        segwitAddress: networkConfig.segwitAddress,
+        segwitPubkey: networkConfig.segwitPubKey,
       })
 
-      const newSigner = new Signer(bitcoin.networks.testnet, [
-        {
-          privateKey: networkConfig.segwitPrivateKey,
-          hdPath: networkConfig.segwitHdPath,
-        },
-        {
-          privateKey: networkConfig.taprootPrivateKey,
-          hdPath: networkConfig.taprootHdPath,
-        },
-      ])
+      const newSigner = new Signer(bitcoin.networks.testnet, {
+        segwitPrivateKey: networkConfig.segwitPrivateKey,
+        taprootPrivateKey: networkConfig.taprootPrivateKey,
+      })
       const { signedPsbt } = await newSigner.SignTaprootInput({
         inputNumber: 0,
         rawPsbt: rawPsbt,
       })
 
-      const sendResponse = await testWallet.pushPsbt({ psbtBase64: signedPsbt })
+      const { signedPsbt: finalPsbt } = await newSigner.SignInput({
+        inputNumber: 1,
+        rawPsbt: signedPsbt,
+      })
+
+      const sendResponse = await testWallet.pushPsbt({ psbtBase64: finalPsbt })
       console.log(sendResponse)
       return sendResponse
 

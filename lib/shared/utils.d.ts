@@ -59,11 +59,9 @@ export declare const formatOptionsToSignInputs: ({ _psbt, pubkey, segwitPubkey, 
     taprootAddress: string;
     network: bitcoin.Network;
 }) => Promise<ToSignInput[]>;
-export declare const formatInputsToSign: ({ _psbt, pubkey, segwitPubkey, segwitAddress, taprootAddress, network, }: {
+export declare const formatInputsToSign: ({ _psbt, pubkey, taprootAddress, network, }: {
     _psbt: bitcoin.Psbt;
     pubkey: string;
-    segwitPubkey: string;
-    segwitAddress: string;
     taprootAddress: string;
     network: bitcoin.Network;
 }) => Promise<bitcoin.Psbt>;
@@ -139,14 +137,13 @@ export declare const filterTaprootUtxos: ({ taprootUtxos, }: {
     taprootUtxos: any[];
 }) => Promise<any>;
 export declare const isValidJSON: (str: string) => boolean;
-export declare const createBtcTx: ({ inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, payFeesWithSegwit, feeRate, amount, network, segwitUtxos, taprootUtxos, }: {
+export declare const createBtcTx: ({ inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, payFeesWithSegwit, feeRate, amount, network, segwitUtxos, taprootUtxos, }: {
     inputAddress: string;
     outputAddress: string;
     mnemonic: string;
     taprootPublicKey: string;
     segwitPublicKey: string;
     segwitAddress: string;
-    isDry?: boolean;
     feeRate: number;
     payFeesWithSegwit?: boolean;
     amount: number;
