@@ -62,7 +62,7 @@ export class SandshrewBitcoinClient {
             createWallet: 'str',
             decodePSBT: 'str',
             decodeScript: 'str',
-            decodeRawTransaction: '',
+            decodeRawTransaction: 'str',
             deriveAddresses: 'str',
             disconnectNode: '',
             dumpPrivKey: '',
