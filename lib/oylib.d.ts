@@ -190,6 +190,7 @@ export declare class Oyl {
         payFeesWithSegwit?: boolean;
     }): Promise<{
         txId: string;
+        rawTx: string;
     }>;
     createBtcTx({ inputAddress, outputAddress, taprootPublicKey, segwitPublicKey, payFeesWithSegwit, feeRate, amount, network, segwitUtxos, taprootUtxos, }: {
         inputAddress: string;
@@ -310,6 +311,7 @@ export declare class Oyl {
         psbtBase64?: string;
     }): Promise<{
         txId: string;
+        rawTx: string;
     }>;
     finalizePsbtBase64(psbtBase64: any): Promise<any>;
     sendPsbt(txData: string, isDry?: boolean): Promise<{

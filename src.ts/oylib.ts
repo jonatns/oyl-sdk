@@ -869,7 +869,7 @@ export class Oyl {
 
     await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(rawTx)
 
-    return { txId }
+    return { txId, rawTx }
   }
 
   async finalizePsbtBase64(psbtBase64) {
