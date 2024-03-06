@@ -1,3 +1,4 @@
+import { Utxo } from './txbuilder';
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
 import { AddressType, IBlockchainInfoUTXO, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
@@ -5,6 +6,7 @@ import { OylApiClient } from './apiclient';
 import * as bitcoin from 'bitcoinjs-lib';
 import { OrdRpc } from './rpclient/ord';
 import { HdKeyring } from './wallet/hdKeyring';
+import { Signer } from './signer';
 export declare const NESTED_SEGWIT_HD_PATH = "m/49'/0'/0'/0";
 export declare const TAPROOT_HD_PATH = "m/86'/0'/0'/0";
 export declare const SEGWIT_HD_PATH = "m/84'/0'/0'/0";
@@ -176,17 +178,32 @@ export declare class Oyl {
      * @param {string} params.publicKey - The public key associated with the transaction.
      * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
      */
-    sendBtc({ to, from, amount, feeRate, publicKey, mnemonic, segwitAddress, segwitPubkey, payFeesWithSegwit, }: {
+    sendBtc({ to, from, amount, feeRate, publicKey, signer, segwitAddress, segwitPubkey, payFeesWithSegwit, }: {
         to: string;
         from: string;
         amount: number;
         feeRate?: number;
         publicKey: string;
-        mnemonic: string;
+        signer: Signer;
         segwitAddress?: string;
         segwitPubkey?: string;
         payFeesWithSegwit?: boolean;
     }): Promise<{
+        txId: string;
+    }>;
+    createBtcTx: ({ inputAddress, outputAddress, taprootPublicKey, segwitPublicKey, segwitAddress, payFeesWithSegwit, feeRate, amount, network, segwitUtxos, taprootUtxos, }: {
+        inputAddress: string;
+        outputAddress: string;
+        taprootPublicKey: string;
+        segwitPublicKey: string;
+        segwitAddress: string;
+        feeRate: number;
+        payFeesWithSegwit?: boolean;
+        amount: number;
+        network: bitcoin.Network;
+        segwitUtxos: Utxo[];
+        taprootUtxos: Utxo[];
+    }) => Promise<{
         rawPsbt: string;
     }>;
     /**

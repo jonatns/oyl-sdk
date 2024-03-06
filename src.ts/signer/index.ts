@@ -87,10 +87,20 @@ export class Signer {
     if (!this.taprootKeyPair) {
       throw new Error('Taproot signer was not initialized')
     }
-    let unSignedTxn = bitcoin.Psbt.fromBase64(rawPsbt)
+    let unSignedPsbt = bitcoin.Psbt.fromBase64(rawPsbt)
     const tweakedSigner = tweakSigner(this.taprootKeyPair)
-    unSignedTxn.signAllInputs(tweakedSigner)
-    const signedPsbt = unSignedTxn.finalizeAllInputs().toBase64()
+    for (let i = 0; i < unSignedPsbt.inputCount; i++) {
+      const matchingPubKey = unSignedPsbt.inputHasPubkey(
+        i,
+        Buffer.from(tweakedSigner.publicKey)
+      )
+      if (matchingPubKey) {
+        unSignedPsbt.signTaprootInput(i, tweakedSigner)
+        unSignedPsbt.finalizeInput(i)
+      }
+    }
+
+    const signedPsbt = unSignedPsbt.toBase64()
 
     return { signedPsbt: signedPsbt }
   }
@@ -99,9 +109,20 @@ export class Signer {
     if (!this.segwitKeyPair) {
       throw new Error('Segwit signer was not initialized')
     }
-    let unSignedTxn = bitcoin.Psbt.fromBase64(rawPsbt)
-    unSignedTxn.signAllInputs(this.segwitKeyPair)
-    const signedPsbt = unSignedTxn.finalizeAllInputs().toBase64()
+    let unSignedPsbt = bitcoin.Psbt.fromBase64(rawPsbt)
+    for (let i = 0; i < unSignedPsbt.inputCount; i++) {
+      const matchingPubKey = unSignedPsbt.inputHasPubkey(
+        i,
+        Buffer.from(this.segwitKeyPair.publicKey)
+      )
+
+      if (matchingPubKey) {
+        unSignedPsbt.signInput(i, this.segwitKeyPair)
+        unSignedPsbt.finalizeInput(i)
+      }
+    }
+
+    const signedPsbt = unSignedPsbt.toBase64()
 
     return { signedPsbt: signedPsbt }
   }

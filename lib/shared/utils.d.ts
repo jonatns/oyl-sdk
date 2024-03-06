@@ -36,6 +36,12 @@ export interface IBISWalletIx {
     collection_slug?: string;
     confirmations?: number;
 }
+export declare const addressTypeMap: {
+    0: string;
+    1: string;
+    2: string;
+    3: string;
+};
 export declare const ECPair: import("ecpair").ECPairAPI;
 export declare const assertHex: (pubKey: Buffer) => Buffer;
 export declare function getNetwork(value: Network | 'main' | 'mainnet' | 'regtest' | 'testnet'): bitcoin.networks.Network;
@@ -133,23 +139,20 @@ export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddr
     txId: string;
     rawTx: string;
 }>;
+export declare const insertBtcUtxo: ({ taprootUtxos, segwitUtxos, toAddress, fromAddress, psbt, amount, useTaprootUtxos, segwitPubKey, payFeesWithSegwit, feeRate, network, }: {
+    taprootUtxos: any[];
+    segwitUtxos: any[];
+    toAddress: string;
+    fromAddress: string;
+    psbt: bitcoin.Psbt;
+    feeRate: number;
+    amount: number;
+    useTaprootUtxos: boolean;
+    segwitPubKey: string;
+    payFeesWithSegwit: boolean;
+    network: bitcoin.Network;
+}) => Promise<bitcoin.Psbt>;
 export declare const filterTaprootUtxos: ({ taprootUtxos, }: {
     taprootUtxos: any[];
 }) => Promise<any>;
 export declare const isValidJSON: (str: string) => boolean;
-export declare const createBtcTx: ({ inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, payFeesWithSegwit, feeRate, amount, network, segwitUtxos, taprootUtxos, }: {
-    inputAddress: string;
-    outputAddress: string;
-    mnemonic: string;
-    taprootPublicKey: string;
-    segwitPublicKey: string;
-    segwitAddress: string;
-    feeRate: number;
-    payFeesWithSegwit?: boolean;
-    amount: number;
-    network: bitcoin.Network;
-    segwitUtxos: Utxo[];
-    taprootUtxos: Utxo[];
-}) => Promise<{
-    rawPsbt: bitcoin.Psbt;
-}>;

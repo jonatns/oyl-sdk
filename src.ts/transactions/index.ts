@@ -3,7 +3,6 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { AddressType, IBlockchainInfoUTXO } from '../shared/interface'
 import { addressFormats } from '../wallet/accounts'
 
-
 export const getBtcPrice = async () => {
   try {
     const response = await fetch(`https://blockchain.info/ticker`, {

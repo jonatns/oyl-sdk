@@ -1,11 +1,10 @@
 import { UTXO_DUST, defaultNetworkOptions } from './shared/constants'
 
-import { findUtxosToCoverAmount, OGPSBTTransaction } from './txbuilder'
+import { findUtxosToCoverAmount, OGPSBTTransaction, Utxo } from './txbuilder'
 
 import {
   delay,
   inscribe,
-  createBtcTx,
   getNetwork,
   isValidJSON,
   waitForTransaction,
@@ -14,6 +13,9 @@ import {
   calculateTaprootTxSize,
   calculateAmountGatheredUtxo,
   filterTaprootUtxos,
+  formatInputsToSign,
+  insertBtcUtxo,
+  addressTypeMap,
 } from './shared/utils'
 import { SandshrewBitcoinClient } from './rpclient/sandshrew'
 import { EsploraRpc } from './rpclient/esplora'
@@ -33,6 +35,7 @@ import {
   RecoverAccountOptions,
   TickerDetails,
   ToSignInput,
+  addressTypeToName,
 } from './shared/interface'
 import { OylApiClient } from './apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
@@ -40,6 +43,7 @@ import { Provider } from './rpclient/provider'
 import { OrdRpc } from './rpclient/ord'
 import { HdKeyring } from './wallet/hdKeyring'
 import { getAddressType } from './transactions'
+import { Signer } from './signer'
 
 export const NESTED_SEGWIT_HD_PATH = "m/49'/0'/0'/0"
 export const TAPROOT_HD_PATH = "m/86'/0'/0'/0"
@@ -530,7 +534,7 @@ export class Oyl {
     amount,
     feeRate,
     publicKey,
-    mnemonic,
+    signer,
     segwitAddress,
     segwitPubkey,
     payFeesWithSegwit = false,
@@ -540,7 +544,7 @@ export class Oyl {
     amount: number
     feeRate?: number
     publicKey: string
-    mnemonic: string
+    signer: Signer
     segwitAddress?: string
     segwitPubkey?: string
     payFeesWithSegwit?: boolean
@@ -564,7 +568,9 @@ export class Oyl {
       feeRate = (await this.esploraRpc.getFeeEstimates())['1']
     }
 
-    const { rawPsbt } = await createBtcTx({
+    let finalPsbt: string
+
+    const { rawPsbt } = await this.createBtcTx({
       inputAddress: from,
       outputAddress: to,
       amount: amount,
@@ -572,14 +578,104 @@ export class Oyl {
       segwitAddress: segwitAddress,
       segwitPublicKey: segwitPubkey,
       taprootPublicKey: publicKey,
-      mnemonic: mnemonic,
       payFeesWithSegwit: payFeesWithSegwit,
       network: this.network,
       segwitUtxos: segwitUtxos,
       taprootUtxos: taprootUtxos,
     })
+    if (payFeesWithSegwit) {
+      const { signedPsbt } = await signer.SignAllTaprootInputs({
+        rawPsbt: rawPsbt,
+      })
 
-    return { rawPsbt: rawPsbt.toBase64() }
+      const { signedPsbt: segwitSigned } = await signer.SignAllInputs({
+        rawPsbt: signedPsbt,
+      })
+      finalPsbt = segwitSigned
+    }
+
+    const inputAddressType = addressTypeMap[getAddressType(from)]
+    if (
+      addressTypeToName[inputAddressType] === 'segwit' &&
+      !payFeesWithSegwit
+    ) {
+      const { signedPsbt } = await signer.SignAllInputs({
+        rawPsbt: rawPsbt,
+      })
+      finalPsbt = signedPsbt
+    }
+
+    if (
+      addressTypeToName[inputAddressType] === 'taproot' &&
+      !payFeesWithSegwit
+    ) {
+      const { signedPsbt } = await signer.SignAllTaprootInputs({
+        rawPsbt: rawPsbt,
+      })
+      finalPsbt = signedPsbt
+    }
+
+    const sendResponse = await this.pushPsbt({ psbtBase64: finalPsbt })
+
+    return sendResponse
+  }
+
+  createBtcTx = async ({
+    inputAddress,
+    outputAddress,
+    taprootPublicKey,
+    segwitPublicKey,
+    segwitAddress,
+    payFeesWithSegwit = false,
+    feeRate,
+    amount,
+    network,
+    segwitUtxos,
+    taprootUtxos,
+  }: {
+    inputAddress: string
+    outputAddress: string
+    taprootPublicKey: string
+    segwitPublicKey: string
+    segwitAddress: string
+    feeRate: number
+    payFeesWithSegwit?: boolean
+    amount: number
+    network: bitcoin.Network
+    segwitUtxos: Utxo[]
+    taprootUtxos: Utxo[]
+  }) => {
+    const psbt = new bitcoin.Psbt({ network: network })
+    const inputAddressType = addressTypeMap[getAddressType(inputAddress)]
+    const useTaprootUtxos = !(
+      addressTypeToName[inputAddressType] === 'nested-segwit' ||
+      addressTypeToName[inputAddressType] === 'segwit'
+    )
+
+    const updatedPsbt: bitcoin.Psbt = await insertBtcUtxo({
+      taprootUtxos: taprootUtxos,
+      segwitUtxos: segwitUtxos,
+      psbt: psbt,
+      toAddress: outputAddress,
+      amount: amount,
+      useTaprootUtxos: useTaprootUtxos,
+      payFeesWithSegwit: payFeesWithSegwit,
+      segwitPubKey: segwitPublicKey,
+      fromAddress: inputAddress,
+      feeRate,
+      network,
+    })
+
+    const formattedInputs: bitcoin.Psbt = await formatInputsToSign({
+      _psbt: updatedPsbt,
+      pubkey: taprootPublicKey,
+      taprootAddress: inputAddress,
+      network,
+    })
+
+    return {
+      rawPsbt: formattedInputs.toBase64(),
+    }
   }
 
   /**
@@ -752,7 +848,7 @@ export class Oyl {
     psbtBase64?: string
   }) {
     if (!psbtHex && !psbtBase64) {
-      throw new Error('Both cannot be undefined')
+      throw new Error('Please supply psbt in either base64 or hex format')
     }
     if (psbtHex && psbtBase64) {
       throw new Error('Please select one format of psbt to broadcast')

@@ -434,8 +434,12 @@ export async function runCLI() {
     case 'buy':
       return await testMarketplaceBuy()
     case 'send':
-      const { rawPsbt } = await networkConfig.wallet.sendBtc({
-        mnemonic,
+      const signer: Signer = new Signer(bitcoin.networks.testnet, {
+        segwitPrivateKey: networkConfig.segwitPrivateKey,
+        taprootPrivateKey: networkConfig.taprootPrivateKey,
+      })
+      const res = await networkConfig.wallet.sendBtc({
+        signer,
         to,
         from: networkConfig.taprootAddress,
         publicKey: networkConfig.taprootPubkey,
@@ -446,23 +450,8 @@ export async function runCLI() {
         segwitPubkey: networkConfig.segwitPubKey,
       })
 
-      const newSigner = new Signer(bitcoin.networks.testnet, {
-        segwitPrivateKey: networkConfig.segwitPrivateKey,
-        taprootPrivateKey: networkConfig.taprootPrivateKey,
-      })
-      const { signedPsbt } = await newSigner.SignTaprootInput({
-        inputNumber: 0,
-        rawPsbt: rawPsbt,
-      })
-
-      const { signedPsbt: finalPsbt } = await newSigner.SignInput({
-        inputNumber: 1,
-        rawPsbt: signedPsbt,
-      })
-
-      const sendResponse = await testWallet.pushPsbt({ psbtBase64: finalPsbt })
-      console.log(sendResponse)
-      return sendResponse
+      console.log(res)
+      return res
 
     case 'send-brc-20':
       const sendBrc20Response = await networkConfig.wallet.sendBRC20({

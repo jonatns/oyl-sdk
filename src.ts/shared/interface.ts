@@ -239,16 +239,16 @@ export interface SignedBid {
 
 export const addressTypeToName = {
   p2pkh: 'legacy',
+  p2tr: 'taproot',
   p2sh: 'nested-segwit',
   p2wpkh: 'segwit',
-  p2tr: 'taproot',
 } as const
 
 export const addressNameToType = {
   legacy: 'p2pkh',
-  segwit: 'p2wpkh',
-  'nested-segwit': 'p2sh',
   taproot: 'p2tr',
+  'nested-segwit': 'p2sh',
+  segwit: 'p2wpkh',
 } as const
 
 export type AddressTypes = keyof typeof addressTypeToName
