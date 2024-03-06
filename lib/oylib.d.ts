@@ -191,19 +191,18 @@ export declare class Oyl {
     }): Promise<{
         txId: string;
     }>;
-    createBtcTx: ({ inputAddress, outputAddress, taprootPublicKey, segwitPublicKey, segwitAddress, payFeesWithSegwit, feeRate, amount, network, segwitUtxos, taprootUtxos, }: {
+    createBtcTx({ inputAddress, outputAddress, taprootPublicKey, segwitPublicKey, payFeesWithSegwit, feeRate, amount, network, segwitUtxos, taprootUtxos, }: {
         inputAddress: string;
         outputAddress: string;
         taprootPublicKey: string;
         segwitPublicKey: string;
-        segwitAddress: string;
         feeRate: number;
         payFeesWithSegwit?: boolean;
         amount: number;
         network: bitcoin.Network;
         segwitUtxos: Utxo[];
         taprootUtxos: Utxo[];
-    }) => Promise<{
+    }): Promise<{
         rawPsbt: string;
     }>;
     /**
