@@ -575,7 +575,6 @@ export class Oyl {
       outputAddress: to,
       amount: amount,
       feeRate: feeRate,
-      segwitAddress: segwitAddress,
       segwitPublicKey: segwitPubkey,
       taprootPublicKey: publicKey,
       payFeesWithSegwit: payFeesWithSegwit,
@@ -620,12 +619,11 @@ export class Oyl {
     return sendResponse
   }
 
-  createBtcTx = async ({
+  async createBtcTx({
     inputAddress,
     outputAddress,
     taprootPublicKey,
     segwitPublicKey,
-    segwitAddress,
     payFeesWithSegwit = false,
     feeRate,
     amount,
@@ -637,14 +635,13 @@ export class Oyl {
     outputAddress: string
     taprootPublicKey: string
     segwitPublicKey: string
-    segwitAddress: string
     feeRate: number
     payFeesWithSegwit?: boolean
     amount: number
     network: bitcoin.Network
     segwitUtxos: Utxo[]
     taprootUtxos: Utxo[]
-  }) => {
+  }) {
     const psbt = new bitcoin.Psbt({ network: network })
     const inputAddressType = addressTypeMap[getAddressType(inputAddress)]
     const useTaprootUtxos = !(
