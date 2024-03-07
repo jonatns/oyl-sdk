@@ -26,7 +26,7 @@ export class Signer {
     this.network = network
   }
 
-  async SignInput({
+  async signInput({
     rawPsbt,
     inputNumber,
     finalize,
@@ -58,7 +58,7 @@ export class Signer {
     return { signedPsbt: signedPsbt }
   }
 
-  async SignTaprootInput({
+  async signTaprootInput({
     rawPsbt,
     inputNumber,
     finalize,
@@ -94,7 +94,7 @@ export class Signer {
     return { signedPsbt: signedPsbt }
   }
 
-  async SignAllTaprootInputs({
+  async signAllTaprootInputs({
     rawPsbt,
     finalize,
   }: {
@@ -124,7 +124,7 @@ export class Signer {
     return { signedPsbt: signedPsbt }
   }
 
-  async SignAllInputs({
+  async signAllInputs({
     rawPsbt,
     finalize,
   }: {
@@ -154,7 +154,7 @@ export class Signer {
     return { signedPsbt: signedPsbt }
   }
 
-  async SignMessage({
+  async signMessage({
     messageToSign,
     keyToUse,
   }: {

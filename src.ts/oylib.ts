@@ -585,12 +585,12 @@ export class Oyl {
       taprootUtxos: taprootUtxos,
     })
     if (payFeesWithSegwit) {
-      const { signedPsbt } = await signer.SignAllTaprootInputs({
+      const { signedPsbt } = await signer.signAllTaprootInputs({
         rawPsbt: rawPsbt,
         finalize: true,
       })
 
-      const { signedPsbt: segwitSigned } = await signer.SignAllInputs({
+      const { signedPsbt: segwitSigned } = await signer.signAllInputs({
         rawPsbt: signedPsbt,
         finalize: true,
       })
@@ -601,7 +601,7 @@ export class Oyl {
       addressTypeToName[inputAddressType] === 'segwit' &&
       !payFeesWithSegwit
     ) {
-      const { signedPsbt } = await signer.SignAllInputs({
+      const { signedPsbt } = await signer.signAllInputs({
         rawPsbt: rawPsbt,
         finalize: true,
       })
@@ -612,7 +612,7 @@ export class Oyl {
       addressTypeToName[inputAddressType] === 'taproot' &&
       !payFeesWithSegwit
     ) {
-      const { signedPsbt } = await signer.SignAllTaprootInputs({
+      const { signedPsbt } = await signer.signAllTaprootInputs({
         rawPsbt: rawPsbt,
         finalize: true,
       })
