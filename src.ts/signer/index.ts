@@ -29,9 +29,11 @@ export class Signer {
   async SignInput({
     rawPsbt,
     inputNumber,
+    finalize,
   }: {
     rawPsbt: string
     inputNumber: number
+    finalize: boolean
   }) {
     if (!this.segwitKeyPair) {
       throw new Error('Segwit signer was not initialized')
@@ -47,8 +49,11 @@ export class Signer {
     }
 
     unSignedPsbt.signInput(inputNumber, this.segwitKeyPair)
+    if (finalize) {
+      unSignedPsbt.finalizeInput(inputNumber)
+    }
 
-    const signedPsbt = unSignedPsbt.finalizeInput(inputNumber).toBase64()
+    const signedPsbt = unSignedPsbt.toBase64()
 
     return { signedPsbt: signedPsbt }
   }
@@ -56,9 +61,11 @@ export class Signer {
   async SignTaprootInput({
     rawPsbt,
     inputNumber,
+    finalize,
   }: {
     rawPsbt: string
     inputNumber: number
+    finalize: boolean
   }) {
     if (!this.taprootKeyPair) {
       throw new Error('Taproot signer was not initialized')
@@ -78,12 +85,22 @@ export class Signer {
 
     unSignedPsbt.signTaprootInput(inputNumber, tweakedSigner)
 
-    const signedPsbt = unSignedPsbt.finalizeInput(inputNumber).toBase64()
+    if (finalize) {
+      unSignedPsbt.finalizeInput(inputNumber)
+    }
+
+    const signedPsbt = unSignedPsbt.toBase64()
 
     return { signedPsbt: signedPsbt }
   }
 
-  async SignAllTaprootInputs({ rawPsbt }: { rawPsbt: string }) {
+  async SignAllTaprootInputs({
+    rawPsbt,
+    finalize,
+  }: {
+    rawPsbt: string
+    finalize: boolean
+  }) {
     if (!this.taprootKeyPair) {
       throw new Error('Taproot signer was not initialized')
     }
@@ -96,7 +113,9 @@ export class Signer {
       )
       if (matchingPubKey) {
         unSignedPsbt.signTaprootInput(i, tweakedSigner)
-        unSignedPsbt.finalizeInput(i)
+        if (finalize) {
+          unSignedPsbt.finalizeInput(i)
+        }
       }
     }
 
@@ -105,7 +124,13 @@ export class Signer {
     return { signedPsbt: signedPsbt }
   }
 
-  async SignAllInputs({ rawPsbt }: { rawPsbt: string }) {
+  async SignAllInputs({
+    rawPsbt,
+    finalize,
+  }: {
+    rawPsbt: string
+    finalize: boolean
+  }) {
     if (!this.segwitKeyPair) {
       throw new Error('Segwit signer was not initialized')
     }
@@ -118,7 +143,9 @@ export class Signer {
 
       if (matchingPubKey) {
         unSignedPsbt.signInput(i, this.segwitKeyPair)
-        unSignedPsbt.finalizeInput(i)
+        if (finalize) {
+          unSignedPsbt.finalizeInput(i)
+        }
       }
     }
 

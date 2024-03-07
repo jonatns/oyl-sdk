@@ -11,25 +11,29 @@ export declare class Signer {
     taprootKeyPair: ECPairInterface;
     addresses: walletInit;
     constructor(network: bitcoin.Network, keys: walletInit);
-    SignInput({ rawPsbt, inputNumber, }: {
+    SignInput({ rawPsbt, inputNumber, finalize, }: {
         rawPsbt: string;
         inputNumber: number;
+        finalize: boolean;
     }): Promise<{
         signedPsbt: string;
     }>;
-    SignTaprootInput({ rawPsbt, inputNumber, }: {
+    SignTaprootInput({ rawPsbt, inputNumber, finalize, }: {
         rawPsbt: string;
         inputNumber: number;
+        finalize: boolean;
     }): Promise<{
         signedPsbt: string;
     }>;
-    SignAllTaprootInputs({ rawPsbt }: {
+    SignAllTaprootInputs({ rawPsbt, finalize, }: {
         rawPsbt: string;
+        finalize: boolean;
     }): Promise<{
         signedPsbt: string;
     }>;
-    SignAllInputs({ rawPsbt }: {
+    SignAllInputs({ rawPsbt, finalize, }: {
         rawPsbt: string;
+        finalize: boolean;
     }): Promise<{
         signedPsbt: string;
     }>;

@@ -178,31 +178,30 @@ export declare class Oyl {
      * @param {string} params.publicKey - The public key associated with the transaction.
      * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
      */
-    sendBtc({ to, from, amount, feeRate, publicKey, signer, segwitAddress, segwitPubkey, payFeesWithSegwit, }: {
-        to: string;
-        from: string;
+    sendBtc({ senderAddress, receiverAddress, senderPublicKey, feeRate, amount, payFeesWithSegwit, segwitFeePublicKey, signer, }: {
+        senderAddress: string;
+        receiverAddress: string;
+        senderPublicKey: string;
+        feeRate: number;
         amount: number;
-        feeRate?: number;
-        publicKey: string;
-        signer: Signer;
-        segwitAddress?: string;
-        segwitPubkey?: string;
         payFeesWithSegwit?: boolean;
+        segwitFeePublicKey?: string;
+        signer: Signer;
     }): Promise<{
         txId: string;
         rawTx: string;
     }>;
-    createBtcTx({ inputAddress, outputAddress, taprootPublicKey, segwitPublicKey, payFeesWithSegwit, feeRate, amount, network, segwitUtxos, taprootUtxos, }: {
-        inputAddress: string;
-        outputAddress: string;
-        taprootPublicKey: string;
-        segwitPublicKey: string;
+    createBtcTx({ senderAddress, receiverAddress, senderPublicKey, feeRate, amount, network, segwitUtxos, taprootUtxos, payFeesWithSegwit, segwitFeePublicKey, }: {
+        senderAddress: string;
+        receiverAddress: string;
+        senderPublicKey: string;
         feeRate: number;
-        payFeesWithSegwit?: boolean;
         amount: number;
         network: bitcoin.Network;
         segwitUtxos: Utxo[];
         taprootUtxos: Utxo[];
+        payFeesWithSegwit?: boolean;
+        segwitFeePublicKey?: string;
     }): Promise<{
         rawPsbt: string;
     }>;

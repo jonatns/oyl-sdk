@@ -529,38 +529,40 @@ export class Oyl {
    * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
    */
   async sendBtc({
-    to,
-    from,
-    amount,
+    senderAddress,
+    receiverAddress,
+    senderPublicKey,
     feeRate,
-    publicKey,
+    amount,
+    payFeesWithSegwit,
+    segwitFeePublicKey,
     signer,
-    segwitAddress,
-    segwitPubkey,
-    payFeesWithSegwit = false,
   }: {
-    to: string
-    from: string
+    senderAddress: string
+    receiverAddress: string
+    senderPublicKey: string
+    feeRate: number
     amount: number
-    feeRate?: number
-    publicKey: string
-    signer: Signer
-    segwitAddress?: string
-    segwitPubkey?: string
     payFeesWithSegwit?: boolean
+    segwitFeePublicKey?: string
+    signer: Signer
   }) {
-    if (payFeesWithSegwit && (!segwitAddress || !segwitPubkey)) {
+    if (payFeesWithSegwit && !segwitFeePublicKey) {
       throw new Error('Invalid segwit information entered')
     }
+    const inputAddressType = addressTypeMap[getAddressType(senderAddress)]
+    let segwitUtxos: Utxo[] | undefined
+    let taprootUtxos: Utxo[] | undefined
 
-    const taprootUtxos = await this.getUtxosArtifacts({
-      address: from,
-    })
-
-    let segwitUtxos: any[] | undefined
-    if (segwitAddress) {
+    if (addressTypeToName[inputAddressType] === 'segwit') {
       segwitUtxos = await this.getUtxosArtifacts({
-        address: segwitAddress,
+        address: senderAddress,
+      })
+    }
+
+    if (addressTypeToName[inputAddressType] === 'taproot') {
+      taprootUtxos = await this.getUtxosArtifacts({
+        address: senderAddress,
       })
     }
 
@@ -571,12 +573,12 @@ export class Oyl {
     let finalPsbt: string
 
     const { rawPsbt } = await this.createBtcTx({
-      inputAddress: from,
-      outputAddress: to,
+      senderAddress: senderAddress,
+      receiverAddress: receiverAddress,
       amount: amount,
       feeRate: feeRate,
-      segwitPublicKey: segwitPubkey,
-      taprootPublicKey: publicKey,
+      segwitFeePublicKey: segwitFeePublicKey,
+      senderPublicKey: senderPublicKey,
       payFeesWithSegwit: payFeesWithSegwit,
       network: this.network,
       segwitUtxos: segwitUtxos,
@@ -585,21 +587,23 @@ export class Oyl {
     if (payFeesWithSegwit) {
       const { signedPsbt } = await signer.SignAllTaprootInputs({
         rawPsbt: rawPsbt,
+        finalize: true,
       })
 
       const { signedPsbt: segwitSigned } = await signer.SignAllInputs({
         rawPsbt: signedPsbt,
+        finalize: true,
       })
       finalPsbt = segwitSigned
     }
 
-    const inputAddressType = addressTypeMap[getAddressType(from)]
     if (
       addressTypeToName[inputAddressType] === 'segwit' &&
       !payFeesWithSegwit
     ) {
       const { signedPsbt } = await signer.SignAllInputs({
         rawPsbt: rawPsbt,
+        finalize: true,
       })
       finalPsbt = signedPsbt
     }
@@ -610,6 +614,7 @@ export class Oyl {
     ) {
       const { signedPsbt } = await signer.SignAllTaprootInputs({
         rawPsbt: rawPsbt,
+        finalize: true,
       })
       finalPsbt = signedPsbt
     }
@@ -620,58 +625,59 @@ export class Oyl {
   }
 
   async createBtcTx({
-    inputAddress,
-    outputAddress,
-    taprootPublicKey,
-    segwitPublicKey,
-    payFeesWithSegwit = false,
+    senderAddress,
+    receiverAddress,
+    senderPublicKey,
     feeRate,
     amount,
     network,
     segwitUtxos,
     taprootUtxos,
+    payFeesWithSegwit,
+    segwitFeePublicKey,
   }: {
-    inputAddress: string
-    outputAddress: string
-    taprootPublicKey: string
-    segwitPublicKey: string
+    senderAddress: string
+    receiverAddress: string
+    senderPublicKey: string
     feeRate: number
-    payFeesWithSegwit?: boolean
     amount: number
     network: bitcoin.Network
     segwitUtxos: Utxo[]
     taprootUtxos: Utxo[]
+    payFeesWithSegwit?: boolean
+    segwitFeePublicKey?: string
   }) {
     const psbt = new bitcoin.Psbt({ network: network })
-    const inputAddressType = addressTypeMap[getAddressType(inputAddress)]
+    const inputAddressType = addressTypeMap[getAddressType(senderAddress)]
     const useTaprootUtxos = !(
       addressTypeToName[inputAddressType] === 'nested-segwit' ||
       addressTypeToName[inputAddressType] === 'segwit'
     )
 
-    const updatedPsbt: bitcoin.Psbt = await insertBtcUtxo({
+    let updatedPsbt: bitcoin.Psbt = await insertBtcUtxo({
       taprootUtxos: taprootUtxos,
       segwitUtxos: segwitUtxos,
       psbt: psbt,
-      toAddress: outputAddress,
+      toAddress: receiverAddress,
       amount: amount,
       useTaprootUtxos: useTaprootUtxos,
       payFeesWithSegwit: payFeesWithSegwit,
-      segwitPubKey: segwitPublicKey,
-      fromAddress: inputAddress,
+      segwitPubKey: segwitFeePublicKey,
+      fromAddress: senderAddress,
       feeRate,
       network,
     })
 
-    const formattedInputs: bitcoin.Psbt = await formatInputsToSign({
-      _psbt: updatedPsbt,
-      pubkey: taprootPublicKey,
-      taprootAddress: inputAddress,
-      network,
-    })
+    if (addressTypeToName[inputAddressType] === 'taproot') {
+      updatedPsbt = await formatInputsToSign({
+        _psbt: updatedPsbt,
+        senderPublicKey: senderPublicKey,
+        network,
+      })
+    }
 
     return {
-      rawPsbt: formattedInputs.toBase64(),
+      rawPsbt: updatedPsbt.toBase64(),
     }
   }
 

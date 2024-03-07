@@ -439,15 +439,14 @@ export async function runCLI() {
         taprootPrivateKey: networkConfig.taprootPrivateKey,
       })
       const res = await networkConfig.wallet.sendBtc({
-        signer,
-        to,
-        from: networkConfig.taprootAddress,
-        publicKey: networkConfig.taprootPubkey,
-        amount,
+        senderAddress: networkConfig.taprootAddress,
+        receiverAddress: to,
+        senderPublicKey: networkConfig.taprootPubkey,
         feeRate,
-        payFeesWithSegwit: true,
-        segwitAddress: networkConfig.segwitAddress,
-        segwitPubkey: networkConfig.segwitPubKey,
+        amount,
+        segwitFeePublicKey: networkConfig.segwitPubKey,
+        signer,
+        payFeesWithSegwit: false,
       })
 
       console.log(res)

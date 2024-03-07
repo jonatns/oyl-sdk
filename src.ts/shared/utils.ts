@@ -340,22 +340,20 @@ export const formatOptionsToSignInputs = async ({
 
 export const formatInputsToSign = async ({
   _psbt,
-  pubkey,
-  taprootAddress,
+  senderPublicKey,
   network,
 }: {
   _psbt: bitcoin.Psbt
-  pubkey: string
-  taprootAddress: string
+  senderPublicKey: string
   network: bitcoin.Network
 }) => {
   let index = 0
   for await (const v of _psbt.data.inputs) {
+    _psbt.getInputType(index)
     const isSigned = v.finalScriptSig || v.finalScriptWitness
     const lostInternalPubkey = !v.tapInternalKey
-
     if (!isSigned || lostInternalPubkey) {
-      const tapInternalKey = assertHex(Buffer.from(pubkey, 'hex'))
+      const tapInternalKey = assertHex(Buffer.from(senderPublicKey, 'hex'))
       const p2tr = bitcoin.payments.p2tr({
         internalPubkey: tapInternalKey,
         network: network,
@@ -1046,7 +1044,7 @@ const addBTCUtxo = async ({
   network: bitcoin.Network
 }) => {
   const txSize = calculateTaprootTxSize(2, 0, 2)
-  const fee = txSize * feeRate < 200 ? 200 : txSize * feeRate
+  const fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
   const utxosToSend = findUtxosToCoverAmount(
     useTaprootUtxos ? taprootUtxos : segwitUtxos,
@@ -1086,7 +1084,7 @@ const addBTCUtxo = async ({
 
   if (payFeesWithSegwit) {
     const feeTxSize = calculateTaprootTxSize(2, 1, 3)
-    const feeAmount = feeTxSize * feeRate < 200 ? 200 : feeTxSize * feeRate
+    const feeAmount = feeTxSize * feeRate < 250 ? 250 : feeTxSize * feeRate
     const utxosToPayFee = findUtxosToCoverAmount(segwitUtxos, amount)
     if (!utxosToPayFee) {
       throw new Error('insufficient segwit balance')

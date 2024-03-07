@@ -65,10 +65,9 @@ export declare const formatOptionsToSignInputs: ({ _psbt, pubkey, segwitPubkey, 
     taprootAddress: string;
     network: bitcoin.Network;
 }) => Promise<ToSignInput[]>;
-export declare const formatInputsToSign: ({ _psbt, pubkey, taprootAddress, network, }: {
+export declare const formatInputsToSign: ({ _psbt, senderPublicKey, network, }: {
     _psbt: bitcoin.Psbt;
-    pubkey: string;
-    taprootAddress: string;
+    senderPublicKey: string;
     network: bitcoin.Network;
 }) => Promise<bitcoin.Psbt>;
 export declare const timeout: (n: any) => Promise<unknown>;
