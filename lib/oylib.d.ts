@@ -358,20 +358,29 @@ export declare class Oyl {
         sendBrc20Txids: string[];
         error?: undefined;
     }>;
-    sendOrdCollectible({ mnemonic, fromAddress, taprootPublicKey, destinationAddress, segwitPubKey, segwitAddress, payFeesWithSegwit, feeRate, isDry, inscriptionId, segwitHdPath, }: {
-        fromAddress: string;
-        taprootPublicKey: string;
-        destinationAddress: string;
-        segwitPubKey?: string;
-        segwitAddress?: string;
-        payFeesWithSegwit?: boolean;
-        isDry?: boolean;
+    sendOrdCollectible({ senderAddress, receiverAddress, senderPublicKey, payFeesWithSegwit, segwitFeePublicKey, signer, feeRate, inscriptionId, }: {
+        senderAddress: string;
+        receiverAddress: string;
+        senderPublicKey: string;
+        payFeesWithSegwit: boolean;
+        segwitFeePublicKey: string;
+        signer: Signer;
         feeRate?: number;
-        mnemonic: string;
-        segwitHdPath?: string;
         inscriptionId: string;
     }): Promise<{
         txId: string;
-        rawTxn: string;
+        rawTx: string;
+    }>;
+    createOrdCollectibleTx({ inscriptionId, senderAddress, senderPublicKey, inputAddressType, receiverAddress, payFeesWithSegwit, segwitFeePublicKey, feeRate, }: {
+        inscriptionId: string;
+        senderAddress: string;
+        receiverAddress: string;
+        feeRate: number;
+        inputAddressType: string;
+        senderPublicKey: string;
+        payFeesWithSegwit?: boolean;
+        segwitFeePublicKey?: string;
+    }): Promise<{
+        rawPsbt: string;
     }>;
 }

@@ -214,13 +214,13 @@ const config = {
     taprootHdPath: TAPROOT_HD_PATH,
     taprootAddress:
       'tb1plh52zdjwmtk8ht54ldxchejg4zx077g8fvwhcjrpar7pmfpuyzdqj7rxjm',
-    taprootPubkey:
+    taprootPubKey:
       '020f3ee243a0d138c26a9f3d9c193aaee79a01326bcbf3e0cfd9e2c8ae32bbbca0',
     segwitAddress: 'tb1qrs9hy48vyzdmt6pve45v6hrf3dwvtdav3dlws6',
     segwitPubKey:
       '02058e30f3b55dac28b66ec8cfad71256f76d508cde1c727c17c8d8ead6a32d585',
     destinationTaprootAddress:
-      'tb1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqs77dhfz',
+      'tb1pstyemhl9n2hydg079rgrh8jhj9s7zdxh2g5u8apwk0c8yc9ge4eqp59l22',
     feeRate: 1,
   },
 }
@@ -428,20 +428,20 @@ export async function runCLI() {
 
   const { mnemonic, to, amount, feeRate, isDry, ticker, psbtBase64, price } =
     options
+  const signer: Signer = new Signer(bitcoin.networks.testnet, {
+    segwitPrivateKey: networkConfig.segwitPrivateKey,
+    taprootPrivateKey: networkConfig.taprootPrivateKey,
+  })
   switch (command) {
     case 'load':
       return await loadRpc(options)
     case 'buy':
       return await testMarketplaceBuy()
     case 'send':
-      const signer: Signer = new Signer(bitcoin.networks.testnet, {
-        segwitPrivateKey: networkConfig.segwitPrivateKey,
-        taprootPrivateKey: networkConfig.taprootPrivateKey,
-      })
       const res = await networkConfig.wallet.sendBtc({
         senderAddress: networkConfig.taprootAddress,
         receiverAddress: to,
-        senderPublicKey: networkConfig.taprootPubkey,
+        senderPublicKey: networkConfig.taprootPubKey,
         feeRate,
         amount,
         segwitFeePublicKey: networkConfig.segwitPubKey,
@@ -456,7 +456,7 @@ export async function runCLI() {
       const sendBrc20Response = await networkConfig.wallet.sendBRC20({
         mnemonic,
         fromAddress: networkConfig.taprootAddress,
-        taprootPublicKey: networkConfig.taprootPubkey,
+        taprootPublicKey: networkConfig.taprootPubKey,
         destinationAddress: to,
         token: ticker,
         amount,
@@ -471,13 +471,14 @@ export async function runCLI() {
       const { inscriptionId } = options
       const sendInscriptionResponse =
         await networkConfig.wallet.sendOrdCollectible({
-          mnemonic: networkConfig.mnemonic,
-          fromAddress: networkConfig.taprootAddress,
-          taprootPublicKey: networkConfig.taprootPubkey,
-          destinationAddress: networkConfig.destinationTaprootAddress,
-          inscriptionId,
+          senderAddress: networkConfig.taprootAddress,
+          receiverAddress: networkConfig.destinationTaprootAddress,
+          senderPublicKey: networkConfig.taprootPubKey,
+          payFeesWithSegwit: true,
+          segwitFeePublicKey: networkConfig.segwitPubKey,
+          signer,
           feeRate,
-          isDry,
+          inscriptionId,
         })
 
       console.log(sendInscriptionResponse)
@@ -503,7 +504,7 @@ export async function runCLI() {
           inputAddress: networkConfig.taprootAddress,
           outputAddress: networkConfig.taprootAddress,
           mnemonic: networkConfig.mnemonic,
-          taprootPublicKey: networkConfig.taprootPubkey,
+          taprootPublicKey: networkConfig.taprootPubKey,
           segwitPublicKey: networkConfig.segwitPubKey,
           segwitAddress: networkConfig.segwitAddress,
           isDry: networkConfig.isDry,
@@ -562,7 +563,7 @@ export async function runCLI() {
         const psbtToSign = bitcoin.Psbt.fromBase64(psbtBase64)
         const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
           _psbt: psbtToSign,
-          pubkey: networkConfig.taprootPubkey,
+          pubkey: networkConfig.taprootPubKey,
           segwitPubkey: networkConfig.segwitPubKey,
           segwitAddress: networkConfig.segwitAddress,
           taprootAddress: networkConfig.taprootAddress,
@@ -572,7 +573,7 @@ export async function runCLI() {
         const signedSendPsbt = await signInputs(
           psbtToSign,
           toSignInputs,
-          networkConfig.taprootPubkey,
+          networkConfig.taprootPubKey,
           networkConfig.segwitPubKey,
           segwitSigner,
           taprootSigner
@@ -615,7 +616,7 @@ export async function runCLI() {
           address: networkConfig.taprootAddress,
           price: price,
           psbtBase64: psbtBase64,
-          pubKey: networkConfig.taprootPubkey,
+          pubKey: networkConfig.taprootPubKey,
           wallet: networkConfig.wallet,
         })
 
@@ -626,7 +627,7 @@ export async function runCLI() {
           const preparationUtxo = bitcoin.Psbt.fromBase64(preparedPsbtBase64)
           const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
             _psbt: preparationUtxo,
-            pubkey: networkConfig.taprootPubkey,
+            pubkey: networkConfig.taprootPubKey,
             segwitPubkey: networkConfig.segwitPubKey,
             segwitAddress: networkConfig.segwitAddress,
             taprootAddress: networkConfig.fromAddress,
@@ -636,7 +637,7 @@ export async function runCLI() {
           const signedSendPsbt = await signInputs(
             preparationUtxo,
             toSignInputs,
-            networkConfig.taprootPubkey,
+            networkConfig.taprootPubKey,
             networkConfig.segwitPubKey,
             segwitSigner,
             taprootSigner
@@ -663,7 +664,7 @@ export async function runCLI() {
         const filledOrderPsbt = bitcoin.Psbt.fromBase64(builtOrderBase64)
         const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
           _psbt: filledOrderPsbt,
-          pubkey: networkConfig.taprootPubkey,
+          pubkey: networkConfig.taprootPubKey,
           segwitPubkey: networkConfig.segwitPubKey,
           segwitAddress: networkConfig.segwitAddress,
           taprootAddress: networkConfig.taprootAddress,
@@ -673,7 +674,7 @@ export async function runCLI() {
         const signedSendPsbt = await signInputs(
           filledOrderPsbt,
           toSignInputs,
-          networkConfig.taprootPubkey,
+          networkConfig.taprootPubKey,
           networkConfig.segwitPubKey,
           segwitSigner,
           taprootSigner
@@ -738,11 +739,12 @@ export async function runCLI() {
           address: networkConfig.taprootAddress,
         })
       )
-    // case 'txn-history':
-    //   const test = new Oyl()
-    //   return await test.getTxHistory({
-    //     addresses: [networkConfig.taprootAddress, networkConfig.segwitAddress],
-    //   })
+    case 'inscriptions':
+      return console.log(
+        await networkConfig.wallet.getInscriptions({
+          address: networkConfig.taprootAddress,
+        })
+      )
     case 'taproot-txn-history':
       return console.log(
         await networkConfig.wallet.getTaprootTxHistory({
