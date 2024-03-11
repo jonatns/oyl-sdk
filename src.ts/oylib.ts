@@ -942,7 +942,7 @@ export class Oyl {
         address: options.fromAddress,
       })
 
-      console.log({ taprootUtxosStr: JSON.stringify(taprootUtxos) })
+      //console.log({ taprootUtxosStr: JSON.stringify(taprootUtxos) })
 
       let segwitUtxos: any[] | undefined
       if (options.segwitAddress) {
