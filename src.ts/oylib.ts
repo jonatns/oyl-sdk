@@ -590,7 +590,7 @@ export class Oyl {
         finalize: true,
       })
 
-      const { signedPsbt: segwitSigned } = await signer.signAllInputs({
+      const { signedPsbt: segwitSigned } = await signer.signAllSegwitInputs({
         rawPsbt: signedPsbt,
         finalize: true,
       })
@@ -601,7 +601,7 @@ export class Oyl {
       addressTypeToName[inputAddressType] === 'segwit' &&
       !payFeesWithSegwit
     ) {
-      const { signedPsbt } = await signer.signAllInputs({
+      const { signedPsbt } = await signer.signAllSegwitInputs({
         rawPsbt: rawPsbt,
         finalize: true,
       })
@@ -1276,7 +1276,7 @@ export class Oyl {
           finalize: true,
         })
 
-        const { signedPsbt: segwitSigned } = await signer.signAllInputs({
+        const { signedPsbt: segwitSigned } = await signer.signAllSegwitInputs({
           rawPsbt: signedPsbt,
           finalize: true,
         })
@@ -1286,7 +1286,7 @@ export class Oyl {
         addressTypeToName[inputAddressType] === 'segwit' &&
         !payFeesWithSegwit
       ) {
-        const { signedPsbt } = await signer.signAllInputs({
+        const { signedPsbt } = await signer.signAllSegwitInputs({
           rawPsbt: rawPsbt,
           finalize: true,
         })

@@ -26,7 +26,7 @@ export class Signer {
     this.network = network
   }
 
-  async signInput({
+  async signSegwitInput({
     rawPsbt,
     inputNumber,
     finalize,
@@ -124,7 +124,7 @@ export class Signer {
     return { signedPsbt: signedPsbt }
   }
 
-  async signAllInputs({
+  async signAllSegwitInputs({
     rawPsbt,
     finalize,
   }: {
