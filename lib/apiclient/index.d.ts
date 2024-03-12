@@ -5,6 +5,7 @@ import { SwapBrcBid, SignedBid } from '../shared/interface';
 export declare class OylApiClient {
     private host;
     private testnet;
+    private regtest;
     private apiKey;
     /**
      * Create an instance of the OylApiClient.
@@ -14,6 +15,7 @@ export declare class OylApiClient {
         host: string;
         apiKey: string;
         testnet?: boolean;
+        regtest?: boolean;
     });
     /**
      * Create an instance of the OylApiClient from a plain object.

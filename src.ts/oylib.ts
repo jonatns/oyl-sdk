@@ -79,6 +79,7 @@ export class Oyl {
     this.apiClient = new OylApiClient({
       host: 'https://api.oyl.gg',
       testnet: options.network == 'testnet' ? true : null,
+      regtest: options.network == 'regtest' ? true : null,
       apiKey: apiKey
     })
     const rpcUrl = `${options.baseUrl}/${options.version}/${options.projectId}`
@@ -941,7 +942,7 @@ export class Oyl {
         address: options.fromAddress,
       })
 
-      console.log({ taprootUtxosStr: JSON.stringify(taprootUtxos) })
+      //console.log({ taprootUtxosStr: JSON.stringify(taprootUtxos) })
 
       let segwitUtxos: any[] | undefined
       if (options.segwitAddress) {
