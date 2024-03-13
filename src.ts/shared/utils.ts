@@ -63,6 +63,7 @@ export interface IBISWalletIx {
 }
 
 export const addressTypeMap = { 0: 'p2pkh', 1: 'p2tr', 2: 'p2sh', 3: 'p2wpkh' }
+export const inscriptionSats = 546
 
 export const ECPair = ECPairFactory(ecc)
 
@@ -349,7 +350,6 @@ export const formatInputsToSign = async ({
 }) => {
   let index = 0
   for await (const v of _psbt.data.inputs) {
-    _psbt.getInputType(index)
     const isSigned = v.finalScriptSig || v.finalScriptWitness
     const lostInternalPubkey = !v.tapInternalKey
     if (!isSigned || lostInternalPubkey) {
@@ -361,6 +361,7 @@ export const formatInputsToSign = async ({
       if (
         v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
       ) {
+        console.log('set', tapInternalKey.toString('hex'))
         v.tapInternalKey = tapInternalKey
       }
     }
@@ -402,216 +403,6 @@ export const signInputs = async (
     await segwitSigner(psbt, segwitInputs)
   }
   return psbt
-}
-
-export const inscribe = async ({
-  content,
-  inputAddress,
-  outputAddress,
-  mnemonic,
-  taprootPublicKey,
-  segwitPublicKey,
-  segwitAddress,
-  isDry,
-  segwitSigner,
-  taprootSigner,
-  feeRate,
-  network,
-  segwitUtxos,
-  taprootUtxos,
-  taprootPrivateKey,
-  sandshrewBtcClient,
-  esploraRpc,
-}: {
-  content: string
-  inputAddress: string
-  outputAddress: string
-  mnemonic: string
-  taprootPublicKey: string
-  segwitPublicKey: string
-  segwitAddress: string
-  isDry?: boolean
-  feeRate: number
-  taprootSigner: any
-  segwitSigner: any
-  payFeesWithSegwit?: boolean
-  network: 'testnet' | 'main' | 'regtest'
-  segwitUtxos?: Utxo[]
-  taprootUtxos: Utxo[]
-  taprootPrivateKey: string
-  sandshrewBtcClient: SandshrewBitcoinClient
-  esploraRpc: EsploraRpc
-}) => {
-  const commitTxSize = calculateTaprootTxSize(3, 0, 2)
-  const feeForCommit =
-    commitTxSize * feeRate < 200 ? 200 : commitTxSize * feeRate
-
-  const revealTxSize = calculateTaprootTxSize(1, 0, 1)
-  const feeForReveal =
-    revealTxSize * feeRate < 200 ? 200 : revealTxSize * feeRate
-
-  const inscriptionSats = 546
-  const amountNeededForInscribe =
-    Number(feeForCommit) + Number(feeForReveal) + inscriptionSats
-
-  const utxosToSend = findUtxosToCoverAmount(
-    taprootUtxos,
-    amountNeededForInscribe
-  )
-
-  if (
-    !utxosToSend ||
-    !utxosToSend.selectedUtxos ||
-    utxosToSend?.selectedUtxos?.length === 0
-  ) {
-    throw new Error('Insufficient balance')
-  }
-
-  const amountGathered = calculateAmountGatheredUtxo(utxosToSend.selectedUtxos)
-
-  const secret = taprootPrivateKey
-  const secKey = ecc2.keys.get_seckey(String(secret))
-  const pubKey = ecc2.keys.get_pubkey(String(secret), true)
-
-  const script = createInscriptionScript(pubKey, content)
-  const tapleaf = Tap.encodeScript(script)
-  const [tpubkey, cblock] = Tap.getPubKey(pubKey, { target: tapleaf })
-  const inscriberAddress = Address.p2tr.fromPubKey(tpubkey, network)
-
-  const psbt = new bitcoin.Psbt({ network: getNetwork(network) })
-
-  for await (const utxo of utxosToSend.selectedUtxos) {
-    psbt.addInput({
-      hash: utxo.txId,
-      index: utxo.outputIndex,
-      witnessUtxo: {
-        script: Buffer.from(utxo.scriptPk, 'hex'),
-        value: utxo.satoshis,
-      },
-    })
-  }
-
-  const revealSats = feeForReveal + inscriptionSats
-  const reimbursementAmount =
-    amountGathered - feeForCommit - feeForReveal - inscriptionSats
-
-  psbt.addOutput({
-    value: Number(feeForReveal) + inscriptionSats,
-    address: inscriberAddress,
-  })
-
-  if (reimbursementAmount > inscriptionSats) {
-    psbt.addOutput({
-      value: reimbursementAmount,
-      address: inputAddress,
-    })
-  }
-
-  const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
-    _psbt: psbt,
-    pubkey: taprootPublicKey,
-    segwitPubkey: segwitPublicKey,
-    segwitAddress: segwitAddress,
-    taprootAddress: inputAddress,
-    network: getNetwork(network),
-  })
-
-  const signedPsbt = await signInputs(
-    psbt,
-    toSignInputs,
-    taprootPublicKey,
-    segwitPublicKey,
-    segwitSigner,
-    taprootSigner
-  )
-  signedPsbt.finalizeAllInputs()
-
-  const commitPsbtHash = signedPsbt.toHex()
-  const commitTxPsbt: bitcoin.Psbt = bitcoin.Psbt.fromHex(commitPsbtHash, {
-    network: getNetwork(network),
-  })
-
-  const commitTxHex = commitTxPsbt.extractTransaction().toHex()
-  const commitTxId = commitTxPsbt.extractTransaction().getId()
-
-  const [result] = await sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([
-    commitTxHex,
-  ])
-
-  if (!result.allowed) {
-    throw new Error(result['reject-reason'])
-  }
-
-  if (!isDry) {
-    await sandshrewBtcClient.bitcoindRpc.sendRawTransaction(commitTxHex)
-
-    const txResult = await waitForTransaction({
-      txId: commitTxId,
-      sandshrewBtcClient,
-    })
-
-    if (!txResult) {
-      throw new Error('ERROR WAITING FOR COMMIT TX')
-    }
-  }
-
-  const commitTxOutput = await getOutputValueByVOutIndex({
-    txId: commitTxId,
-    vOut: 0,
-    esploraRpc,
-  })
-
-  if (!commitTxOutput) {
-    throw new Error('ERROR GETTING FIRST INPUT VALUE')
-  }
-
-  const txData = Tx.create({
-    vin: [
-      {
-        txid: commitTxId,
-        vout: 0,
-        prevout: {
-          value: revealSats,
-          scriptPubKey: ['OP_1', tpubkey],
-        },
-      },
-    ],
-    vout: [
-      {
-        value: 546,
-        scriptPubKey: Address.toScriptPubKey(inputAddress),
-      },
-    ],
-  })
-
-  const sig = Signer.taproot.sign(secKey, txData, 0, {
-    extension: tapleaf,
-  })
-
-  txData.vin[0].witness = [sig, script, cblock]
-
-  const inscriptionTxHex = Tx.encode(txData).hex
-
-  const [inscriptionResult] =
-    await sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([inscriptionTxHex])
-
-  if (!inscriptionResult.allowed) {
-    throw new Error(inscriptionResult['reject-reason'])
-  }
-
-  let revealTxId = ''
-  if (!isDry) {
-    revealTxId = await sandshrewBtcClient.bitcoindRpc.sendRawTransaction(
-      inscriptionTxHex
-    )
-  }
-
-  return {
-    commitTx: commitTxId,
-    revealTx: revealTxId,
-    txId: revealTxId,
-    rawTx: inscriptionTxHex,
-  }
 }
 
 export const createInscriptionScript = (pubKey: any, content: any) => {

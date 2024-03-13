@@ -1,6 +1,7 @@
 import * as bitcoin from 'bitcoinjs-lib'
-import { ECPair, tweakSigner } from '../shared/utils'
+import { ECPair, assertHex, tweakSigner } from '../shared/utils'
 import { ECPairInterface } from 'ecpair'
+import { toXOnly } from '@sadoprotocol/ordit-sdk'
 
 type walletInit = {
   segwitPrivateKey?: string
@@ -77,7 +78,7 @@ export class Signer {
 
     const matchingPubKey = unSignedPsbt.inputHasPubkey(
       inputNumber,
-      Buffer.from(tweakedSigner.publicKey)
+      tweakedSigner.publicKey
     )
     if (!matchingPubKey) {
       throw new Error('Input does not match signer type')
@@ -109,7 +110,7 @@ export class Signer {
     for (let i = 0; i < unSignedPsbt.inputCount; i++) {
       const matchingPubKey = unSignedPsbt.inputHasPubkey(
         i,
-        Buffer.from(tweakedSigner.publicKey)
+        tweakedSigner.publicKey
       )
       if (matchingPubKey) {
         unSignedPsbt.signTaprootInput(i, tweakedSigner)

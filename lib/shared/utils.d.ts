@@ -42,6 +42,7 @@ export declare const addressTypeMap: {
     2: string;
     3: string;
 };
+export declare const inscriptionSats = 546;
 export declare const ECPair: import("ecpair").ECPairAPI;
 export declare const assertHex: (pubKey: Buffer) => Buffer;
 export declare function getNetwork(value: Network | 'main' | 'mainnet' | 'regtest' | 'testnet'): bitcoin.networks.Network;
@@ -72,31 +73,6 @@ export declare const formatInputsToSign: ({ _psbt, senderPublicKey, network, }: 
 }) => Promise<bitcoin.Psbt>;
 export declare const timeout: (n: any) => Promise<unknown>;
 export declare const signInputs: (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], taprootPubkey: string, segwitPubKey: string, segwitSigner: any, taprootSigner: any) => Promise<bitcoin.Psbt>;
-export declare const inscribe: ({ content, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, feeRate, network, segwitUtxos, taprootUtxos, taprootPrivateKey, sandshrewBtcClient, esploraRpc, }: {
-    content: string;
-    inputAddress: string;
-    outputAddress: string;
-    mnemonic: string;
-    taprootPublicKey: string;
-    segwitPublicKey: string;
-    segwitAddress: string;
-    isDry?: boolean;
-    feeRate: number;
-    taprootSigner: any;
-    segwitSigner: any;
-    payFeesWithSegwit?: boolean;
-    network: 'testnet' | 'main' | 'regtest';
-    segwitUtxos?: Utxo[];
-    taprootUtxos: Utxo[];
-    taprootPrivateKey: string;
-    sandshrewBtcClient: SandshrewBitcoinClient;
-    esploraRpc: EsploraRpc;
-}) => Promise<{
-    commitTx: string;
-    revealTx: string;
-    txId: string;
-    rawTx: string;
-}>;
 export declare const createInscriptionScript: (pubKey: any, content: any) => string[];
 export declare let RPC_ADDR: string;
 export declare const callBTCRPCEndpoint: (method: string, params: string | string[], network: string) => Promise<any>;

@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { Utxo } from './txbuilder';
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
@@ -332,31 +333,44 @@ export declare class Oyl {
         fromAddress: string;
         hdPathWithIndex: string;
     }): Promise<any>;
-    sendBRC20(options: {
-        mnemonic: string;
-        fromAddress: string;
-        taprootPublicKey: string;
-        destinationAddress: string;
-        segwitHdPath: string;
-        segwitPubKey?: string;
-        segwitAddress?: string;
+    createInscriptionCommitPsbt({ content, senderAddress, senderPublicKey, segwitFeePublicKey, payFeesWithSegwit, feeRate, taprootUtxos, signer, }: {
+        content: string;
+        senderAddress: string;
+        senderPublicKey: string;
+        segwitFeePublicKey: string;
+        feeRate: number;
         payFeesWithSegwit?: boolean;
+        taprootUtxos: Utxo[];
+        signer: Signer;
+    }): Promise<{
+        commitPsbt: string;
+    }>;
+    createRevealTxn({ senderAddress, signer, content, feeRate, commitTxId, senderPublicKey, }: {
+        senderAddress: string;
+        signer: Signer;
+        content: string;
+        feeRate: number;
+        commitTxId: string;
+        senderPublicKey: string;
+    }): Promise<{
+        revealPsbt: string;
+        tapleaf: string;
+    }>;
+    sendBRC20({ signer, senderAddress, receiverAddress, senderPublicKey, payFeesWithSegwit, segwitFeePublicKey, feeRate, token, amount, }: {
+        signer: Signer;
+        senderAddress: string;
+        receiverAddress?: string;
+        senderPublicKey: string;
+        payFeesWithSegwit: boolean;
+        segwitFeePublicKey: string;
         feeRate?: number;
         token?: string;
         amount?: number;
         postage?: number;
-        isDry?: boolean;
-        inscriptionId?: string;
     }): Promise<{
-        error: string;
-        txId?: undefined;
-        rawTxn?: undefined;
-        sendBrc20Txids?: undefined;
-    } | {
         txId: string;
         rawTxn: string;
         sendBrc20Txids: string[];
-        error?: undefined;
     }>;
     sendOrdCollectible({ senderAddress, receiverAddress, senderPublicKey, payFeesWithSegwit, segwitFeePublicKey, signer, feeRate, inscriptionId, }: {
         senderAddress: string;
@@ -382,5 +396,14 @@ export declare class Oyl {
         segwitFeePublicKey?: string;
     }): Promise<{
         rawPsbt: string;
+    }>;
+    signAPsbt({ payFeesWithSegwit, psbt, signer, inputAddressType, tapleaf, }: {
+        payFeesWithSegwit: boolean;
+        psbt: string;
+        signer: Signer;
+        inputAddressType: string;
+        tapleaf?: Buffer;
+    }): Promise<{
+        signedPsbt: string;
     }>;
 }
