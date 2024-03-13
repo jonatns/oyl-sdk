@@ -25,10 +25,9 @@ export declare class Signer {
     }): Promise<{
         signedPsbt: string;
     }>;
-    signAllTaprootInputs({ rawPsbt, finalize, tapleaf, }: {
+    signAllTaprootInputs({ rawPsbt, finalize, }: {
         rawPsbt: string;
         finalize: boolean;
-        tapleaf?: Buffer;
     }): Promise<{
         signedPsbt: string;
     }>;

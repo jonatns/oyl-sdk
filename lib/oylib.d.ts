@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { Utxo } from './txbuilder';
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
@@ -354,7 +353,6 @@ export declare class Oyl {
         senderPublicKey: string;
     }): Promise<{
         revealPsbt: string;
-        tapleaf: string;
     }>;
     sendBRC20({ signer, senderAddress, receiverAddress, senderPublicKey, payFeesWithSegwit, segwitFeePublicKey, feeRate, token, amount, }: {
         signer: Signer;
@@ -397,12 +395,11 @@ export declare class Oyl {
     }): Promise<{
         rawPsbt: string;
     }>;
-    signAPsbt({ payFeesWithSegwit, psbt, signer, inputAddressType, tapleaf, }: {
+    signAPsbt({ payFeesWithSegwit, psbt, signer, inputAddressType, }: {
         payFeesWithSegwit: boolean;
         psbt: string;
         signer: Signer;
         inputAddressType: string;
-        tapleaf?: Buffer;
     }): Promise<{
         signedPsbt: string;
     }>;
