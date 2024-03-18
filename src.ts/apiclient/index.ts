@@ -1,5 +1,6 @@
 import fetch from 'node-fetch'
 import { SwapBrcBid, SignedBid } from '../shared/interface'
+import { getAllInscriptionsByAddressRegtest } from '../tests/regtestApi'
 
 /**
  * Represents the client for interacting with the Oyl API.
@@ -7,15 +8,17 @@ import { SwapBrcBid, SignedBid } from '../shared/interface'
 export class OylApiClient {
   private host: string
   private testnet: boolean
+  private regtest: boolean
   private apiKey: string
 
   /**
    * Create an instance of the OylApiClient.
    * @param options - Configuration object containing the API host.
    */
-  constructor(options?: { host: string; apiKey: string; testnet?: boolean }) {
+  constructor(options?: { host: string; apiKey: string; testnet?: boolean; regtest?: boolean }) {
     this.host = options?.host || ''
     this.testnet = options.testnet == true
+    this.regtest = options.regtest == true
     this.apiKey = options.apiKey
   }
 
@@ -112,12 +115,17 @@ export class OylApiClient {
   }
 
   async getAllInscriptionsByAddress(address: string): Promise<any> {
-    return await this._call('/get-inscriptions', 'post', {
-      address: address,
-      exclude_brc20: false,
-      count: 20,
-      order: 'desc',
-    })
+    if (this.regtest) {
+      return await getAllInscriptionsByAddressRegtest(address)
+    } else {
+      return await this._call('/get-inscriptions', 'post', {
+        address: address,
+        exclude_brc20: false,
+        count: 20,
+        order: 'desc',
+      })
+    }
+
   }
 
   async getInscriptionsForTxn(txn_id: string): Promise<any> {

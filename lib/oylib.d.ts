@@ -332,7 +332,7 @@ export declare class Oyl {
         fromAddress: string;
         hdPathWithIndex: string;
     }): Promise<any>;
-    createInscriptionCommitPsbt({ content, senderAddress, senderPublicKey, segwitFeePublicKey, payFeesWithSegwit, feeRate, taprootUtxos, signer, }: {
+    inscriptionCommitTx({ content, senderAddress, senderPublicKey, segwitFeePublicKey, payFeesWithSegwit, feeRate, taprootUtxos, signer, }: {
         content: string;
         senderAddress: string;
         senderPublicKey: string;
@@ -348,7 +348,7 @@ export declare class Oyl {
         commitPsbt: string;
         utxosUsedForFees: string[];
     }>;
-    createRevealPsbt({ senderAddress, signer, content, feeRate, commitTxId, }: {
+    inscriptionRevealTx({ senderAddress, signer, content, feeRate, commitTxId, }: {
         senderAddress: string;
         signer: Signer;
         content: string;
@@ -374,7 +374,7 @@ export declare class Oyl {
         rawTxn: string;
         sendBrc20Txids: any[];
     }>;
-    sendBtcUtxo({ senderAddress, receiverAddress, senderPublicKey, payFeesWithSegwit, segwitFeePublicKey, feeRate, taprootUtxos, utxoId, utxosUsedForFees, }: {
+    inscriptionSendTx({ senderAddress, receiverAddress, senderPublicKey, payFeesWithSegwit, segwitFeePublicKey, feeRate, taprootUtxos, utxoId, utxosUsedForFees, }: {
         senderAddress: string;
         receiverAddress: string;
         senderPublicKey: string;
