@@ -456,6 +456,7 @@ export async function runCLI() {
         senderAddress: networkConfig.taprootAddress,
         senderPublicKey: networkConfig.taprootPubKey,
         segwitFeePublicKey: networkConfig.segwitPubKey,
+        receiverAddress: networkConfig.destinationTaprootAddress,
         ticker,
         amount,
         signer,

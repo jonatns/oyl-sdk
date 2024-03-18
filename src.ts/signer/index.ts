@@ -106,7 +106,8 @@ export class Signer {
       throw new Error('Taproot signer was not initialized')
     }
     let unSignedPsbt = bitcoin.Psbt.fromBase64(rawPsbt)
-    const tweakedSigner = tweakSigner(this.taprootKeyPair)
+    let tweakedSigner = tweakSigner(this.taprootKeyPair)
+
     for (let i = 0; i < unSignedPsbt.inputCount; i++) {
       const matchingPubKey = unSignedPsbt.inputHasPubkey(
         i,

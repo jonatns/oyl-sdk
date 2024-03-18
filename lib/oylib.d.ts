@@ -343,16 +343,20 @@ export declare class Oyl {
         signer: Signer;
     }): Promise<{
         commitPsbt: string;
+        utxosUsedForFees?: undefined;
+    } | {
+        commitPsbt: string;
+        utxosUsedForFees: string[];
     }>;
-    createRevealTxn({ senderAddress, signer, content, feeRate, commitTxId, senderPublicKey, }: {
+    createRevealPsbt({ senderAddress, signer, content, feeRate, commitTxId, }: {
         senderAddress: string;
         signer: Signer;
         content: string;
         feeRate: number;
         commitTxId: string;
-        senderPublicKey: string;
     }): Promise<{
-        revealPsbt: string;
+        revealTx: string;
+        revealTpubkey: string;
     }>;
     sendBRC20({ signer, senderAddress, receiverAddress, senderPublicKey, payFeesWithSegwit, segwitFeePublicKey, feeRate, token, amount, }: {
         signer: Signer;
@@ -368,7 +372,20 @@ export declare class Oyl {
     }): Promise<{
         txId: string;
         rawTxn: string;
-        sendBrc20Txids: string[];
+        sendBrc20Txids: any[];
+    }>;
+    sendBtcUtxo({ senderAddress, receiverAddress, senderPublicKey, payFeesWithSegwit, segwitFeePublicKey, feeRate, taprootUtxos, utxoId, utxosUsedForFees, }: {
+        senderAddress: string;
+        receiverAddress: string;
+        senderPublicKey: string;
+        payFeesWithSegwit: boolean;
+        segwitFeePublicKey: string;
+        feeRate?: number;
+        taprootUtxos: Utxo[];
+        utxoId: string;
+        utxosUsedForFees: string[];
+    }): Promise<{
+        sentPsbt: string;
     }>;
     sendOrdCollectible({ senderAddress, receiverAddress, senderPublicKey, payFeesWithSegwit, segwitFeePublicKey, signer, feeRate, inscriptionId, }: {
         senderAddress: string;
@@ -395,7 +412,7 @@ export declare class Oyl {
     }): Promise<{
         rawPsbt: string;
     }>;
-    signAPsbt({ payFeesWithSegwit, psbt, signer, inputAddressType, }: {
+    useSigner({ payFeesWithSegwit, psbt, signer, inputAddressType, }: {
         payFeesWithSegwit: boolean;
         psbt: string;
         signer: Signer;

@@ -22,7 +22,7 @@ import {
   usableUtxo,
   Utxo,
 } from '../txbuilder/buildOrdTx'
-import { isTaprootInput } from 'bitcoinjs-lib/src/psbt/bip371'
+import { isTaprootInput, toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew'
 import { EsploraRpc } from '../rpclient/esplora'
 
@@ -353,15 +353,14 @@ export const formatInputsToSign = async ({
     const isSigned = v.finalScriptSig || v.finalScriptWitness
     const lostInternalPubkey = !v.tapInternalKey
     if (!isSigned || lostInternalPubkey) {
-      const tapInternalKey = assertHex(Buffer.from(senderPublicKey, 'hex'))
+      const tapInternalKey = toXOnly(Buffer.from(senderPublicKey, 'hex'))
       const p2tr = bitcoin.payments.p2tr({
         internalPubkey: tapInternalKey,
         network: network,
       })
       if (
-        v.witnessUtxo?.script.toString('hex') == p2tr.output?.toString('hex')
+        v.witnessUtxo?.script.toString('hex') === p2tr.output?.toString('hex')
       ) {
-        console.log('set', tapInternalKey.toString('hex'))
         v.tapInternalKey = tapInternalKey
       }
     }
