@@ -356,7 +356,6 @@ export declare class Oyl {
         commitTxId: string;
     }): Promise<{
         revealTx: string;
-        revealTpubkey: string;
     }>;
     sendBRC20({ signer, senderAddress, receiverAddress, senderPublicKey, payFeesWithSegwit, segwitFeePublicKey, feeRate, token, amount, }: {
         signer: Signer;

@@ -562,8 +562,24 @@ export class Oyl {
       throw new Error('Invalid segwit information entered')
     }
     const inputAddressType = addressTypeMap[getAddressType(senderAddress)]
+    if (addressTypeToName[inputAddressType] === 'segwit' && payFeesWithSegwit) {
+      throw new Error(
+        'No need for this flag. Fees by default will come from sender address'
+      )
+    }
+
     let segwitUtxos: Utxo[] | undefined
     let taprootUtxos: Utxo[] | undefined
+
+    if (payFeesWithSegwit) {
+      const p2wpkh = bitcoin.payments.p2wpkh({
+        pubkey: Buffer.from(segwitFeePublicKey, 'hex'),
+        network: this.network,
+      })
+      segwitUtxos = await this.getUtxosArtifacts({
+        address: p2wpkh.address,
+      })
+    }
 
     if (addressTypeToName[inputAddressType] === 'segwit') {
       segwitUtxos = await this.getUtxosArtifacts({
@@ -1206,7 +1222,6 @@ export class Oyl {
 
     return {
       revealTx: inscriptionTxHex,
-      revealTpubkey: tpubkey,
     }
   }
 
