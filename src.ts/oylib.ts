@@ -314,6 +314,18 @@ export class Oyl {
     return balance
   }
 
+  /**
+   * Fetches the balance details including confirmed and pending amounts for a given address.
+   * @param {Object} param0 - An object containing the address property.
+   * @param {string} param0.address - The address for which to fetch balance details.
+   * @returns {Promise<any>} A promise that resolves to an object containing balance and its USD value.
+   * @throws {Error} Throws an error if the balance retrieval fails.
+   */
+  async getAddressBalance({ address }: { address: string }) {
+    const balance = await this.apiClient.getAddressBalance(address)
+    return balance
+  }
+
   async getUtxos(address: string, includeInscriptions: boolean = true) {
     const utxosResponse: any[] = await this.esploraRpc.getAddressUtxo(address)
     const formattedUtxos: IBlockchainInfoUTXO[] = []
@@ -563,9 +575,7 @@ export class Oyl {
     }
     const inputAddressType = addressTypeMap[getAddressType(senderAddress)]
     if (addressTypeToName[inputAddressType] === 'segwit' && payFeesWithSegwit) {
-      throw new Error(
-        'No need for this flag. Fees by default will come from sender address'
-      )
+      payFeesWithSegwit = false
     }
 
     let segwitUtxos: Utxo[] | undefined

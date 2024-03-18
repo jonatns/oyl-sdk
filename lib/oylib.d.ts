@@ -113,6 +113,16 @@ export declare class Oyl {
     getTaprootBalance({ address }: {
         address: string;
     }): Promise<any>;
+    /**
+     * Fetches the balance details including confirmed and pending amounts for a given address.
+     * @param {Object} param0 - An object containing the address property.
+     * @param {string} param0.address - The address for which to fetch balance details.
+     * @returns {Promise<any>} A promise that resolves to an object containing balance and its USD value.
+     * @throws {Error} Throws an error if the balance retrieval fails.
+     */
+    getAddressBalance({ address }: {
+        address: string;
+    }): Promise<any>;
     getUtxos(address: string, includeInscriptions?: boolean): Promise<{
         unspent_outputs: IBlockchainInfoUTXO[];
     }>;

@@ -444,7 +444,7 @@ export async function runCLI() {
         amount,
         segwitFeePublicKey: networkConfig.segwitPubKey,
         signer,
-        payFeesWithSegwit: false,
+        payFeesWithSegwit: true,
       })
 
       console.log(res)
