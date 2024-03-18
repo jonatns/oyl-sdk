@@ -1003,7 +1003,7 @@ export class Oyl {
     return taprootSigner
   }
 
-  async createInscriptionCommitPsbt({
+  async inscriptionCommitTx({
     content,
     senderAddress,
     senderPublicKey,
@@ -1138,7 +1138,7 @@ export class Oyl {
     }
   }
 
-  async createRevealPsbt({
+  async inscriptionRevealTx({
     senderAddress,
     signer,
     content,
@@ -1247,17 +1247,16 @@ export class Oyl {
 
       const content = `{"p":"brc-20","op":"transfer","tick":"${token}","amt":"${amount}"}`
 
-      const { commitPsbt, utxosUsedForFees } =
-        await this.createInscriptionCommitPsbt({
-          content,
-          senderAddress: senderAddress,
-          senderPublicKey: senderPublicKey,
-          signer,
-          segwitFeePublicKey: segwitFeePublicKey,
-          payFeesWithSegwit: payFeesWithSegwit,
-          taprootUtxos,
-          feeRate,
-        })
+      const { commitPsbt, utxosUsedForFees } = await this.inscriptionCommitTx({
+        content,
+        senderAddress: senderAddress,
+        senderPublicKey: senderPublicKey,
+        signer,
+        segwitFeePublicKey: segwitFeePublicKey,
+        payFeesWithSegwit: payFeesWithSegwit,
+        taprootUtxos,
+        feeRate,
+      })
 
       const { signedPsbt } = await this.useSigner({
         payFeesWithSegwit: payFeesWithSegwit,
@@ -1277,7 +1276,7 @@ export class Oyl {
         throw new Error('ERROR WAITING FOR COMMIT TX')
       }
 
-      const { revealTx } = await this.createRevealPsbt({
+      const { revealTx } = await this.inscriptionRevealTx({
         senderAddress,
         signer,
         content,
@@ -1297,7 +1296,7 @@ export class Oyl {
       }
       await delay(5000)
 
-      const { sentPsbt: sentRawPsbt } = await this.sendBtcUtxo({
+      const { sentPsbt: sentRawPsbt } = await this.inscriptionSendTx({
         senderAddress,
         receiverAddress,
         senderPublicKey,
@@ -1330,7 +1329,7 @@ export class Oyl {
     }
   }
 
-  async sendBtcUtxo({
+  async inscriptionSendTx({
     senderAddress,
     receiverAddress,
     senderPublicKey,
