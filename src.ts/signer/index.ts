@@ -140,7 +140,7 @@ export class Signer {
     for (let i = 0; i < unSignedPsbt.inputCount; i++) {
       const matchingPubKey = unSignedPsbt.inputHasPubkey(
         i,
-        Buffer.from(this.segwitKeyPair.publicKey)
+        this.segwitKeyPair.publicKey
       )
 
       if (matchingPubKey) {

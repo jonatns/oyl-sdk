@@ -364,10 +364,6 @@ export function findUtxosToCoverAmount(utxos: Utxo[], amount: number) {
     totalSatoshis += utxo.satoshis
   }
 
-  console.log('DEBUG: TOTAL SATOSHIS')
-  console.log(totalSatoshis)
-  console.log('DEBUG: AMOUNT')
-  console.log(amount)
   if (totalSatoshis >= amount) {
     return {
       selectedUtxos,

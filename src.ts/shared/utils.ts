@@ -25,6 +25,7 @@ import {
 import { isTaprootInput, toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew'
 import { EsploraRpc } from '../rpclient/esplora'
+import { getAddressType } from '../transactions'
 
 bitcoin.initEccLib(ecc)
 
@@ -748,49 +749,6 @@ const insertCollectibleUtxo = async ({
   })
 }
 
-export const insertBtcUtxo = async ({
-  taprootUtxos,
-  segwitUtxos,
-  toAddress,
-  fromAddress,
-  psbt,
-  amount,
-  useTaprootUtxos,
-  segwitPubKey,
-  payFeesWithSegwit,
-  feeRate,
-  network,
-}: {
-  taprootUtxos: any[]
-  segwitUtxos: any[]
-  toAddress: string
-  fromAddress: string
-  psbt: bitcoin.Psbt
-  feeRate: number
-  amount: number
-  useTaprootUtxos: boolean
-  segwitPubKey: string
-  payFeesWithSegwit: boolean
-  network: bitcoin.Network
-}) => {
-  const nonMetaUtxos = await filterTaprootUtxos({ taprootUtxos: taprootUtxos })
-
-  const modifiedPsbt = await addBTCUtxo({
-    taprootUtxos: nonMetaUtxos,
-    segwitUtxos: segwitUtxos,
-    toAddress: toAddress,
-    psbtTx: psbt,
-    amount: amount,
-    fromAddress: fromAddress,
-    segwitPubKey: segwitPubKey,
-    useTaprootUtxos: useTaprootUtxos,
-    payFeesWithSegwit: payFeesWithSegwit,
-    feeRate,
-    network,
-  })
-  return modifiedPsbt
-}
-
 export const filterTaprootUtxos = async ({
   taprootUtxos,
 }: {
@@ -808,46 +766,69 @@ export const filterTaprootUtxos = async ({
   return nonMetaUtxos
 }
 
-const addBTCUtxo = async ({
-  taprootUtxos,
-  segwitUtxos,
+export const filterUtxos = async ({ utxos }: { utxos: any[] }) => {
+  const { nonMetaUtxos } = utxos.reduce(
+    (acc, utxo) => {
+      utxo.value === 546 && utxo.vout === 0
+        ? acc.metaUtxos.push(utxo)
+        : acc.nonMetaUtxos.push(utxo)
+      return acc
+    },
+    { metaUtxos: [], nonMetaUtxos: [] }
+  )
+  return nonMetaUtxos
+}
+
+export const addBtcUtxo = async ({
+  utxos,
   toAddress,
-  psbtTx,
+  fromAddress,
+  psbt,
   amount,
   feeRate,
-  fromAddress,
-  useTaprootUtxos,
-  payFeesWithSegwit,
-  segwitPubKey,
   network,
+  spendAddress,
+  senderPubKey,
+  altSpendAddress,
+  altSpendPubKey,
+  altSpendUtxos,
 }: {
-  taprootUtxos: Utxo[]
-  segwitUtxos: Utxo[]
+  utxos: any[]
   toAddress: string
-  psbtTx: bitcoin.Psbt
-  amount: number
-  feeRate: number
   fromAddress: string
-  useTaprootUtxos: boolean
-  payFeesWithSegwit: boolean
-  segwitPubKey: string
+  psbt: bitcoin.Psbt
+  feeRate: number
+  amount: number
   network: bitcoin.Network
+  spendAddress: string
+  senderPubKey: string
+  altSpendAddress?: string
+  altSpendPubKey?: string
+  altSpendUtxos?: Utxo[]
 }) => {
+  const spendableUtxos = await filterTaprootUtxos({
+    taprootUtxos: utxos,
+  })
   const txSize = calculateTaprootTxSize(2, 0, 2)
   const fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
-  const utxosToSend = findUtxosToCoverAmount(
-    useTaprootUtxos ? taprootUtxos : segwitUtxos,
-    payFeesWithSegwit ? amount : amount + fee
-  )
-  if (!utxosToSend) {
-    throw new Error('insufficient balance')
-  }
+  let utxosToSend: any = findUtxosToCoverAmount(spendableUtxos, amount + fee)
+  let usingAlt = false
 
+  if (!utxosToSend) {
+    const unFilteredAltUtxos = await filterTaprootUtxos({
+      taprootUtxos: altSpendUtxos,
+    })
+    utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, amount + fee)
+    if (!utxosToSend) {
+      throw new Error('Insufficient Balance')
+    }
+    usingAlt = true
+  }
   const amountGathered = calculateAmountGatheredUtxo(utxosToSend.selectedUtxos)
 
   for (let i = 0; i < utxosToSend.selectedUtxos.length; i++) {
-    psbtTx.addInput({
+    psbt.addInput({
       hash: utxosToSend.selectedUtxos[i].txId,
       index: utxosToSend.selectedUtxos[i].outputIndex,
       witnessUtxo: {
@@ -857,57 +838,26 @@ const addBTCUtxo = async ({
     })
   }
 
-  psbtTx.addOutput({
+  psbt.addOutput({
     address: toAddress,
     value: amount,
   })
 
-  const changeAmount = payFeesWithSegwit
-    ? amountGathered - amount
-    : amountGathered - amount - fee
+  const changeAmount = amountGathered - amount - fee
   if (changeAmount > 546) {
-    psbtTx.addOutput({
-      address: fromAddress,
+    psbt.addOutput({
+      address: spendAddress,
       value: changeAmount,
     })
   }
 
-  if (payFeesWithSegwit) {
-    const feeTxSize = calculateTaprootTxSize(2, 1, 3)
-    const feeAmount = feeTxSize * feeRate < 250 ? 250 : feeTxSize * feeRate
-    const utxosToPayFee = findUtxosToCoverAmount(segwitUtxos, amount)
-    if (!utxosToPayFee) {
-      throw new Error('insufficient segwit balance')
-    }
-    const feeAmountGathered = calculateAmountGatheredUtxo(
-      utxosToPayFee.selectedUtxos
-    )
-    const changeAmount = feeAmountGathered - feeAmount
-    const p2wpkh = bitcoin.payments.p2wpkh({
-      pubkey: Buffer.from(segwitPubKey, 'hex'),
-      network: network,
-    })
-    for (let i = 0; i < utxosToPayFee.selectedUtxos.length; i++) {
-      if (
-        usableUtxo(utxosToPayFee.selectedUtxos[i], utxosToSend.selectedUtxos)
-      ) {
-        psbtTx.addInput({
-          hash: utxosToPayFee.selectedUtxos[i].txId,
-          index: utxosToPayFee.selectedUtxos[i].outputIndex,
-          witnessUtxo: {
-            value: utxosToPayFee.selectedUtxos[i].satoshis,
-            script: Buffer.from(utxosToPayFee.selectedUtxos[i].scriptPk, 'hex'),
-          },
-        })
-      }
-    }
-    psbtTx.addOutput({
-      address: p2wpkh.address,
-      value: changeAmount,
-    })
-  }
+  const updatedPsbt = await formatInputsToSign({
+    _psbt: psbt,
+    senderPublicKey: usingAlt ? altSpendPubKey : senderPubKey,
+    network,
+  })
 
-  return psbtTx
+  return updatedPsbt
 }
 
 export const isValidJSON = (str: string) => {

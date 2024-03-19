@@ -437,14 +437,14 @@ export async function runCLI() {
       return await testMarketplaceBuy()
     case 'send':
       const res = await networkConfig.wallet.sendBtc({
-        senderAddress: networkConfig.taprootAddress,
-        receiverAddress: to,
-        senderPublicKey: networkConfig.taprootPubKey,
+        fromAddress: networkConfig.segwitAddress,
+        toAddress: to,
+        senderPublicKey: networkConfig.segwitPubKey,
         feeRate,
         amount,
-        segwitFeePublicKey: networkConfig.segwitPubKey,
+        altSpendAddress: networkConfig.taprootAddress,
+        altSpendPubKey: networkConfig.taprootPubKey,
         signer,
-        payFeesWithSegwit: true,
       })
 
       console.log(res)

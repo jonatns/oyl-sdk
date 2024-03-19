@@ -188,30 +188,32 @@ export declare class Oyl {
      * @param {string} params.publicKey - The public key associated with the transaction.
      * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
      */
-    sendBtc({ senderAddress, receiverAddress, senderPublicKey, feeRate, amount, payFeesWithSegwit, segwitFeePublicKey, signer, }: {
-        senderAddress: string;
-        receiverAddress: string;
-        senderPublicKey: string;
-        feeRate: number;
+    sendBtc({ fromAddress, toAddress, senderPubKey, feeRate, amount, altSpendPubKey, spendAddress, altSpendAddress, signer, }: {
+        fromAddress: string;
+        toAddress: string;
+        senderPubKey: string;
+        feeRate?: number;
         amount: number;
-        payFeesWithSegwit?: boolean;
-        segwitFeePublicKey?: string;
+        altSpendPubKey?: string;
+        spendAddress?: string;
+        altSpendAddress?: string;
         signer: Signer;
     }): Promise<{
         txId: string;
         rawTx: string;
     }>;
-    createBtcTx({ senderAddress, receiverAddress, senderPublicKey, feeRate, amount, network, segwitUtxos, taprootUtxos, payFeesWithSegwit, segwitFeePublicKey, }: {
-        senderAddress: string;
-        receiverAddress: string;
-        senderPublicKey: string;
+    createBtcTx({ fromAddress, toAddress, senderPubKey, feeRate, amount, network, utxos, spendAddress, altSpendAddress, altSpendPubKey, altSpendUtxos, }: {
+        fromAddress: string;
+        toAddress: string;
+        senderPubKey: string;
         feeRate: number;
         amount: number;
         network: bitcoin.Network;
-        segwitUtxos: Utxo[];
-        taprootUtxos: Utxo[];
-        payFeesWithSegwit?: boolean;
-        segwitFeePublicKey?: string;
+        utxos: Utxo[];
+        spendAddress: string;
+        altSpendAddress?: string;
+        altSpendPubKey?: string;
+        altSpendUtxos?: Utxo[];
     }): Promise<{
         rawPsbt: string;
     }>;

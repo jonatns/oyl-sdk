@@ -114,20 +114,24 @@ export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddr
     txId: string;
     rawTx: string;
 }>;
-export declare const insertBtcUtxo: ({ taprootUtxos, segwitUtxos, toAddress, fromAddress, psbt, amount, useTaprootUtxos, segwitPubKey, payFeesWithSegwit, feeRate, network, }: {
+export declare const filterTaprootUtxos: ({ taprootUtxos, }: {
     taprootUtxos: any[];
-    segwitUtxos: any[];
+}) => Promise<any>;
+export declare const filterUtxos: ({ utxos }: {
+    utxos: any[];
+}) => Promise<any>;
+export declare const addBtcUtxo: ({ utxos, toAddress, fromAddress, psbt, amount, feeRate, network, spendAddress, senderPubKey, altSpendAddress, altSpendPubKey, altSpendUtxos, }: {
+    utxos: any[];
     toAddress: string;
     fromAddress: string;
     psbt: bitcoin.Psbt;
     feeRate: number;
     amount: number;
-    useTaprootUtxos: boolean;
-    segwitPubKey: string;
-    payFeesWithSegwit: boolean;
     network: bitcoin.Network;
+    spendAddress: string;
+    senderPubKey: string;
+    altSpendAddress?: string;
+    altSpendPubKey?: string;
+    altSpendUtxos?: Utxo[];
 }) => Promise<bitcoin.Psbt>;
-export declare const filterTaprootUtxos: ({ taprootUtxos, }: {
-    taprootUtxos: any[];
-}) => Promise<any>;
 export declare const isValidJSON: (str: string) => boolean;
