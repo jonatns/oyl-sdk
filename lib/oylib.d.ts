@@ -188,28 +188,28 @@ export declare class Oyl {
      * @param {string} params.publicKey - The public key associated with the transaction.
      * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
      */
-    sendBtc({ fromAddress, toAddress, senderPubKey, feeRate, amount, altSpendPubKey, spendAddress, altSpendAddress, signer, }: {
+    sendBtc({ fromAddress, toAddress, feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, signer, }: {
         fromAddress: string;
         toAddress: string;
-        senderPubKey: string;
         feeRate?: number;
         amount: number;
         altSpendPubKey?: string;
-        spendAddress?: string;
+        spendAddress: string;
+        spendPubKey: string;
         altSpendAddress?: string;
         signer: Signer;
     }): Promise<{
         txId: string;
         rawTx: string;
     }>;
-    createBtcTx({ fromAddress, toAddress, senderPubKey, feeRate, amount, network, utxos, spendAddress, altSpendAddress, altSpendPubKey, altSpendUtxos, }: {
+    createBtcTx({ fromAddress, toAddress, spendPubKey, feeRate, amount, network, spendUtxos, spendAddress, altSpendAddress, altSpendPubKey, altSpendUtxos, }: {
         fromAddress: string;
         toAddress: string;
-        senderPubKey: string;
+        spendPubKey: string;
         feeRate: number;
         amount: number;
         network: bitcoin.Network;
-        utxos: Utxo[];
+        spendUtxos: Utxo[];
         spendAddress: string;
         altSpendAddress?: string;
         altSpendPubKey?: string;
@@ -398,28 +398,29 @@ export declare class Oyl {
     }): Promise<{
         sentPsbt: string;
     }>;
-    sendOrdCollectible({ senderAddress, receiverAddress, senderPublicKey, payFeesWithSegwit, segwitFeePublicKey, signer, feeRate, inscriptionId, }: {
-        senderAddress: string;
-        receiverAddress: string;
-        senderPublicKey: string;
-        payFeesWithSegwit: boolean;
-        segwitFeePublicKey: string;
-        signer: Signer;
+    sendOrdCollectible({ fromAddress, toAddress, senderPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, inscriptionId, }: {
+        fromAddress: string;
+        toAddress: string;
+        senderPubKey: string;
         feeRate?: number;
+        altSpendPubKey?: string;
+        spendAddress?: string;
+        altSpendAddress?: string;
+        signer: Signer;
         inscriptionId: string;
     }): Promise<{
         txId: string;
         rawTx: string;
     }>;
-    createOrdCollectibleTx({ inscriptionId, senderAddress, senderPublicKey, inputAddressType, receiverAddress, payFeesWithSegwit, segwitFeePublicKey, feeRate, }: {
+    createOrdCollectibleTx({ inscriptionId, fromAddress, senderPubKey, spendAddress, toAddress, altSpendAddress, altSpendPubKey, feeRate, }: {
+        fromAddress: string;
+        toAddress: string;
+        senderPubKey: string;
+        feeRate?: number;
+        altSpendPubKey?: string;
+        spendAddress?: string;
+        altSpendAddress?: string;
         inscriptionId: string;
-        senderAddress: string;
-        receiverAddress: string;
-        feeRate: number;
-        inputAddressType: string;
-        senderPublicKey: string;
-        payFeesWithSegwit?: boolean;
-        segwitFeePublicKey?: string;
     }): Promise<{
         rawPsbt: string;
     }>;

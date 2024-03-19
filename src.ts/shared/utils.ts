@@ -780,7 +780,7 @@ export const filterUtxos = async ({ utxos }: { utxos: any[] }) => {
 }
 
 export const addBtcUtxo = async ({
-  utxos,
+  spendUtxos,
   toAddress,
   fromAddress,
   psbt,
@@ -788,12 +788,12 @@ export const addBtcUtxo = async ({
   feeRate,
   network,
   spendAddress,
-  senderPubKey,
+  spendPubKey,
   altSpendAddress,
   altSpendPubKey,
   altSpendUtxos,
 }: {
-  utxos: any[]
+  spendUtxos: any[]
   toAddress: string
   fromAddress: string
   psbt: bitcoin.Psbt
@@ -801,13 +801,13 @@ export const addBtcUtxo = async ({
   amount: number
   network: bitcoin.Network
   spendAddress: string
-  senderPubKey: string
+  spendPubKey: string
   altSpendAddress?: string
   altSpendPubKey?: string
   altSpendUtxos?: Utxo[]
 }) => {
   const spendableUtxos = await filterTaprootUtxos({
-    taprootUtxos: utxos,
+    taprootUtxos: spendUtxos,
   })
   const txSize = calculateTaprootTxSize(2, 0, 2)
   const fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
@@ -853,7 +853,7 @@ export const addBtcUtxo = async ({
 
   const updatedPsbt = await formatInputsToSign({
     _psbt: psbt,
-    senderPublicKey: usingAlt ? altSpendPubKey : senderPubKey,
+    senderPublicKey: usingAlt ? altSpendPubKey : spendPubKey,
     network,
   })
 

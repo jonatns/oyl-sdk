@@ -437,16 +437,16 @@ export async function runCLI() {
       return await testMarketplaceBuy()
     case 'send':
       const res = await networkConfig.wallet.sendBtc({
-        fromAddress: networkConfig.segwitAddress,
+        fromAddress: networkConfig.taprootAddress,
         toAddress: to,
-        senderPublicKey: networkConfig.segwitPubKey,
         feeRate,
         amount,
-        altSpendAddress: networkConfig.taprootAddress,
-        altSpendPubKey: networkConfig.taprootPubKey,
+        spendAddress: networkConfig.taprootAddress,
+        spendPubKey: networkConfig.taprootPubKey,
+        altSpendAddress: networkConfig.segwitAddress,
+        altSpendPubKey: networkConfig.segwitPubKey,
         signer,
       })
-
       console.log(res)
       return res
 
@@ -469,14 +469,14 @@ export async function runCLI() {
       const { inscriptionId } = options
       const sendInscriptionResponse =
         await networkConfig.wallet.sendOrdCollectible({
-          senderAddress: networkConfig.taprootAddress,
-          receiverAddress: networkConfig.destinationTaprootAddress,
-          senderPublicKey: networkConfig.taprootPubKey,
-          payFeesWithSegwit: true,
-          segwitFeePublicKey: networkConfig.segwitPubKey,
           signer,
           feeRate,
           inscriptionId,
+          fromAddress: networkConfig.taprootAddress,
+          toAddress: networkConfig.destinationTaprootAddress,
+          senderPubKey: networkConfig.taprootPubKey,
+          altSpendPubKey: networkConfig.segwitPubKey,
+          altSpendAddress: networkConfig.segwitAddress,
         })
 
       console.log(sendInscriptionResponse)
