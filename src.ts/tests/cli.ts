@@ -422,9 +422,6 @@ export async function runCLI() {
     taprootAddress: networkConfig.taprootAddress,
   })
 
-  // const wallet = generateWallet(true, networkConfig.mnemonic)
-  // return
-
   const { to, amount, feeRate, ticker, psbtBase64, price } = options
   const signer: Signer = new Signer(bitcoin.networks.testnet, {
     segwitPrivateKey: networkConfig.segwitPrivateKey,
