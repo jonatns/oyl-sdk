@@ -344,24 +344,20 @@ export declare class Oyl {
         fromAddress: string;
         hdPathWithIndex: string;
     }): Promise<any>;
-    inscriptionCommitTx({ content, senderAddress, senderPublicKey, segwitFeePublicKey, payFeesWithSegwit, feeRate, taprootUtxos, signer, }: {
-        content: string;
-        senderAddress: string;
-        senderPublicKey: string;
-        segwitFeePublicKey: string;
-        feeRate: number;
-        payFeesWithSegwit?: boolean;
-        taprootUtxos: Utxo[];
+    inscriptionCommitTx({ content, spendAddress, spendPubKey, signer, altSpendPubKey, altSpendAddress, feeRate, }: {
+        spendPubKey: string;
+        altSpendPubKey?: string;
+        spendAddress?: string;
+        altSpendAddress?: string;
         signer: Signer;
+        feeRate?: number;
+        content: string;
     }): Promise<{
-        commitPsbt: string;
-        utxosUsedForFees?: undefined;
-    } | {
         commitPsbt: string;
         utxosUsedForFees: string[];
     }>;
-    inscriptionRevealTx({ senderAddress, signer, content, feeRate, commitTxId, }: {
-        senderAddress: string;
+    inscriptionRevealTx({ receiverAddress, signer, content, feeRate, commitTxId, }: {
+        receiverAddress: string;
         signer: Signer;
         content: string;
         feeRate: number;
@@ -369,30 +365,31 @@ export declare class Oyl {
     }): Promise<{
         revealTx: string;
     }>;
-    sendBRC20({ signer, senderAddress, receiverAddress, senderPublicKey, payFeesWithSegwit, segwitFeePublicKey, feeRate, token, amount, }: {
+    sendBRC20({ fromAddress, fromPubKey, toAddress, spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, token, amount, }: {
+        fromAddress: string;
+        fromPubKey: string;
+        toAddress: string;
+        spendPubKey: string;
+        altSpendPubKey?: string;
+        spendAddress?: string;
+        altSpendAddress?: string;
         signer: Signer;
-        senderAddress: string;
-        receiverAddress?: string;
-        senderPublicKey: string;
-        payFeesWithSegwit: boolean;
-        segwitFeePublicKey: string;
         feeRate?: number;
         token?: string;
         amount?: number;
-        postage?: number;
     }): Promise<{
         txId: string;
         rawTxn: string;
         sendBrc20Txids: any[];
     }>;
-    inscriptionSendTx({ senderAddress, receiverAddress, senderPublicKey, payFeesWithSegwit, segwitFeePublicKey, feeRate, taprootUtxos, utxoId, utxosUsedForFees, }: {
-        senderAddress: string;
-        receiverAddress: string;
-        senderPublicKey: string;
-        payFeesWithSegwit: boolean;
-        segwitFeePublicKey: string;
+    inscriptionSendTx({ toAddress, fromPubKey, spendPubKey, spendAddress, altSpendAddress, altSpendPubKey, feeRate, utxoId, utxosUsedForFees, }: {
+        toAddress: string;
+        fromPubKey: string;
+        altSpendAddress: string;
+        altSpendPubKey: string;
+        spendAddress: string;
+        spendPubKey: string;
         feeRate?: number;
-        taprootUtxos: Utxo[];
         utxoId: string;
         utxosUsedForFees: string[];
     }): Promise<{
@@ -425,13 +422,5 @@ export declare class Oyl {
         inscriptionId: string;
     }): Promise<{
         rawPsbt: string;
-    }>;
-    useSigner({ payFeesWithSegwit, psbt, signer, inputAddressType, }: {
-        payFeesWithSegwit: boolean;
-        psbt: string;
-        signer: Signer;
-        inputAddressType: string;
-    }): Promise<{
-        signedPsbt: string;
     }>;
 }

@@ -438,9 +438,9 @@ export async function runCLI() {
     case 'send':
       const res = await networkConfig.wallet.sendBtc({
         fromAddress: networkConfig.taprootAddress,
-        toAddress: to,
+        toAddress: networkConfig.segwitAddress,
         feeRate,
-        amount,
+        amount: 3150,
         spendAddress: networkConfig.taprootAddress,
         spendPubKey: networkConfig.taprootPubKey,
         altSpendAddress: networkConfig.segwitAddress,
@@ -452,15 +452,17 @@ export async function runCLI() {
 
     case 'send-brc-20':
       const sendBrc20Response = await networkConfig.wallet.sendBRC20({
-        senderAddress: networkConfig.taprootAddress,
-        senderPublicKey: networkConfig.taprootPubKey,
-        segwitFeePublicKey: networkConfig.segwitPubKey,
-        receiverAddress: networkConfig.destinationTaprootAddress,
-        ticker,
+        token: ticker,
         amount,
         signer,
         feeRate,
-        payFeesWithSegwit: false,
+        fromAddress: networkConfig.taprootAddress,
+        fromPubKey: networkConfig.taprootPubKey,
+        toAddress: to,
+        spendAddress: networkConfig.taprootAddress,
+        spendPubKey: networkConfig.taprootPubKey,
+        altSpendAddress: networkConfig.segwitAddress,
+        altSpendPubKey: networkConfig.segwitPubKey,
       })
       console.log(sendBrc20Response)
       return sendBrc20Response
