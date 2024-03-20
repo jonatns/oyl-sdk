@@ -473,10 +473,12 @@ export async function runCLI() {
           feeRate,
           inscriptionId,
           fromAddress: networkConfig.taprootAddress,
-          toAddress: networkConfig.destinationTaprootAddress,
-          senderPubKey: networkConfig.taprootPubKey,
-          altSpendPubKey: networkConfig.segwitPubKey,
-          altSpendAddress: networkConfig.segwitAddress,
+          fromPubKey: networkConfig.taprootPubKey,
+          toAddress: to,
+          spendAddress: networkConfig.segwitAddress,
+          spendPubKey: networkConfig.segwitPubKey,
+          altSpendPubKey: networkConfig.taprootPubKey,
+          altSpendAddress: networkConfig.taprootAddress,
         })
 
       console.log(sendInscriptionResponse)

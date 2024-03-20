@@ -1435,8 +1435,9 @@ export class Oyl {
 
   async sendOrdCollectible({
     fromAddress,
+    fromPubKey,
     toAddress,
-    senderPubKey,
+    spendPubKey,
     feeRate,
     altSpendPubKey,
     spendAddress,
@@ -1445,8 +1446,9 @@ export class Oyl {
     inscriptionId,
   }: {
     fromAddress: string
+    fromPubKey: string
     toAddress: string
-    senderPubKey: string
+    spendPubKey: string
     feeRate?: number
     altSpendPubKey?: string
     spendAddress?: string
@@ -1457,7 +1459,8 @@ export class Oyl {
     const { rawPsbt } = await this.createOrdCollectibleTx({
       inscriptionId,
       fromAddress,
-      senderPubKey,
+      fromPubKey,
+      spendPubKey,
       spendAddress,
       toAddress,
       altSpendAddress,
@@ -1485,7 +1488,8 @@ export class Oyl {
   async createOrdCollectibleTx({
     inscriptionId,
     fromAddress,
-    senderPubKey,
+    fromPubKey,
+    spendPubKey,
     spendAddress,
     toAddress,
     altSpendAddress,
@@ -1493,15 +1497,15 @@ export class Oyl {
     feeRate,
   }: {
     fromAddress: string
+    fromPubKey: string
     toAddress: string
-    senderPubKey: string
+    spendPubKey: string
     feeRate?: number
     altSpendPubKey?: string
     spendAddress?: string
     altSpendAddress?: string
     inscriptionId: string
   }) {
-    const spender = spendAddress ? spendAddress : fromAddress
     const sendTxSize = calculateTaprootTxSize(3, 0, 2)
     const fee = sendTxSize * feeRate < 250 ? 250 : sendTxSize * feeRate
     let usingAlt = false
@@ -1510,7 +1514,7 @@ export class Oyl {
     let altSpendUtxos: Utxo[] | undefined
 
     spendUtxos = await this.getUtxosArtifacts({
-      address: spender,
+      address: spendAddress,
     })
 
     if (!spendUtxos) {
@@ -1592,17 +1596,23 @@ export class Oyl {
         },
       })
     }
-    const reimbursementAmount = amountGathered - fee
-    if (reimbursementAmount > 546) {
+    const changeAmount = amountGathered - fee
+    if (changeAmount > 546) {
       psbtTx.addOutput({
         address: spendAddress,
         value: amountGathered - fee,
       })
     }
 
-    psbtTx = await formatInputsToSign({
+    const partiallyFormattedPsbtTx = await formatInputsToSign({
       _psbt: psbtTx,
-      senderPublicKey: usingAlt ? altSpendPubKey : senderPubKey,
+      senderPublicKey: fromPubKey,
+      network: this.network,
+    })
+
+    psbtTx = await formatInputsToSign({
+      _psbt: partiallyFormattedPsbtTx,
+      senderPublicKey: usingAlt ? altSpendPubKey : spendPubKey,
       network: this.network,
     })
 

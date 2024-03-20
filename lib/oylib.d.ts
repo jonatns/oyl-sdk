@@ -398,10 +398,11 @@ export declare class Oyl {
     }): Promise<{
         sentPsbt: string;
     }>;
-    sendOrdCollectible({ fromAddress, toAddress, senderPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, inscriptionId, }: {
+    sendOrdCollectible({ fromAddress, fromPubKey, toAddress, spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, inscriptionId, }: {
         fromAddress: string;
+        fromPubKey: string;
         toAddress: string;
-        senderPubKey: string;
+        spendPubKey: string;
         feeRate?: number;
         altSpendPubKey?: string;
         spendAddress?: string;
@@ -412,10 +413,11 @@ export declare class Oyl {
         txId: string;
         rawTx: string;
     }>;
-    createOrdCollectibleTx({ inscriptionId, fromAddress, senderPubKey, spendAddress, toAddress, altSpendAddress, altSpendPubKey, feeRate, }: {
+    createOrdCollectibleTx({ inscriptionId, fromAddress, fromPubKey, spendPubKey, spendAddress, toAddress, altSpendAddress, altSpendPubKey, feeRate, }: {
         fromAddress: string;
+        fromPubKey: string;
         toAddress: string;
-        senderPubKey: string;
+        spendPubKey: string;
         feeRate?: number;
         altSpendPubKey?: string;
         spendAddress?: string;
