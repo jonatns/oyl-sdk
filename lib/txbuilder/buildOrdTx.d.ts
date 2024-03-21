@@ -46,3 +46,4 @@ export declare function findUtxosToCoverAmount(utxos: Utxo[], amount: number): {
     totalSatoshis: number;
     change: number;
 };
+export declare const usableUtxo: (feeUtxo: Utxo, utxosToSend: Utxo[]) => boolean;

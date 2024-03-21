@@ -1,3 +1,4 @@
+import { Utxo } from './txbuilder';
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
 import { AddressType, IBlockchainInfoUTXO, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
@@ -5,6 +6,7 @@ import { OylApiClient } from './apiclient';
 import * as bitcoin from 'bitcoinjs-lib';
 import { OrdRpc } from './rpclient/ord';
 import { HdKeyring } from './wallet/hdKeyring';
+import { Signer } from './signer';
 export declare const NESTED_SEGWIT_HD_PATH = "m/49'/0'/0'/0";
 export declare const TAPROOT_HD_PATH = "m/86'/0'/0'/0";
 export declare const SEGWIT_HD_PATH = "m/84'/0'/0'/0";
@@ -111,6 +113,16 @@ export declare class Oyl {
     getTaprootBalance({ address }: {
         address: string;
     }): Promise<any>;
+    /**
+     * Fetches the balance details including confirmed and pending amounts for a given address.
+     * @param {Object} param0 - An object containing the address property.
+     * @param {string} param0.address - The address for which to fetch balance details.
+     * @returns {Promise<any>} A promise that resolves to an object containing balance and its USD value.
+     * @throws {Error} Throws an error if the balance retrieval fails.
+     */
+    getAddressBalance({ address }: {
+        address: string;
+    }): Promise<any>;
     getUtxos(address: string, includeInscriptions?: boolean): Promise<{
         unspent_outputs: IBlockchainInfoUTXO[];
     }>;
@@ -176,20 +188,34 @@ export declare class Oyl {
      * @param {string} params.publicKey - The public key associated with the transaction.
      * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
      */
-    sendBtc({ to, from, amount, feeRate, publicKey, mnemonic, segwitAddress, segwitPubkey, segwitHdPath, payFeesWithSegwit, }: {
-        to: string;
-        from: string;
-        amount: number;
+    sendBtc({ fromAddress, toAddress, feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, signer, }: {
+        fromAddress: string;
+        toAddress: string;
         feeRate?: number;
-        publicKey: string;
-        mnemonic: string;
-        segwitAddress?: string;
-        segwitPubkey?: string;
-        segwitHdPath?: 'oyl' | 'xverse' | 'leather' | 'unisat' | 'testnet';
-        payFeesWithSegwit?: boolean;
+        amount: number;
+        altSpendPubKey?: string;
+        spendAddress: string;
+        spendPubKey: string;
+        altSpendAddress?: string;
+        signer: Signer;
     }): Promise<{
-        txnId: string;
-        rawTxn: string;
+        txId: string;
+        rawTx: string;
+    }>;
+    createBtcTx({ fromAddress, toAddress, spendPubKey, feeRate, amount, network, spendUtxos, spendAddress, altSpendAddress, altSpendPubKey, altSpendUtxos, }: {
+        fromAddress: string;
+        toAddress: string;
+        spendPubKey: string;
+        feeRate: number;
+        amount: number;
+        network: bitcoin.Network;
+        spendUtxos: Utxo[];
+        spendAddress: string;
+        altSpendAddress?: string;
+        altSpendPubKey?: string;
+        altSpendUtxos?: Utxo[];
+    }): Promise<{
+        rawPsbt: string;
     }>;
     /**
      * Retrieves information about a SegWit address.
@@ -291,8 +317,12 @@ export declare class Oyl {
     }): Promise<{
         psbtHex: string;
     }>;
-    pushPsbt(psbtHex: string): Promise<{
+    pushPsbt({ psbtHex, psbtBase64, }: {
+        psbtHex?: string;
+        psbtBase64?: string;
+    }): Promise<{
         txId: string;
+        rawTx: string;
     }>;
     finalizePsbtBase64(psbtBase64: any): Promise<any>;
     sendPsbt(txData: string, isDry?: boolean): Promise<{
@@ -314,46 +344,83 @@ export declare class Oyl {
         fromAddress: string;
         hdPathWithIndex: string;
     }): Promise<any>;
-    sendBRC20(options: {
-        mnemonic: string;
+    inscriptionCommitTx({ content, spendAddress, spendPubKey, signer, altSpendPubKey, altSpendAddress, feeRate, }: {
+        spendPubKey: string;
+        altSpendPubKey?: string;
+        spendAddress?: string;
+        altSpendAddress?: string;
+        signer: Signer;
+        feeRate?: number;
+        content: string;
+    }): Promise<{
+        commitPsbt: string;
+        utxosUsedForFees: string[];
+    }>;
+    inscriptionRevealTx({ receiverAddress, signer, content, feeRate, commitTxId, }: {
+        receiverAddress: string;
+        signer: Signer;
+        content: string;
+        feeRate: number;
+        commitTxId: string;
+    }): Promise<{
+        revealTx: string;
+    }>;
+    sendBRC20({ fromAddress, fromPubKey, toAddress, spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, token, amount, }: {
         fromAddress: string;
-        taprootPublicKey: string;
-        destinationAddress: string;
-        segwitHdPath: string;
-        segwitPubKey?: string;
-        segwitAddress?: string;
-        payFeesWithSegwit?: boolean;
+        fromPubKey: string;
+        toAddress: string;
+        spendPubKey: string;
+        altSpendPubKey?: string;
+        spendAddress?: string;
+        altSpendAddress?: string;
+        signer: Signer;
         feeRate?: number;
         token?: string;
         amount?: number;
-        postage?: number;
-        isDry?: boolean;
-        inscriptionId?: string;
     }): Promise<{
-        error: string;
-        txId?: undefined;
-        rawTxn?: undefined;
-        sendBrc20Txids?: undefined;
-    } | {
         txId: string;
         rawTxn: string;
-        sendBrc20Txids: string[];
-        error?: undefined;
+        sendBrc20Txids: any[];
     }>;
-    sendOrdCollectible({ mnemonic, fromAddress, taprootPublicKey, destinationAddress, segwitPubKey, segwitAddress, payFeesWithSegwit, feeRate, isDry, inscriptionId, segwitHdPath, }: {
-        fromAddress: string;
-        taprootPublicKey: string;
-        destinationAddress: string;
-        segwitPubKey?: string;
-        segwitAddress?: string;
-        payFeesWithSegwit?: boolean;
-        isDry?: boolean;
+    inscriptionSendTx({ toAddress, fromPubKey, spendPubKey, spendAddress, altSpendAddress, altSpendPubKey, feeRate, utxoId, utxosUsedForFees, }: {
+        toAddress: string;
+        fromPubKey: string;
+        altSpendAddress: string;
+        altSpendPubKey: string;
+        spendAddress: string;
+        spendPubKey: string;
         feeRate?: number;
-        mnemonic: string;
-        segwitHdPath?: string;
+        utxoId: string;
+        utxosUsedForFees: string[];
+    }): Promise<{
+        sentPsbt: string;
+    }>;
+    sendOrdCollectible({ fromAddress, fromPubKey, toAddress, spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, inscriptionId, }: {
+        fromAddress: string;
+        fromPubKey: string;
+        toAddress: string;
+        spendPubKey: string;
+        feeRate?: number;
+        altSpendPubKey?: string;
+        spendAddress?: string;
+        altSpendAddress?: string;
+        signer: Signer;
         inscriptionId: string;
     }): Promise<{
         txId: string;
-        rawTxn: string;
+        rawTx: string;
+    }>;
+    createOrdCollectibleTx({ inscriptionId, fromAddress, fromPubKey, spendPubKey, spendAddress, toAddress, altSpendAddress, altSpendPubKey, feeRate, }: {
+        fromAddress: string;
+        fromPubKey: string;
+        toAddress: string;
+        spendPubKey: string;
+        feeRate?: number;
+        altSpendPubKey?: string;
+        spendAddress?: string;
+        altSpendAddress?: string;
+        inscriptionId: string;
+    }): Promise<{
+        rawPsbt: string;
     }>;
 }

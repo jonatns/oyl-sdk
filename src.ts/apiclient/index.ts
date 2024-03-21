@@ -15,7 +15,12 @@ export class OylApiClient {
    * Create an instance of the OylApiClient.
    * @param options - Configuration object containing the API host.
    */
-  constructor(options?: { host: string; apiKey: string; testnet?: boolean; regtest?: boolean }) {
+  constructor(options?: {
+    host: string
+    apiKey: string
+    testnet?: boolean
+    regtest?: boolean
+  }) {
     this.host = options?.host || ''
     this.testnet = options.testnet == true
     this.regtest = options.regtest == true
@@ -27,7 +32,11 @@ export class OylApiClient {
    * @param data - The data object.
    * @returns An instance of OylApiClient.
    */
-  static fromObject(data: { host: string; testnet?: boolean; apiKey: string }): OylApiClient {
+  static fromObject(data: {
+    host: string
+    testnet?: boolean
+    apiKey: string
+  }): OylApiClient {
     return new this(data)
   }
 
@@ -35,11 +44,11 @@ export class OylApiClient {
    * Convert this OylApiClient instance to a plain object.
    * @returns The plain object representation.
    */
-  toObject(): { host: string; testnet: boolean, apiKey: string } {
+  toObject(): { host: string; testnet: boolean; apiKey: string } {
     return {
       host: this.host,
       testnet: this.testnet,
-      apiKey: this.apiKey
+      apiKey: this.apiKey,
     }
   }
 
@@ -47,10 +56,10 @@ export class OylApiClient {
     try {
       const options: RequestInit = {
         method: method,
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': this.apiKey
-       },
+          Authorization: this.apiKey,
+        },
         cache: 'no-cache',
       }
       if (this.testnet) {
@@ -78,11 +87,11 @@ export class OylApiClient {
     })
   }
 
-   /**
+  /**
    * Get brc20 details by ticker.
    * @param ticker - The ticker to query.
    */
-   async getBrc20TokenDetails(ticker: string) {
+  async getBrc20TokenDetails(ticker: string) {
     return await this._call('/get-brc20-token-details', 'post', {
       ticker: ticker,
     })
@@ -100,7 +109,7 @@ export class OylApiClient {
 
   async getBrcPrice(ticker: string) {
     return await this._call('/get-brc-price', 'post', {
-      ticker: ticker
+      ticker: ticker,
     })
   }
 
@@ -125,7 +134,6 @@ export class OylApiClient {
         order: 'desc',
       })
     }
-
   }
 
   async getInscriptionsForTxn(txn_id: string): Promise<any> {
@@ -148,10 +156,23 @@ export class OylApiClient {
 
   async getTaprootBalance(address: string): Promise<any> {
     const res = await this._call('/get-taproot-balance', 'post', {
-      address: address    
+      address: address,
+      testnet: this.testnet,
     })
-    if (res.data){
-    return res.data
+    if (res.data) {
+      return res.data
+    } else {
+      return res
+    }
+  }
+
+  async getAddressBalance(address: string): Promise<any> {
+    const res = await this._call('/get-address-balance', 'post', {
+      address: address,
+      testnet: this.testnet,
+    })
+    if (res.data) {
+      return res.data
     } else {
       return res
     }

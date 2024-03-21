@@ -36,6 +36,13 @@ export interface IBISWalletIx {
     collection_slug?: string;
     confirmations?: number;
 }
+export declare const addressTypeMap: {
+    0: string;
+    1: string;
+    2: string;
+    3: string;
+};
+export declare const inscriptionSats = 546;
 export declare const ECPair: import("ecpair").ECPairAPI;
 export declare const assertHex: (pubKey: Buffer) => Buffer;
 export declare function getNetwork(value: Network | 'main' | 'mainnet' | 'regtest' | 'testnet'): bitcoin.networks.Network;
@@ -59,33 +66,13 @@ export declare const formatOptionsToSignInputs: ({ _psbt, pubkey, segwitPubkey, 
     taprootAddress: string;
     network: bitcoin.Network;
 }) => Promise<ToSignInput[]>;
+export declare const formatInputsToSign: ({ _psbt, senderPublicKey, network, }: {
+    _psbt: bitcoin.Psbt;
+    senderPublicKey: string;
+    network: bitcoin.Network;
+}) => Promise<bitcoin.Psbt>;
 export declare const timeout: (n: any) => Promise<unknown>;
 export declare const signInputs: (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], taprootPubkey: string, segwitPubKey: string, segwitSigner: any, taprootSigner: any) => Promise<bitcoin.Psbt>;
-export declare const inscribe: ({ content, inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, feeRate, network, segwitUtxos, taprootUtxos, taprootPrivateKey, sandshrewBtcClient, esploraRpc, }: {
-    content: string;
-    inputAddress: string;
-    outputAddress: string;
-    mnemonic: string;
-    taprootPublicKey: string;
-    segwitPublicKey: string;
-    segwitAddress: string;
-    isDry?: boolean;
-    feeRate: number;
-    taprootSigner: any;
-    segwitSigner: any;
-    payFeesWithSegwit?: boolean;
-    network: 'testnet' | 'main' | 'regtest';
-    segwitUtxos?: Utxo[];
-    taprootUtxos: Utxo[];
-    taprootPrivateKey: string;
-    sandshrewBtcClient: SandshrewBitcoinClient;
-    esploraRpc: EsploraRpc;
-}) => Promise<{
-    commitTx: string;
-    revealTx: string;
-    txId: string;
-    rawTx: string;
-}>;
 export declare const createInscriptionScript: (pubKey: any, content: any) => string[];
 export declare let RPC_ADDR: string;
 export declare const callBTCRPCEndpoint: (method: string, params: string | string[], network: string) => Promise<any>;
@@ -130,24 +117,21 @@ export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddr
 export declare const filterTaprootUtxos: ({ taprootUtxos, }: {
     taprootUtxos: any[];
 }) => Promise<any>;
-export declare const isValidJSON: (str: string) => boolean;
-export declare const createBtcTx: ({ inputAddress, outputAddress, mnemonic, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, amount, network, segwitUtxos, taprootUtxos, }: {
-    inputAddress: string;
-    outputAddress: string;
-    mnemonic: string;
-    taprootPublicKey: string;
-    segwitPublicKey: string;
-    segwitAddress: string;
-    isDry?: boolean;
+export declare const filterUtxos: ({ utxos }: {
+    utxos: any[];
+}) => Promise<any>;
+export declare const addBtcUtxo: ({ spendUtxos, toAddress, fromAddress, psbt, amount, feeRate, network, spendAddress, spendPubKey, altSpendAddress, altSpendPubKey, altSpendUtxos, }: {
+    spendUtxos: any[];
+    toAddress: string;
+    fromAddress: string;
+    psbt: bitcoin.Psbt;
     feeRate: number;
-    segwitSigner: any;
-    taprootSigner: any;
-    payFeesWithSegwit?: boolean;
     amount: number;
     network: bitcoin.Network;
-    segwitUtxos: Utxo[];
-    taprootUtxos: Utxo[];
-}) => Promise<{
-    txnId: string;
-    rawTxn: string;
-}>;
+    spendAddress: string;
+    spendPubKey: string;
+    altSpendAddress?: string;
+    altSpendPubKey?: string;
+    altSpendUtxos?: Utxo[];
+}) => Promise<bitcoin.Psbt>;
+export declare const isValidJSON: (str: string) => boolean;

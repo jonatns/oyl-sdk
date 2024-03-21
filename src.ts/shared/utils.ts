@@ -3,7 +3,6 @@ import ECPairFactory from 'ecpair'
 import ecc from '@bitcoinerlab/secp256k1'
 import {
   AddressType,
-  addressTypeToName,
   BitcoinPaymentType,
   IBlockchainInfoUTXO,
   Network,
@@ -14,18 +13,19 @@ import {
 import BigNumber from 'bignumber.js'
 import { maximumScriptBytes } from './constants'
 import axios from 'axios'
-import { getAddressType } from '../transactions'
 import { Address, Signer, Tap, Tx } from '@cmdcode/tapscript'
 import * as ecc2 from '@cmdcode/crypto-utils'
 import {
   addInscriptionUtxo,
   findUtxosToCoverAmount,
   getUtxosForFees,
+  usableUtxo,
   Utxo,
 } from '../txbuilder/buildOrdTx'
-import { isTaprootInput } from 'bitcoinjs-lib/src/psbt/bip371'
+import { isTaprootInput, toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew'
 import { EsploraRpc } from '../rpclient/esplora'
+import { getAddressType } from '../transactions'
 
 bitcoin.initEccLib(ecc)
 
@@ -63,7 +63,8 @@ export interface IBISWalletIx {
   confirmations?: number
 }
 
-const addressTypeMap = { 1: 'p2pkh', 2: 'p2sh', 3: 'p2wpkh', 4: 'p2tr' }
+export const addressTypeMap = { 0: 'p2pkh', 1: 'p2tr', 2: 'p2sh', 3: 'p2wpkh' }
+export const inscriptionSats = 546
 
 export const ECPair = ECPairFactory(ecc)
 
@@ -339,6 +340,37 @@ export const formatOptionsToSignInputs = async ({
   return toSignInputs
 }
 
+export const formatInputsToSign = async ({
+  _psbt,
+  senderPublicKey,
+  network,
+}: {
+  _psbt: bitcoin.Psbt
+  senderPublicKey: string
+  network: bitcoin.Network
+}) => {
+  let index = 0
+  for await (const v of _psbt.data.inputs) {
+    const isSigned = v.finalScriptSig || v.finalScriptWitness
+    const lostInternalPubkey = !v.tapInternalKey
+    if (!isSigned || lostInternalPubkey) {
+      const tapInternalKey = toXOnly(Buffer.from(senderPublicKey, 'hex'))
+      const p2tr = bitcoin.payments.p2tr({
+        internalPubkey: tapInternalKey,
+        network: network,
+      })
+      if (
+        v.witnessUtxo?.script.toString('hex') === p2tr.output?.toString('hex')
+      ) {
+        v.tapInternalKey = tapInternalKey
+      }
+    }
+    index++
+  }
+
+  return _psbt
+}
+
 export const timeout = async (n) =>
   await new Promise((resolve) => setTimeout(resolve, n))
 
@@ -371,216 +403,6 @@ export const signInputs = async (
     await segwitSigner(psbt, segwitInputs)
   }
   return psbt
-}
-
-export const inscribe = async ({
-  content,
-  inputAddress,
-  outputAddress,
-  mnemonic,
-  taprootPublicKey,
-  segwitPublicKey,
-  segwitAddress,
-  isDry,
-  segwitSigner,
-  taprootSigner,
-  feeRate,
-  network,
-  segwitUtxos,
-  taprootUtxos,
-  taprootPrivateKey,
-  sandshrewBtcClient,
-  esploraRpc,
-}: {
-  content: string
-  inputAddress: string
-  outputAddress: string
-  mnemonic: string
-  taprootPublicKey: string
-  segwitPublicKey: string
-  segwitAddress: string
-  isDry?: boolean
-  feeRate: number
-  taprootSigner: any
-  segwitSigner: any
-  payFeesWithSegwit?: boolean
-  network: 'testnet' | 'main' | 'regtest'
-  segwitUtxos?: Utxo[]
-  taprootUtxos: Utxo[]
-  taprootPrivateKey: string
-  sandshrewBtcClient: SandshrewBitcoinClient
-  esploraRpc: EsploraRpc
-}) => {
-  const commitTxSize = calculateTaprootTxSize(3, 0, 2)
-  const feeForCommit =
-    commitTxSize * feeRate < 200 ? 200 : commitTxSize * feeRate
-
-  const revealTxSize = calculateTaprootTxSize(1, 0, 1)
-  const feeForReveal =
-    revealTxSize * feeRate < 200 ? 200 : revealTxSize * feeRate
-
-  const inscriptionSats = 546
-  const amountNeededForInscribe =
-    Number(feeForCommit) + Number(feeForReveal) + inscriptionSats
-
-  const utxosToSend = findUtxosToCoverAmount(
-    taprootUtxos,
-    amountNeededForInscribe
-  )
-
-  if (
-    !utxosToSend ||
-    !utxosToSend.selectedUtxos ||
-    utxosToSend?.selectedUtxos?.length === 0
-  ) {
-    throw new Error('Insufficient balance')
-  }
-
-  const amountGathered = calculateAmountGatheredUtxo(utxosToSend.selectedUtxos)
-
-  const secret = taprootPrivateKey
-  const secKey = ecc2.keys.get_seckey(String(secret))
-  const pubKey = ecc2.keys.get_pubkey(String(secret), true)
-
-  const script = createInscriptionScript(pubKey, content)
-  const tapleaf = Tap.encodeScript(script)
-  const [tpubkey, cblock] = Tap.getPubKey(pubKey, { target: tapleaf })
-  const inscriberAddress = Address.p2tr.fromPubKey(tpubkey, network)
-
-  const psbt = new bitcoin.Psbt({ network: getNetwork(network) })
-
-  for await (const utxo of utxosToSend.selectedUtxos) {
-    psbt.addInput({
-      hash: utxo.txId,
-      index: utxo.outputIndex,
-      witnessUtxo: {
-        script: Buffer.from(utxo.scriptPk, 'hex'),
-        value: utxo.satoshis,
-      },
-    })
-  }
-
-  const revealSats = feeForReveal + inscriptionSats
-  const reimbursementAmount =
-    amountGathered - feeForCommit - feeForReveal - inscriptionSats
-
-  psbt.addOutput({
-    value: Number(feeForReveal) + inscriptionSats,
-    address: inscriberAddress,
-  })
-
-  if (reimbursementAmount > inscriptionSats) {
-    psbt.addOutput({
-      value: reimbursementAmount,
-      address: inputAddress,
-    })
-  }
-
-  const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
-    _psbt: psbt,
-    pubkey: taprootPublicKey,
-    segwitPubkey: segwitPublicKey,
-    segwitAddress: segwitAddress,
-    taprootAddress: inputAddress,
-    network: getNetwork(network),
-  })
-
-  const signedPsbt = await signInputs(
-    psbt,
-    toSignInputs,
-    taprootPublicKey,
-    segwitPublicKey,
-    segwitSigner,
-    taprootSigner
-  )
-  signedPsbt.finalizeAllInputs()
-
-  const commitPsbtHash = signedPsbt.toHex()
-  const commitTxPsbt: bitcoin.Psbt = bitcoin.Psbt.fromHex(commitPsbtHash, {
-    network: getNetwork(network),
-  })
-
-  const commitTxHex = commitTxPsbt.extractTransaction().toHex()
-  const commitTxId = commitTxPsbt.extractTransaction().getId()
-
-  const [result] = await sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([
-    commitTxHex,
-  ])
-
-  if (!result.allowed) {
-    throw new Error(result['reject-reason'])
-  }
-
-  if (!isDry) {
-    await sandshrewBtcClient.bitcoindRpc.sendRawTransaction(commitTxHex)
-
-    const txResult = await waitForTransaction({
-      txId: commitTxId,
-      sandshrewBtcClient,
-    })
-
-    if (!txResult) {
-      throw new Error('ERROR WAITING FOR COMMIT TX')
-    }
-  }
-
-  const commitTxOutput = await getOutputValueByVOutIndex({
-    txId: commitTxId,
-    vOut: 0,
-    esploraRpc,
-  })
-
-  if (!commitTxOutput) {
-    throw new Error('ERROR GETTING FIRST INPUT VALUE')
-  }
-
-  const txData = Tx.create({
-    vin: [
-      {
-        txid: commitTxId,
-        vout: 0,
-        prevout: {
-          value: revealSats,
-          scriptPubKey: ['OP_1', tpubkey],
-        },
-      },
-    ],
-    vout: [
-      {
-        value: 546,
-        scriptPubKey: Address.toScriptPubKey(inputAddress),
-      },
-    ],
-  })
-
-  const sig = Signer.taproot.sign(secKey, txData, 0, {
-    extension: tapleaf,
-  })
-
-  txData.vin[0].witness = [sig, script, cblock]
-
-  const inscriptionTxHex = Tx.encode(txData).hex
-
-  const [inscriptionResult] =
-    await sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([inscriptionTxHex])
-
-  if (!inscriptionResult.allowed) {
-    throw new Error(inscriptionResult['reject-reason'])
-  }
-
-  let revealTxId = ''
-  if (!isDry) {
-    revealTxId = await sandshrewBtcClient.bitcoindRpc.sendRawTransaction(
-      inscriptionTxHex
-    )
-  }
-
-  return {
-    commitTx: commitTxId,
-    revealTx: revealTxId,
-    txId: revealTxId,
-    rawTx: inscriptionTxHex,
-  }
 }
 
 export const createInscriptionScript = (pubKey: any, content: any) => {
@@ -927,48 +749,6 @@ const insertCollectibleUtxo = async ({
   })
 }
 
-const insertBtcUtxo = async ({
-  taprootUtxos,
-  segwitUtxos,
-  toAddress,
-  fromAddress,
-  psbt,
-  amount,
-  useTaprootUtxos,
-  segwitPubKey,
-  feeRate,
-  network,
-}: {
-  taprootUtxos: any[]
-  segwitUtxos: any[]
-  toAddress: string
-  fromAddress: string
-  psbt: bitcoin.Psbt
-  feeRate: number
-  amount: number
-  useTaprootUtxos: boolean
-  segwitPubKey: string
-  network: bitcoin.Network
-}) => {
-  let nonMetaUtxos: any[]
-  if (useTaprootUtxos) {
-    nonMetaUtxos = await filterTaprootUtxos({ taprootUtxos: taprootUtxos })
-  } else {
-    nonMetaUtxos = segwitUtxos
-  }
-
-  return await addBTCUtxo({
-    utxos: nonMetaUtxos,
-    toAddress: toAddress,
-    psbtTx: psbt,
-    amount: amount,
-    fromAddress: fromAddress,
-    segwitPubKey: segwitPubKey,
-    feeRate,
-    network,
-  })
-}
-
 export const filterTaprootUtxos = async ({
   taprootUtxos,
 }: {
@@ -986,81 +766,98 @@ export const filterTaprootUtxos = async ({
   return nonMetaUtxos
 }
 
-const addBTCUtxo = async ({
-  utxos,
+export const filterUtxos = async ({ utxos }: { utxos: any[] }) => {
+  const { nonMetaUtxos } = utxos.reduce(
+    (acc, utxo) => {
+      utxo.value === 546 && utxo.vout === 0
+        ? acc.metaUtxos.push(utxo)
+        : acc.nonMetaUtxos.push(utxo)
+      return acc
+    },
+    { metaUtxos: [], nonMetaUtxos: [] }
+  )
+  return nonMetaUtxos
+}
+
+export const addBtcUtxo = async ({
+  spendUtxos,
   toAddress,
-  psbtTx,
+  fromAddress,
+  psbt,
   amount,
   feeRate,
-  fromAddress,
-  segwitPubKey,
   network,
+  spendAddress,
+  spendPubKey,
+  altSpendAddress,
+  altSpendPubKey,
+  altSpendUtxos,
 }: {
-  utxos: Utxo[]
+  spendUtxos: any[]
   toAddress: string
-  psbtTx: bitcoin.Psbt
-  amount: number
-  feeRate: number
   fromAddress: string
-  segwitPubKey: string
+  psbt: bitcoin.Psbt
+  feeRate: number
+  amount: number
   network: bitcoin.Network
+  spendAddress: string
+  spendPubKey: string
+  altSpendAddress?: string
+  altSpendPubKey?: string
+  altSpendUtxos?: Utxo[]
 }) => {
-  const txSize = calculateTaprootTxSize(3, 0, 2)
-  const fee = txSize * feeRate < 200 ? 200 : txSize * feeRate
+  const spendableUtxos = await filterTaprootUtxos({
+    taprootUtxos: spendUtxos,
+  })
+  const txSize = calculateTaprootTxSize(2, 0, 2)
+  const fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
-  const utxosToSend = findUtxosToCoverAmount(utxos, amount + fee)
+  let utxosToSend: any = findUtxosToCoverAmount(spendableUtxos, amount + fee)
+  let usingAlt = false
+
   if (!utxosToSend) {
-    throw new Error('insufficient balance')
-  }
-
-  const amountGathered = calculateAmountGatheredUtxo(utxosToSend.selectedUtxos)
-  const addressType = getAddressType(fromAddress)
-  let redeemScript
-  if (addressType === 2) {
-    const p2wpkh = bitcoin.payments.p2wpkh({
-      pubkey: Buffer.from(segwitPubKey, 'hex'),
-      network: network,
+    const unFilteredAltUtxos = await filterTaprootUtxos({
+      taprootUtxos: altSpendUtxos,
     })
-    redeemScript = p2wpkh.output
+    utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, amount + fee)
+    if (!utxosToSend) {
+      throw new Error('Insufficient Balance')
+    }
+    usingAlt = true
   }
+  const amountGathered = calculateAmountGatheredUtxo(utxosToSend.selectedUtxos)
 
   for (let i = 0; i < utxosToSend.selectedUtxos.length; i++) {
-    if (addressType === 2) {
-      psbtTx.addInput({
-        hash: utxosToSend.selectedUtxos[i].txId,
-        index: utxosToSend.selectedUtxos[i].outputIndex,
-        witnessUtxo: {
-          value: utxosToSend.selectedUtxos[i].satoshis,
-          script: Buffer.from(utxosToSend.selectedUtxos[i].scriptPk, 'hex'),
-        },
-        redeemScript: redeemScript,
-      })
-    } else {
-      psbtTx.addInput({
-        hash: utxosToSend.selectedUtxos[i].txId,
-        index: utxosToSend.selectedUtxos[i].outputIndex,
-        witnessUtxo: {
-          value: utxosToSend.selectedUtxos[i].satoshis,
-          script: Buffer.from(utxosToSend.selectedUtxos[i].scriptPk, 'hex'),
-        },
-      })
-    }
+    psbt.addInput({
+      hash: utxosToSend.selectedUtxos[i].txId,
+      index: utxosToSend.selectedUtxos[i].outputIndex,
+      witnessUtxo: {
+        value: utxosToSend.selectedUtxos[i].satoshis,
+        script: Buffer.from(utxosToSend.selectedUtxos[i].scriptPk, 'hex'),
+      },
+    })
   }
 
-  psbtTx.addOutput({
+  psbt.addOutput({
     address: toAddress,
-    value: Math.floor(amount),
+    value: amount,
   })
 
   const changeAmount = amountGathered - amount - fee
   if (changeAmount > 546) {
-    psbtTx.addOutput({
-      address: fromAddress,
+    psbt.addOutput({
+      address: spendAddress,
       value: changeAmount,
     })
   }
 
-  return utxosToSend
+  const updatedPsbt = await formatInputsToSign({
+    _psbt: psbt,
+    senderPublicKey: usingAlt ? altSpendPubKey : spendPubKey,
+    network,
+  })
+
+  return updatedPsbt
 }
 
 export const isValidJSON = (str: string) => {
@@ -1069,84 +866,5 @@ export const isValidJSON = (str: string) => {
     return true
   } catch (e) {
     return false
-  }
-}
-
-export const createBtcTx = async ({
-  inputAddress,
-  outputAddress,
-  mnemonic,
-  taprootPublicKey,
-  segwitPublicKey,
-  segwitAddress,
-  isDry,
-  segwitSigner,
-  taprootSigner,
-  payFeesWithSegwit = false,
-  feeRate,
-  amount,
-  network,
-  segwitUtxos,
-  taprootUtxos,
-}: {
-  inputAddress: string
-  outputAddress: string
-  mnemonic: string
-  taprootPublicKey: string
-  segwitPublicKey: string
-  segwitAddress: string
-  isDry?: boolean
-  feeRate: number
-  segwitSigner: any
-  taprootSigner: any
-  payFeesWithSegwit?: boolean
-  amount: number
-  network: bitcoin.Network
-  segwitUtxos: Utxo[]
-  taprootUtxos: Utxo[]
-}) => {
-  const psbt = new bitcoin.Psbt({ network: network })
-  const inputAddressType = addressTypeMap[getAddressType(inputAddress)]
-  const useTaprootUtxos = !(
-    addressTypeToName[inputAddressType] === 'nested-segwit' ||
-    addressTypeToName[inputAddressType] === 'segwit'
-  )
-
-  await insertBtcUtxo({
-    taprootUtxos: taprootUtxos,
-    segwitUtxos: segwitUtxos,
-    psbt: psbt,
-    toAddress: outputAddress,
-    amount: amount,
-    useTaprootUtxos: useTaprootUtxos,
-    segwitPubKey: segwitPublicKey,
-    fromAddress: inputAddress,
-    feeRate,
-    network,
-  })
-
-  const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
-    _psbt: psbt,
-    pubkey: taprootPublicKey,
-    segwitPubkey: segwitPublicKey,
-    segwitAddress: segwitAddress,
-    taprootAddress: inputAddress,
-    network,
-  })
-
-  const signedPsbt = await signInputs(
-    psbt,
-    toSignInputs,
-    taprootPublicKey,
-    segwitPublicKey,
-    segwitSigner,
-    taprootSigner
-  )
-
-  signedPsbt.finalizeAllInputs()
-
-  return {
-    txnId: signedPsbt.extractTransaction().getId(),
-    rawTxn: signedPsbt.extractTransaction().toHex(),
   }
 }

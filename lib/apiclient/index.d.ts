@@ -43,9 +43,9 @@ export declare class OylApiClient {
      */
     getBrc20TokenInfo(ticker: string): Promise<any>;
     /**
-    * Get brc20 details by ticker.
-    * @param ticker - The ticker to query.
-    */
+     * Get brc20 details by ticker.
+     * @param ticker - The ticker to query.
+     */
     getBrc20TokenDetails(ticker: string): Promise<any>;
     /**
      * Get Brc20 balances by address.
@@ -64,6 +64,7 @@ export declare class OylApiClient {
     getInscriptionsForTxn(txn_id: string): Promise<any>;
     getTaprootTxHistory(taprootAddress: any, totalTxs: any): Promise<any>;
     getTaprootBalance(address: string): Promise<any>;
+    getAddressBalance(address: string): Promise<any>;
     /**
      * Get collectible by ID.
      * @param id - The ID of the collectible.
