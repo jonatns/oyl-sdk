@@ -624,7 +624,9 @@ export class Oyl {
         segwitSigned,
       ])
     if (!validPsbt) {
-      throw new Error('Psbt is not valid. Check keys / signatures are correct.')
+      throw new Error(
+        'PSBT failed mempool acceptance. Signatures may be incorrect or it may not be finalized.'
+      )
     }
     const sendResponse = await this.pushPsbt({ psbtBase64: segwitSigned })
 
@@ -1238,7 +1240,7 @@ export class Oyl {
         ])
       if (!validCommitPsbt) {
         throw new Error(
-          'Psbt is not valid. Check keys / signatures are correct.'
+          'PSBT failed mempool acceptance. Signatures may be incorrect or it may not be finalized.'
         )
       }
 
@@ -1303,7 +1305,7 @@ export class Oyl {
         ])
       if (!validSendPsbt) {
         throw new Error(
-          'Psbt is not valid. Check keys / signatures are correct.'
+          'PSBT failed mempool acceptance. Signatures may be incorrect or it may not be finalized.'
         )
       }
 
@@ -1497,7 +1499,9 @@ export class Oyl {
         segwitSigned,
       ])
     if (!validPsbt) {
-      throw new Error('Psbt is not valid. Check keys / signatures are correct.')
+      throw new Error(
+        'PSBT failed mempool acceptance. Signatures may be incorrect or it may not be finalized.'
+      )
     }
     return await this.pushPsbt({ psbtBase64: segwitSigned })
   }
