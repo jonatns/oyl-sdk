@@ -13,19 +13,15 @@ import {
 import BigNumber from 'bignumber.js'
 import { maximumScriptBytes } from './constants'
 import axios from 'axios'
-import { Address, Signer, Tap, Tx } from '@cmdcode/tapscript'
-import * as ecc2 from '@cmdcode/crypto-utils'
 import {
   addInscriptionUtxo,
   findUtxosToCoverAmount,
   getUtxosForFees,
-  usableUtxo,
   Utxo,
 } from '../txbuilder/buildOrdTx'
 import { isTaprootInput, toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew'
 import { EsploraRpc } from '../rpclient/esplora'
-import { getAddressType } from '../transactions'
 
 bitcoin.initEccLib(ecc)
 
@@ -754,6 +750,9 @@ export const filterTaprootUtxos = async ({
 }: {
   taprootUtxos: any[]
 }) => {
+  if (!taprootUtxos) {
+    return null
+  }
   const { nonMetaUtxos } = taprootUtxos.reduce(
     (acc, utxo) => {
       utxo.inscriptions.length > 0 || utxo.satoshis === 546
