@@ -17,7 +17,6 @@ import {
   inscriptionSats,
   createInscriptionScript,
   getOutputValueByVOutIndex,
-  isP2WPKH,
 } from './shared/utils'
 
 import { SandshrewBitcoinClient } from './rpclient/sandshrew'
