@@ -3,6 +3,7 @@ import { BIP32Factory } from 'bip32'
 const bip32 = BIP32Factory(ecc)
 import * as bip39 from 'bip39'
 import * as bitcoin from 'bitcoinjs-lib'
+bitcoin.initEccLib(ecc)
 
 export const generateWallet = (testnet: boolean, mnemonic?: string) => {
   const toXOnly = (pubKey: Buffer) =>
@@ -10,7 +11,7 @@ export const generateWallet = (testnet: boolean, mnemonic?: string) => {
 
   if (!mnemonic) {
     mnemonic =
-      'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
+      'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
   }
 
   let pathLegacy = "m/44'/0'/0'/0"
@@ -62,18 +63,20 @@ export const generateWallet = (testnet: boolean, mnemonic?: string) => {
   // Native Segwit
   const childSegwit = root.derivePath(pathSegwit)
   const pubkeySegwit = childSegwit.publicKey
+  const privateKeySegwit = childSegwit.privateKey
   const addressSegwit = bitcoin.payments.p2wpkh({
     pubkey: pubkeySegwit,
     network,
   })
   console.log('\nNative Segwit: ')
   console.log('pubkey: ', pubkeySegwit.toString('hex'))
+  console.log('privateKey: ', privateKeySegwit.toString('hex'))
   console.log('address: ', addressSegwit.address)
 
   // Taproot
   const childTaproot = root.derivePath(pathTaproot)
   const pubkeyTaproot = childTaproot.publicKey
-
+  const privateKeyTaproot = childTaproot.privateKey
   const pubkeyTaprootXOnly = toXOnly(pubkeyTaproot)
 
   const addressTaproot = bitcoin.payments.p2tr({
@@ -82,6 +85,9 @@ export const generateWallet = (testnet: boolean, mnemonic?: string) => {
   })
   console.log('\nTaproot: ')
   console.log('pubkey: ', pubkeyTaproot.toString('hex'))
+  console.log('privateKey: ', privateKeyTaproot.toString('hex'))
   console.log('pubkey XOnly: ', pubkeyTaprootXOnly.toString('hex'))
   console.log('address: ', addressTaproot.address)
 }
+
+generateWallet(true)

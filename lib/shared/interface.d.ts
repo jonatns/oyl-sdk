@@ -223,15 +223,15 @@ export interface SignedBid {
 }
 export declare const addressTypeToName: {
     readonly p2pkh: "legacy";
+    readonly p2tr: "taproot";
     readonly p2sh: "nested-segwit";
     readonly p2wpkh: "segwit";
-    readonly p2tr: "taproot";
 };
 export declare const addressNameToType: {
     readonly legacy: "p2pkh";
-    readonly segwit: "p2wpkh";
-    readonly 'nested-segwit': "p2sh";
     readonly taproot: "p2tr";
+    readonly 'nested-segwit': "p2sh";
+    readonly segwit: "p2wpkh";
 };
 export type AddressTypes = keyof typeof addressTypeToName;
 export type AddressFormats = (typeof addressTypeToName)[AddressTypes];

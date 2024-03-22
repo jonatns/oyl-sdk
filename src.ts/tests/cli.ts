@@ -1,32 +1,30 @@
 import yargs from 'yargs'
 import { camelCase } from 'change-case'
 import 'dotenv/config'
-import { NESTED_SEGWIT_HD_PATH, Oyl, TAPROOT_HD_PATH } from '../oylib'
+import {
+  NESTED_SEGWIT_HD_PATH,
+  Oyl,
+  SEGWIT_HD_PATH,
+  TAPROOT_HD_PATH,
+} from '../oylib'
+import { Signer } from '../signer'
 import { Aggregator } from '../PSBTAggregator'
 import * as bitcoin from 'bitcoinjs-lib'
 import axios from 'axios'
 import * as ecc2 from '@bitcoinerlab/secp256k1'
-import { generateWallet } from './genWallet'
-
 import { hideBin } from 'yargs/helpers'
-import { getAddressesFromPublicKey } from '@sadoprotocol/ordit-sdk'
 import { BuildMarketplaceTransaction } from '../marketplace/buildMarketplaceTx'
 import { Network, ToSignInput } from '../shared/interface'
 import {
-  calculateTaprootTxSize,
   callBTCRPCEndpoint,
   delay,
   formatOptionsToSignInputs,
   getNetwork,
-  inscribe,
   signInputs,
   waitForTransaction,
 } from '../shared/utils'
 import { customPaths } from '../wallet/accountsManager'
 import * as transactions from '../transactions'
-import { findUtxosToCoverAmount } from '../txbuilder'
-import * as net from 'net'
-import { Tx } from '@cmdcode/tapscript'
 import { Marketplace } from '../marketplace'
 
 bitcoin.initEccLib(ecc2)
@@ -97,8 +95,8 @@ export async function testAggregator() {
 export async function viewPsbt() {
   console.log(
     bitcoin.Psbt.fromBase64(process.env.PSBT_BASE64, {
-      network: bitcoin.networks.bitcoin,
-    }).data.inputs
+      network: bitcoin.networks.testnet,
+    }).txOutputs
   )
 }
 
@@ -197,17 +195,23 @@ const config = {
   },
   [TESTNET]: {
     mnemonic:
-      'dad wall sand scissors evil second elbow possible hour elbow recipe dinosaur',
+      'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
     wallet: testWallet as Oyl,
+    segwitPrivateKey:
+      '60fb403231a1c9606a2207b6e43b3d1c22f04199bed4c4c96313fb4d7f40b0e0',
+    segwitHdPath: SEGWIT_HD_PATH,
+    taprootPrivateKey:
+      'd63f19f6b4f6e1e6b9fdc9dc2cb1942f1a15409e064b73ea10176e9155c9b3c2',
+    taprootHdPath: TAPROOT_HD_PATH,
     taprootAddress:
-      'tb1p7ncck66wthnjl2clcry46f2uxjcn8naw95e6r8ag0x9zremx00lqmpzpkk',
-    taprootPubkey:
-      '021953423299016db2541eea62268f5461fadbaa904b22955dd9b12322e920db33',
-    segwitAddress: 'tb1q9fflqu0ll6qnkcvlyc4dp4lpa4806gunlsvcnc',
+      'tb1plh52zdjwmtk8ht54ldxchejg4zx077g8fvwhcjrpar7pmfpuyzdqj7rxjm',
+    taprootPubKey:
+      '020f3ee243a0d138c26a9f3d9c193aaee79a01326bcbf3e0cfd9e2c8ae32bbbca0',
+    segwitAddress: 'tb1qrs9hy48vyzdmt6pve45v6hrf3dwvtdav3dlws6',
     segwitPubKey:
-      '031cee6c58c8f2bc98cfddb4fa182b03603503b5b5d121170d28a5f3e250123343',
+      '02058e30f3b55dac28b66ec8cfad71256f76d508cde1c727c17c8d8ead6a32d585',
     destinationTaprootAddress:
-      'tb1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqs77dhfz',
+      'tb1pstyemhl9n2hydg079rgrh8jhj9s7zdxh2g5u8apwk0c8yc9ge4eqp59l22',
     feeRate: 1,
   },
 }
@@ -410,41 +414,45 @@ export async function runCLI() {
     taprootAddress: networkConfig.taprootAddress,
   })
 
-  // const wallet = generateWallet(true, networkConfig.mnemonic)
-  // return
-
-  const { mnemonic, to, amount, feeRate, isDry, ticker, psbtBase64, price } =
-    options
+  const { to, amount, feeRate, ticker, psbtBase64, price } = options
+  const signer: Signer = new Signer(bitcoin.networks.testnet, {
+    segwitPrivateKey: networkConfig.segwitPrivateKey,
+    taprootPrivateKey: networkConfig.taprootPrivateKey,
+  })
   switch (command) {
     case 'load':
       return await loadRpc(options)
     case 'buy':
       return await testMarketplaceBuy()
     case 'send':
-      const sendResponse = await networkConfig.wallet.sendBtc({
-        mnemonic,
-        to,
-        from: networkConfig.taprootAddress,
-        publicKey: networkConfig.taprootPubkey,
-        amount,
+      const res = await networkConfig.wallet.sendBtc({
+        fromAddress: networkConfig.taprootAddress,
+        toAddress: networkConfig.segwitAddress,
         feeRate,
+        amount: 3150,
+        spendAddress: networkConfig.taprootAddress,
+        spendPubKey: networkConfig.taprootPubKey,
+        altSpendAddress: networkConfig.segwitAddress,
+        altSpendPubKey: networkConfig.segwitPubKey,
+        signer,
       })
-
-      console.log(sendResponse)
-      return sendResponse
+      console.log(res)
+      return res
 
     case 'send-brc-20':
       const sendBrc20Response = await networkConfig.wallet.sendBRC20({
-        mnemonic,
-        fromAddress: networkConfig.taprootAddress,
-        taprootPublicKey: networkConfig.taprootPubkey,
-        destinationAddress: to,
         token: ticker,
         amount,
+        signer,
         feeRate,
-        isDry,
+        fromAddress: networkConfig.taprootAddress,
+        fromPubKey: networkConfig.taprootPubKey,
+        toAddress: to,
+        spendAddress: networkConfig.taprootAddress,
+        spendPubKey: networkConfig.taprootPubKey,
+        altSpendAddress: networkConfig.segwitAddress,
+        altSpendPubKey: networkConfig.segwitPubKey,
       })
-
       console.log(sendBrc20Response)
       return sendBrc20Response
 
@@ -452,13 +460,16 @@ export async function runCLI() {
       const { inscriptionId } = options
       const sendInscriptionResponse =
         await networkConfig.wallet.sendOrdCollectible({
-          mnemonic: networkConfig.mnemonic,
-          fromAddress: networkConfig.taprootAddress,
-          taprootPublicKey: networkConfig.taprootPubkey,
-          destinationAddress: networkConfig.destinationTaprootAddress,
-          inscriptionId,
+          signer,
           feeRate,
-          isDry,
+          inscriptionId,
+          fromAddress: networkConfig.taprootAddress,
+          fromPubKey: networkConfig.taprootPubKey,
+          toAddress: to,
+          spendAddress: networkConfig.segwitAddress,
+          spendPubKey: networkConfig.segwitPubKey,
+          altSpendPubKey: networkConfig.taprootPubKey,
+          altSpendAddress: networkConfig.taprootAddress,
         })
 
       console.log(sendInscriptionResponse)
@@ -479,110 +490,110 @@ export async function runCLI() {
         })
 
         const content = `{"p":"brc-20","op":"transfer","tick":"${ticker}","amt":"${amount}"}`
-        const { txId } = await inscribe({
-          content,
-          inputAddress: networkConfig.taprootAddress,
-          outputAddress: networkConfig.taprootAddress,
-          mnemonic: networkConfig.mnemonic,
-          taprootPublicKey: networkConfig.taprootPubkey,
-          segwitPublicKey: networkConfig.segwitPubKey,
-          segwitAddress: networkConfig.segwitAddress,
-          isDry: networkConfig.isDry,
-          segwitSigner: segwitSigner,
-          taprootSigner: taprootSigner,
-          feeRate: feeRate,
-          network: network,
-          taprootUtxos: taprootUtxos,
-          taprootPrivateKey:
-            taprootPrivateKey.keyring.keyring._index2wallet[0][1].privateKey.toString(
-              'hex'
-            ),
-          sandshrewBtcClient: (networkConfig.wallet as Oyl).sandshrewBtcClient,
-          esploraRpc: (networkConfig.wallet as Oyl).esploraRpc,
-        })
+        //   const { txId } = await inscribe({
+        //     content,
+        //     inputAddress: networkConfig.taprootAddress,
+        //     outputAddress: networkConfig.taprootAddress,
+        //     mnemonic: networkConfig.mnemonic,
+        //     taprootPublicKey: networkConfig.taprootPubKey,
+        //     segwitPublicKey: networkConfig.segwitPubKey,
+        //     segwitAddress: networkConfig.segwitAddress,
+        //     isDry: networkConfig.isDry,
+        //     segwitSigner: segwitSigner,
+        //     taprootSigner: taprootSigner,
+        //     feeRate: feeRate,
+        //     network: network,
+        //     taprootUtxos: taprootUtxos,
+        //     taprootPrivateKey:
+        //       taprootPrivateKey.keyring.keyring._index2wallet[0][1].privateKey.toString(
+        //         'hex'
+        //       ),
+        //     sandshrewBtcClient: (networkConfig.wallet as Oyl).sandshrewBtcClient,
+        //     esploraRpc: (networkConfig.wallet as Oyl).esploraRpc,
+        //   })
 
-        console.log({ txId })
+        //   console.log({ txId })
 
-        console.log("WAITING FOR UNISAT TO INDEX THE INSCRIPTION'S UTXO")
-        await delay(15000)
-        console.log('DONE WAITING')
+        //   console.log("WAITING FOR UNISAT TO INDEX THE INSCRIPTION'S UTXO")
+        //   await delay(15000)
+        //   console.log('DONE WAITING')
 
-        const body = {
-          address: networkConfig.taprootAddress,
-          ticker,
-          amount: amount.toString(),
-          transferableInscription: {
-            inscription_id: `${txId}i0`,
-            ticker,
-            transfer_amount: amount.toString(),
-            is_valid: true,
-            is_used: false,
-            satpoint: `${txId}:0:0`,
-            min_price: null,
-            min_unit_price: null,
-            ordinalswallet_price: null,
-            ordinalswallet_unit_price: null,
-            unisat_price: null,
-            unisat_unit_price: null,
-          },
-          price: Number(price),
-        }
+        //   const body = {
+        //     address: networkConfig.taprootAddress,
+        //     ticker,
+        //     amount: amount.toString(),
+        //     transferableInscription: {
+        //       inscription_id: `${txId}i0`,
+        //       ticker,
+        //       transfer_amount: amount.toString(),
+        //       is_valid: true,
+        //       is_used: false,
+        //       satpoint: `${txId}:0:0`,
+        //       min_price: null,
+        //       min_unit_price: null,
+        //       ordinalswallet_price: null,
+        //       ordinalswallet_unit_price: null,
+        //       unisat_price: null,
+        //       unisat_unit_price: null,
+        //     },
+        //     price: Number(price),
+        //   }
 
-        const OMNISAT_API_URL =
-          'https://omnisat-fe-git-testnet-omnisat-foundation.vercel.app/api'
+        //   const OMNISAT_API_URL =
+        //     'https://omnisat-fe-git-testnet-omnisat-foundation.vercel.app/api'
 
-        const { psbtBase64, psbtHex } = await axios
-          .post(`${OMNISAT_API_URL}/orders/create`, body, {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          })
-          .then((res) => res.data)
-          .catch((error) => console.error('Error:', error))
+        //   const { psbtBase64, psbtHex } = await axios
+        //     .post(`${OMNISAT_API_URL}/orders/create`, body, {
+        //       headers: {
+        //         'Content-Type': 'application/json',
+        //       },
+        //     })
+        //     .then((res) => res.data)
+        //     .catch((error) => console.error('Error:', error))
 
-        const psbtToSign = bitcoin.Psbt.fromBase64(psbtBase64)
-        const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
-          _psbt: psbtToSign,
-          pubkey: networkConfig.taprootPubkey,
-          segwitPubkey: networkConfig.segwitPubKey,
-          segwitAddress: networkConfig.segwitAddress,
-          taprootAddress: networkConfig.taprootAddress,
-          network: getNetwork(network),
-        })
+        //   const psbtToSign = bitcoin.Psbt.fromBase64(psbtBase64)
+        //   const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
+        //     _psbt: psbtToSign,
+        //     pubkey: networkConfig.taprootPubKey,
+        //     segwitPubkey: networkConfig.segwitPubKey,
+        //     segwitAddress: networkConfig.segwitAddress,
+        //     taprootAddress: networkConfig.taprootAddress,
+        //     network: getNetwork(network),
+        //   })
 
-        const signedSendPsbt = await signInputs(
-          psbtToSign,
-          toSignInputs,
-          networkConfig.taprootPubkey,
-          networkConfig.segwitPubKey,
-          segwitSigner,
-          taprootSigner
-        )
+        //   const signedSendPsbt = await signInputs(
+        //     psbtToSign,
+        //     toSignInputs,
+        //     networkConfig.taprootPubKey,
+        //     networkConfig.segwitPubKey,
+        //     segwitSigner,
+        //     taprootSigner
+        //   )
 
-        signedSendPsbt.finalizeInput(2)
+        //   signedSendPsbt.finalizeInput(2)
 
-        console.log({
-          signedSendPsbt: signedSendPsbt.toBase64(),
-          signedSendPsbtHex: signedSendPsbt.toHex(),
-        })
+        //   console.log({
+        //     signedSendPsbt: signedSendPsbt.toBase64(),
+        //     signedSendPsbtHex: signedSendPsbt.toHex(),
+        //   })
 
-        const updateBody = {
-          psbtBase64: signedSendPsbt.toBase64(),
-          psbtHex: signedSendPsbt.toHex(),
-          satpoint: txId + ':0:0',
-        }
+        //   const updateBody = {
+        //     psbtBase64: signedSendPsbt.toBase64(),
+        //     psbtHex: signedSendPsbt.toHex(),
+        //     satpoint: txId + ':0:0',
+        //   }
 
-        const updateResponse = await axios
-          .put(`${OMNISAT_API_URL}/orders/create`, updateBody, {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          })
-          .then((res) => res.data)
-          .catch((error) => console.error('Error:', error))
-        console.log({ updateResponse })
+        //   const updateResponse = await axios
+        //     .put(`${OMNISAT_API_URL}/orders/create`, updateBody, {
+        //       headers: {
+        //         'Content-Type': 'application/json',
+        //       },
+        //     })
+        //     .then((res) => res.data)
+        //     .catch((error) => console.error('Error:', error))
+        //   console.log({ updateResponse })
 
-        return updateResponse
+        //   return updateResponse
       } catch (error) {
         console.error(error)
         return
@@ -596,7 +607,7 @@ export async function runCLI() {
           address: networkConfig.taprootAddress,
           price: price,
           psbtBase64: psbtBase64,
-          pubKey: networkConfig.taprootPubkey,
+          pubKey: networkConfig.taprootPubKey,
           wallet: networkConfig.wallet,
         })
 
@@ -607,7 +618,7 @@ export async function runCLI() {
           const preparationUtxo = bitcoin.Psbt.fromBase64(preparedPsbtBase64)
           const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
             _psbt: preparationUtxo,
-            pubkey: networkConfig.taprootPubkey,
+            pubkey: networkConfig.taprootPubKey,
             segwitPubkey: networkConfig.segwitPubKey,
             segwitAddress: networkConfig.segwitAddress,
             taprootAddress: networkConfig.fromAddress,
@@ -617,7 +628,7 @@ export async function runCLI() {
           const signedSendPsbt = await signInputs(
             preparationUtxo,
             toSignInputs,
-            networkConfig.taprootPubkey,
+            networkConfig.taprootPubKey,
             networkConfig.segwitPubKey,
             segwitSigner,
             taprootSigner
@@ -644,7 +655,7 @@ export async function runCLI() {
         const filledOrderPsbt = bitcoin.Psbt.fromBase64(builtOrderBase64)
         const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
           _psbt: filledOrderPsbt,
-          pubkey: networkConfig.taprootPubkey,
+          pubkey: networkConfig.taprootPubKey,
           segwitPubkey: networkConfig.segwitPubKey,
           segwitAddress: networkConfig.segwitAddress,
           taprootAddress: networkConfig.taprootAddress,
@@ -654,7 +665,7 @@ export async function runCLI() {
         const signedSendPsbt = await signInputs(
           filledOrderPsbt,
           toSignInputs,
-          networkConfig.taprootPubkey,
+          networkConfig.taprootPubKey,
           networkConfig.segwitPubKey,
           segwitSigner,
           taprootSigner
@@ -680,8 +691,8 @@ export async function runCLI() {
         return
       }
 
-    // case 'view':
-    //   return await viewPsbt()
+    case 'view':
+      return await viewPsbt()
     // // case 'market':
     // //   return await testMarketplaceBuy()
     // //   break
@@ -719,11 +730,12 @@ export async function runCLI() {
           address: networkConfig.taprootAddress,
         })
       )
-    // case 'txn-history':
-    //   const test = new Oyl()
-    //   return await test.getTxHistory({
-    //     addresses: [networkConfig.taprootAddress, networkConfig.segwitAddress],
-    //   })
+    case 'inscriptions':
+      return console.log(
+        await networkConfig.wallet.getInscriptions({
+          address: networkConfig.taprootAddress,
+        })
+      )
     case 'taproot-txn-history':
       return console.log(
         await networkConfig.wallet.getTaprootTxHistory({
