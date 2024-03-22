@@ -17,6 +17,7 @@ import {
   inscriptionSats,
   createInscriptionScript,
   getOutputValueByVOutIndex,
+  isP2WPKH,
 } from './shared/utils'
 
 import { SandshrewBitcoinClient } from './rpclient/sandshrew'
@@ -568,6 +569,15 @@ export class Oyl {
     altSpendAddress?: string
     signer: Signer
   }) {
+    const addressType = getAddressType(toAddress)
+    if (addressTypeMap[addressType] === 'p2pkh') {
+      throw new Error('Sending bitcoin to legacy address is not supported')
+    }
+    if (addressTypeMap[addressType] === 'p2sh') {
+      throw new Error(
+        'Sending bitcoin to a nested-segwit address is not supported'
+      )
+    }
     let spendUtxos: Utxo[] | undefined
     let altSpendUtxos: Utxo[] | undefined
 
@@ -610,7 +620,13 @@ export class Oyl {
       rawPsbt: signedPsbt,
       finalize: true,
     })
-
+    const validPsbt =
+      await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([
+        segwitSigned,
+      ])
+    if (!validPsbt) {
+      throw new Error('Psbt is not valid. Check keys / signatures are correct.')
+    }
     const sendResponse = await this.pushPsbt({ psbtBase64: segwitSigned })
 
     return sendResponse
@@ -1217,6 +1233,16 @@ export class Oyl {
         finalize: true,
       })
 
+      const validCommitPsbt =
+        await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([
+          segwitSigned,
+        ])
+      if (!validCommitPsbt) {
+        throw new Error(
+          'Psbt is not valid. Check keys / signatures are correct.'
+        )
+      }
+
       const { txId: commitTxId } = await this.pushPsbt({
         psbtBase64: taprootSigned,
       })
@@ -1271,6 +1297,16 @@ export class Oyl {
           rawPsbt: segwitSendSignedPsbt,
           finalize: true,
         })
+
+      const validSendPsbt =
+        await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([
+          segwitSigned,
+        ])
+      if (!validSendPsbt) {
+        throw new Error(
+          'Psbt is not valid. Check keys / signatures are correct.'
+        )
+      }
 
       const { txId: sentPsbtTxId } = await this.pushPsbt({
         psbtBase64: taprootSendSignedPsbt,
@@ -1457,6 +1493,13 @@ export class Oyl {
       finalize: true,
     })
 
+    const validPsbt =
+      await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([
+        segwitSigned,
+      ])
+    if (!validPsbt) {
+      throw new Error('Psbt is not valid. Check keys / signatures are correct.')
+    }
     return await this.pushPsbt({ psbtBase64: segwitSigned })
   }
 
