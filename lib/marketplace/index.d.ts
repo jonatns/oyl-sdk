@@ -1,6 +1,6 @@
 import { AddressType, OGPSBTTransaction } from "..";
 import { BuildMarketplaceTransaction } from "./buildMarketplaceTx";
-import { MarketplaceOffers } from "../shared/interface";
+import { ExternalSwap, MarketplaceOffer } from "../shared/interface";
 export declare class Marketplace {
     private wallet;
     address: string;
@@ -12,10 +12,13 @@ export declare class Marketplace {
     constructor(options?: any);
     processMultipleBuys(orders: any, previousOrderTxId: string, remainingSats: number, index?: number, psbtBase64s?: string[], psbtHexs?: any[], txIds?: any[]): any;
     getSigner(): Promise<OGPSBTTransaction>;
-    buyMarketPlaceOffers(offers: any): Promise<{
-        marketplaceTxns: any[];
+    buyMarketPlaceOffers(pOffers: any): Promise<any>;
+    processAllOffers(offers: MarketplaceOffer[]): Promise<{
+        processed: boolean;
+        processedOffers: any[];
     }>;
-    processAllOffers(offers: MarketplaceOffers[]): Promise<any[]>;
+    externalSwap(bid: ExternalSwap): Promise<any>;
+    externalSign(options: any): Promise<string>;
     /**
      * should be able to check if an offer is still valid on the external marketplace
       should make request to the api (and force a refetch of the orderId

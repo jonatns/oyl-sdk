@@ -130,6 +130,7 @@ export class OGPSBTTransaction {
       typeof _psbt === 'string'
         ? bitcoin.Psbt.fromHex(_psbt as string, { network: psbtNetwork })
         : (_psbt as bitcoin.Psbt)
+        console.log(psbt.data.inputs)
     psbt.data.inputs.forEach((v, index) => {
       let script: any = null
       let value = 0
@@ -182,13 +183,21 @@ export class OGPSBTTransaction {
     return psbt
   }
 
-  async signPsbt(psbt: bitcoin.Psbt, autoFinalized = true, isRevealTx: boolean = false) {
+  async signPsbt(psbt: bitcoin.Psbt, autoFinalized = true, isRevealTx: boolean = false, indexToSign: [] = []) {
     const psbtNetwork = this.network
-
-    const toSignInputs: ToSignInput[] = await this.formatOptionsToSignInputs(
+    let toSignInputs: ToSignInput[] = []
+    if (indexToSign.length >= 1){
+      for (let i = 0; i < indexToSign.length; i++){
+        toSignInputs.push({
+          index: indexToSign[i],
+          publicKey: this.pubkey,
+      })
+    } } else {
+    toSignInputs = await this.formatOptionsToSignInputs(
       psbt,
       isRevealTx
     )
+    }
 
     psbt.data.inputs.forEach((v, index) => {
       const isNotSigned = !(v.finalScriptSig || v.finalScriptWitness)

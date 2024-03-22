@@ -321,7 +321,7 @@ export class OylApiClient {
    * @param params - Parameters for the bid.
    */
   async initSwapBid(params: SwapBrcBid): Promise<any> {
-    return await this._call('/initiate-bid', 'post', params)
+    return await this._call('/initiate-unisat-bid', 'post', params)
   }
 
   /**
@@ -329,6 +329,6 @@ export class OylApiClient {
    * @param params - Parameters for the signed bid.
    */
   async submitSignedBid(params: SignedBid): Promise<any> {
-    return await this._call('/finalize-bid', 'post', params)
+    return await this._call('/finalize-unisat-bid', 'post', params)
   }
 }
