@@ -30,7 +30,7 @@ export declare class OGPSBTTransaction {
     removeRecentOutputs(count: number): void;
     formatOptionsToSignInputs: (_psbt: string | bitcoin.Psbt, isRevealTx?: boolean) => Promise<ToSignInput[]>;
     createSignedPsbt(): Promise<bitcoin.Psbt>;
-    signPsbt(psbt: bitcoin.Psbt, autoFinalized?: boolean, isRevealTx?: boolean): Promise<bitcoin.Psbt>;
+    signPsbt(psbt: bitcoin.Psbt, autoFinalized?: boolean, isRevealTx?: boolean, indexToSign?: []): Promise<bitcoin.Psbt>;
     generate(autoAdjust: boolean): Promise<{
         fee: number;
         rawtx: string;

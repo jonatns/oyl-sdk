@@ -131,12 +131,22 @@ export enum AddressType {
 export interface MarketplaceOffer {
   ticker: string
   offerId: string
-  amount: string
-  address: string
-  marketplace: 'okx' | 'unisat'
-  unitPrice: number
-  totalPrice: number
-  psbt: string
+  amount?: string
+  address?: string
+  marketplace: string
+  unitPrice?: number
+  totalPrice?: number
+  psbt?: string
+}
+
+export interface ExternalSwap {
+  address: String
+  auctionId: String
+  bidPrice: Number
+  pubKey: String
+  mnemonic: String
+  hdPath: String
+  type: AddressType
 }
 
 export interface MarketplaceOffers {

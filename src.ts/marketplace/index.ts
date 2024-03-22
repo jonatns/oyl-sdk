@@ -1,7 +1,7 @@
 import { Oyl, getAddressType, AddressType, OGPSBTTransaction, getNetwork, timeout } from "..";
 import { BuildMarketplaceTransaction } from "./buildMarketplaceTx";
 import * as bitcoin from "bitcoinjs-lib";
-import { MarketplaceOffers } from "../shared/interface";
+import { ExternalSwap, MarketplaceOffer, MarketplaceOffers } from "../shared/interface";
 
 export class Marketplace {
   private wallet: Oyl;
@@ -99,7 +99,11 @@ export class Marketplace {
     return tx;
   }
 
-  async buyMarketPlaceOffers(offers) {
+  async buyMarketPlaceOffers(pOffers) {
+    if (pOffers.processed){
+      return pOffers.processedOffers
+    }
+    const offers = pOffers.processedOffers
     if (offers.length < 1) throw Error("No offers to buy");
 
     const marketPlaceBuy = new BuildMarketplaceTransaction({
@@ -171,9 +175,10 @@ export class Marketplace {
     };
   }
 
-  async processAllOffers(offers: MarketplaceOffers[]) {
+  async processAllOffers(offers: MarketplaceOffer[]) {
 
     const processedOffers = []
+    let externalSwap = false
     const testnet = this.wallet.network == getNetwork('testnet');
     for (const offer of offers) {
       if (offer.marketplace == 'omnisat') {
@@ -182,9 +187,86 @@ export class Marketplace {
           throw new Error("cannot find offer")
         }
         processedOffers.push(newOffer);
+      } else if (offer.marketplace == 'unisat' && !testnet){
+        let txId = await this.externalSwap({
+          address: this.address, 
+          auctionId: offer.offerId,
+          bidPrice: offer.totalPrice,
+          pubKey: this.publicKey,
+          mnemonic: this.mnemonic,
+          hdPath: this.hdPath,
+          type: this.addressType
+        })
+        processedOffers.push(txId)
+        externalSwap = true
+        await timeout(5000)
       }
     }
-    return processedOffers;
+    return {
+      processed: externalSwap,
+      processedOffers
+    };
+  }
+
+  async externalSwap(bid: ExternalSwap) {
+    const psbt = await this.wallet.apiClient.initSwapBid({
+      address: bid.address,
+      auctionId: bid.auctionId,
+      bidPrice: bid.bidPrice,
+      pubKey: bid.pubKey
+    })
+    console.log(psbt)
+    if (psbt.error) throw new Error("cannot find offer");
+    const unsignedPsbt = psbt.psbtBid;
+    const feeRate = psbt.feeRate;
+
+    const swapOptions = bid;
+    swapOptions["psbt"] = unsignedPsbt;
+    swapOptions["feeRate"] = feeRate;
+    swapOptions["indexToSign"] = psbt.bidSignIndexes
+
+    const signedPsbt = await this.externalSign(swapOptions);
+
+    const data = await this.wallet.apiClient.submitSignedBid({
+      psbtBid: signedPsbt,
+      auctionId: bid.auctionId,
+      bidId: psbt.bidId
+    });
+    return data.txid;
+
+  }
+
+  async externalSign(options) {
+    const address = options.address;
+    const feeRate = options.feeRate;
+    const mnemonic = options.mnemonic;
+    const pubKey = options.pubKey;
+
+    const psbt = bitcoin.Psbt.fromHex(options.psbt, { network: bitcoin.networks.bitcoin });
+    const payload = await this.wallet.fromPhrase({
+      mnemonic: mnemonic.trim(),
+      hdPath: options.hdPath,
+      addrType: options.type
+    })
+
+    const keyring = payload.keyring.keyring;
+    const signer = keyring.signTransaction.bind(keyring);
+    const from = address;
+    const addressType = getAddressType(from)
+    if (addressType == null) throw Error("Invalid Address Type");
+
+    const tx = new OGPSBTTransaction(
+      signer,
+      from,
+      pubKey,
+      addressType,
+      this.wallet.network,
+      feeRate
+    );
+
+    const psbt_ = await tx.signPsbt(psbt, false, false, options.indexToSign)
+
+    return psbt_.toHex();
   }
 
   /**

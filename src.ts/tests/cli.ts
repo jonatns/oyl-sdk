@@ -42,35 +42,27 @@ export async function loadRpc(options) {
 }
 
 export async function testMarketplaceBuy() {
-  const initOptions = {
-    baseUrl: 'https://testnet.sandshrew.io',
-    version: 'v1',
-    projectId: 'd6aebfed1769128379aca7d215f0b689', // default API key
-    network: 'testnet' as Network,
-  }
-  const wallet = new Oyl(initOptions)
+  
+  const wallet = new Oyl()
 
   const marketplaceOptions = {
-    address: process.env.TESTNET_TAPROOT_ADDRESS,
-    publicKey: process.env.TESTNET_TAPROOT_PUBKEY,
-    mnemonic: process.env.TESTNET_TAPROOT_MNEMONIC,
-    hdPath: process.env.TESTNET_TAPROOT_HDPATH,
+    address: process.env.TAPROOT_ADDRESS,
+    publicKey: process.env.TAPROOT_PUBKEY,
+    mnemonic: process.env.TAPROOT_MNEMONIC,
+    hdPath: process.env.HD_PATH,
     feeRate: parseFloat(process.env.FEE_RATE),
     wallet: wallet,
   }
 
-  const quotes = [
-    {
-      offerId: '65afed54d45a352ea5a48ec0',
-      marketplace: 'omnisat',
-      ticker: 'xing',
-    },
-    {
-      offerId: '65b1560b3a76022313d73a40',
-      marketplace: 'omnisat',
-      ticker: 'xing',
-    },
-  ]
+  const offers = await wallet.apiClient.getAggregatedOffers({
+   ticker: 'ordi',
+   limitOrderAmount: 2,
+   marketPrice: 110000
+  }
+  )
+
+  const quotes = offers.bestPrice.offers
+  console.log(quotes)
   const marketplace = new Marketplace(marketplaceOptions)
   const offersToBuy = await marketplace.processAllOffers(quotes)
   const signedTxs = await marketplace.buyMarketPlaceOffers(offersToBuy)
