@@ -174,7 +174,6 @@ export class AccountManager {
     await this.segwitKeyring.addAccounts(1)
     const taprootAccounts = await this.taprootKeyring.getAccounts()
     const segwitAccounts = await this.segwitKeyring.getAccounts()
-    // console.log(taprootAccounts)
     const taprootAddresses: string[] = []
     const segwitAddresses: string[] = []
     let i = 0
