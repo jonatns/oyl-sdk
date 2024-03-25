@@ -1,4 +1,4 @@
-import { UTXO_DUST, defaultNetworkOptions } from './shared/constants'
+import { defaultNetworkOptions } from './shared/constants'
 import * as ecc2 from '@cmdcode/crypto-utils'
 
 import { findUtxosToCoverAmount, OGPSBTTransaction, Utxo } from './txbuilder'
@@ -28,16 +28,10 @@ import { AccountManager, customPaths } from './wallet/accountsManager'
 
 import {
   AddressType,
-  HistoryTx,
-  HistoryTxBrc20Inscription,
-  HistoryTxCollectibleInscription,
   IBlockchainInfoUTXO,
-  InscriptionType,
   Providers,
   RecoverAccountOptions,
   TickerDetails,
-  ToSignInput,
-  addressTypeToName,
 } from './shared/interface'
 import { OylApiClient } from './apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
@@ -48,8 +42,6 @@ import { getAddressType } from './transactions'
 import { Signer } from './signer'
 import { Address, Tap, Tx } from '@cmdcode/tapscript'
 import * as cmdcode from '@cmdcode/tapscript'
-import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
-import { tweakPubKey } from '@cmdcode/tapscript/dist/types/lib/tap/tweak'
 
 export const NESTED_SEGWIT_HD_PATH = "m/49'/0'/0'/0"
 export const TAPROOT_HD_PATH = "m/86'/0'/0'/0"
@@ -204,7 +196,7 @@ export class Oyl {
       const walletPayload = await wallet.recoverAccounts()
       return walletPayload
     } catch (error) {
-      return error
+      throw error
     }
   }
 
@@ -220,7 +212,7 @@ export class Oyl {
       const walletPayload = await wallet.addAccount()
       return walletPayload
     } catch (error) {
-      return error
+      throw error
     }
   }
 
@@ -238,7 +230,7 @@ export class Oyl {
       const walletPayload = await wallet.initializeAccounts()
       return walletPayload
     } catch (error) {
-      return error
+      throw error
     }
   }
 

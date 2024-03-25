@@ -70,20 +70,20 @@ export declare class Oyl {
      * @returns {Promise<any>} A promise that resolves to the recovered wallet payload.
      * @throws {Error} Throws an error if recovery fails.
      */
-    recoverWallet(options: Omit<RecoverAccountOptions, 'network'>): Promise<any>;
+    recoverWallet(options: Omit<RecoverAccountOptions, 'network'>): Promise<import("./shared/interface").oylAccounts>;
     /**
      * Adds a new account to the wallet using the given options.
      * @param {RecoverAccountOptions} options - Options describing the account to be added.
      * @returns {Promise<any>} A promise that resolves to the payload of the newly added account.
      * @throws {Error} Throws an error if adding the account fails.
      */
-    addAccountToWallet(options: Omit<RecoverAccountOptions, 'network'>): Promise<any>;
+    addAccountToWallet(options: Omit<RecoverAccountOptions, 'network'>): Promise<import("./shared/interface").oylAccounts>;
     /**
      * Initializes a new Oyl account with taproot & segwit HDKeyrings  within the wallet.
      * @returns {Promise<any>} A promise that resolves to the payload of the initialized accounts.
      * @throws {Error} Throws an error if the initialization fails.
      */
-    initializeWallet(): Promise<any>;
+    initializeWallet(): Promise<import("./shared/interface").oylAccounts>;
     /**
      * Derives a SegWit address from a given public key.
      * @param {Object} param0 - An object containing the public key.
