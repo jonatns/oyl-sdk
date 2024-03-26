@@ -512,14 +512,6 @@ base64-js@^1.5.1:
   resolved "https://registry.yarnpkg.com/base64-js/-/base64-js-1.5.1.tgz#1b1b440160a5bf7ad40b650f095963481903930a"
   integrity sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==
 
-"bcurl@https://github.com/bcoin-org/bcurl.git#semver:^0.2.0":
-  version "0.2.1"
-  resolved "https://github.com/bcoin-org/bcurl.git#73885e833750d724a247fb146a01c682540d0130"
-  dependencies:
-    brq "~0.1.10"
-    bsert "~0.0.12"
-    bsock "~0.1.10"
-
 bech32@=2.0.0, bech32@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/bech32/-/bech32-2.0.0.tgz#078d3686535075c8c79709f054b1b226a133b355"
@@ -714,13 +706,6 @@ browserify-aes@^1.0.6:
     inherits "^2.0.1"
     safe-buffer "^5.0.1"
 
-brq@~0.1.10:
-  version "0.1.10"
-  resolved "https://registry.yarnpkg.com/brq/-/brq-0.1.10.tgz#e1e828eee8e09b435ced2eff52274d52a2f30bd8"
-  integrity sha512-iil4TtQWw9Wb2G+mEP0iHqM8Q16mHINJzR5wHTsfKZTtcOVoEGj6yX3ed7yLQ92KR4QO9KjlrlO7/Y7766i7Tw==
-  dependencies:
-    bsert "~0.0.12"
-
 bs58@^4.0.0, bs58@^4.0.1:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/bs58/-/bs58-4.0.1.tgz#be161e76c354f6f788ae4071f63f34e8c4f0a42a"
@@ -751,18 +736,6 @@ bs58check@^3.0.1:
   dependencies:
     "@noble/hashes" "^1.2.0"
     bs58 "^5.0.0"
-
-bsert@~0.0.12:
-  version "0.0.12"
-  resolved "https://registry.yarnpkg.com/bsert/-/bsert-0.0.12.tgz#157c6a6beb1548af3b14d484fcd2a78eb440599d"
-  integrity sha512-lUB0EMu4KhIf+VQ6RZJ7J3dFdohYSeta+gNgDi00Hi/t3k/W6xZlwm9PSSG0q7hJ2zW9Rsn5yaMPymETxroTRw==
-
-bsock@~0.1.10:
-  version "0.1.11"
-  resolved "https://registry.yarnpkg.com/bsock/-/bsock-0.1.11.tgz#7b29cf0f888804728ee729436322fb710fbc9ca2"
-  integrity sha512-4COhlKKBfOQOomNvz1hjoPtN5ytpqbxkuCPvIPbYMvaZwNBKpo8dZa1LJjcN3wuAkjIIJLF/fc4o3e1DYiceQw==
-  dependencies:
-    bsert "~0.0.12"
 
 buffer-compare@=1.1.1:
   version "1.1.1"
@@ -3154,6 +3127,7 @@ wif@^2.0.6:
     bs58check "<3.0.0"
 
 "wrap-ansi-cjs@npm:wrap-ansi@^7.0.0", wrap-ansi@^7.0.0:
+  name wrap-ansi-cjs
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/wrap-ansi/-/wrap-ansi-7.0.0.tgz#67e145cff510a6a6984bdf1152911d69d2eb9e43"
   integrity sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==
