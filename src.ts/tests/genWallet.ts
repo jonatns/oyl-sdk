@@ -10,8 +10,7 @@ export const generateWallet = (testnet: boolean, mnemonic?: string) => {
     pubKey.length === 32 ? pubKey : pubKey.slice(1, 33)
 
   if (!mnemonic) {
-    mnemonic =
-      'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
+    mnemonic = process.env.TESTNET_MNEMONIC
   }
 
   let pathLegacy = "m/44'/0'/0'/0"
