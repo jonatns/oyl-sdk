@@ -607,15 +607,7 @@ export class Oyl {
       rawPsbt: signedPsbt,
       finalize: true,
     })
-    const validPsbt =
-      await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([
-        segwitSigned,
-      ])
-    if (!validPsbt) {
-      throw new Error(
-        'PSBT failed mempool acceptance. Signatures may be incorrect or it may not be finalized.'
-      )
-    }
+
     const sendResponse = await this.pushPsbt({ psbtBase64: segwitSigned })
 
     return sendResponse
@@ -1222,16 +1214,6 @@ export class Oyl {
         finalize: true,
       })
 
-      const validCommitPsbt =
-        await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([
-          segwitSigned,
-        ])
-      if (!validCommitPsbt) {
-        throw new Error(
-          'PSBT failed mempool acceptance. Signatures may be incorrect or it may not be finalized.'
-        )
-      }
-
       const { txId: commitTxId } = await this.pushPsbt({
         psbtBase64: taprootSigned,
       })
@@ -1286,16 +1268,6 @@ export class Oyl {
           rawPsbt: segwitSendSignedPsbt,
           finalize: true,
         })
-
-      const validSendPsbt =
-        await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([
-          segwitSigned,
-        ])
-      if (!validSendPsbt) {
-        throw new Error(
-          'PSBT failed mempool acceptance. Signatures may be incorrect or it may not be finalized.'
-        )
-      }
 
       const { txId: sentPsbtTxId } = await this.pushPsbt({
         psbtBase64: taprootSendSignedPsbt,
@@ -1482,15 +1454,6 @@ export class Oyl {
       finalize: true,
     })
 
-    const validPsbt =
-      await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([
-        segwitSigned,
-      ])
-    if (!validPsbt) {
-      throw new Error(
-        'PSBT failed mempool acceptance. Signatures may be incorrect or it may not be finalized.'
-      )
-    }
     return await this.pushPsbt({ psbtBase64: segwitSigned })
   }
 
