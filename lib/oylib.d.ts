@@ -12,8 +12,6 @@ export declare const TAPROOT_HD_PATH = "m/86'/0'/0'/0";
 export declare const SEGWIT_HD_PATH = "m/84'/0'/0'/0";
 export declare const LEGACY_HD_PATH = "m/44'/0'/0'/0";
 export declare class Oyl {
-    private mnemonic;
-    private wallet;
     network: bitcoin.Network;
     sandshrewBtcClient: SandshrewBitcoinClient;
     esploraRpc: EsploraRpc;

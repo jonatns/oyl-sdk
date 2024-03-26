@@ -56,8 +56,6 @@ const RequiredPath = [
 ]
 
 export class Oyl {
-  private mnemonic: String
-  private wallet
   public network: bitcoin.Network
   public sandshrewBtcClient: SandshrewBitcoinClient
   public esploraRpc: EsploraRpc
@@ -173,11 +171,9 @@ export class Oyl {
         this.network
       )
 
-      this.wallet = wallet
       const data = {
         keyring: wallet,
       }
-      this.mnemonic = mnemonic
       return data
     } catch (err) {
       return err
