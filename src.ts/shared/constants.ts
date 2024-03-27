@@ -21,13 +21,13 @@ export const defaultNetworkOptions: Record<Network, NetworkOptions> = {
   mainnet: {
     baseUrl: 'https://mainnet.sandshrew.io',
     version: 'v1',
-    projectId: 'd6aebfed1769128379aca7d215f0b689', // default API key
+    projectId: process.env.SANDSHREW_PROJECT_ID,
     network: 'mainnet',
   },
   testnet: {
     baseUrl: 'https://testnet.sandshrew.io',
     version: 'v1',
-    projectId: 'd6aebfed1769128379aca7d215f0b689', // default API key
+    projectId: process.env.SANDSHREW_PROJECT_ID,
     network: 'testnet',
   },
   regtest: {

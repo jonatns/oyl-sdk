@@ -42,7 +42,6 @@ export async function loadRpc(options) {
 }
 
 export async function testMarketplaceBuy() {
-  
   const wallet = new Oyl()
 
   const marketplaceOptions = {
@@ -55,11 +54,10 @@ export async function testMarketplaceBuy() {
   }
 
   const offers = await wallet.apiClient.getAggregatedOffers({
-   ticker: 'ordi',
-   limitOrderAmount: 2,
-   marketPrice: 110000
-  }
-  )
+    ticker: 'ordi',
+    limitOrderAmount: 2,
+    marketPrice: 110000,
+  })
 
   const quotes = offers.bestPrice.offers
   console.log(quotes)
@@ -162,14 +160,14 @@ const tapWallet = new Oyl({
   network: 'mainnet',
   baseUrl: 'https://mainnet.sandshrew.io',
   version: 'v1',
-  projectId: 'd6aebfed1769128379aca7d215f0b689',
+  projectId: process.env.SANDSHREW_PROJECT_ID,
 })
 
 const testWallet = new Oyl({
   network: 'testnet',
   baseUrl: 'https://testnet.sandshrew.io',
   version: 'v1',
-  projectId: 'd6aebfed1769128379aca7d215f0b689',
+  projectId: process.env.SANDSHREW_PROJECT_ID,
 })
 
 const XVERSE = 'xverse'
@@ -179,9 +177,10 @@ const TESTNET = 'testnet'
 
 const config = {
   [MAINNET]: {
-    mnemonic:
-      'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
+    mnemonic: process.env.MAINNET_MNEMONIC,
     wallet: tapWallet as Oyl,
+    segwitPrivateKey: process.env.TESTNET_SEGWIT_PRIVATEKEY,
+    taprootPrivateKey: process.env.TESTNET_TAPROOT_PRIVATEKEY,
     taprootAddress:
       'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
     taprootPubkey:
@@ -194,14 +193,11 @@ const config = {
     feeRate: 25,
   },
   [TESTNET]: {
-    mnemonic:
-      'rich baby hotel region tape express recipe amazing chunk flavor oven obtain',
+    mnemonic: process.env.TESTNET_MNEMONIC,
     wallet: testWallet as Oyl,
-    segwitPrivateKey:
-      '60fb403231a1c9606a2207b6e43b3d1c22f04199bed4c4c96313fb4d7f40b0e0',
+    segwitPrivateKey: process.env.TESTNET_SEGWIT_PRIVATEKEY,
     segwitHdPath: SEGWIT_HD_PATH,
-    taprootPrivateKey:
-      'd63f19f6b4f6e1e6b9fdc9dc2cb1942f1a15409e064b73ea10176e9155c9b3c2',
+    taprootPrivateKey: process.env.TESTNET_TAPROOT_PRIVATEKEY,
     taprootHdPath: TAPROOT_HD_PATH,
     taprootAddress:
       'tb1plh52zdjwmtk8ht54ldxchejg4zx077g8fvwhcjrpar7pmfpuyzdqj7rxjm',
