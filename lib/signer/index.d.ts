@@ -30,12 +30,14 @@ export declare class Signer {
         finalize: boolean;
     }): Promise<{
         signedPsbt: string;
+        signedHexPsbt: string;
     }>;
     signAllSegwitInputs({ rawPsbt, finalize, }: {
         rawPsbt: string;
         finalize: boolean;
     }): Promise<{
         signedPsbt: string;
+        signedHexPsbt: string;
     }>;
     signMessage({ messageToSign, keyToUse, }: {
         messageToSign: string;
