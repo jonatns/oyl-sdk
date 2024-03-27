@@ -198,11 +198,11 @@ export class HdKeyring extends EventEmitter {
     const from = start
     const to = end
     const accounts: { address: string; index: number }[] = []
-    for (let i = from; i < to; i++) {
+    for (let i = from; i < to + 1; i++) {
       const [address] = this._addressFromIndex(i)
       accounts.push({
         address,
-        index: i + 1,
+        index: i,
       })
     }
     return accounts
