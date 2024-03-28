@@ -94,12 +94,12 @@ export class Marketplace {
         txIds
       )
     } catch (error) {
-      //exit recursion if an error occurs
+      //skip to the next if an error occurs
       return await this.processMultipleBuys(
         orders,
-        '',
-        0,
-        orders.length,
+        previousOrderTxId,
+        remainingSats,
+        index + 1,
         psbtBase64s,
         psbtHexs,
         txIds
