@@ -176,17 +176,15 @@ export class Marketplace {
   }
 
   async processAllOffers(offers: MarketplaceOffer[]) {
-
     const processedOffers = []
     let externalSwap = false
     const testnet = this.wallet.network == getNetwork('testnet');
     for (const offer of offers) {
       if (offer.marketplace == 'omnisat') {
         let newOffer = await this.wallet.apiClient.getOmnisatOfferPsbt({ offerId: offer.offerId, ticker: offer.ticker, testnet });
-        if (newOffer == false) {
-          throw new Error("cannot find offer")
+        if (newOffer != false) {
+           processedOffers.push(newOffer);
         }
-        processedOffers.push(newOffer);
       } else if (offer.marketplace == 'unisat' && !testnet){
         let txId = await this.externalSwap({
           address: this.address, 
@@ -197,10 +195,13 @@ export class Marketplace {
           hdPath: this.hdPath,
           type: this.addressType
         })
-        processedOffers.push(txId)
-        externalSwap = true
-        await timeout(5000)
+        if (txId != null) processedOffers.push(txId);
+        externalSwap = true;
+        await timeout(5000);
       }
+    }
+    if (processedOffers.length < 1){
+       throw new Error ("Offers not available")
     }
     return {
       processed: externalSwap,
@@ -215,8 +216,7 @@ export class Marketplace {
       bidPrice: bid.bidPrice,
       pubKey: bid.pubKey
     })
-    console.log(psbt)
-    if (psbt.error) throw new Error("cannot find offer");
+    if (!(psbt?.error)) {
     const unsignedPsbt = psbt.psbtBid;
     const feeRate = psbt.feeRate;
 
@@ -233,7 +233,8 @@ export class Marketplace {
       bidId: psbt.bidId
     });
     return data.txid;
-
+   }
+   return null
   }
 
   async externalSign(options) {
