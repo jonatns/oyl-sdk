@@ -21,7 +21,7 @@ export declare class Inscriber {
      * Initializes a new instance of the Inscriber.
      * @param options - Initialization options for the inscriber.
      */
-    constructor({ address, destinationAddress, pubKey, postage, mediaContent, mediaType, outputs, meta, network }: {
+    constructor({ address, destinationAddress, pubKey, postage, mediaContent, mediaType, outputs, meta, network, }: {
         address: string;
         destinationAddress: string;
         pubKey: string;

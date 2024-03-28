@@ -38,7 +38,7 @@ export class PSBTTransaction {
     feeRate,
     network,
     segwitSigner?,
-    segwitPubKey?,
+    segwitPubKey?
   ) {
     this.signer = signer
     this.segwitSigner = segwitSigner

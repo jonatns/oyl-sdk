@@ -15,27 +15,43 @@ export class BuildMarketplaceTransaction {
   public takerScript: string
   public network: bitcoin.Network
 
-  constructor({ address, pubKey, psbtBase64, price, wallet }: MarketplaceBuy) {
-    this.walletAddress = address
-    this.pubKey = pubKey
-    /** should resolve values below based on network passed */
-    this.api = wallet.apiClient
-    this.esplora = wallet.esploraRpc
-    this.sandshrew = wallet.sandshrewBtcClient
-    this.psbtBase64 = psbtBase64
-    this.orderPrice = price
-    this.network = wallet.network
-    const tapInternalKey = assertHex(Buffer.from(this.pubKey, 'hex'))
-    const p2tr = bitcoin.payments.p2tr({
-      internalPubkey: tapInternalKey,
-      network: this.network,
-    })
-    const addressType = getAddressType(this.walletAddress)
-    if (addressType == AddressType.P2TR) {
-      console.log('taker script', p2tr.output?.toString('hex'))
-      this.takerScript = p2tr.output?.toString('hex')
+  constructor({
+    address,
+    pubKey,
+    psbtBase64,
+    price,
+    wallet,
+    dryRun,
+  }: MarketplaceBuy) {
+    if (dryRun) {
+      this.walletAddress = address
+      this.pubKey = pubKey
+      this.api = wallet.apiClient
+      this.esplora = wallet.esploraRpc
+      this.sandshrew = wallet.sandshrewBtcClient
+      this.network = wallet.network
     } else {
-      throw Error('Can only get script for taproot addresses')
+      this.walletAddress = address
+      this.pubKey = pubKey
+      /** should resolve values below based on network passed */
+      this.api = wallet.apiClient
+      this.esplora = wallet.esploraRpc
+      this.sandshrew = wallet.sandshrewBtcClient
+      this.psbtBase64 = psbtBase64
+      this.orderPrice = price
+      this.network = wallet.network
+      const tapInternalKey = assertHex(Buffer.from(this.pubKey, 'hex'))
+      const p2tr = bitcoin.payments.p2tr({
+        internalPubkey: tapInternalKey,
+        network: this.network,
+      })
+      const addressType = getAddressType(this.walletAddress)
+      if (addressType == AddressType.P2TR) {
+        console.log('taker script', p2tr.output?.toString('hex'))
+        this.takerScript = p2tr.output?.toString('hex')
+      } else {
+        throw Error('Can only get script for taproot addresses')
+      }
     }
   }
 
@@ -107,7 +123,7 @@ export class BuildMarketplaceTransaction {
   }
 
   async prepareWallet() {
-    const requiredSatoshis = 3000 + 1200
+    const requiredSatoshis = 10000 + 1200
     const retrievedUtxos = await this.getUTXOsToCoverAmount(requiredSatoshis)
     if (retrievedUtxos.length === 0) {
       throw Error('Not enough funds to prepare address utxos')

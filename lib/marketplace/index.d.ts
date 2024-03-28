@@ -1,6 +1,6 @@
-import { AddressType, OGPSBTTransaction } from "..";
-import { BuildMarketplaceTransaction } from "./buildMarketplaceTx";
-import { ExternalSwap, MarketplaceOffer } from "../shared/interface";
+import { AddressType, OGPSBTTransaction } from '..';
+import { BuildMarketplaceTransaction } from './buildMarketplaceTx';
+import { ExternalSwap, MarketplaceOffer } from '../shared/interface';
 export declare class Marketplace {
     private wallet;
     address: string;

@@ -183,6 +183,7 @@ export interface MarketplaceBuy {
     psbtBase64: string;
     price: number;
     wallet: Oyl;
+    dryRun?: boolean;
 }
 export interface IBlockchainInfoUTXO {
     tx_hash_big_endian: string;

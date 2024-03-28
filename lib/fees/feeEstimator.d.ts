@@ -1,7 +1,7 @@
 /// <reference types="node" />
-import { Psbt } from "bitcoinjs-lib";
-import { Network } from "../shared/interface";
-import { FeeEstimatorOptions } from "../shared/interface";
+import { Psbt } from 'bitcoinjs-lib';
+import { Network } from '../shared/interface';
+import { FeeEstimatorOptions } from '../shared/interface';
 export default class FeeEstimator {
     protected fee: number;
     protected feeRate: number;
