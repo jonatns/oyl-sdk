@@ -197,11 +197,11 @@ export class Marketplace {
         })
         if (txId != null) processedOffers.push(txId);
         externalSwap = true;
-        await timeout(5000);
+        await timeout(2000);
       }
     }
     if (processedOffers.length < 1){
-       throw new Error ("Offers not available")
+       throw new Error ("Offers  unavailable")
     }
     return {
       processed: externalSwap,
@@ -232,7 +232,7 @@ export class Marketplace {
       auctionId: bid.auctionId,
       bidId: psbt.bidId
     });
-    return data.txid;
+    if (data.txid) return data.txid;
    }
    return null
   }
@@ -274,10 +274,9 @@ export class Marketplace {
    * should be able to check if an offer is still valid on the external marketplace
     should make request to the api (and force a refetch of the orderId
   **/
-  async checkIfOfferIsValid(offer): Promise<Boolean> {
-
-    return false;
-  }
+  // async checkIfOfferIsValid(offer): Promise<Boolean> {
+  //   return false;
+  // }
 
   /**
    * Should regularize an address in the event an address doesn't have

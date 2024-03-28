@@ -23,7 +23,6 @@ export declare class Marketplace {
      * should be able to check if an offer is still valid on the external marketplace
       should make request to the api (and force a refetch of the orderId
     **/
-    checkIfOfferIsValid(offer: any): Promise<Boolean>;
     /**
      * Should regularize an address in the event an address doesn't have
      required utxos for a psbt atomic swap
