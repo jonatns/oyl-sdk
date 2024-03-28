@@ -226,13 +226,12 @@ export class OylApiClient {
   }: {
     ticker: string
     limitOrderAmount: number
-    marketPrice: number
+    marketPrice?: number
     testnet?: boolean
   }): Promise<any> {
     const response = await this._call('/get-brc20-aggregate-offers', 'post', {
       ticker: ticker,
       limitOrderAmount,
-      marketPrice,
       testnet,
     })
     if (response.error) throw Error(response.error)

@@ -56,7 +56,6 @@ export async function testMarketplaceBuy() {
   const offers = await wallet.apiClient.getAggregatedOffers({
     ticker: 'ordi',
     limitOrderAmount: 2,
-    marketPrice: 110000,
   })
 
   const quotes = offers.bestPrice.offers
@@ -66,6 +65,7 @@ export async function testMarketplaceBuy() {
   const signedTxs = await marketplace.buyMarketPlaceOffers(offersToBuy)
   console.log(signedTxs)
 }
+
 export async function testAggregator() {
   const aggregator = new Aggregator()
   const aggregated = await aggregator.fetchAndAggregateOffers(

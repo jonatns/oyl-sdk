@@ -92,7 +92,7 @@ export declare class OylApiClient {
     getAggregatedOffers({ ticker, limitOrderAmount, marketPrice, testnet, }: {
         ticker: string;
         limitOrderAmount: number;
-        marketPrice: number;
+        marketPrice?: number;
         testnet?: boolean;
     }): Promise<any>;
     /**
