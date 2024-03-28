@@ -82,8 +82,10 @@ export class Marketplace {
           result.hex
         )
       const txId = txPayload.txid
+
       psbtHexs.push(result.hex)
       txIds.push(txId)
+
       return await this.processMultipleBuys(
         orders,
         txId,
@@ -197,7 +199,10 @@ export class Marketplace {
       if (!broadcast.allowed) {
         console.log('Error in broadcasting tx: ' + multipleBuys.txIds[i])
         console.log(broadcast)
-        throw new Error(result['reject-reason'])
+        console.log(result['reject-reason'])
+        return {
+          marketplaceTxns,
+        }
       }
       await this.wallet.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(
         multipleBuys.psbtHexs[i]
