@@ -11,7 +11,7 @@ export declare class BuildMarketplaceTransaction {
     makersAddress: string | null;
     takerScript: string;
     network: bitcoin.Network;
-    constructor({ address, pubKey, psbtBase64, price, wallet }: MarketplaceBuy);
+    constructor({ address, pubKey, psbtBase64, price, wallet, dryRun, }: MarketplaceBuy);
     getUTXOsToCoverAmount(amountNeeded: number, inscriptionLocs?: string[]): Promise<any>;
     isWalletPrepared(): Promise<boolean>;
     prepareWallet(): Promise<{

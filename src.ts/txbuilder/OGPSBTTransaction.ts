@@ -30,7 +30,6 @@ export class OGPSBTTransaction {
     addressType: AddressType,
     network?: bitcoin.Network,
     feeRate?: number
-
   ) {
     this.signer = signer
     this.address = address
@@ -122,7 +121,10 @@ export class OGPSBTTransaction {
     this.outputs.splice(-count)
   }
 
-  formatOptionsToSignInputs = async (_psbt: string | bitcoin.Psbt, isRevealTx: boolean = false) => {
+  formatOptionsToSignInputs = async (
+    _psbt: string | bitcoin.Psbt,
+    isRevealTx: boolean = false
+  ) => {
     let toSignInputs: ToSignInput[] = []
     const psbtNetwork = this.network
 
@@ -130,7 +132,7 @@ export class OGPSBTTransaction {
       typeof _psbt === 'string'
         ? bitcoin.Psbt.fromHex(_psbt as string, { network: psbtNetwork })
         : (_psbt as bitcoin.Psbt)
-        console.log(psbt.data.inputs)
+    console.log(psbt.data.inputs)
     psbt.data.inputs.forEach((v, index) => {
       let script: any = null
       let value = 0
@@ -183,20 +185,23 @@ export class OGPSBTTransaction {
     return psbt
   }
 
-  async signPsbt(psbt: bitcoin.Psbt, autoFinalized = true, isRevealTx: boolean = false, indexToSign: [] = []) {
+  async signPsbt(
+    psbt: bitcoin.Psbt,
+    autoFinalized = true,
+    isRevealTx: boolean = false,
+    indexToSign: [] = []
+  ) {
     const psbtNetwork = this.network
     let toSignInputs: ToSignInput[] = []
-    if (indexToSign.length >= 1){
-      for (let i = 0; i < indexToSign.length; i++){
+    if (indexToSign.length >= 1) {
+      for (let i = 0; i < indexToSign.length; i++) {
         toSignInputs.push({
           index: indexToSign[i],
           publicKey: this.pubkey,
-      })
-    } } else {
-    toSignInputs = await this.formatOptionsToSignInputs(
-      psbt,
-      isRevealTx
-    )
+        })
+      }
+    } else {
+      toSignInputs = await this.formatOptionsToSignInputs(psbt, isRevealTx)
     }
 
     psbt.data.inputs.forEach((v, index) => {
@@ -278,25 +283,25 @@ Summary
 ----------------------------------------------------------------------------------------------
 Inputs
 ${this.inputs
-        .map((input, index) => {
-          const str = `
+  .map((input, index) => {
+    const str = `
 =>${index} ${input.data.witnessUtxo.value} Sats
         lock-size: ${input.data.witnessUtxo.script.length}
         via ${input.data.hash} [${input.data.index}]
 `
-          return str
-        })
-        .join('')}
+    return str
+  })
+  .join('')}
 total: ${this.getTotalInput()} Sats
 ----------------------------------------------------------------------------------------------
 Outputs
 ${this.outputs
-        .map((output, index) => {
-          const str = `
+  .map((output, index) => {
+    const str = `
 =>${index} ${output.address} ${output.value} Sats`
-          return str
-        })
-        .join('')}
+    return str
+  })
+  .join('')}
 
 total: ${this.getTotalOutput() - feePaid} Sats
 =============================================================================================
