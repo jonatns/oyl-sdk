@@ -110,6 +110,15 @@ export declare class OylApiClient {
         offerId: number;
     }): Promise<any>;
     /**
+     * Get BTC price.
+     */
+    getBtcPrice(): Promise<any>;
+    /**
+   * Get BTC market chart.
+   * @param days - The number of days to use as interval.
+   */
+    getBitcoinMarketChart(days: string): Promise<any>;
+    /**
      * Get Omnisat ticker offers.
      * @param _ticker - The ticker to query.
      */
