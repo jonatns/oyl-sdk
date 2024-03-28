@@ -119,6 +119,14 @@ export declare class OylApiClient {
    */
     getBitcoinMarketChart(days: string): Promise<any>;
     /**
+     * Get BTC market weekly.
+     */
+    getBitcoinMarketWeekly(): Promise<any>;
+    /**
+    * Get BTC markets.
+    */
+    getBitcoinMarkets(): Promise<any>;
+    /**
      * Get Omnisat ticker offers.
      * @param _ticker - The ticker to query.
      */

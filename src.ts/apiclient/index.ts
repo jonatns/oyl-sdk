@@ -266,22 +266,36 @@ export class OylApiClient {
    * Get BTC price.
    */
   async getBtcPrice() {
-    const response = await this._call('/get-bitcoin-price', 'post', {"ticker": null})
+    const response = await this._call('/get-bitcoin-price', 'post', { "ticker": null })
     return response
   }
 
-    /**
-   * Get BTC market chart.
-   * @param days - The number of days to use as interval.
-   */
-    async getBitcoinMarketChart(days: string): Promise<any> {
-      const response = await this._call('/get-bitcoin-market-chart', 'post', {
-        days: days,
-      })
-      return response
-    }
+  /**
+ * Get BTC market chart.
+ * @param days - The number of days to use as interval.
+ */
+  async getBitcoinMarketChart(days: string): Promise<any> {
+    const response = await this._call('/get-bitcoin-market-chart', 'post', {
+      days: days,
+    })
+    return response
+  }
 
-    
+  /**
+   * Get BTC market weekly.
+   */
+  async getBitcoinMarketWeekly() {
+    const response = await this._call('/get-bitcoin-market-weekly', 'post', { "ticker": null })
+    return response
+  }
+
+  /**
+  * Get BTC markets.
+  */
+  async getBitcoinMarkets() {
+    const response = await this._call('/get-bitcoin-markets', 'post', { "ticker": null })
+    return response
+  }
 
   /**
    * Get Omnisat ticker offers.
