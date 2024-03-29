@@ -25,7 +25,6 @@ export function createWallet(
   const fullPayload = {}
   fullPayload['keyring'] = keyring
   fullPayload['address'] = address
-  //TO-DO - check return value of fullPayload so you dont have wallet.keyring.keyring
   return fullPayload
 }
 
