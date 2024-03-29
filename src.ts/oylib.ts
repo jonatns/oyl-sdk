@@ -572,7 +572,7 @@ export class Oyl {
     })
 
     if (!spendUtxos) {
-      throw new Error('insufficient balance')
+      throw new Error('Insufficient Balance')
     }
     if (altSpendAddress) {
       altSpendUtxos = await this.getUtxosArtifacts({
