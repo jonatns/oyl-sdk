@@ -650,6 +650,16 @@ export class Oyl {
   }) {
     const psbt = new bitcoin.Psbt({ network: network })
 
+    const addressType = getAddressType(toAddress)
+    if (addressTypeMap[addressType] === 'p2pkh') {
+      throw new Error('Sending bitcoin to legacy address is not supported')
+    }
+    if (addressTypeMap[addressType] === 'p2sh') {
+      throw new Error(
+        'Sending bitcoin to a nested-segwit address is not supported'
+      )
+    }
+
     let updatedPsbt: bitcoin.Psbt = await addBtcUtxo({
       spendUtxos,
       psbt: psbt,
