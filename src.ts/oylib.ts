@@ -313,7 +313,7 @@ export class Oyl {
   async getUtxos(address: string, includeInscriptions: boolean = true) {
     const utxosResponse: any[] = await this.esploraRpc.getAddressUtxo(address)
     const formattedUtxos: IBlockchainInfoUTXO[] = []
-
+    console.log(utxosResponse)
     let filtered = utxosResponse
     if (!includeInscriptions) {
       filtered = utxosResponse.filter((utxo) => utxo.value > 546)
@@ -498,7 +498,7 @@ export class Oyl {
    * @returns A promise that resolves to the UTXO artifacts.
    */
   async getUtxosArtifacts({ address }) {
-    const { unspent_outputs } = await this.getUtxos(address, false)
+    const { unspent_outputs } = await this.getUtxos(address, true)
     const inscriptions = await this.getInscriptions({ address })
     const utxoArtifacts = await transactions.getMetaUtxos(
       address,
