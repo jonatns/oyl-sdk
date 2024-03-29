@@ -92,7 +92,7 @@ export declare class OylApiClient {
     getAggregatedOffers({ ticker, limitOrderAmount, marketPrice, testnet, }: {
         ticker: string;
         limitOrderAmount: number;
-        marketPrice: number;
+        marketPrice?: number;
         testnet?: boolean;
     }): Promise<any>;
     /**
@@ -109,6 +109,23 @@ export declare class OylApiClient {
     getOkxOfferPsbt({ offerId }: {
         offerId: number;
     }): Promise<any>;
+    /**
+     * Get BTC price.
+     */
+    getBtcPrice(): Promise<any>;
+    /**
+   * Get BTC market chart.
+   * @param days - The number of days to use as interval.
+   */
+    getBitcoinMarketChart(days: string): Promise<any>;
+    /**
+     * Get BTC market weekly.
+     */
+    getBitcoinMarketWeekly(): Promise<any>;
+    /**
+    * Get BTC markets.
+    */
+    getBitcoinMarkets(): Promise<any>;
     /**
      * Get Omnisat ticker offers.
      * @param _ticker - The ticker to query.
