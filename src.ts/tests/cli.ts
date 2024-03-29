@@ -732,6 +732,12 @@ export async function runCLI() {
           address: networkConfig.taprootAddress,
         })
       )
+    case 'utxo-artifacts':
+      return console.log(
+        await networkConfig.wallet.getUtxosArtifacts({
+          address: networkConfig.taprootAddress,
+        })
+      )
     case 'taproot-txn-history':
       return console.log(
         await networkConfig.wallet.getTaprootTxHistory({
