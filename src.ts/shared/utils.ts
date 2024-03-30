@@ -750,7 +750,7 @@ export const filterTaprootUtxos = async ({
 }: {
   taprootUtxos: any[]
 }) => {
-  if (!taprootUtxos) {
+  if (!taprootUtxos || taprootUtxos.length === 0) {
     return null
   }
   const { nonMetaUtxos } = taprootUtxos.reduce(

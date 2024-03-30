@@ -354,6 +354,9 @@ export function findUtxosForFees(utxos: Utxo[], amount: number) {
 }
 
 export function findUtxosToCoverAmount(utxos: Utxo[], amount: number) {
+  if (!utxos || utxos.length === 0) {
+    return null
+  }
   let totalSatoshis = 0
   const selectedUtxos: Utxo[] = []
 
