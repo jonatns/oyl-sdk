@@ -2,6 +2,7 @@
 import { payments, Psbt } from 'bitcoinjs-lib';
 import * as bitcoin from 'bitcoinjs-lib';
 import { Oyl } from '../oylib';
+import { Signer } from '../signer';
 export interface InscriptionResponse {
     address: string;
     inscriptions?: string;
@@ -121,6 +122,7 @@ export interface MarketplaceOffer {
     amount?: string;
     address?: string;
     marketplace: string;
+    price?: number;
     unitPrice?: number;
     totalPrice?: number;
     psbt?: string;
@@ -133,6 +135,16 @@ export interface ExternalSwap {
     mnemonic: String;
     hdPath: String;
     type: AddressType;
+}
+export interface MarketplaceAccount {
+    wallet: Oyl;
+    spendAddress: string;
+    spendPubKey: string;
+    altSpendAddress: string;
+    altSpendPubKey: string;
+    signer: Signer;
+    receiveAddress: string;
+    feeRate: number;
 }
 export interface MarketplaceOffers {
     offerId: string;
