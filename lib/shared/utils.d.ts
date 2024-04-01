@@ -133,5 +133,8 @@ export declare const addBtcUtxo: ({ spendUtxos, toAddress, fromAddress, psbt, am
     altSpendAddress?: string;
     altSpendPubKey?: string;
     altSpendUtxos?: Utxo[];
-}) => Promise<bitcoin.Psbt>;
+}) => Promise<{
+    psbt: bitcoin.Psbt;
+    fee: number;
+}>;
 export declare const isValidJSON: (str: string) => boolean;

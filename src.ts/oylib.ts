@@ -649,7 +649,7 @@ export class Oyl {
       )
     }
 
-    let updatedPsbt: bitcoin.Psbt = await addBtcUtxo({
+    let { psbt: updatedPsbt, fee } = await addBtcUtxo({
       spendUtxos,
       psbt: psbt,
       toAddress,
@@ -666,6 +666,7 @@ export class Oyl {
 
     return {
       rawPsbt: updatedPsbt.toBase64(),
+      fee,
     }
   }
 
@@ -1604,5 +1605,70 @@ export class Oyl {
     })
 
     return { rawPsbt: psbtTx.toBase64() }
+  }
+
+  async sendBtcEstimate({
+    fromAddress,
+    toAddress,
+    feeRate,
+    amount,
+    altSpendPubKey,
+    spendAddress,
+    spendPubKey,
+    altSpendAddress,
+  }: {
+    fromAddress: string
+    toAddress: string
+    feeRate?: number
+    amount: number
+    altSpendPubKey?: string
+    spendAddress: string
+    spendPubKey: string
+    altSpendAddress?: string
+  }) {
+    const addressType = getAddressType(toAddress)
+    if (addressTypeMap[addressType] === 'p2pkh') {
+      throw new Error('Sending bitcoin to legacy address is not supported')
+    }
+    if (addressTypeMap[addressType] === 'p2sh') {
+      throw new Error(
+        'Sending bitcoin to a nested-segwit address is not supported'
+      )
+    }
+    let spendUtxos: Utxo[] | undefined
+    let altSpendUtxos: Utxo[] | undefined
+
+    spendUtxos = await this.getUtxosArtifacts({
+      address: spendAddress,
+    })
+
+    if (!spendUtxos) {
+      throw new Error('Insufficient Balance')
+    }
+    if (altSpendAddress) {
+      altSpendUtxos = await this.getUtxosArtifacts({
+        address: altSpendAddress,
+      })
+    }
+
+    if (!feeRate) {
+      feeRate = (await this.esploraRpc.getFeeEstimates())['1']
+    }
+
+    const { fee } = await this.createBtcTx({
+      fromAddress,
+      toAddress,
+      spendPubKey,
+      feeRate,
+      amount,
+      network: this.network,
+      spendUtxos,
+      spendAddress,
+      altSpendPubKey,
+      altSpendAddress,
+      altSpendUtxos,
+    })
+
+    return fee
   }
 }
