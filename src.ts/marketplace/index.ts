@@ -13,7 +13,6 @@ import {
   ExternalSwap,
   MarketplaceAccount,
   MarketplaceOffer,
-  MarketplaceOffers,
 } from '../shared/interface'
 import { Signer } from '../signer';
 

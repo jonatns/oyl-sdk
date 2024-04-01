@@ -15,6 +15,7 @@ export class BuildMarketplaceTransaction {
   public takerScript: string
   public network: bitcoin.Network
   public addressType: AddressType
+  public receiveAddress: string
 
   constructor({
     address,
@@ -27,7 +28,7 @@ export class BuildMarketplaceTransaction {
   }: MarketplaceBuy) {
     this.walletAddress = address
     this.pubKey = pubKey
-    /** should resolve values below based on network passed */
+    this.receiveAddress = receiveAddress    
     this.api = wallet.apiClient
     this.esplora = wallet.esploraRpc
     this.sandshrew = wallet.sandshrewBtcClient
@@ -256,7 +257,7 @@ export class BuildMarketplaceTransaction {
       value: 1200,
     })
     swapPsbt.addOutput({
-      address: this.walletAddress,
+      address: this.receiveAddress,
       value: 546,
     })
     swapPsbt.addOutput({
@@ -349,7 +350,7 @@ export class BuildMarketplaceTransaction {
       value: 1200,
     })
     swapPsbt.addOutput({
-      address: this.walletAddress,
+      address: this.receiveAddress,
       value: 546,
     })
     swapPsbt.addOutput({
