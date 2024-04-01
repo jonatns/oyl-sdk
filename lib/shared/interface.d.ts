@@ -128,13 +128,8 @@ export interface MarketplaceOffer {
     psbt?: string;
 }
 export interface ExternalSwap {
-    address: String;
     auctionId: String;
     bidPrice: Number;
-    pubKey: String;
-    mnemonic: String;
-    hdPath: String;
-    type: AddressType;
 }
 export interface MarketplaceAccount {
     wallet: Oyl;
@@ -195,6 +190,7 @@ export interface MarketplaceBuy {
     psbtBase64: string;
     price: number;
     wallet: Oyl;
+    receiveAddress: string;
     dryRun?: boolean;
 }
 export interface IBlockchainInfoUTXO {

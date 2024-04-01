@@ -19,47 +19,39 @@ export class BuildMarketplaceTransaction {
   constructor({
     address,
     pubKey,
+    receiveAddress,
     psbtBase64,
     price,
     wallet,
-    dryRun,
+
   }: MarketplaceBuy) {
-    if (dryRun) {
-      this.walletAddress = address
-      this.pubKey = pubKey
-      this.api = wallet.apiClient
-      this.esplora = wallet.esploraRpc
-      this.sandshrew = wallet.sandshrewBtcClient
-      this.network = wallet.network
-    } else {
-      this.walletAddress = address
-      this.pubKey = pubKey
-      /** should resolve values below based on network passed */
-      this.api = wallet.apiClient
-      this.esplora = wallet.esploraRpc
-      this.sandshrew = wallet.sandshrewBtcClient
-      this.psbtBase64 = psbtBase64
-      this.orderPrice = price
-      this.network = wallet.network
-      this.addressType = getAddressType(this.walletAddress)
-      switch (this.addressType) {
-        case AddressType.P2TR: {
-          const tapInternalKey = assertHex(Buffer.from(this.pubKey, 'hex'));
-          const p2tr = bitcoin.payments.p2tr({
-            internalPubkey: tapInternalKey,
-            network: this.network,
-          });
-          this.takerScript = p2tr.output?.toString('hex');
-          break;
-        }
-        case AddressType.P2WPKH: {
-          const p2wpkh = bitcoin.payments.p2wpkh({
-            pubkey: Buffer.from(this.pubKey, 'hex'),
-            network: this.network,
-          });
-          this.takerScript = p2wpkh.output?.toString('hex');
-          break;
-        }
+    this.walletAddress = address
+    this.pubKey = pubKey
+    /** should resolve values below based on network passed */
+    this.api = wallet.apiClient
+    this.esplora = wallet.esploraRpc
+    this.sandshrew = wallet.sandshrewBtcClient
+    this.psbtBase64 = psbtBase64
+    this.orderPrice = price
+    this.network = wallet.network
+    this.addressType = getAddressType(this.walletAddress)
+    switch (this.addressType) {
+      case AddressType.P2TR: {
+        const tapInternalKey = assertHex(Buffer.from(this.pubKey, 'hex'));
+        const p2tr = bitcoin.payments.p2tr({
+          internalPubkey: tapInternalKey,
+          network: this.network,
+        });
+        this.takerScript = p2tr.output?.toString('hex');
+        break;
+      }
+      case AddressType.P2WPKH: {
+        const p2wpkh = bitcoin.payments.p2wpkh({
+          pubkey: Buffer.from(this.pubKey, 'hex'),
+          network: this.network,
+        });
+        this.takerScript = p2wpkh.output?.toString('hex');
+        break;
       }
     }
   }

@@ -142,13 +142,8 @@ export interface MarketplaceOffer {
 }
 
 export interface ExternalSwap {
-  address: String
   auctionId: String
   bidPrice: Number
-  pubKey: String
-  mnemonic: String
-  hdPath: String
-  type: AddressType
 }
 
 export interface MarketplaceAccount {
@@ -218,6 +213,7 @@ export interface MarketplaceBuy {
   psbtBase64: string
   price: number
   wallet: Oyl
+  receiveAddress: string
   dryRun?: boolean
 }
 
