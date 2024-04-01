@@ -14,6 +14,7 @@ export class BuildMarketplaceTransaction {
   public makersAddress: string | null
   public takerScript: string
   public network: bitcoin.Network
+  public addressType: AddressType
 
   constructor({
     address,
@@ -40,17 +41,25 @@ export class BuildMarketplaceTransaction {
       this.psbtBase64 = psbtBase64
       this.orderPrice = price
       this.network = wallet.network
-      const tapInternalKey = assertHex(Buffer.from(this.pubKey, 'hex'))
-      const p2tr = bitcoin.payments.p2tr({
-        internalPubkey: tapInternalKey,
-        network: this.network,
-      })
-      const addressType = getAddressType(this.walletAddress)
-      if (addressType == AddressType.P2TR) {
-        console.log('taker script', p2tr.output?.toString('hex'))
-        this.takerScript = p2tr.output?.toString('hex')
-      } else {
-        throw Error('Can only get script for taproot addresses')
+      this.addressType = getAddressType(this.walletAddress)
+      switch (this.addressType) {
+        case AddressType.P2TR: {
+          const tapInternalKey = assertHex(Buffer.from(this.pubKey, 'hex'));
+          const p2tr = bitcoin.payments.p2tr({
+            internalPubkey: tapInternalKey,
+            network: this.network,
+          });
+          this.takerScript = p2tr.output?.toString('hex');
+          break;
+        }
+        case AddressType.P2WPKH: {
+          const p2wpkh = bitcoin.payments.p2wpkh({
+            pubkey: Buffer.from(this.pubKey, 'hex'),
+            network: this.network,
+          });
+          this.takerScript = p2wpkh.output?.toString('hex');
+          break;
+        }
       }
     }
   }
@@ -68,8 +77,8 @@ export class BuildMarketplaceTransaction {
       console.log('unspentsOrderedByValue len:', unspentsOrderedByValue.length)
       console.log(
         '=========== Getting Collectibles for address ' +
-          this.walletAddress +
-          '========'
+        this.walletAddress +
+        '========'
       )
       const retrievedIxs = (
         await this.api.getCollectiblesByAddress(this.walletAddress)
@@ -130,17 +139,17 @@ export class BuildMarketplaceTransaction {
     }
     const prepareTx = new bitcoin.Psbt({ network: this.network })
     console.log('=========== Retreived Utxos to add: ', retrievedUtxos)
-    for (let i = 0; i < retrievedUtxos.length; i++) {
-      prepareTx.addInput({
-        hash: retrievedUtxos[i].txid,
-        index: retrievedUtxos[i].vout,
+    retrievedUtxos.forEach((utxo) => {
+      const input = this.addInputConditionally({
+        hash: utxo.txid,
+        index: utxo.vout,
         witnessUtxo: {
-          value: retrievedUtxos[i].value,
+          value: utxo.value,
           script: Buffer.from(this.takerScript, 'hex'),
         },
-        tapInternalKey: assertHex(Buffer.from(this.pubKey, 'hex')),
-      })
-    }
+      });
+      prepareTx.addInput(input);
+    });
     const amountRetrieved = this.calculateAmountGathered(retrievedUtxos)
     const remainder = amountRetrieved - 3000 - 1200
     prepareTx.addOutput({
@@ -200,17 +209,17 @@ export class BuildMarketplaceTransaction {
     console.log('=========== Creating Inputs ========')
     const swapPsbt = new bitcoin.Psbt({ network: this.network })
     console.log('=========== Adding dummy utxos ========')
-
     for (let i = 0; i < 2; i++) {
-      swapPsbt.addInput({
+      const input = this.addInputConditionally({
         hash: allUtxosWorth600[i].txid,
         index: allUtxosWorth600[i].vout,
         witnessUtxo: {
           value: allUtxosWorth600[i].value,
           script: Buffer.from(this.takerScript, 'hex'),
         },
-        tapInternalKey: assertHex(Buffer.from(this.pubKey, 'hex')),
-      })
+      });
+
+      swapPsbt.addInput(input);
     }
 
     console.log('=========== Fetching Maker Input Data ========')
@@ -237,17 +246,17 @@ export class BuildMarketplaceTransaction {
       '=========== Adding available non ordinal UTXOS as input ========'
     )
     console.log('=========== Retreived Utxos to add: ', retrievedUtxos)
-    for (let i = 0; i < retrievedUtxos.length; i++) {
-      swapPsbt.addInput({
-        hash: retrievedUtxos[i].txid,
-        index: retrievedUtxos[i].vout,
+    retrievedUtxos.forEach((utxo) => {
+      const input = this.addInputConditionally({
+        hash: utxo.txid,
+        index: utxo.vout,
         witnessUtxo: {
-          value: retrievedUtxos[i].value,
+          value: utxo.value,
           script: Buffer.from(this.takerScript, 'hex'),
         },
-        tapInternalKey: assertHex(Buffer.from(this.pubKey, 'hex')),
-      })
-    }
+      });
+      swapPsbt.addInput(input);
+    });
 
     console.log('=========== Done Inputs now adding outputs ============')
     swapPsbt.addOutput({
@@ -295,24 +304,22 @@ export class BuildMarketplaceTransaction {
     })
     const swapPsbt = new bitcoin.Psbt({ network: this.network })
 
-    swapPsbt.addInput({
+    swapPsbt.addInput(this.addInputConditionally({
       hash: previousOrderTxId,
       index: 3,
       witnessUtxo: {
         value: 600,
         script: Buffer.from(this.takerScript, 'hex'),
       },
-      tapInternalKey: assertHex(Buffer.from(this.pubKey, 'hex')),
-    })
-    swapPsbt.addInput({
+    }))
+    swapPsbt.addInput(this.addInputConditionally({
       hash: previousOrderTxId,
       index: 4,
       witnessUtxo: {
         value: 600,
         script: Buffer.from(this.takerScript, 'hex'),
       },
-      tapInternalKey: assertHex(Buffer.from(this.pubKey, 'hex')),
-    })
+    }))
     console.log("=========== Getting Maker's Address ========")
     await this.getMakersAddress()
     console.log('=========== Makers Address: ', this.makersAddress)
@@ -336,7 +343,7 @@ export class BuildMarketplaceTransaction {
         bitcoin.Transaction.SIGHASH_SINGLE |
         bitcoin.Transaction.SIGHASH_ANYONECANPAY,
     })
-    swapPsbt.addInput({
+    swapPsbt.addInput(this.addInputConditionally({
       hash: previousOrderTxId,
       index: 5,
       witnessUtxo: {
@@ -344,7 +351,7 @@ export class BuildMarketplaceTransaction {
         script: Buffer.from(this.takerScript, 'hex'),
       },
       tapInternalKey: assertHex(Buffer.from(this.pubKey, 'hex')),
-    })
+    }))
     swapPsbt.addOutput({
       address: this.walletAddress,
       value: 1200,
@@ -420,4 +427,11 @@ export class BuildMarketplaceTransaction {
     //   }
     // }
   }
+
+  addInputConditionally(inputData) {
+    if (this.addressType === AddressType.P2TR) {
+      inputData['tapInternalKey'] = assertHex(Buffer.from(this.pubKey, 'hex'));
+    }
+    return inputData;
+  };
 }
