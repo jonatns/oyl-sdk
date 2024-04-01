@@ -239,7 +239,6 @@ export class OGPSBTTransaction {
     // this.dumpTx(psbt1);
     this.removeChangeOutput()
 
-    // todo: support changing the feeRate
     const txSize = psbt1.extractTransaction().toBuffer().length
     const fee = txSize * this.feeRate
 
