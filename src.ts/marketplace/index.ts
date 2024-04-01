@@ -199,6 +199,7 @@ export class Marketplace {
         auctionId: bid.auctionId,
         bidPrice: bid.bidPrice,
         pubKey: this.selectedSpendPubkey,
+        receiveAddress: this.receiveAddress
       })
       if (!psbt?.error) {
         const unsignedPsbt = psbt.psbtBid

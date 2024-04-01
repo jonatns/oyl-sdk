@@ -42,7 +42,12 @@ export async function loadRpc(options) {
 }
 
 export async function testMarketplaceBuy() {
-  const wallet = new Oyl()
+  const wallet = new Oyl({
+    network: 'testnet',
+    baseUrl: 'https://testnet.sandshrew.io',
+    version: 'v1',
+    projectId: process.env.SANDSHREW_PROJECT_ID,
+  })
 
   const marketplaceOptions = {
     address: process.env.TAPROOT_ADDRESS,
@@ -52,6 +57,8 @@ export async function testMarketplaceBuy() {
     feeRate: parseFloat(process.env.FEE_RATE),
     wallet: wallet,
   }
+
+ 
 
   const offers = await wallet.apiClient.getAggregatedOffers({
     ticker: 'ordi',

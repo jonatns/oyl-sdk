@@ -250,6 +250,7 @@ export interface SwapBrcBid {
   auctionId: String
   bidPrice: Number
   pubKey: String
+  receiveAddress: string
 }
 
 export interface SignedBid {
