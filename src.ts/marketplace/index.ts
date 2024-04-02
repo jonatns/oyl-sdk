@@ -443,12 +443,12 @@ export class Marketplace {
       const keyPair = this.signer.segwitKeyPair;
       const privateKey = keyPair.privateKey
       const signature = sign(message, privateKey, keyPair.compressed, {segwitType: 'p2wpkh'}); 
-      return signature.toString('hex')
+      return signature.toString('base64')
     } else if (getAddressType(this.receiveAddress) == AddressType.P2TR){
       const keyPair =  this.signer.taprootKeyPair;
       const privateKey = keyPair.privateKey
       const signature = sign(message, privateKey, keyPair.compressed); 
-      return signature.toString('hex')
+      return signature.toString('base64')
     }
   }
 }
