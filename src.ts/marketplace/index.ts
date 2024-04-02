@@ -15,6 +15,9 @@ import {
   MarketplaceOffer,
 } from '../shared/interface'
 import { Signer } from '../signer';
+import type { Json } from 'jsontokens';
+import { createUnsecuredToken } from 'jsontokens';
+
 
 export class Marketplace {
   private wallet: Oyl;
@@ -27,6 +30,7 @@ export class Marketplace {
   private altSpendPubKey: string;
   private signer: Signer;
   public feeRate: number;
+  public addressesBound: boolean = false;
 
   constructor(options: MarketplaceAccount) {
       this.wallet = options.wallet;
@@ -194,13 +198,19 @@ export class Marketplace {
   }
 
   async externalSwap(bid: ExternalSwap) {
-      const psbt = await this.wallet.apiClient.initSwapBid({
+      const payload = {
         address: this.selectedSpendAddress,
         auctionId: bid.auctionId,
         bidPrice: bid.bidPrice,
         pubKey: this.selectedSpendPubkey,
         receiveAddress: this.receiveAddress
-      })
+      }
+      if (this.selectedSpendAddress != this.receiveAddress && !this.addressesBound){
+        const signature = await this.getSignatureForBind();
+        payload["signature"] = signature
+        this.addressesBound = true;
+      }
+      const psbt = await this.wallet.apiClient.initSwapBid(payload)
       if (!psbt?.error) {
         const unsignedPsbt = psbt.psbtBid
   
@@ -424,6 +434,15 @@ export class Marketplace {
       } catch (e: any) {
           throw new Error(e)
       }
+  }
+
+  async getSignatureForBind(){
+    const toSignStr = `Please confirm that\nPayment Address: ${this.selectedSpendAddress}\nOrdinals Address: ${this.receiveAddress}`
+    const keyToUse = getAddressType(this.receiveAddress) == AddressType.P2TR ? "taprootKeyPair" : "segwitKeyPair"
+    const options = {address: this.receiveAddress, message: toSignStr};
+    const payload = createUnsecuredToken(options as Json);
+    const signature = await this.signer.signMessage({messageToSign: payload, keyToUse })
+    return signature.toString('hex')
   }
 }
 

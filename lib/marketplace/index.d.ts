@@ -11,6 +11,7 @@ export declare class Marketplace {
     private altSpendPubKey;
     private signer;
     feeRate: number;
+    addressesBound: boolean;
     constructor(options: MarketplaceAccount);
     /**
      * Should estimate the total amount of satoshi required to execute offers including fees
@@ -31,4 +32,5 @@ export declare class Marketplace {
     getUnspentsForAddress(address: string): Promise<any>;
     getUnspentsForAddressInOrderByValue(address: string): Promise<any>;
     getUTXOsToCoverAmount(address: string, amountNeeded: number, inscriptionLocs?: string[]): Promise<any>;
+    getSignatureForBind(): Promise<string>;
 }

@@ -225,6 +225,7 @@ export interface SwapBrcBid {
     bidPrice: Number;
     pubKey: String;
     receiveAddress: string;
+    signature?: string;
 }
 export interface SignedBid {
     psbtBid: String;
