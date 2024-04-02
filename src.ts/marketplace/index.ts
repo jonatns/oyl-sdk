@@ -18,7 +18,7 @@ import { Signer } from '../signer';
 import type { Json } from 'jsontokens';
 import { createUnsecuredToken } from 'jsontokens';
 import { sign } from 'bitcoinjs-message';
-
+import { BIP322, Signer as bip322Signer, Verifier } from 'bip322-js';
 
 export class Marketplace {
   private wallet: Oyl;
@@ -441,14 +441,14 @@ export class Marketplace {
     const message = `Please confirm that\nPayment Address: ${this.selectedSpendAddress}\nOrdinals Address: ${this.receiveAddress}`
     if (getAddressType(this.receiveAddress) == AddressType.P2WPKH){
       const keyPair = this.signer.segwitKeyPair;
-      const privateKey = keyPair.privateKey
-      const signature = sign(message, privateKey, keyPair.compressed, {segwitType: 'p2wpkh'}); 
-      return signature.toString('base64')
+      const privateKey = keyPair.toWIF()
+      const signature = bip322Signer.sign( privateKey, this.receiveAddress, message); 
+      return signature.toString('hex')
     } else if (getAddressType(this.receiveAddress) == AddressType.P2TR){
       const keyPair =  this.signer.taprootKeyPair;
-      const privateKey = keyPair.privateKey
-      const signature = sign(message, privateKey, keyPair.compressed); 
-      return signature.toString('base64')
+      const privateKey = keyPair.toWIF()
+      const signature = bip322Signer.sign( privateKey, this.receiveAddress, message); 
+      return signature.toString('hex')
     }
   }
 }
