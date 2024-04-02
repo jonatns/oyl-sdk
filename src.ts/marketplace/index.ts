@@ -17,6 +17,7 @@ import {
 import { Signer } from '../signer';
 import type { Json } from 'jsontokens';
 import { createUnsecuredToken } from 'jsontokens';
+import { sign } from 'bitcoinjs-message';
 
 
 export class Marketplace {
@@ -437,12 +438,18 @@ export class Marketplace {
   }
 
   async getSignatureForBind(){
-    const toSignStr = `Please confirm that\nPayment Address: ${this.selectedSpendAddress}\nOrdinals Address: ${this.receiveAddress}`
-    const keyToUse = getAddressType(this.receiveAddress) == AddressType.P2TR ? "taprootKeyPair" : "segwitKeyPair"
-    const options = {address: this.receiveAddress, message: toSignStr};
-    const payload = createUnsecuredToken(options as Json);
-    const signature = await this.signer.signMessage({messageToSign: payload, keyToUse })
-    return signature.toString('hex')
+    const message = `Please confirm that\nPayment Address: ${this.selectedSpendAddress}\nOrdinals Address: ${this.receiveAddress}`
+    if (getAddressType(this.receiveAddress) == AddressType.P2WPKH){
+      const keyPair = this.signer.segwitKeyPair;
+      const privateKey = keyPair.privateKey
+      const signature = sign(message, privateKey, keyPair.compressed, {segwitType: 'p2wpkh'}); 
+      return signature.toString('hex')
+    } else if (getAddressType(this.receiveAddress) == AddressType.P2TR){
+      const keyPair =  this.signer.taprootKeyPair;
+      const privateKey = keyPair.privateKey
+      const signature = sign(message, privateKey, keyPair.compressed); 
+      return signature.toString('hex')
+    }
   }
 }
 
