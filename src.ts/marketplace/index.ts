@@ -442,11 +442,15 @@ export class Marketplace {
     if (getAddressType(this.receiveAddress) == AddressType.P2WPKH){
       const keyPair = this.signer.segwitKeyPair;
       const privateKey = keyPair.toWIF()
+      console.log(privateKey)
+      console.log(this.receiveAddress)
       const signature = bip322Signer.sign( privateKey, this.receiveAddress, message); 
       return signature.toString('base64')
     } else if (getAddressType(this.receiveAddress) == AddressType.P2TR){
       const keyPair =  this.signer.taprootKeyPair;
       const privateKey = keyPair.toWIF()
+      console.log(privateKey)
+      console.log(this.receiveAddress)
       const signature = bip322Signer.sign( privateKey, this.receiveAddress, message); 
       return signature.toString('base64')
     }
