@@ -814,7 +814,7 @@ export const addBtcUtxo = async ({
   let utxosToSend: any = findUtxosToCoverAmount(spendableUtxos, amount + fee)
   let usingAlt = false
 
-  if (utxosToSend.selectedUtxos.length > 2) {
+  if (utxosToSend?.selectedUtxos.length > 2) {
     const txSize = calculateTaprootTxSize(
       utxosToSend.selectedUtxos.length,
       0,
@@ -831,7 +831,7 @@ export const addBtcUtxo = async ({
     })
     utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, amount + fee)
 
-    if (utxosToSend.selectedUtxos.length > 2) {
+    if (utxosToSend?.selectedUtxos.length > 2) {
       const txSize = calculateTaprootTxSize(
         utxosToSend.selectedUtxos.length,
         0,
