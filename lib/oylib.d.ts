@@ -214,6 +214,7 @@ export declare class Oyl {
         altSpendUtxos?: Utxo[];
     }): Promise<{
         rawPsbt: string;
+        fee: number;
     }>;
     /**
      * Retrieves information about a SegWit address.
@@ -421,4 +422,14 @@ export declare class Oyl {
     }): Promise<{
         rawPsbt: string;
     }>;
+    sendBtcEstimate({ fromAddress, toAddress, feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, }: {
+        fromAddress: string;
+        toAddress: string;
+        feeRate?: number;
+        amount: number;
+        altSpendPubKey?: string;
+        spendAddress: string;
+        spendPubKey: string;
+        altSpendAddress?: string;
+    }): Promise<number>;
 }

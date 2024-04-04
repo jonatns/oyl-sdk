@@ -434,6 +434,20 @@ export async function runCLI() {
       })
       console.log(res)
       return res
+    case 'send-btc-estimate':
+      const sendEstimateResponse = await networkConfig.wallet.sendBtcEstimate({
+        fromAddress: networkConfig.taprootAddress,
+        toAddress: networkConfig.segwitAddress,
+        feeRate,
+        amount: 30,
+        spendAddress: networkConfig.taprootAddress,
+        spendPubKey: networkConfig.taprootPubKey,
+        altSpendAddress: networkConfig.segwitAddress,
+        altSpendPubKey: networkConfig.segwitPubKey,
+        signer,
+      })
+      console.log(sendEstimateResponse)
+      return sendEstimateResponse
 
     case 'send-brc-20':
       const sendBrc20Response = await networkConfig.wallet.sendBRC20({
