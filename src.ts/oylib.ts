@@ -1671,4 +1671,320 @@ export class Oyl {
 
     return fee
   }
+
+  async sendRune({
+    fromAddress,
+    fromPubKey,
+    toAddress,
+    spendPubKey,
+    feeRate,
+    altSpendPubKey,
+    spendAddress,
+    altSpendAddress,
+    signer,
+    symbol,
+    amount,
+  }: {
+    fromAddress: string
+    fromPubKey: string
+    toAddress: string
+    spendPubKey: string
+    altSpendPubKey?: string
+    spendAddress?: string
+    altSpendAddress?: string
+    signer: Signer
+    feeRate?: number
+    symbol?: string
+    amount?: number
+  }) {
+    try {
+      if (!feeRate) {
+        feeRate = (await this.esploraRpc.getFeeEstimates())['1']
+      }
+
+      const { commitPsbt, utxosUsedForFees } = await this.runeCommitTx({
+        symbol,
+        amount,
+        spendAddress,
+        spendPubKey,
+        signer,
+        altSpendPubKey,
+        altSpendAddress,
+        feeRate,
+      })
+
+      const { signedPsbt: segwitSigned } = await signer.signAllSegwitInputs({
+        rawPsbt: commitPsbt,
+        finalize: true,
+      })
+
+      const { signedPsbt: taprootSigned } = await signer.signAllTaprootInputs({
+        rawPsbt: segwitSigned,
+        finalize: true,
+      })
+
+      const { txId: commitTxId } = await this.pushPsbt({
+        psbtBase64: taprootSigned,
+      })
+      const txResult = await waitForTransaction({
+        txId: commitTxId,
+        sandshrewBtcClient: this.sandshrewBtcClient,
+      })
+      if (!txResult) {
+        throw new Error('ERROR WAITING FOR COMMIT TX')
+      }
+
+      const { revealTx } = await this.runeRevealTx({
+        symbol,
+        amount,
+        receiverAddress: fromAddress,
+        signer,
+        commitTxId: commitTxId,
+        feeRate,
+      })
+
+      const revealTxId =
+        await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(revealTx)
+
+      const revealResult = await waitForTransaction({
+        txId: revealTxId,
+        sandshrewBtcClient: this.sandshrewBtcClient,
+      })
+      if (!revealResult) {
+        throw new Error('ERROR WAITING FOR COMMIT TX')
+      }
+      await delay(5000)
+
+      const { sentPsbt: sentRawPsbt } = await this.inscriptionSendTx({
+        toAddress,
+        fromPubKey,
+        spendPubKey,
+        spendAddress,
+        altSpendAddress,
+        altSpendPubKey,
+        feeRate,
+        utxoId: revealTxId,
+        utxosUsedForFees: utxosUsedForFees,
+      })
+
+      const { signedPsbt: segwitSendSignedPsbt } =
+        await signer.signAllSegwitInputs({
+          rawPsbt: sentRawPsbt,
+          finalize: true,
+        })
+
+      const { signedPsbt: taprootSendSignedPsbt } =
+        await signer.signAllTaprootInputs({
+          rawPsbt: segwitSendSignedPsbt,
+          finalize: true,
+        })
+
+      const { txId: sentPsbtTxId } = await this.pushPsbt({
+        psbtBase64: taprootSendSignedPsbt,
+      })
+      return {
+        txId: sentPsbtTxId,
+        rawTxn: taprootSendSignedPsbt,
+        sendRuneTxids: [commitTxId, revealTxId, sentPsbtTxId],
+      }
+    } catch (err) {
+      console.error(err)
+      throw new Error(err)
+    }
+  }
+
+  async runeCommitTx({
+    symbol,
+    amount,
+    spendAddress,
+    spendPubKey,
+    signer,
+    altSpendPubKey,
+    altSpendAddress,
+    feeRate,
+  }: {
+    symbol: string
+    amount: number
+    spendPubKey: string
+    altSpendPubKey?: string
+    spendAddress?: string
+    altSpendAddress?: string
+    signer: Signer
+    feeRate?: number
+  }) {
+    const commitTxSize = calculateTaprootTxSize(3, 0, 2)
+    const feeForCommit =
+      commitTxSize * feeRate < 200 ? 200 : commitTxSize * feeRate
+
+    const revealTxSize = calculateTaprootTxSize(1, 0, 1)
+    const feeForReveal =
+      revealTxSize * feeRate < 200 ? 200 : revealTxSize * feeRate
+
+    const amountNeededForInscribe =
+      Number(feeForCommit) + Number(feeForReveal) + inscriptionSats
+    const utxosUsedForFees: string[] = []
+
+    let usingAlt = false
+
+    let spendUtxos: Utxo[] | undefined
+    let altSpendUtxos: Utxo[] | undefined
+
+    spendUtxos = await this.getUtxosArtifacts({
+      address: spendAddress,
+    })
+
+    if (!spendUtxos) {
+      throw new Error('No utxos for this address')
+    }
+
+    if (altSpendAddress) {
+      altSpendUtxos = await this.getUtxosArtifacts({
+        address: altSpendAddress,
+      })
+    }
+
+    const spendableUtxos = await filterTaprootUtxos({
+      taprootUtxos: spendUtxos,
+    })
+
+    const psbt = new bitcoin.Psbt({ network: this.network })
+    const secret = signer.taprootKeyPair.privateKey.toString('hex')
+
+    const pubKey = ecc2.keys.get_pubkey(String(secret), true)
+
+    const script = createRuneIssuanceScript(pubKey, symbol, amount)
+    const tapleaf = Tap.encodeScript(script)
+    const [tpubkey] = Tap.getPubKey(pubKey, { target: tapleaf })
+    const inscriberAddress = Address.p2tr.fromPubKey(
+      tpubkey,
+      this.currentNetwork
+    )
+    psbt.addOutput({
+      value: Number(feeForReveal) + inscriptionSats,
+      address: inscriberAddress,
+    })
+
+    let utxosToPayFee = findUtxosToCoverAmount(
+      spendableUtxos,
+      amountNeededForInscribe
+    )
+    if (!utxosToPayFee) {
+      const filteredAltUtxos = await filterTaprootUtxos({
+        taprootUtxos: altSpendUtxos,
+      })
+      utxosToPayFee = findUtxosToCoverAmount(
+        filteredAltUtxos,
+        amountNeededForInscribe
+      )
+      if (!utxosToPayFee) {
+        throw new Error('Insufficient Balance')
+      }
+      usingAlt = true
+    }
+
+    const feeAmountGathered = calculateAmountGatheredUtxo(
+      utxosToPayFee.selectedUtxos
+    )
+    const changeAmount =
+      feeAmountGathered - feeForCommit - feeForReveal - inscriptionSats
+
+    for (let i = 0; i < utxosToPayFee.selectedUtxos.length; i++) {
+      utxosUsedForFees.push(utxosToPayFee.selectedUtxos[i].txId)
+      psbt.addInput({
+        hash: utxosToPayFee.selectedUtxos[i].txId,
+        index: utxosToPayFee.selectedUtxos[i].outputIndex,
+        witnessUtxo: {
+          value: utxosToPayFee.selectedUtxos[i].satoshis,
+          script: Buffer.from(utxosToPayFee.selectedUtxos[i].scriptPk, 'hex'),
+        },
+      })
+    }
+    psbt.addOutput({
+      address: spendAddress,
+      value: changeAmount,
+    })
+
+    const formattedPsbt: bitcoin.Psbt = await formatInputsToSign({
+      _psbt: psbt,
+      senderPublicKey: usingAlt ? altSpendPubKey : spendPubKey,
+      network: this.network,
+    })
+
+    return {
+      commitPsbt: formattedPsbt.toBase64(),
+      utxosUsedForFees: utxosUsedForFees,
+    }
+  }
+
+  async runeRevealTx({
+    symbol,
+    amount,
+    receiverAddress,
+    signer,
+    feeRate,
+    commitTxId,
+  }: {
+    symbol: string
+    amount: number
+    receiverAddress: string
+    signer: Signer
+    feeRate: number
+    commitTxId: string
+  }) {
+    const revealTxSize = calculateTaprootTxSize(1, 0, 1)
+    const feeForReveal =
+      revealTxSize * feeRate < 200 ? 200 : revealTxSize * feeRate
+
+    const revealSats = feeForReveal + inscriptionSats
+    const secret = signer.taprootKeyPair.privateKey.toString('hex')
+
+    const secKey = ecc2.keys.get_seckey(String(secret))
+
+    const pubKey = ecc2.keys.get_pubkey(String(secret), true)
+
+    const script = createRuneIssuanceScript(pubKey, symbol, amount)
+    const tapleaf = Tap.encodeScript(script)
+    const [tpubkey, cblock] = Tap.getPubKey(pubKey, { target: tapleaf })
+
+    const commitTxOutput = await getOutputValueByVOutIndex({
+      txId: commitTxId,
+      vOut: 0,
+      esploraRpc: this.esploraRpc,
+    })
+
+    if (!commitTxOutput) {
+      throw new Error('ERROR GETTING FIRST INPUT VALUE')
+    }
+
+    const txData = Tx.create({
+      vin: [
+        {
+          txid: commitTxId,
+          vout: 0,
+          prevout: {
+            value: revealSats,
+            scriptPubKey: ['OP_1', tpubkey],
+          },
+        },
+      ],
+      vout: [
+        {
+          value: 546,
+          scriptPubKey: Address.toScriptPubKey(receiverAddress),
+        },
+      ],
+    })
+
+    const sig = cmdcode.Signer.taproot.sign(secKey, txData, 0, {
+      extension: tapleaf,
+    })
+
+    txData.vin[0].witness = [sig, script, cblock]
+
+    const inscriptionTxHex = Tx.encode(txData).hex
+
+    return {
+      revealTx: inscriptionTxHex,
+    }
+  }
 }
