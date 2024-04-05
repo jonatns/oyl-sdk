@@ -22,6 +22,8 @@ import {
 import { isTaprootInput, toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew'
 import { EsploraRpc } from '../rpclient/esplora'
+import { unsigned } from 'big-varint'
+import bigInt from 'big-integer'
 
 bitcoin.initEccLib(ecc)
 
@@ -416,6 +418,35 @@ export const createInscriptionScript = (pubKey: any, content: any) => {
     'OP_0',
     textEncoder.encode(content),
     'OP_ENDIF',
+  ] as string[]
+}
+
+function encodeToBase26(inputString: string): string {
+  const baseCharCode = 'a'.charCodeAt(0)
+  return inputString
+    .toLowerCase()
+    .split('')
+    .map((char) => {
+      const charCode = char.charCodeAt(0)
+      if (charCode >= baseCharCode && charCode < baseCharCode + 26) {
+        return String.fromCharCode(charCode - baseCharCode + 97) // Convert to base26 (a-z)
+      } else {
+        return char
+      }
+    })
+    .join('')
+}
+
+export const createRuneSendScript = (
+  id: number,
+  amount: number,
+  changeIndex: number
+) => {
+  return [
+    'OP_RETURN',
+    'OP_PUSHNUM_13',
+    'OP_PUSHBYTES_12',
+    //  unsigned.encode(bigInt(changeIndex)),
   ] as string[]
 }
 

@@ -423,9 +423,9 @@ export async function runCLI() {
     case 'send':
       const res = await networkConfig.wallet.sendBtc({
         fromAddress: networkConfig.taprootAddress,
-        toAddress: networkConfig.segwitAddress,
+        toAddress: networkConfig.taprootAddress,
         feeRate,
-        amount: 3150,
+        amount: 546,
         spendAddress: networkConfig.taprootAddress,
         spendPubKey: networkConfig.taprootPubKey,
         altSpendAddress: networkConfig.segwitAddress,

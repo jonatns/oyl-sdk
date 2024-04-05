@@ -432,4 +432,33 @@ export declare class Oyl {
         spendPubKey: string;
         altSpendAddress?: string;
     }): Promise<number>;
+    sendRune({ fromAddress, fromPubKey, toAddress, spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, symbol, amount, }: {
+        fromAddress: string;
+        fromPubKey: string;
+        toAddress: string;
+        spendPubKey: string;
+        altSpendPubKey?: string;
+        spendAddress?: string;
+        altSpendAddress?: string;
+        signer: Signer;
+        feeRate?: number;
+        symbol?: string;
+        amount?: number;
+    }): Promise<{
+        txId: string;
+        rawTxn: string;
+    }>;
+    runeCommitTx({ symbol, amount, spendAddress, spendPubKey, signer, altSpendPubKey, altSpendAddress, feeRate, outPutIndex, }: {
+        symbol: string;
+        amount: number;
+        spendPubKey: string;
+        altSpendPubKey?: string;
+        spendAddress?: string;
+        altSpendAddress?: string;
+        signer: Signer;
+        feeRate?: number;
+        outPutIndex: string;
+    }): Promise<{
+        commitPsbt: string;
+    }>;
 }
