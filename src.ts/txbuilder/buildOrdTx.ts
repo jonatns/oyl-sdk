@@ -355,7 +355,7 @@ export function findUtxosForFees(utxos: Utxo[], amount: number) {
 
 export function findUtxosToCoverAmount(utxos: Utxo[], amount: number) {
   if (!utxos || utxos.length === 0) {
-    return null
+    return undefined
   }
   let totalSatoshis = 0
   const selectedUtxos: Utxo[] = []
@@ -374,7 +374,7 @@ export function findUtxosToCoverAmount(utxos: Utxo[], amount: number) {
       change: totalSatoshis - amount,
     }
   } else {
-    return null
+    return undefined
   }
 }
 

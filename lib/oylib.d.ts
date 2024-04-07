@@ -354,6 +354,7 @@ export declare class Oyl {
     }): Promise<{
         commitPsbt: string;
         utxosUsedForFees: string[];
+        fee: number;
     }>;
     inscriptionRevealTx({ receiverAddress, signer, content, feeRate, commitTxId, }: {
         receiverAddress: string;
@@ -410,7 +411,7 @@ export declare class Oyl {
         rawTx: string;
     }>;
     createOrdCollectibleTx({ inscriptionId, fromAddress, fromPubKey, spendPubKey, spendAddress, toAddress, altSpendAddress, altSpendPubKey, feeRate, }: {
-        fromAddress: string;
+        fromAddress?: string;
         fromPubKey: string;
         toAddress: string;
         spendPubKey: string;
@@ -421,6 +422,7 @@ export declare class Oyl {
         inscriptionId: string;
     }): Promise<{
         rawPsbt: string;
+        fee: number;
     }>;
     sendBtcEstimate({ fromAddress, toAddress, feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, }: {
         fromAddress: string;
@@ -432,4 +434,27 @@ export declare class Oyl {
         spendPubKey: string;
         altSpendAddress?: string;
     }): Promise<number>;
+    sendCollectibleEstimate({ spendAddress, altSpendAddress, toAddress, feeRate, }: {
+        toAddress: string;
+        feeRate?: number;
+        altSpendAddress?: string;
+        spendAddress?: string;
+    }): Promise<{
+        fee: number;
+    }>;
+    sendBR20Estimate({ toAddress, spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, token, amount, }: {
+        toAddress: string;
+        spendPubKey: string;
+        altSpendPubKey?: string;
+        spendAddress?: string;
+        altSpendAddress?: string;
+        signer: Signer;
+        feeRate?: number;
+        token?: string;
+        amount?: number;
+    }): Promise<{
+        commitTxFee: number;
+        sendTxFee: number;
+        total: number;
+    }>;
 }
