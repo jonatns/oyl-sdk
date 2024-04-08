@@ -25,6 +25,7 @@
     "@bitcoinerlab/secp256k1": "^1.0.2",
     "@cmdcode/crypto-utils": "^2.4.6",
     "@cmdcode/tapscript": "^1.4.3",
+    "@okxweb3/coin-bitcoin": "^1.0.15",
     "@sadoprotocol/ordit-sdk": "^2.2.4",
     "axios": "^1.6.2",
     "bignumber.js": "^9.1.1",

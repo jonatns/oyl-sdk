@@ -15,9 +15,7 @@ import {
   MarketplaceOffer,
 } from '../shared/interface'
 import { Signer } from '../signer';
-import type { Json } from 'jsontokens';
-import { createUnsecuredToken } from 'jsontokens';
-import { sign } from 'bitcoinjs-message';
+import { genSignedBuyingPSBTWithoutListSignature, networks } from "@okxweb3/coin-bitcoin";
 import { BIP322, Signer as bip322Signer, Verifier } from 'bip322-js';
 
 export class Marketplace {
@@ -381,6 +379,7 @@ export class Marketplace {
   async getUTXOsToCoverAmount(
       address: string,
       amountNeeded: number,
+      excludedUtxos = [],
       inscriptionLocs?: string[]
   ) {
       try {
@@ -413,6 +412,9 @@ export class Marketplace {
           let sum = 0
           const result: any = []
           for await (let utxo of unspentsOrderedByValue) {
+            if (this.isExcludedUtxo(utxo, excludedUtxos)) { // Check if the UTXO should be excluded
+              continue;
+            }
               const currentUTXO = utxo
               const utxoSatpoint = getSatpointFromUtxo(currentUTXO)
               if (
@@ -437,20 +439,75 @@ export class Marketplace {
       }
   }
 
+  async getAllUTXOsWorthASpecificValue(value: number) {
+    const unspents = await this.getUnspentsForAddress(this.selectedSpendAddress)
+    console.log('=========== Confirmed/Unconfirmed Utxos Len', unspents.length)
+    return unspents.filter((utxo) => utxo.value === value)
+  }
+
+  async buildDummyAndPaymentUtxos (orderPrice: number){
+    const allUtxosWorth600 = await this.getAllUTXOsWorthASpecificValue(600)
+    if (allUtxosWorth600.length < 2) {
+      throw Error('not enough padding utxos (600 sat) for marketplace buy')
+    }
+
+    const dummyUtxos = []
+    for (let i = 0; i < 2; i++) {
+      dummyUtxos.push({
+        txHash: allUtxosWorth600[i].txid,
+        vout: allUtxosWorth600[i].vout,
+        coinAmount: allUtxosWorth600[i].value
+      });
+    }
+
+    const requiredSatoshis = orderPrice + 3000 + 546 
+    const retrievedUtxos = await this.getUTXOsToCoverAmount(this.selectedSpendAddress, requiredSatoshis, dummyUtxos)
+    if (retrievedUtxos.length === 0) {
+      throw Error('Not enough funds to purchase this offer')
+    }
+
+    const paymentUtxos = []
+    retrievedUtxos.forEach((utxo) => {
+      paymentUtxos.push({
+        txHash: utxo.txid,
+        vout: utxo.vout,
+        coinAmount: utxo.value,
+      });
+    });
+
+    return {
+      dummyUtxos,
+      paymentUtxos
+    }
+  }
+
+  async createOkxSignedPsbt (sellerPsbt: string, orderPrice: number) {
+    const keyPair = (getAddressType(this.selectedSpendAddress) == AddressType.P2WPKH) ? this.signer.segwitKeyPair : this.signer.taprootKeyPair
+    const privateKey = keyPair.toWIF();
+    const buyingData = await this.buildDummyAndPaymentUtxos(orderPrice);
+    buyingData["receiveNftAddress"] = this.receiveAddress;
+    buyingData["paymentAndChangeAddress"] = this.selectedSpendAddress;
+    buyingData["feeRate"] = this.feeRate;
+    buyingData["sellerPsbts"] = sellerPsbt
+
+    const buyerPsbt = genSignedBuyingPSBTWithoutListSignature(buyingData, privateKey, networks.bitcoin);
+    return buyerPsbt
+  }
+
+  isExcludedUtxo(utxo, excludedUtxos) {
+    return excludedUtxos.some(excluded => excluded.txHash === utxo.txid && excluded.vout === utxo.vout);
+}
+
   async getSignatureForBind(){
     const message = `Please confirm that\nPayment Address: ${this.selectedSpendAddress}\nOrdinals Address: ${this.receiveAddress}`
     if (getAddressType(this.receiveAddress) == AddressType.P2WPKH){
       const keyPair = this.signer.segwitKeyPair;
       const privateKey = keyPair.toWIF()
-      console.log(privateKey)
-      console.log(this.receiveAddress)
       const signature = bip322Signer.sign( privateKey, this.receiveAddress, message); 
       return signature.toString('base64')
     } else if (getAddressType(this.receiveAddress) == AddressType.P2TR){
       const keyPair =  this.signer.taprootKeyPair;
       const privateKey = keyPair.toWIF()
-      console.log(privateKey)
-      console.log(this.receiveAddress)
       const signature = bip322Signer.sign( privateKey, this.receiveAddress, message); 
       return signature.toString('base64')
     }
