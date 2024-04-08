@@ -255,7 +255,7 @@ export class OylApiClient {
    * @param offerId - The offer Id to query.
    */
   async getOkxOfferPsbt({ offerId }: { offerId: number }): Promise<any> {
-    const response = await this._call('/get-token-okx-offers', 'post', {
+    const response = await this._call('/get-okx-offer-psbt', 'post', {
       offerId: offerId,
     })
     return response

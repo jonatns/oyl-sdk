@@ -2,7 +2,6 @@ import {
   Oyl,
   getAddressType,
   AddressType,
-  OGPSBTTransaction,
   getNetwork,
   timeout,
   getSatpointFromUtxo,
@@ -185,6 +184,10 @@ export class Marketplace {
               if (txId != null) processedOffers.push(txId)
               externalSwap = true
               await timeout(2000)
+          } else if (offer.marketplace == 'okx' && !testnet) {
+              const offerPsbt = await this.wallet.apiClient.getOkxOfferPsbt({offerId: offer.offerId});
+              const signedPsbt = await this.createOkxSignedPsbt(offerPsbt.data.sellerPsbt, offer.totalPrice);
+              console.log(signedPsbt)
           }
       }
       if (processedOffers.length < 1) {
@@ -482,6 +485,19 @@ export class Marketplace {
   }
 
   async createOkxSignedPsbt (sellerPsbt: string, orderPrice: number) {
+    const marketPlaceBuy = new BuildMarketplaceTransaction({
+      address: this.selectedSpendAddress,
+      pubKey: this.selectedSpendPubkey,
+      receiveAddress: this.receiveAddress,
+      psbtBase64: "",
+      price: 0,
+      wallet: this.wallet,
+  })
+  const preparedWallet = await this.prepareAddress(marketPlaceBuy)
+  await timeout(30000)
+  if (!preparedWallet) {
+    throw new Error('Address not prepared to buy marketplace offers')
+  }
     const keyPair = (getAddressType(this.selectedSpendAddress) == AddressType.P2WPKH) ? this.signer.segwitKeyPair : this.signer.taprootKeyPair
     const privateKey = keyPair.toWIF();
     const data = await this.buildDummyAndPaymentUtxos(orderPrice) as any;

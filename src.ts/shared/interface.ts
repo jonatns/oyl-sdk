@@ -131,7 +131,7 @@ export enum AddressType {
 
 export interface MarketplaceOffer {
   ticker: string
-  offerId: string
+  offerId: any 
   amount?: string
   address?: string
   marketplace: string
