@@ -1690,6 +1690,7 @@ export class Oyl {
     spendPubKey: string
     altSpendAddress?: string
   }) {
+    const testnet = this.network == getNetwork('testnet')
     const result = await this.apiClient.sendBtcEstimate({
       feeRate,
       amount,
@@ -1697,6 +1698,7 @@ export class Oyl {
       spendAddress,
       spendPubKey,
       altSpendAddress,
+      testnet,
     })
 
     return result
@@ -1711,10 +1713,12 @@ export class Oyl {
     altSpendAddress?: string
     spendAddress?: string
   }) {
+    const testnet = this.network == getNetwork('testnet')
     const result = await this.apiClient.sendCollectibleEstimate({
       spendAddress,
       altSpendAddress,
       feeRate,
+      testnet,
     })
     return result
   }
@@ -1734,6 +1738,7 @@ export class Oyl {
     signer: Signer
     feeRate?: number
   }) {
+    const testnet = this.network == getNetwork('testnet')
     const result = await this.apiClient.sendBrc20Estimate({
       spendPubKey,
       feeRate,
@@ -1741,6 +1746,7 @@ export class Oyl {
       spendAddress,
       altSpendAddress,
       signer,
+      testnet,
     })
 
     return result

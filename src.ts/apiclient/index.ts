@@ -409,6 +409,7 @@ export class OylApiClient {
     spendAddress,
     spendPubKey,
     altSpendAddress,
+    testnet,
   }: {
     feeRate?: number
     amount: number
@@ -416,6 +417,7 @@ export class OylApiClient {
     spendAddress: string
     spendPubKey: string
     altSpendAddress?: string
+    testnet: boolean
   }): Promise<any> {
     return await this._call('/send-btc-estimate', 'post', {
       feeRate,
@@ -424,6 +426,7 @@ export class OylApiClient {
       spendAddress,
       spendPubKey,
       altSpendAddress,
+      testnet,
     })
   }
 
@@ -433,7 +436,8 @@ export class OylApiClient {
     spendAddress,
     spendPubKey,
     altSpendAddress,
-    signer
+    signer,
+    testnet,
   }: {
     feeRate?: number
     altSpendPubKey?: string
@@ -441,6 +445,7 @@ export class OylApiClient {
     spendPubKey: string
     altSpendAddress?: string
     signer: Signer
+    testnet: boolean
   }): Promise<any> {
     return await this._call('/send-brc20-estimate', 'post', {
       spendPubKey,
@@ -449,8 +454,7 @@ export class OylApiClient {
       spendAddress,
       altSpendAddress,
       signer,
-      token: 'estimate',
-      amount: 1,
+      testnet,
     })
   }
 
@@ -458,15 +462,18 @@ export class OylApiClient {
     spendAddress,
     altSpendAddress,
     feeRate,
+    testnet,
   }: {
     feeRate?: number
     spendAddress: string
     altSpendAddress?: string
+    testnet: boolean
   }): Promise<any> {
     return await this._call('/send-collectible-estimate', 'post', {
       spendAddress,
       altSpendAddress,
       feeRate,
+      testnet,
     })
   }
 }

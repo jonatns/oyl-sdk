@@ -177,25 +177,28 @@ export declare class OylApiClient {
      * @param params - Parameters for the signed bid.
      */
     submitSignedBid(params: SignedBid): Promise<any>;
-    sendBtcEstimate({ feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, }: {
+    sendBtcEstimate({ feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, testnet, }: {
         feeRate?: number;
         amount: number;
         altSpendPubKey?: string;
         spendAddress: string;
         spendPubKey: string;
         altSpendAddress?: string;
+        testnet: boolean;
     }): Promise<any>;
-    sendBrc20Estimate({ feeRate, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, signer }: {
+    sendBrc20Estimate({ feeRate, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, signer, testnet, }: {
         feeRate?: number;
         altSpendPubKey?: string;
         spendAddress: string;
         spendPubKey: string;
         altSpendAddress?: string;
         signer: Signer;
+        testnet: boolean;
     }): Promise<any>;
-    sendCollectibleEstimate({ spendAddress, altSpendAddress, feeRate, }: {
+    sendCollectibleEstimate({ spendAddress, altSpendAddress, feeRate, testnet, }: {
         feeRate?: number;
         spendAddress: string;
         altSpendAddress?: string;
+        testnet: boolean;
     }): Promise<any>;
 }
