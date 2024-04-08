@@ -188,6 +188,7 @@ export class Marketplace {
               const offerPsbt = await this.wallet.apiClient.getOkxOfferPsbt({offerId: offer.offerId});
               const signedPsbt = await this.createOkxSignedPsbt(offerPsbt.data.sellerPsbt, offer.totalPrice);
               console.log(signedPsbt)
+              //NEED TO ADAPT THIS TO FLOW OF OMNISAT & UNISAT
           }
       }
       if (processedOffers.length < 1) {
