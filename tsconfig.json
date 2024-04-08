@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "target": "ES2022",
     "resolveJsonModule": true,
-    "target": "es2015",
     "noImplicitAny": false,
     "esModuleInterop": true,
     "sourceMap": true,

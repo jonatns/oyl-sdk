@@ -28,7 +28,7 @@ rebuild:
 
 reset:
 	$(Q)rm -rf lib
-	$(Q)yarn build
+	$(Q)yarn run build
 	$(Q)echo "--- reset"
 sendBtc: reset
 	$(Q)oyl-cli send

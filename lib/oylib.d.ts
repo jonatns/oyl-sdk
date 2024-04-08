@@ -448,16 +448,14 @@ export declare class Oyl {
         txId: string;
         rawTxn: string;
     }>;
-    runeCommitTx({ symbol, amount, spendAddress, spendPubKey, signer, altSpendPubKey, altSpendAddress, feeRate, outPutIndex, }: {
-        symbol: string;
+    runeCommitTx({ amount, spendAddress, spendPubKey, altSpendPubKey, altSpendAddress, feeRate, outPutIndex, }: {
         amount: number;
         spendPubKey: string;
         altSpendPubKey?: string;
         spendAddress?: string;
         altSpendAddress?: string;
-        signer: Signer;
         feeRate?: number;
-        outPutIndex: string;
+        outPutIndex?: string;
     }): Promise<{
         commitPsbt: string;
     }>;

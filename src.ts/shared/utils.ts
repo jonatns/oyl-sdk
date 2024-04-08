@@ -22,8 +22,6 @@ import {
 import { isTaprootInput, toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew'
 import { EsploraRpc } from '../rpclient/esplora'
-import { unsigned } from 'big-varint'
-import bigInt from 'big-integer'
 
 bitcoin.initEccLib(ecc)
 
@@ -919,4 +917,21 @@ export const isValidJSON = (str: string) => {
   } catch (e) {
     return false
   }
+}
+
+export const encodeVarint = (bigIntValue: any) => {
+  const bufferArray = []
+  let num = bigIntValue
+
+  do {
+    let byte = num & BigInt(0x7f) // Get the next 7 bits of the number.
+    num >>= BigInt(7) // Remove the 7 bits we just processed.
+    if (num !== BigInt(0)) {
+      // If there are more bits to process,
+      byte |= BigInt(0x80) // set the continuation bit.
+    }
+    bufferArray.push(Number(byte))
+  } while (num !== BigInt(0))
+
+  return { varint: Buffer.from(bufferArray) }
 }

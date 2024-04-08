@@ -484,7 +484,18 @@ export async function runCLI() {
 
       console.log(sendInscriptionResponse)
       return sendInscriptionResponse
-
+    case 'send-rune':
+      const sendRuneResponse = await networkConfig.wallet.sendRune({
+        signer,
+        amount: 100,
+        feeRate: 2,
+        spendAddress: networkConfig.taprootAddress,
+        spendPubKey: networkConfig.taprootPubKey,
+        altSpendPubKey: networkConfig.segwitPubKey,
+        altSpendAddress: networkConfig.segwitAddress,
+      })
+      console.log(sendRuneResponse)
+      return sendRuneResponse
     case 'create-offer':
       try {
         const taprootUtxos = await networkConfig.wallet.getUtxosArtifacts({

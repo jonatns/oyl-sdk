@@ -139,3 +139,6 @@ export declare const addBtcUtxo: ({ spendUtxos, toAddress, fromAddress, psbt, am
     fee: number;
 }>;
 export declare const isValidJSON: (str: string) => boolean;
+export declare const encodeVarint: (bigIntValue: any) => {
+    varint: Buffer;
+};
