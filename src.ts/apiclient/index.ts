@@ -1,6 +1,7 @@
 import fetch from 'node-fetch'
 import { SwapBrcBid, SignedBid } from '../shared/interface'
 import { getAllInscriptionsByAddressRegtest } from '../tests/regtestApi'
+import { Signer } from '../signer'
 
 /**
  * Represents the client for interacting with the Oyl API.
@@ -265,14 +266,16 @@ export class OylApiClient {
    * Get BTC price.
    */
   async getBtcPrice() {
-    const response = await this._call('/get-bitcoin-price', 'post', { "ticker": null })
+    const response = await this._call('/get-bitcoin-price', 'post', {
+      ticker: null,
+    })
     return response
   }
 
   /**
- * Get BTC market chart.
- * @param days - The number of days to use as interval.
- */
+   * Get BTC market chart.
+   * @param days - The number of days to use as interval.
+   */
   async getBitcoinMarketChart(days: string): Promise<any> {
     const response = await this._call('/get-bitcoin-market-chart', 'post', {
       days: days,
@@ -284,15 +287,19 @@ export class OylApiClient {
    * Get BTC market weekly.
    */
   async getBitcoinMarketWeekly() {
-    const response = await this._call('/get-bitcoin-market-weekly', 'post', { "ticker": null })
+    const response = await this._call('/get-bitcoin-market-weekly', 'post', {
+      ticker: null,
+    })
     return response
   }
 
   /**
-  * Get BTC markets.
-  */
+   * Get BTC markets.
+   */
   async getBitcoinMarkets() {
-    const response = await this._call('/get-bitcoin-markets', 'post', { "ticker": null })
+    const response = await this._call('/get-bitcoin-markets', 'post', {
+      ticker: null,
+    })
     return response
   }
 
@@ -393,5 +400,73 @@ export class OylApiClient {
    */
   async submitSignedBid(params: SignedBid): Promise<any> {
     return await this._call('/finalize-unisat-bid', 'post', params)
+  }
+
+  async sendBtcEstimate({
+    feeRate,
+    amount,
+    altSpendPubKey,
+    spendAddress,
+    spendPubKey,
+    altSpendAddress,
+  }: {
+    feeRate?: number
+    amount: number
+    altSpendPubKey?: string
+    spendAddress: string
+    spendPubKey: string
+    altSpendAddress?: string
+  }): Promise<any> {
+    return await this._call('/send-btc-estimate', 'post', {
+      feeRate,
+      amount,
+      altSpendPubKey,
+      spendAddress,
+      spendPubKey,
+      altSpendAddress,
+    })
+  }
+
+  async sendBrc20Estimate({
+    feeRate,
+    altSpendPubKey,
+    spendAddress,
+    spendPubKey,
+    altSpendAddress,
+    signer
+  }: {
+    feeRate?: number
+    altSpendPubKey?: string
+    spendAddress: string
+    spendPubKey: string
+    altSpendAddress?: string
+    signer: Signer
+  }): Promise<any> {
+    return await this._call('/send-brc20-estimate', 'post', {
+      spendPubKey,
+      feeRate,
+      altSpendPubKey,
+      spendAddress,
+      altSpendAddress,
+      signer,
+      token: 'estimate',
+      amount: 1,
+    })
+  }
+
+  async sendCollectibleEstimate({
+    spendAddress,
+    altSpendAddress,
+    feeRate,
+  }: {
+    feeRate?: number
+    spendAddress: string
+    altSpendAddress?: string
+  }): Promise<any> {
+    return await this._call('/send-collectible-estimate', 'post', {
+      spendAddress,
+      altSpendAddress,
+      feeRate,
+    })
   }
 }

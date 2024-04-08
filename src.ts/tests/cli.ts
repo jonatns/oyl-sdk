@@ -477,7 +477,7 @@ export async function runCLI() {
 
     case 'send-brc-20-estimate':
       const sendBrc20EstimateResponse =
-        await networkConfig.wallet.sendBR20Estimate({
+        await networkConfig.wallet.sendBrc20Estimate({
           signer,
           feeRate,
           toAddress: to,

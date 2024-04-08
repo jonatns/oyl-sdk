@@ -535,7 +535,6 @@ export class Oyl {
    * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
    */
   async sendBtc({
-    fromAddress,
     toAddress,
     feeRate,
     amount,
@@ -545,7 +544,6 @@ export class Oyl {
     altSpendAddress,
     signer,
   }: {
-    fromAddress: string
     toAddress: string
     feeRate?: number
     amount: number
@@ -585,7 +583,6 @@ export class Oyl {
     }
 
     const { rawPsbt } = await this.createBtcTx({
-      fromAddress,
       toAddress,
       spendPubKey,
       feeRate,
@@ -613,7 +610,6 @@ export class Oyl {
   }
 
   async createBtcTx({
-    fromAddress,
     toAddress,
     spendPubKey,
     feeRate,
@@ -625,7 +621,6 @@ export class Oyl {
     altSpendPubKey,
     altSpendUtxos,
   }: {
-    fromAddress: string
     toAddress: string
     spendPubKey: string
     feeRate: number
@@ -654,7 +649,6 @@ export class Oyl {
       psbt: psbt,
       toAddress,
       amount: amount,
-      fromAddress,
       feeRate,
       network,
       spendAddress,
@@ -1682,8 +1676,6 @@ export class Oyl {
   }
 
   async sendBtcEstimate({
-    fromAddress,
-    toAddress,
     feeRate,
     amount,
     altSpendPubKey,
@@ -1691,8 +1683,6 @@ export class Oyl {
     spendPubKey,
     altSpendAddress,
   }: {
-    fromAddress: string
-    toAddress: string
     feeRate?: number
     amount: number
     altSpendPubKey?: string
@@ -1700,247 +1690,59 @@ export class Oyl {
     spendPubKey: string
     altSpendAddress?: string
   }) {
-    const addressType = getAddressType(toAddress)
-    if (addressTypeMap[addressType] === 'p2pkh') {
-      throw new Error('Sending bitcoin to legacy address is not supported')
-    }
-    if (addressTypeMap[addressType] === 'p2sh') {
-      throw new Error(
-        'Sending bitcoin to a nested-segwit address is not supported'
-      )
-    }
-    let spendUtxos: Utxo[] | undefined
-    let altSpendUtxos: Utxo[] | undefined
-
-    spendUtxos = await this.getUtxosArtifacts({
-      address: spendAddress,
-    })
-
-    if (!spendUtxos) {
-      throw new Error('Insufficient Balance')
-    }
-    if (altSpendAddress) {
-      altSpendUtxos = await this.getUtxosArtifacts({
-        address: altSpendAddress,
-      })
-    }
-
-    if (!feeRate) {
-      feeRate = (await this.esploraRpc.getFeeEstimates())['1']
-    }
-
-    const { fee } = await this.createBtcTx({
-      fromAddress,
-      toAddress,
-      spendPubKey,
+    const result = await this.apiClient.sendBtcEstimate({
       feeRate,
       amount,
-      network: this.network,
-      spendUtxos,
-      spendAddress,
       altSpendPubKey,
+      spendAddress,
+      spendPubKey,
       altSpendAddress,
-      altSpendUtxos,
     })
 
-    return fee
+    return result
   }
 
   async sendCollectibleEstimate({
     spendAddress,
     altSpendAddress,
-    toAddress,
     feeRate,
   }: {
-    toAddress: string
     feeRate?: number
     altSpendAddress?: string
     spendAddress?: string
   }) {
-    const addressType = getAddressType(toAddress)
-    if (addressTypeMap[addressType] === 'p2pkh') {
-      throw new Error('Sending bitcoin to legacy address is not supported')
-    }
-    if (addressTypeMap[addressType] === 'p2sh') {
-      throw new Error(
-        'Sending bitcoin to a nested-segwit address is not supported'
-      )
-    }
-    let spendUtxos: Utxo[] | undefined
-    let altSpendUtxos: Utxo[] | undefined
-
-    spendUtxos = await this.getUtxosArtifacts({
-      address: spendAddress,
+    const result = await this.apiClient.sendCollectibleEstimate({
+      spendAddress,
+      altSpendAddress,
+      feeRate,
     })
-
-    if (!spendUtxos) {
-      throw new Error('Insufficient Balance')
-    }
-
-    altSpendUtxos = await this.getUtxosArtifacts({
-      address: altSpendAddress,
-    })
-
-    if (!feeRate) {
-      feeRate = (await this.esploraRpc.getFeeEstimates())['1']
-    }
-    const sendTxSize = calculateTaprootTxSize(2, 0, 2)
-    let fee = sendTxSize * feeRate < 250 ? 250 : sendTxSize * feeRate
-
-    const availableUtxos = await filterTaprootUtxos({
-      taprootUtxos: spendUtxos,
-    })
-    let utxosToSend = findUtxosToCoverAmount(availableUtxos, fee)
-
-    if (utxosToSend?.selectedUtxos.length > 2) {
-      const txSize = calculateTaprootTxSize(
-        utxosToSend.selectedUtxos.length,
-        0,
-        2
-      )
-      fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
-      utxosToSend = findUtxosToCoverAmount(availableUtxos, fee)
-    }
-
-    if (!utxosToSend) {
-      const unFilteredAltUtxos = await filterTaprootUtxos({
-        taprootUtxos: altSpendUtxos,
-      })
-      utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, fee)
-
-      if (utxosToSend?.selectedUtxos.length > 2) {
-        const txSize = calculateTaprootTxSize(
-          utxosToSend.selectedUtxos.length,
-          0,
-          2
-        )
-        fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
-        utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, fee)
-      }
-      if (!utxosToSend) {
-        throw new Error('Insufficient Balance')
-      }
-    }
-
-    const sendTxFee = fee
-
-    return { fee: sendTxFee }
+    return result
   }
 
-  async sendBR20Estimate({
-    toAddress,
+  async sendBrc20Estimate({
     spendPubKey,
     feeRate,
     altSpendPubKey,
     spendAddress,
     altSpendAddress,
     signer,
-    token = 'estimate',
-    amount = 1,
   }: {
-    toAddress: string
     spendPubKey: string
     altSpendPubKey?: string
     spendAddress?: string
     altSpendAddress?: string
     signer: Signer
     feeRate?: number
-    token?: string
-    amount?: number
   }) {
-    const addressType = getAddressType(toAddress)
-    if (addressTypeMap[addressType] === 'p2pkh') {
-      throw new Error('Sending bitcoin to legacy address is not supported')
-    }
-    if (addressTypeMap[addressType] === 'p2sh') {
-      throw new Error(
-        'Sending bitcoin to a nested-segwit address is not supported'
-      )
-    }
-    let spendUtxos: Utxo[] | undefined
-    let altSpendUtxos: Utxo[] | undefined
-
-    spendUtxos = await this.getUtxosArtifacts({
-      address: spendAddress,
+    const result = await this.apiClient.sendBrc20Estimate({
+      spendPubKey,
+      feeRate,
+      altSpendPubKey,
+      spendAddress,
+      altSpendAddress,
+      signer,
     })
 
-    if (!spendUtxos) {
-      throw new Error('Insufficient Balance')
-    }
-
-    altSpendUtxos = await this.getUtxosArtifacts({
-      address: altSpendAddress,
-    })
-
-    if (!feeRate) {
-      feeRate = (await this.esploraRpc.getFeeEstimates())['1']
-    }
-
-    const content = `{"p":"brc-20","op":"transfer","tick":"${token}","amt":"${amount}"}`
-    const sendTxSize = calculateTaprootTxSize(2, 0, 2)
-    let fee = sendTxSize * feeRate < 250 ? 250 : sendTxSize * feeRate
-
-    const { fee: commitTxFee, utxosUsedForFees } =
-      await this.inscriptionCommitTx({
-        content,
-        signer,
-        spendAddress,
-        spendPubKey,
-        altSpendPubKey,
-        altSpendAddress,
-        feeRate,
-      })
-
-    const filteredSpendUtxos = await filterTaprootUtxos({
-      taprootUtxos: spendUtxos,
-    })
-
-    let availableUtxos = filteredSpendUtxos.filter(
-      (utxo: any) => !utxosUsedForFees.includes(utxo.txId)
-    )
-
-    let utxosToSend = findUtxosToCoverAmount(availableUtxos, fee)
-
-    if (utxosToSend?.selectedUtxos.length > 2) {
-      const txSize = calculateTaprootTxSize(
-        utxosToSend.selectedUtxos.length,
-        0,
-        2
-      )
-      fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
-      utxosToSend = findUtxosToCoverAmount(availableUtxos, fee)
-    }
-
-    if (!utxosToSend) {
-      const unFilteredAltUtxos = await filterTaprootUtxos({
-        taprootUtxos: altSpendUtxos,
-      })
-      const availableUtxos = unFilteredAltUtxos.filter(
-        (utxo: any) => !utxosUsedForFees.includes(utxo.txId)
-      )
-      utxosToSend = findUtxosToCoverAmount(availableUtxos, fee)
-
-      if (utxosToSend?.selectedUtxos.length > 2) {
-        const txSize = calculateTaprootTxSize(
-          utxosToSend.selectedUtxos.length,
-          0,
-          2
-        )
-        fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
-        utxosToSend = findUtxosToCoverAmount(availableUtxos, fee)
-      }
-
-      if (!utxosToSend) {
-        throw new Error('Insufficient Balance')
-      }
-    }
-
-    const sendTxFee = fee
-
-    return {
-      commitTxFee: commitTxFee,
-      sendTxFee: sendTxFee,
-      total: commitTxFee + sendTxFee,
-    }
+    return result
   }
 }
