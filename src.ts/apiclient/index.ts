@@ -436,7 +436,6 @@ export class OylApiClient {
     spendAddress,
     spendPubKey,
     altSpendAddress,
-    signer,
     testnet,
   }: {
     feeRate?: number
@@ -444,7 +443,7 @@ export class OylApiClient {
     spendAddress: string
     spendPubKey: string
     altSpendAddress?: string
-    signer: Signer
+    signerPrivateKey: string
     testnet: boolean
   }): Promise<any> {
     return await this._call('/send-brc20-estimate', 'post', {
@@ -453,7 +452,6 @@ export class OylApiClient {
       altSpendPubKey,
       spendAddress,
       altSpendAddress,
-      signer,
       testnet,
     })
   }

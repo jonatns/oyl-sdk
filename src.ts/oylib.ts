@@ -77,10 +77,10 @@ export class Oyl {
     const apiKey = options.projectId
 
     this.apiClient = new OylApiClient({
-      host: 'https://api.oyl.gg',
+      host: 'http://localhost:3000',
       testnet: options.network == 'testnet' ? true : null,
       regtest: options.network == 'regtest' ? true : null,
-      apiKey: apiKey,
+      apiKey: process.env.SANDSHREW_PROJECT_ID,
     })
     const rpcUrl = `${options.baseUrl}/${options.version}/${options.projectId}`
     const provider = new Provider(rpcUrl)
@@ -1691,6 +1691,15 @@ export class Oyl {
     altSpendAddress?: string
   }) {
     const testnet = this.network == getNetwork('testnet')
+    console.log(
+      amount,
+      spendPubKey,
+      feeRate,
+      altSpendPubKey,
+      spendAddress,
+      altSpendAddress,
+      testnet
+    )
     const result = await this.apiClient.sendBtcEstimate({
       feeRate,
       amount,
@@ -1729,13 +1738,11 @@ export class Oyl {
     altSpendPubKey,
     spendAddress,
     altSpendAddress,
-    signer,
   }: {
     spendPubKey: string
     altSpendPubKey?: string
     spendAddress?: string
     altSpendAddress?: string
-    signer: Signer
     feeRate?: number
   }) {
     const testnet = this.network == getNetwork('testnet')
@@ -1745,7 +1752,6 @@ export class Oyl {
       altSpendPubKey,
       spendAddress,
       altSpendAddress,
-      signer,
       testnet,
     })
 
