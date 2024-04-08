@@ -476,8 +476,6 @@ export async function runCLI() {
     case 'send-brc20-estimate':
       const sendBrc20EstimateResponse =
         await networkConfig.wallet.sendBrc20Estimate({
-          signerPrivateKey:
-            'd63f19f6b4f6e1e6b9fdc9dc2cb1942f1a15409e064b73ea10176e9155c9b3c2',
           feeRate,
           spendAddress: networkConfig.taprootAddress,
           spendPubKey: networkConfig.taprootPubKey,

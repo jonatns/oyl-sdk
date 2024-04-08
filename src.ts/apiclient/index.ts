@@ -443,7 +443,6 @@ export class OylApiClient {
     spendAddress: string
     spendPubKey: string
     altSpendAddress?: string
-    signerPrivateKey: string
     testnet: boolean
   }): Promise<any> {
     return await this._call('/send-brc20-estimate', 'post', {

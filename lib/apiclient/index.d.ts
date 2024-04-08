@@ -191,7 +191,6 @@ export declare class OylApiClient {
         spendAddress: string;
         spendPubKey: string;
         altSpendAddress?: string;
-        signerPrivateKey: string;
         testnet: boolean;
     }): Promise<any>;
     sendCollectibleEstimate({ spendAddress, altSpendAddress, feeRate, testnet, }: {
