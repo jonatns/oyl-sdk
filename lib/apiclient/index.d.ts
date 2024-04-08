@@ -1,4 +1,5 @@
 import { SwapBrcBid, SignedBid } from '../shared/interface';
+import { Signer } from '../signer';
 /**
  * Represents the client for interacting with the Oyl API.
  */
@@ -114,17 +115,17 @@ export declare class OylApiClient {
      */
     getBtcPrice(): Promise<any>;
     /**
-   * Get BTC market chart.
-   * @param days - The number of days to use as interval.
-   */
+     * Get BTC market chart.
+     * @param days - The number of days to use as interval.
+     */
     getBitcoinMarketChart(days: string): Promise<any>;
     /**
      * Get BTC market weekly.
      */
     getBitcoinMarketWeekly(): Promise<any>;
     /**
-    * Get BTC markets.
-    */
+     * Get BTC markets.
+     */
     getBitcoinMarkets(): Promise<any>;
     /**
      * Get Omnisat ticker offers.
@@ -176,4 +177,28 @@ export declare class OylApiClient {
      * @param params - Parameters for the signed bid.
      */
     submitSignedBid(params: SignedBid): Promise<any>;
+    sendBtcEstimate({ feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, testnet, }: {
+        feeRate?: number;
+        amount: number;
+        altSpendPubKey?: string;
+        spendAddress: string;
+        spendPubKey: string;
+        altSpendAddress?: string;
+        testnet: boolean;
+    }): Promise<any>;
+    sendBrc20Estimate({ feeRate, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, signer, testnet, }: {
+        feeRate?: number;
+        altSpendPubKey?: string;
+        spendAddress: string;
+        spendPubKey: string;
+        altSpendAddress?: string;
+        signer: Signer;
+        testnet: boolean;
+    }): Promise<any>;
+    sendCollectibleEstimate({ spendAddress, altSpendAddress, feeRate, testnet, }: {
+        feeRate?: number;
+        spendAddress: string;
+        altSpendAddress?: string;
+        testnet: boolean;
+    }): Promise<any>;
 }

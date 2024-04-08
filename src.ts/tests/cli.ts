@@ -462,10 +462,7 @@ export async function runCLI() {
       return res
     case 'send-btc-estimate':
       const sendEstimateResponse = await networkConfig.wallet.sendBtcEstimate({
-        fromAddress: networkConfig.taprootAddress,
-        toAddress: networkConfig.segwitAddress,
         feeRate,
-        amount: 30,
         spendAddress: networkConfig.taprootAddress,
         spendPubKey: networkConfig.taprootPubKey,
         altSpendAddress: networkConfig.segwitAddress,
@@ -477,10 +474,9 @@ export async function runCLI() {
 
     case 'send-brc-20-estimate':
       const sendBrc20EstimateResponse =
-        await networkConfig.wallet.sendBR20Estimate({
+        await networkConfig.wallet.sendBrc20Estimate({
           signer,
           feeRate,
-          toAddress: to,
           spendAddress: networkConfig.taprootAddress,
           spendPubKey: networkConfig.taprootPubKey,
           altSpendAddress: networkConfig.segwitAddress,
@@ -493,12 +489,7 @@ export async function runCLI() {
       const sendCollectibleEstimateResponse =
         await networkConfig.wallet.sendCollectibleEstimate({
           feeRate,
-          fromAddress: networkConfig.taprootAddress,
-          fromPubKey: networkConfig.taprootPubKey,
-          toAddress: to,
           spendAddress: networkConfig.segwitAddress,
-          spendPubKey: networkConfig.segwitPubKey,
-          altSpendPubKey: networkConfig.taprootPubKey,
           altSpendAddress: networkConfig.taprootAddress,
         })
 

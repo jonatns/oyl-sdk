@@ -186,8 +186,7 @@ export declare class Oyl {
      * @param {string} params.publicKey - The public key associated with the transaction.
      * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
      */
-    sendBtc({ fromAddress, toAddress, feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, signer, }: {
-        fromAddress: string;
+    sendBtc({ toAddress, feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, signer, }: {
         toAddress: string;
         feeRate?: number;
         amount: number;
@@ -200,8 +199,7 @@ export declare class Oyl {
         txId: string;
         rawTx: string;
     }>;
-    createBtcTx({ fromAddress, toAddress, spendPubKey, feeRate, amount, network, spendUtxos, spendAddress, altSpendAddress, altSpendPubKey, altSpendUtxos, }: {
-        fromAddress: string;
+    createBtcTx({ toAddress, spendPubKey, feeRate, amount, network, spendUtxos, spendAddress, altSpendAddress, altSpendPubKey, altSpendUtxos, }: {
         toAddress: string;
         spendPubKey: string;
         feeRate: number;
@@ -424,37 +422,25 @@ export declare class Oyl {
         rawPsbt: string;
         fee: number;
     }>;
-    sendBtcEstimate({ fromAddress, toAddress, feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, }: {
-        fromAddress: string;
-        toAddress: string;
+    sendBtcEstimate({ feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, }: {
         feeRate?: number;
         amount: number;
         altSpendPubKey?: string;
         spendAddress: string;
         spendPubKey: string;
         altSpendAddress?: string;
-    }): Promise<number>;
-    sendCollectibleEstimate({ spendAddress, altSpendAddress, toAddress, feeRate, }: {
-        toAddress: string;
+    }): Promise<any>;
+    sendCollectibleEstimate({ spendAddress, altSpendAddress, feeRate, }: {
         feeRate?: number;
         altSpendAddress?: string;
         spendAddress?: string;
-    }): Promise<{
-        fee: number;
-    }>;
-    sendBR20Estimate({ toAddress, spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, token, amount, }: {
-        toAddress: string;
+    }): Promise<any>;
+    sendBrc20Estimate({ spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, }: {
         spendPubKey: string;
         altSpendPubKey?: string;
         spendAddress?: string;
         altSpendAddress?: string;
         signer: Signer;
         feeRate?: number;
-        token?: string;
-        amount?: number;
-    }): Promise<{
-        commitTxFee: number;
-        sendTxFee: number;
-        total: number;
-    }>;
+    }): Promise<any>;
 }

@@ -781,7 +781,6 @@ export const filterUtxos = async ({ utxos }: { utxos: any[] }) => {
 export const addBtcUtxo = async ({
   spendUtxos,
   toAddress,
-  fromAddress,
   psbt,
   amount,
   feeRate,
@@ -794,7 +793,6 @@ export const addBtcUtxo = async ({
 }: {
   spendUtxos: any[]
   toAddress: string
-  fromAddress: string
   psbt: bitcoin.Psbt
   feeRate: number
   amount: number
