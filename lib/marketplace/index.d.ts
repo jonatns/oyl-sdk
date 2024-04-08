@@ -31,6 +31,13 @@ export declare class Marketplace {
     externalSign(options: any): Promise<any>;
     getUnspentsForAddress(address: string): Promise<any>;
     getUnspentsForAddressInOrderByValue(address: string): Promise<any>;
-    getUTXOsToCoverAmount(address: string, amountNeeded: number, inscriptionLocs?: string[]): Promise<any>;
+    getUTXOsToCoverAmount(address: string, amountNeeded: number, excludedUtxos?: any[], inscriptionLocs?: string[]): Promise<any>;
+    getAllUTXOsWorthASpecificValue(value: number): Promise<any>;
+    buildDummyAndPaymentUtxos(orderPrice: number): Promise<{
+        dummyUtxos: any[];
+        paymentUtxos: any[];
+    }>;
+    createOkxSignedPsbt(sellerPsbt: string, orderPrice: number): Promise<string>;
+    isExcludedUtxo(utxo: any, excludedUtxos: any): any;
     getSignatureForBind(): Promise<string>;
 }

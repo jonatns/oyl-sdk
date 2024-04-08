@@ -15,7 +15,7 @@ import {
   MarketplaceOffer,
 } from '../shared/interface'
 import { Signer } from '../signer';
-import { genSignedBuyingPSBTWithoutListSignature, networks } from "@okxweb3/coin-bitcoin";
+import { genSignedBuyingPSBTWithoutListSignature, networks, BuyingData } from "@okxweb3/coin-bitcoin";
 import { BIP322, Signer as bip322Signer, Verifier } from 'bip322-js';
 
 export class Marketplace {
@@ -484,11 +484,12 @@ export class Marketplace {
   async createOkxSignedPsbt (sellerPsbt: string, orderPrice: number) {
     const keyPair = (getAddressType(this.selectedSpendAddress) == AddressType.P2WPKH) ? this.signer.segwitKeyPair : this.signer.taprootKeyPair
     const privateKey = keyPair.toWIF();
-    const buyingData = await this.buildDummyAndPaymentUtxos(orderPrice);
-    buyingData["receiveNftAddress"] = this.receiveAddress;
-    buyingData["paymentAndChangeAddress"] = this.selectedSpendAddress;
-    buyingData["feeRate"] = this.feeRate;
-    buyingData["sellerPsbts"] = sellerPsbt
+    const data = await this.buildDummyAndPaymentUtxos(orderPrice) as any;
+    data["receiveNftAddress"] = this.receiveAddress;
+    data["paymentAndChangeAddress"] = this.selectedSpendAddress;
+    data["feeRate"] = this.feeRate;
+    data["sellerPsbts"] = [sellerPsbt]
+    const buyingData: BuyingData = data
 
     const buyerPsbt = genSignedBuyingPSBTWithoutListSignature(buyingData, privateKey, networks.bitcoin);
     return buyerPsbt
