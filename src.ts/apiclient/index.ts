@@ -133,6 +133,7 @@ export class OylApiClient {
         exclude_brc20: false,
         count: 20,
         order: 'desc',
+        test: this.testnet,
       })
     }
   }
