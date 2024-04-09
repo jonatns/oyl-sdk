@@ -810,7 +810,6 @@ export const filterUtxos = async ({ utxos }: { utxos: any[] }) => {
 export const addBtcUtxo = async ({
   spendUtxos,
   toAddress,
-  fromAddress,
   psbt,
   amount,
   feeRate,
@@ -823,7 +822,6 @@ export const addBtcUtxo = async ({
 }: {
   spendUtxos: any[]
   toAddress: string
-  fromAddress: string
   psbt: bitcoin.Psbt
   feeRate: number
   amount: number
@@ -843,7 +841,7 @@ export const addBtcUtxo = async ({
   let utxosToSend: any = findUtxosToCoverAmount(spendableUtxos, amount + fee)
   let usingAlt = false
 
-  if (utxosToSend.selectedUtxos.length > 2) {
+  if (utxosToSend?.selectedUtxos.length > 2) {
     const txSize = calculateTaprootTxSize(
       utxosToSend.selectedUtxos.length,
       0,
@@ -860,7 +858,7 @@ export const addBtcUtxo = async ({
     })
     utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, amount + fee)
 
-    if (utxosToSend.selectedUtxos.length > 2) {
+    if (utxosToSend?.selectedUtxos.length > 2) {
       const txSize = calculateTaprootTxSize(
         utxosToSend.selectedUtxos.length,
         0,

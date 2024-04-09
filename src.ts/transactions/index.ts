@@ -73,6 +73,12 @@ export const getMetaUtxos = async (
       }
     }
 
+    for (const inscription of inscriptions['runes']) {
+      if (inscription.detail.includes(utxo.tx_hash_big_endian)) {
+        formattedUtxo.inscriptions.push({ runes: inscription.detail })
+      }
+    }
+
     formattedData.push(formattedUtxo)
   }
 

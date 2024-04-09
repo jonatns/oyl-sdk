@@ -121,10 +121,9 @@ export declare const filterTaprootUtxos: ({ taprootUtxos, }: {
 export declare const filterUtxos: ({ utxos }: {
     utxos: any[];
 }) => Promise<any>;
-export declare const addBtcUtxo: ({ spendUtxos, toAddress, fromAddress, psbt, amount, feeRate, network, spendAddress, spendPubKey, altSpendAddress, altSpendPubKey, altSpendUtxos, }: {
+export declare const addBtcUtxo: ({ spendUtxos, toAddress, psbt, amount, feeRate, network, spendAddress, spendPubKey, altSpendAddress, altSpendPubKey, altSpendUtxos, }: {
     spendUtxos: any[];
     toAddress: string;
-    fromAddress: string;
     psbt: bitcoin.Psbt;
     feeRate: number;
     amount: number;
