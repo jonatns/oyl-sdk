@@ -1729,13 +1729,11 @@ export class Oyl {
     altSpendPubKey,
     spendAddress,
     altSpendAddress,
-    signer,
   }: {
     spendPubKey: string
     altSpendPubKey?: string
     spendAddress?: string
     altSpendAddress?: string
-    signer: Signer
     feeRate?: number
   }) {
     const testnet = this.network == getNetwork('testnet')
@@ -1745,7 +1743,6 @@ export class Oyl {
       altSpendPubKey,
       spendAddress,
       altSpendAddress,
-      signer,
       testnet,
     })
 

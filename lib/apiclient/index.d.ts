@@ -1,5 +1,4 @@
 import { SwapBrcBid, SignedBid } from '../shared/interface';
-import { Signer } from '../signer';
 /**
  * Represents the client for interacting with the Oyl API.
  */
@@ -186,13 +185,12 @@ export declare class OylApiClient {
         altSpendAddress?: string;
         testnet: boolean;
     }): Promise<any>;
-    sendBrc20Estimate({ feeRate, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, signer, testnet, }: {
+    sendBrc20Estimate({ feeRate, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, testnet, }: {
         feeRate?: number;
         altSpendPubKey?: string;
         spendAddress: string;
         spendPubKey: string;
         altSpendAddress?: string;
-        signer: Signer;
         testnet: boolean;
     }): Promise<any>;
     sendCollectibleEstimate({ spendAddress, altSpendAddress, feeRate, testnet, }: {

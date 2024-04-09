@@ -435,12 +435,11 @@ export declare class Oyl {
         altSpendAddress?: string;
         spendAddress?: string;
     }): Promise<any>;
-    sendBrc20Estimate({ spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, }: {
+    sendBrc20Estimate({ spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, }: {
         spendPubKey: string;
         altSpendPubKey?: string;
         spendAddress?: string;
         altSpendAddress?: string;
-        signer: Signer;
         feeRate?: number;
     }): Promise<any>;
 }
