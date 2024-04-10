@@ -144,7 +144,7 @@ export class BuildMarketplaceTransaction {
       prepareTx.addInput(input);
     });
     const amountRetrieved = this.calculateAmountGathered(retrievedUtxos)
-    const remainder = amountRetrieved - 3000 - 1200
+    const remainder = amountRetrieved - 30000 - 1200
     prepareTx.addOutput({
       address: this.walletAddress,
       value: 600,
@@ -179,7 +179,7 @@ export class BuildMarketplaceTransaction {
       network: this.network,
     })
     const costPrice = this.orderPrice
-    const requiredSatoshis = costPrice + 3000 + 546 + 1200 + 600 + 600
+    const requiredSatoshis = costPrice + 30000 + 546 + 1200 + 600 + 600
     const retrievedUtxos = await this.getUTXOsToCoverAmount(requiredSatoshis)
     if (retrievedUtxos.length === 0) {
       throw Error('Not enough funds to purchase this offer')
@@ -266,7 +266,7 @@ export class BuildMarketplaceTransaction {
     })
     const amountRetrieved = this.calculateAmountGathered(retrievedUtxos)
     const remainder =
-      amountRetrieved - costPrice - 3000 - 546 - 1200 - 600 - 600
+      amountRetrieved - costPrice - 30000 - 546 - 1200 - 600 - 600
     swapPsbt.addOutput({
       address: this.walletAddress,
       value: 600,

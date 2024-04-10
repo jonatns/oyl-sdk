@@ -52,7 +52,7 @@ export class Marketplace {
           let offerPrice = offers[i]?.price
               ? offers[i].price
               : offers[i]?.totalPrice
-          costEstimate += offerPrice + 50000 + 546 + 1200
+          costEstimate += offerPrice + 30000 + 546 + 1200
       }
       return costEstimate
   }
