@@ -162,6 +162,7 @@ export class Marketplace {
 
 
   async processAllOffers(offers: MarketplaceOffer[]) {
+    console.log("offer gotten", offers[0])
       await this.selectSpendAddress(offers)
       const processedOffers = []
       let externalSwap = false
@@ -186,6 +187,7 @@ export class Marketplace {
               await timeout(2000)
           } else if (offer.marketplace == 'okx' && !testnet) {
               const offerPsbt = await this.wallet.apiClient.getOkxOfferPsbt({offerId: offer.offerId});
+              console.log(offerPsbt)
               const signedPsbt = await this.createOkxSignedPsbt(offerPsbt.data.sellerPsbt, offer.totalPrice);
               console.log(signedPsbt)
               //NEED TO ADAPT THIS TO FLOW OF OMNISAT & UNISAT
