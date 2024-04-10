@@ -145,7 +145,7 @@ export declare class Oyl {
      * @returns {Promise<Array<any>>} A promise that resolves to an array of inscription details.
      */
     getInscriptions({ address }: {
-        address: any;
+        address: string;
     }): Promise<{
         collectibles: any[];
         brc20: any[];

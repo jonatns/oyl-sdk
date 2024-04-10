@@ -194,6 +194,13 @@ export interface IBlockchainInfoUTXO {
     confirmations: number;
     tx_index: number;
 }
+export interface txOutputs {
+    scriptpubkey: string;
+    scriptpubkey_asm: string;
+    scriptpubkey_type: string;
+    scriptpubkey_address: string;
+    value: number;
+}
 export interface InscribeTransfer {
     fromAddress: string;
     taprootPublicKey: string;

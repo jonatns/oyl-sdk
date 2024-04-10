@@ -811,12 +811,11 @@ export async function runCLI() {
 
     case 'utxo-artifacts':
       return console.log(
-        (
-          await networkConfig.wallet.getUtxosArtifacts({
-            address: networkConfig.taprootAddress,
-          })
-        )[0]['inscriptions'][0]
+        await networkConfig.wallet.getUtxosArtifacts({
+          address: networkConfig.taprootAddress,
+        })
       )
+
     case 'taproot-txn-history':
       return console.log(
         await networkConfig.wallet.getTaprootTxHistory({

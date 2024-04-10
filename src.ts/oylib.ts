@@ -33,6 +33,7 @@ import {
   Providers,
   RecoverAccountOptions,
   TickerDetails,
+  txOutputs,
 } from './shared/interface'
 import { OylApiClient } from './apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
@@ -434,15 +435,17 @@ export class Oyl {
    * @param {string} param0.address - The address to query for inscriptions.
    * @returns {Promise<Array<any>>} A promise that resolves to an array of inscription details.
    */
-  async getInscriptions({ address }) {
+  async getInscriptions({ address }: { address: string }) {
     const collectibles = []
     const brc20 = []
     const runes = []
+
     const allRunes = await (
       await fetch(
-        `https://testnet.sandshrew.io:8443/rune_balances?address=eq.${address}`
+        `https://testnet.sandshrew.io:8443/outpoints?address=eq.${address}`
       )
     ).json()
+
     const allOrdinals: any[] = (
       await this.apiClient.getAllInscriptionsByAddress(address)
     ).data
@@ -496,20 +499,22 @@ export class Oyl {
     }
 
     for (const artifact of allRunes) {
-      const { rune_id, balance, address } = artifact
+      const { outpoint_id, rune_id, amount } = artifact
       const { entry } = await this.ordRpc.getRuneById(rune_id)
-
       const detail = {
-        id: rune_id,
+        runeId: rune_id,
+        outpoint_id: outpoint_id,
         name: entry.spaced_rune,
         symbol: entry.symbol,
-        address: address,
-        balance: balance,
+        divisibility: entry.divisibility,
+        amount: amount,
+        mints: entry.mints,
+        burned: entry.burned,
+        terms: entry.terms,
       }
-
       runes.push({
-        id: rune_id,
-        name: entry.spaced_rune,
+        txId: outpoint_id.split(':')[0],
+        outputIndex: outpoint_id.split(':')[1],
         detail,
       })
     }
@@ -524,7 +529,10 @@ export class Oyl {
    */
   async getUtxosArtifacts({ address }) {
     const { unspent_outputs } = await this.getUtxos(address, true)
-    const inscriptions = await this.getInscriptions({ address })
+    const inscriptions = await this.getInscriptions({
+      address,
+    })
+
     const utxoArtifacts = await transactions.getMetaUtxos(
       address,
       unspent_outputs,
