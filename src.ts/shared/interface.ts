@@ -139,6 +139,7 @@ export interface MarketplaceOffer {
   unitPrice?: number
   totalPrice?: number
   psbt?: string
+  inscriptionId?: string
 }
 
 export interface ExternalSwap {
