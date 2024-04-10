@@ -147,6 +147,16 @@ export interface ExternalSwap {
   bidPrice: Number
 }
 
+export interface OkxBid {
+    ticker: string;
+    amount: number;
+    fromAddress: string;
+    toAddress: string;
+    inscriptionId: string;
+    buyerPsbt: string;
+    orderId: number;
+}
+
 export interface MarketplaceAccount {
   wallet: Oyl
   spendAddress: string

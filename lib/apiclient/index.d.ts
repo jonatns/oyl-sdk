@@ -1,4 +1,4 @@
-import { SwapBrcBid, SignedBid } from '../shared/interface';
+import { SwapBrcBid, SignedBid, OkxBid } from '../shared/interface';
 /**
  * Represents the client for interacting with the Oyl API.
  */
@@ -109,6 +109,11 @@ export declare class OylApiClient {
     getOkxOfferPsbt({ offerId }: {
         offerId: number;
     }): Promise<any>;
+    /**
+    * Submit a signed bid for OKX marketplace.
+    * @param params - Parameters for the signed bid.
+    */
+    submitOkxBid(bidDetails: OkxBid): Promise<any>;
     /**
      * Get BTC price.
      */

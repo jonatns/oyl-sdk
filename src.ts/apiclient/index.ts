@@ -1,5 +1,5 @@
 import fetch from 'node-fetch'
-import { SwapBrcBid, SignedBid } from '../shared/interface'
+import { SwapBrcBid, SignedBid, OkxBid } from '../shared/interface'
 import { getAllInscriptionsByAddressRegtest } from '../tests/regtestApi'
 
 /**
@@ -258,6 +258,15 @@ export class OylApiClient {
     const response = await this._call('/get-okx-offer-psbt', 'post', {
       offerId: offerId,
     })
+    return response
+  }
+
+   /**
+   * Submit a signed bid for OKX marketplace.
+   * @param params - Parameters for the signed bid.
+   */
+   async submitOkxBid(bidDetails : OkxBid): Promise<any> {
+    const response = await this._call('/finalize-okx-bid', 'post', bidDetails)
     return response
   }
 
