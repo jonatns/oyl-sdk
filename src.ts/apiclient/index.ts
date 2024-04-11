@@ -243,10 +243,18 @@ export class OylApiClient {
   /**
    * Get BRC-20 offers.
    * @param ticker - The ticker to query.
+   * @param limit - The limit of offers to return (Default = 5).
    */
-  async getBrc20Offers({ ticker }: { ticker: string }): Promise<any> {
+  async getBrc20Offers({
+    ticker,
+    limit = 5,
+  }: {
+    ticker: string
+    limit?: number
+  }): Promise<any> {
     const response = await this._call('/get-brc20-offers', 'post', {
-      ticker: ticker,
+      ticker,
+      limit,
     })
     if (response.error) throw Error(response.error)
     return response

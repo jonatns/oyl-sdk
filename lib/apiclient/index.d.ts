@@ -98,9 +98,11 @@ export declare class OylApiClient {
     /**
      * Get BRC-20 offers.
      * @param ticker - The ticker to query.
+     * @param limit - The limit of offers to return (Default = 5).
      */
-    getBrc20Offers({ ticker }: {
+    getBrc20Offers({ ticker, limit, }: {
         ticker: string;
+        limit?: number;
     }): Promise<any>;
     /**
      * Get Okx ticker offers.
