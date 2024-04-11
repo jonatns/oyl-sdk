@@ -326,6 +326,32 @@ const argv = yargs(hideBin(process.argv))
       })
       .help().argv
   })
+  .command('send-collectible-estimate', 'Get collectible estimate', (yargs) => {
+    return yargs
+      .option('to', {
+        alias: 't',
+        describe: 'Destination address for the collectible',
+        type: 'string',
+        default: config[yargs.argv['network']].destinationTaprootAddress,
+      })
+      .option('feeRate', {
+        alias: 'f',
+        describe: 'Fee rate for the transaction',
+        type: 'number',
+        default: config[yargs.argv['network']].feeRate,
+      })
+      .option('mnemonic', {
+        describe: 'Mnemonic for the wallet',
+        type: 'string',
+        default: config[yargs.argv['network']].mnemonic,
+      })
+      .option('isDry', {
+        describe: 'Dry run',
+        type: 'boolean',
+        default: false,
+      })
+      .help().argv
+  })
   .command('view', 'View PSBT', {})
   .command('convert', 'Convert PSBT', {})
   .command('aggregate', 'Test Aggregator', {})
@@ -441,6 +467,41 @@ export async function runCLI() {
       })
       console.log(res)
       return res
+    case 'send-btc-estimate':
+      const sendEstimateResponse = await networkConfig.wallet.sendBtcEstimate({
+        feeRate: 1,
+        spendAddress: networkConfig.taprootAddress,
+        spendPubKey: networkConfig.taprootPubKey,
+        altSpendAddress: networkConfig.segwitAddress,
+        altSpendPubKey: networkConfig.segwitPubKey,
+        signer,
+        amount: 546,
+      })
+      console.log(sendEstimateResponse)
+      return sendEstimateResponse
+
+    case 'send-brc20-estimate':
+      const sendBrc20EstimateResponse =
+        await networkConfig.wallet.sendBrc20Estimate({
+          feeRate,
+          spendAddress: networkConfig.taprootAddress,
+          spendPubKey: networkConfig.taprootPubKey,
+          altSpendAddress: networkConfig.segwitAddress,
+          altSpendPubKey: networkConfig.segwitPubKey,
+        })
+      console.log(sendBrc20EstimateResponse)
+      return sendBrc20EstimateResponse
+
+    case 'send-collectible-estimate':
+      const sendCollectibleEstimateResponse =
+        await networkConfig.wallet.sendCollectibleEstimate({
+          feeRate,
+          spendAddress: networkConfig.segwitAddress,
+          altSpendAddress: networkConfig.taprootAddress,
+        })
+
+      console.log(sendCollectibleEstimateResponse)
+      return sendCollectibleEstimateResponse
 
     case 'send-brc-20':
       const sendBrc20Response = await networkConfig.wallet.sendBRC20({
@@ -460,12 +521,10 @@ export async function runCLI() {
       return sendBrc20Response
 
     case 'send-collectible':
-      const { inscriptionId } = options
       const sendInscriptionResponse =
         await networkConfig.wallet.sendOrdCollectible({
           signer,
           feeRate,
-          inscriptionId,
           fromAddress: networkConfig.taprootAddress,
           fromPubKey: networkConfig.taprootPubKey,
           toAddress: to,

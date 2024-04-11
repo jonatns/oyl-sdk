@@ -186,8 +186,7 @@ export declare class Oyl {
      * @param {string} params.publicKey - The public key associated with the transaction.
      * @returns {Promise<Object>} A promise that resolves to an object containing transaction ID and other response data from the API client.
      */
-    sendBtc({ fromAddress, toAddress, feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, signer, }: {
-        fromAddress: string;
+    sendBtc({ toAddress, feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, signer, }: {
         toAddress: string;
         feeRate?: number;
         amount: number;
@@ -200,8 +199,7 @@ export declare class Oyl {
         txId: string;
         rawTx: string;
     }>;
-    createBtcTx({ fromAddress, toAddress, spendPubKey, feeRate, amount, network, spendUtxos, spendAddress, altSpendAddress, altSpendPubKey, altSpendUtxos, }: {
-        fromAddress: string;
+    createBtcTx({ toAddress, spendPubKey, feeRate, amount, network, spendUtxos, spendAddress, altSpendAddress, altSpendPubKey, altSpendUtxos, }: {
         toAddress: string;
         spendPubKey: string;
         feeRate: number;
@@ -214,6 +212,7 @@ export declare class Oyl {
         altSpendUtxos?: Utxo[];
     }): Promise<{
         rawPsbt: string;
+        fee: number;
     }>;
     /**
      * Retrieves information about a SegWit address.
@@ -353,6 +352,7 @@ export declare class Oyl {
     }): Promise<{
         commitPsbt: string;
         utxosUsedForFees: string[];
+        fee: number;
     }>;
     inscriptionRevealTx({ receiverAddress, signer, content, feeRate, commitTxId, }: {
         receiverAddress: string;
@@ -409,7 +409,7 @@ export declare class Oyl {
         rawTx: string;
     }>;
     createOrdCollectibleTx({ inscriptionId, fromAddress, fromPubKey, spendPubKey, spendAddress, toAddress, altSpendAddress, altSpendPubKey, feeRate, }: {
-        fromAddress: string;
+        fromAddress?: string;
         fromPubKey: string;
         toAddress: string;
         spendPubKey: string;
@@ -420,5 +420,26 @@ export declare class Oyl {
         inscriptionId: string;
     }): Promise<{
         rawPsbt: string;
+        fee: number;
     }>;
+    sendBtcEstimate({ feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, }: {
+        feeRate?: number;
+        amount: number;
+        altSpendPubKey?: string;
+        spendAddress: string;
+        spendPubKey: string;
+        altSpendAddress?: string;
+    }): Promise<any>;
+    sendCollectibleEstimate({ spendAddress, altSpendAddress, feeRate, }: {
+        feeRate?: number;
+        altSpendAddress?: string;
+        spendAddress?: string;
+    }): Promise<any>;
+    sendBrc20Estimate({ spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, }: {
+        spendPubKey: string;
+        altSpendPubKey?: string;
+        spendAddress?: string;
+        altSpendAddress?: string;
+        feeRate?: number;
+    }): Promise<any>;
 }

@@ -781,7 +781,6 @@ export const filterUtxos = async ({ utxos }: { utxos: any[] }) => {
 export const addBtcUtxo = async ({
   spendUtxos,
   toAddress,
-  fromAddress,
   psbt,
   amount,
   feeRate,
@@ -794,7 +793,6 @@ export const addBtcUtxo = async ({
 }: {
   spendUtxos: any[]
   toAddress: string
-  fromAddress: string
   psbt: bitcoin.Psbt
   feeRate: number
   amount: number
@@ -809,16 +807,38 @@ export const addBtcUtxo = async ({
     taprootUtxos: spendUtxos,
   })
   const txSize = calculateTaprootTxSize(2, 0, 2)
-  const fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
+  let fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
   let utxosToSend: any = findUtxosToCoverAmount(spendableUtxos, amount + fee)
   let usingAlt = false
+
+  if (utxosToSend?.selectedUtxos.length > 2) {
+    const txSize = calculateTaprootTxSize(
+      utxosToSend.selectedUtxos.length,
+      0,
+      2
+    )
+    fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
+
+    utxosToSend = findUtxosToCoverAmount(spendableUtxos, amount + fee)
+  }
 
   if (!utxosToSend) {
     const unFilteredAltUtxos = await filterTaprootUtxos({
       taprootUtxos: altSpendUtxos,
     })
     utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, amount + fee)
+
+    if (utxosToSend?.selectedUtxos.length > 2) {
+      const txSize = calculateTaprootTxSize(
+        utxosToSend.selectedUtxos.length,
+        0,
+        2
+      )
+      fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
+
+      utxosToSend = findUtxosToCoverAmount(spendableUtxos, amount + fee)
+    }
     if (!utxosToSend) {
       throw new Error('Insufficient Balance')
     }
@@ -856,7 +876,7 @@ export const addBtcUtxo = async ({
     network,
   })
 
-  return updatedPsbt
+  return { psbt: updatedPsbt, fee: fee }
 }
 
 export const isValidJSON = (str: string) => {
