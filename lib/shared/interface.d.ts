@@ -2,6 +2,7 @@
 import { payments, Psbt } from 'bitcoinjs-lib';
 import * as bitcoin from 'bitcoinjs-lib';
 import { Oyl } from '../oylib';
+import { Signer } from '../signer';
 export interface InscriptionResponse {
     address: string;
     inscriptions?: string;
@@ -117,22 +118,38 @@ export declare enum AddressType {
 }
 export interface MarketplaceOffer {
     ticker: string;
-    offerId: string;
+    offerId: any;
     amount?: string;
     address?: string;
     marketplace: string;
+    price?: number;
     unitPrice?: number;
     totalPrice?: number;
     psbt?: string;
+    inscriptionId?: string;
 }
 export interface ExternalSwap {
-    address: String;
     auctionId: String;
     bidPrice: Number;
-    pubKey: String;
-    mnemonic: String;
-    hdPath: String;
-    type: AddressType;
+}
+export interface OkxBid {
+    ticker: string;
+    amount: number;
+    fromAddress: string;
+    toAddress: string;
+    inscriptionId: string;
+    buyerPsbt: string;
+    orderId: number;
+}
+export interface MarketplaceAccount {
+    wallet: Oyl;
+    spendAddress: string;
+    spendPubKey: string;
+    altSpendAddress: string;
+    altSpendPubKey: string;
+    signer: Signer;
+    receiveAddress: string;
+    feeRate: number;
 }
 export interface MarketplaceOffers {
     offerId: string;
@@ -183,6 +200,8 @@ export interface MarketplaceBuy {
     psbtBase64: string;
     price: number;
     wallet: Oyl;
+    receiveAddress: string;
+    dryRun?: boolean;
 }
 export interface IBlockchainInfoUTXO {
     tx_hash_big_endian: string;
@@ -215,6 +234,8 @@ export interface SwapBrcBid {
     auctionId: String;
     bidPrice: Number;
     pubKey: String;
+    receiveAddress: string;
+    signature?: string;
 }
 export interface SignedBid {
     psbtBid: String;

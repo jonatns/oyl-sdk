@@ -6,7 +6,10 @@ export class Aggregator {
   public offers
 
   constructor() {
-    this.apiClient = new OylApiClient({ host: 'https://api.oyl.gg', apiKey: "" })
+    this.apiClient = new OylApiClient({
+      host: 'https://api.oyl.gg',
+      apiKey: '',
+    })
   }
 
   /**

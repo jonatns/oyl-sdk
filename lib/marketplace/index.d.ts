@@ -1,40 +1,43 @@
-import { AddressType, OGPSBTTransaction } from "..";
-import { BuildMarketplaceTransaction } from "./buildMarketplaceTx";
-import { ExternalSwap, MarketplaceOffer } from "../shared/interface";
+import { BuildMarketplaceTransaction } from './buildMarketplaceTx';
+import { ExternalSwap, MarketplaceAccount, MarketplaceOffer } from '../shared/interface';
 export declare class Marketplace {
     private wallet;
-    address: string;
-    publicKey: string;
-    private mnemonic;
-    private hdPath;
+    private receiveAddress;
+    private selectedSpendAddress;
+    private selectedSpendPubkey;
+    private spendAddress;
+    private spendPubKey;
+    private altSpendAddress;
+    private altSpendPubKey;
+    private signer;
     feeRate: number;
-    addressType: AddressType;
-    constructor(options?: any);
+    addressesBound: boolean;
+    constructor(options: MarketplaceAccount);
+    /**
+     * Should estimate the total amount of satoshi required to execute offers including fees
+     **/
+    getOffersCostEstimate(offers: MarketplaceOffer[]): Promise<number>;
+    selectSpendAddress(offers: MarketplaceOffer[]): Promise<void>;
     processMultipleBuys(orders: any, previousOrderTxId: string, remainingSats: number, index?: number, psbtBase64s?: string[], psbtHexs?: any[], txIds?: any[]): any;
-    getSigner(): Promise<OGPSBTTransaction>;
-    buyMarketPlaceOffers(pOffers: any): Promise<any>;
+    signMarketplacePsbt(psbt: string, finalize?: boolean): Promise<any>;
     processAllOffers(offers: MarketplaceOffer[]): Promise<{
         processed: boolean;
         processedOffers: any[];
     }>;
     externalSwap(bid: ExternalSwap): Promise<any>;
-    externalSign(options: any): Promise<string>;
-    /**
-     * should be able to check if an offer is still valid on the external marketplace
-      should make request to the api (and force a refetch of the orderId
-    **/
-    checkIfOfferIsValid(offer: any): Promise<Boolean>;
-    /**
-     * Should regularize an address in the event an address doesn't have
-     required utxos for a psbt atomic swap
-     */
+    buyMarketPlaceOffers(pOffers: any): Promise<any>;
     prepareAddress(marketPlaceBuy: BuildMarketplaceTransaction): Promise<Boolean>;
-    /**
-     * Should estimate the total amount of satoshi required to execute offers including fees
-     **/
-    getOffersCostEstimate(offers: any): Promise<number>;
-    /**
-     * Should validate the txid is in the mempool
-     **/
-    validateTxidInMempool(txid: string): Promise<void>;
+    canAddressAffordOffers(address: string, estimatedCost: number): Promise<boolean>;
+    externalSign(options: any): Promise<any>;
+    getUnspentsForAddress(address: string): Promise<any>;
+    getUnspentsForAddressInOrderByValue(address: string): Promise<any>;
+    getUTXOsToCoverAmount(address: string, amountNeeded: number, excludedUtxos?: any[], inscriptionLocs?: string[]): Promise<any>;
+    getAllUTXOsWorthASpecificValue(value: number): Promise<any>;
+    buildDummyAndPaymentUtxos(orderPrice: number): Promise<{
+        dummyUtxos: any[];
+        paymentUtxos: any[];
+    }>;
+    createOkxSignedPsbt(sellerPsbt: string, orderPrice: number): Promise<string>;
+    isExcludedUtxo(utxo: any, excludedUtxos: any): any;
+    getSignatureForBind(): Promise<string>;
 }
