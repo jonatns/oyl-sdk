@@ -241,6 +241,18 @@ export class OylApiClient {
   }
 
   /**
+   * Get BRC-20 offers.
+   * @param ticker - The ticker to query.
+   */
+  async getBrc20Offers({ ticker }: { ticker: string }): Promise<any> {
+    const response = await this._call('/get-brc20-offers', 'post', {
+      ticker: ticker,
+    })
+    if (response.error) throw Error(response.error)
+    return response
+  }
+
+  /**
    * Get Okx ticker offers.
    * @param _ticker - The ticker to query.
    */
@@ -263,11 +275,11 @@ export class OylApiClient {
     return response
   }
 
-   /**
+  /**
    * Submit a signed bid for OKX marketplace.
    * @param params - Parameters for the signed bid.
    */
-   async submitOkxBid(bidDetails : OkxBid): Promise<any> {
+  async submitOkxBid(bidDetails: OkxBid): Promise<any> {
     const response = await this._call('/finalize-okx-bid', 'post', bidDetails)
     return response
   }

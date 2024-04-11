@@ -96,6 +96,13 @@ export declare class OylApiClient {
         testnet?: boolean;
     }): Promise<any>;
     /**
+     * Get BRC-20 offers.
+     * @param ticker - The ticker to query.
+     */
+    getBrc20Offers({ ticker }: {
+        ticker: string;
+    }): Promise<any>;
+    /**
      * Get Okx ticker offers.
      * @param _ticker - The ticker to query.
      */
@@ -110,9 +117,9 @@ export declare class OylApiClient {
         offerId: number;
     }): Promise<any>;
     /**
-    * Submit a signed bid for OKX marketplace.
-    * @param params - Parameters for the signed bid.
-    */
+     * Submit a signed bid for OKX marketplace.
+     * @param params - Parameters for the signed bid.
+     */
     submitOkxBid(bidDetails: OkxBid): Promise<any>;
     /**
      * Get BTC price.
