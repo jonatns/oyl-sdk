@@ -200,12 +200,12 @@ const config = {
     taprootPrivateKey: process.env.TESTNET_TAPROOT_PRIVATEKEY,
     taprootHdPath: TAPROOT_HD_PATH,
     taprootAddress:
-      'tb1plh52zdjwmtk8ht54ldxchejg4zx077g8fvwhcjrpar7pmfpuyzdqj7rxjm',
+      'tb1ppkm55mpx6nx2mex4u6f25tp8wwgswy2fjn4qwkkdrsge0wyp902szjsm9r',
     taprootPubKey:
-      '020f3ee243a0d138c26a9f3d9c193aaee79a01326bcbf3e0cfd9e2c8ae32bbbca0',
-    segwitAddress: 'tb1qrs9hy48vyzdmt6pve45v6hrf3dwvtdav3dlws6',
+      '038e37e6d2e10e56dfc7a0570d7ba6821a1a5c77e7f16c2d8ad5187841eb76d29a',
+    segwitAddress: 'tb1qwxnhtpp07dwh8y9s4dej9zplfksewz73xkfgje',
     segwitPubKey:
-      '02058e30f3b55dac28b66ec8cfad71256f76d508cde1c727c17c8d8ead6a32d585',
+      '03d307e838fbeffe6cfaaf5c4eb6a21cc00dff4acceb88760e5c511921173fda47',
     destinationTaprootAddress:
       'tb1pstyemhl9n2hydg079rgrh8jhj9s7zdxh2g5u8apwk0c8yc9ge4eqp59l22',
     feeRate: 1,
@@ -531,6 +531,9 @@ export async function runCLI() {
       return sendInscriptionResponse
     case 'send-rune':
       const sendRuneResponse = await networkConfig.wallet.sendRune({
+        runeId: '2585328:8',
+        toAddress:
+          'tb1pstyemhl9n2hydg079rgrh8jhj9s7zdxh2g5u8apwk0c8yc9ge4eqp59l22',
         signer,
         amount: 100,
         feeRate: 2,
@@ -541,6 +544,20 @@ export async function runCLI() {
       })
       console.log(sendRuneResponse)
       return sendRuneResponse
+    case 'mint-rune':
+      const mintRuneResponse = await networkConfig.wallet.mintRune({
+        runeId: '2585328:8',
+        toAddress: networkConfig.taprootAddress,
+        signer,
+        amount: 1000,
+        feeRate: 1,
+        spendAddress: networkConfig.taprootAddress,
+        spendPubKey: networkConfig.taprootPubKey,
+        altSpendPubKey: networkConfig.segwitPubKey,
+        altSpendAddress: networkConfig.segwitAddress,
+      })
+      console.log(mintRuneResponse)
+      return mintRuneResponse
     case 'create-offer':
       try {
         const taprootUtxos = await networkConfig.wallet.getUtxosArtifacts({

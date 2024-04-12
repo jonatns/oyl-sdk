@@ -455,9 +455,7 @@ export declare class Oyl {
         altSpendAddress?: string;
         feeRate?: number;
     }): Promise<any>;
-    sendRune({ fromAddress, fromPubKey, toAddress, spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, symbol, amount, }: {
-        fromAddress: string;
-        fromPubKey: string;
+    sendRune({ toAddress, spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, runeId, amount, }: {
         toAddress: string;
         spendPubKey: string;
         altSpendPubKey?: string;
@@ -465,21 +463,48 @@ export declare class Oyl {
         altSpendAddress?: string;
         signer: Signer;
         feeRate?: number;
-        symbol?: string;
+        runeId?: string;
         amount?: number;
     }): Promise<{
         txId: string;
         rawTxn: string;
     }>;
-    runeCommitTx({ amount, spendAddress, spendPubKey, altSpendPubKey, altSpendAddress, feeRate, outPutIndex, }: {
+    runeSendTx({ runeId, toAddress, amount, spendAddress, spendPubKey, altSpendPubKey, altSpendAddress, feeRate, }: {
+        runeId: string;
+        toAddress: string;
         amount: number;
         spendPubKey: string;
         altSpendPubKey?: string;
         spendAddress?: string;
         altSpendAddress?: string;
         feeRate?: number;
-        outPutIndex?: string;
     }): Promise<{
-        commitPsbt: string;
+        sendPsbt: string;
+    }>;
+    mintRune({ toAddress, spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, runeId, amount, }: {
+        toAddress: string;
+        spendPubKey: string;
+        altSpendPubKey?: string;
+        spendAddress?: string;
+        altSpendAddress?: string;
+        signer: Signer;
+        feeRate?: number;
+        runeId?: string;
+        amount?: number;
+    }): Promise<{
+        txId: string;
+        rawTxn: string;
+    }>;
+    runeMintTx({ runeId, toAddress, amount, spendAddress, spendPubKey, altSpendPubKey, altSpendAddress, feeRate, }: {
+        runeId: string;
+        toAddress: string;
+        amount: number;
+        spendPubKey: string;
+        altSpendPubKey?: string;
+        spendAddress?: string;
+        altSpendAddress?: string;
+        feeRate?: number;
+    }): Promise<{
+        sendPsbt: string;
     }>;
 }

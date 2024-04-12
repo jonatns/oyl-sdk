@@ -18,6 +18,8 @@ import {
   createInscriptionScript,
   getOutputValueByVOutIndex,
   encodeVarint,
+  createRuneSendScript,
+  createRuneMintScript,
 } from './shared/utils'
 
 import { SandshrewBitcoinClient } from './rpclient/sandshrew'
@@ -1796,8 +1798,6 @@ export class Oyl {
   }
 
   async sendRune({
-    fromAddress,
-    fromPubKey,
     toAddress,
     spendPubKey,
     feeRate,
@@ -1805,11 +1805,9 @@ export class Oyl {
     spendAddress,
     altSpendAddress,
     signer,
-    symbol,
+    runeId,
     amount,
   }: {
-    fromAddress: string
-    fromPubKey: string
     toAddress: string
     spendPubKey: string
     altSpendPubKey?: string
@@ -1817,69 +1815,77 @@ export class Oyl {
     altSpendAddress?: string
     signer: Signer
     feeRate?: number
-    symbol?: string
+    runeId?: string
     amount?: number
   }) {
-    try {
-      if (!feeRate) {
-        feeRate = (await this.esploraRpc.getFeeEstimates())['1']
+    if (!feeRate) {
+      feeRate = (await this.esploraRpc.getFeeEstimates())['1']
+    }
+
+    const runeBalances: any[] = await (
+      await fetch(
+        `https://testnet.sandshrew.io:8443/rune_balances?address=eq.${spendAddress}`
+      )
+    ).json()
+
+    for (const rune of runeBalances) {
+      if (amount > rune.balance && runeId === rune.rune_id) {
+        throw new Error('Insufficient Balance')
       }
+    }
 
-      const { commitPsbt } = await this.runeCommitTx({
-        amount,
-        spendAddress,
-        spendPubKey,
-        altSpendPubKey,
-        altSpendAddress,
-        feeRate,
-      })
+    const { sendPsbt } = await this.runeSendTx({
+      runeId,
+      toAddress,
+      amount,
+      spendAddress,
+      spendPubKey,
+      altSpendPubKey,
+      altSpendAddress,
+      feeRate,
+    })
 
-      const { signedPsbt: segwitSigned } = await signer.signAllSegwitInputs({
-        rawPsbt: commitPsbt,
-        finalize: true,
-      })
+    const { signedPsbt: segwitSigned } = await signer.signAllSegwitInputs({
+      rawPsbt: sendPsbt,
+      finalize: true,
+    })
 
-      const { signedPsbt: taprootSigned } = await signer.signAllTaprootInputs({
-        rawPsbt: segwitSigned,
-        finalize: true,
-      })
+    const { signedPsbt: taprootSigned } = await signer.signAllTaprootInputs({
+      rawPsbt: segwitSigned,
+      finalize: true,
+    })
 
-      const { txId: commitTxId } = await this.pushPsbt({
-        psbtBase64: taprootSigned,
-      })
+    const { txId } = await this.pushPsbt({
+      psbtBase64: taprootSigned,
+    })
 
-      return {
-        txId: commitTxId,
-        rawTxn: commitPsbt,
-      }
-    } catch (err) {
-      console.error(err)
-      throw new Error(err)
+    return {
+      txId: txId,
+      rawTxn: taprootSigned,
     }
   }
 
-  async runeCommitTx({
+  async runeSendTx({
+    runeId,
+    toAddress,
     amount,
     spendAddress,
     spendPubKey,
     altSpendPubKey,
     altSpendAddress,
     feeRate,
-    outPutIndex,
   }: {
+    runeId: string
+    toAddress: string
     amount: number
     spendPubKey: string
     altSpendPubKey?: string
     spendAddress?: string
     altSpendAddress?: string
     feeRate?: number
-    outPutIndex?: string
   }) {
-    const commitTxSize = calculateTaprootTxSize(2, 0, 3)
-    let feeForCommit =
-      commitTxSize * feeRate < 250 ? 250 : commitTxSize * feeRate
-
-    const utxosUsedForFees: string[] = []
+    const txSize = calculateTaprootTxSize(2, 0, 3)
+    let feeForSend = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
     let usingAlt = false
 
@@ -1906,14 +1912,9 @@ export class Oyl {
 
     const psbt = new bitcoin.Psbt({ network: this.network })
 
-    psbt.addOutput({
-      value: inscriptionSats,
-      address: spendAddress,
-    })
-
     let utxosToPayFee = findUtxosToCoverAmount(
       spendableUtxos,
-      feeForCommit + inscriptionSats
+      feeForSend + inscriptionSats
     )
     if (utxosToPayFee?.selectedUtxos.length > 2) {
       const txSize = calculateTaprootTxSize(
@@ -1921,11 +1922,11 @@ export class Oyl {
         0,
         3
       )
-      feeForCommit = txSize * feeRate < 250 ? 250 : txSize * feeRate
+      feeForSend = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
       utxosToPayFee = findUtxosToCoverAmount(
         spendableUtxos,
-        feeForCommit + inscriptionSats
+        feeForSend + inscriptionSats
       )
     }
 
@@ -1935,7 +1936,7 @@ export class Oyl {
       })
       utxosToPayFee = findUtxosToCoverAmount(
         unFilteredAltUtxos,
-        feeForCommit + inscriptionSats
+        feeForSend + inscriptionSats
       )
 
       if (utxosToPayFee?.selectedUtxos.length > 2) {
@@ -1944,11 +1945,11 @@ export class Oyl {
           0,
           3
         )
-        feeForCommit = txSize * feeRate < 250 ? 250 : txSize * feeRate
+        feeForSend = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
         utxosToPayFee = findUtxosToCoverAmount(
           spendableUtxos,
-          feeForCommit + inscriptionSats
+          feeForSend + inscriptionSats
         )
       }
       if (!utxosToPayFee) {
@@ -1959,10 +1960,9 @@ export class Oyl {
     const feeAmountGathered = calculateAmountGatheredUtxo(
       utxosToPayFee.selectedUtxos
     )
-    const changeAmount = feeAmountGathered - feeForCommit - inscriptionSats
+    const changeAmount = feeAmountGathered - feeForSend - inscriptionSats
 
     for (let i = 0; i < utxosToPayFee.selectedUtxos.length; i++) {
-      utxosUsedForFees.push(utxosToPayFee.selectedUtxos[i].txId)
       psbt.addInput({
         hash: utxosToPayFee.selectedUtxos[i].txId,
         index: utxosToPayFee.selectedUtxos[i].outputIndex,
@@ -1976,33 +1976,18 @@ export class Oyl {
       address: spendAddress,
       value: changeAmount,
     })
-    const pointerFlag = encodeVarint(BigInt(22)).varint
-    const bodyFlag = encodeVarint(BigInt(0)).varint
-    const mintFlag = encodeVarint(BigInt(20)).varint
 
-    const mintAmount = encodeVarint(BigInt(100)).varint
-    const encodedOutputIndex = encodeVarint(
-      BigInt(psbt.txOutputs.length)
-    ).varint
+    psbt.addOutput({
+      value: inscriptionSats,
+      address: toAddress,
+    })
 
-    const encodedBlock = encodeVarint(BigInt(2585328)).varint
-    const encodedBlockTxNumber = encodeVarint(BigInt(8)).varint
-
-    const script = Buffer.concat([
-      Buffer.from('6a', 'hex'), //op_return
-      Buffer.from('5d', 'hex'), // pushnum 13
-      Buffer.from('0f', 'hex'), // pushbytes 15
-      mintFlag,
-      encodedBlock,
-      mintFlag,
-      encodedBlockTxNumber,
-      bodyFlag,
-      encodedBlock,
-      encodedBlockTxNumber,
-      mintAmount,
-      encodedOutputIndex,
-    ])
-
+    const script = createRuneSendScript({
+      runeId,
+      amount,
+      sendOutputIndex: 1,
+      pointer: 0,
+    })
     const output = { script: script, value: 0 }
     psbt.addOutput(output)
 
@@ -2013,7 +1998,200 @@ export class Oyl {
     })
 
     return {
-      commitPsbt: formattedPsbt.toBase64(),
+      sendPsbt: formattedPsbt.toBase64(),
+    }
+  }
+
+  async mintRune({
+    toAddress,
+    spendPubKey,
+    feeRate,
+    altSpendPubKey,
+    spendAddress,
+    altSpendAddress,
+    signer,
+    runeId,
+    amount,
+  }: {
+    toAddress: string
+    spendPubKey: string
+    altSpendPubKey?: string
+    spendAddress?: string
+    altSpendAddress?: string
+    signer: Signer
+    feeRate?: number
+    runeId?: string
+    amount?: number
+  }) {
+    if (!feeRate) {
+      feeRate = (await this.esploraRpc.getFeeEstimates())['1']
+    }
+
+    const { sendPsbt } = await this.runeMintTx({
+      runeId,
+      toAddress,
+      amount,
+      spendAddress,
+      spendPubKey,
+      altSpendPubKey,
+      altSpendAddress,
+      feeRate,
+    })
+
+    const { signedPsbt: segwitSigned } = await signer.signAllSegwitInputs({
+      rawPsbt: sendPsbt,
+      finalize: true,
+    })
+
+    const { signedPsbt: taprootSigned } = await signer.signAllTaprootInputs({
+      rawPsbt: segwitSigned,
+      finalize: true,
+    })
+
+    const { txId } = await this.pushPsbt({
+      psbtBase64: taprootSigned,
+    })
+
+    return {
+      txId: txId,
+      rawTxn: taprootSigned,
+    }
+  }
+
+  async runeMintTx({
+    runeId,
+    toAddress,
+    amount,
+    spendAddress,
+    spendPubKey,
+    altSpendPubKey,
+    altSpendAddress,
+    feeRate,
+  }: {
+    runeId: string
+    toAddress: string
+    amount: number
+    spendPubKey: string
+    altSpendPubKey?: string
+    spendAddress?: string
+    altSpendAddress?: string
+    feeRate?: number
+  }) {
+    const txSize = calculateTaprootTxSize(2, 0, 3)
+    let feeForSend = txSize * feeRate < 250 ? 250 : txSize * feeRate
+
+    let usingAlt = false
+
+    let spendUtxos: Utxo[] | undefined
+    let altSpendUtxos: Utxo[] | undefined
+
+    spendUtxos = await this.getUtxosArtifacts({
+      address: spendAddress,
+    })
+
+    if (!spendUtxos) {
+      throw new Error('No utxos for this address')
+    }
+
+    if (altSpendAddress) {
+      altSpendUtxos = await this.getUtxosArtifacts({
+        address: altSpendAddress,
+      })
+    }
+
+    const spendableUtxos = await filterTaprootUtxos({
+      taprootUtxos: spendUtxos,
+    })
+
+    const psbt = new bitcoin.Psbt({ network: this.network })
+
+    let utxosToPayFee = findUtxosToCoverAmount(
+      spendableUtxos,
+      feeForSend + inscriptionSats
+    )
+    if (utxosToPayFee?.selectedUtxos.length > 2) {
+      const txSize = calculateTaprootTxSize(
+        utxosToPayFee.selectedUtxos.length,
+        0,
+        3
+      )
+      feeForSend = txSize * feeRate < 250 ? 250 : txSize * feeRate
+
+      utxosToPayFee = findUtxosToCoverAmount(
+        spendableUtxos,
+        feeForSend + inscriptionSats
+      )
+    }
+
+    if (!utxosToPayFee) {
+      const unFilteredAltUtxos = await filterTaprootUtxos({
+        taprootUtxos: altSpendUtxos,
+      })
+      utxosToPayFee = findUtxosToCoverAmount(
+        unFilteredAltUtxos,
+        feeForSend + inscriptionSats
+      )
+
+      if (utxosToPayFee?.selectedUtxos.length > 2) {
+        const txSize = calculateTaprootTxSize(
+          utxosToPayFee.selectedUtxos.length,
+          0,
+          3
+        )
+        feeForSend = txSize * feeRate < 250 ? 250 : txSize * feeRate
+
+        utxosToPayFee = findUtxosToCoverAmount(
+          spendableUtxos,
+          feeForSend + inscriptionSats
+        )
+      }
+      if (!utxosToPayFee) {
+        throw new Error('Insufficient Balance')
+      }
+      usingAlt = true
+    }
+    const feeAmountGathered = calculateAmountGatheredUtxo(
+      utxosToPayFee.selectedUtxos
+    )
+    const changeAmount = feeAmountGathered - feeForSend - inscriptionSats
+
+    for (let i = 0; i < utxosToPayFee.selectedUtxos.length; i++) {
+      psbt.addInput({
+        hash: utxosToPayFee.selectedUtxos[i].txId,
+        index: utxosToPayFee.selectedUtxos[i].outputIndex,
+        witnessUtxo: {
+          value: utxosToPayFee.selectedUtxos[i].satoshis,
+          script: Buffer.from(utxosToPayFee.selectedUtxos[i].scriptPk, 'hex'),
+        },
+      })
+    }
+    psbt.addOutput({
+      address: spendAddress,
+      value: changeAmount,
+    })
+
+    psbt.addOutput({
+      value: inscriptionSats,
+      address: toAddress,
+    })
+
+    const script = createRuneMintScript({
+      runeId,
+      amountToMint: amount,
+      mintOutPutIndex: 1,
+      pointer: 1,
+    })
+    const output = { script: script, value: 0 }
+    psbt.addOutput(output)
+
+    const formattedPsbt: bitcoin.Psbt = await formatInputsToSign({
+      _psbt: psbt,
+      senderPublicKey: usingAlt ? altSpendPubKey : spendPubKey,
+      network: this.network,
+    })
+
+    return {
+      sendPsbt: formattedPsbt.toBase64(),
     }
   }
 }

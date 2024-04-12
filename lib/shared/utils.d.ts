@@ -74,7 +74,18 @@ export declare const formatInputsToSign: ({ _psbt, senderPublicKey, network, }: 
 export declare const timeout: (n: any) => Promise<unknown>;
 export declare const signInputs: (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], taprootPubkey: string, segwitPubKey: string, segwitSigner: any, taprootSigner: any) => Promise<bitcoin.Psbt>;
 export declare const createInscriptionScript: (pubKey: any, content: any) => string[];
-export declare const createRuneSendScript: (id: number, amount: number, changeIndex: number) => string[];
+export declare const createRuneSendScript: ({ runeId, amount, sendOutputIndex, pointer, }: {
+    runeId: string;
+    amount: number;
+    sendOutputIndex?: number;
+    pointer: number;
+}) => Buffer;
+export declare const createRuneMintScript: ({ runeId, amountToMint, mintOutPutIndex, pointer, }: {
+    runeId: string;
+    amountToMint: number;
+    mintOutPutIndex: number;
+    pointer?: number;
+}) => Buffer;
 export declare let RPC_ADDR: string;
 export declare const callBTCRPCEndpoint: (method: string, params: string | string[], network: string) => Promise<any>;
 export declare function waitForTransaction({ txId, sandshrewBtcClient, }: {

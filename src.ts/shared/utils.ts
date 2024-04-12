@@ -435,17 +435,106 @@ function encodeToBase26(inputString: string): string {
     .join('')
 }
 
-export const createRuneSendScript = (
-  id: number,
-  amount: number,
-  changeIndex: number
-) => {
-  return [
-    'OP_RETURN',
-    'OP_PUSHNUM_13',
-    'OP_PUSHBYTES_12',
-    //  unsigned.encode(bigInt(changeIndex)),
-  ] as string[]
+export const createRuneSendScript = ({
+  runeId,
+  amount,
+  sendOutputIndex = 1,
+  pointer = 0,
+}: {
+  runeId: string
+  amount: number
+  sendOutputIndex?: number
+  pointer: number
+}) => {
+  const pointerFlag = encodeVarint(BigInt(22)).varint
+  const pointerVarint = encodeVarint(BigInt(pointer)).varint
+  const bodyFlag = encodeVarint(BigInt(0)).varint
+  const amountToSend = encodeVarint(BigInt(amount)).varint
+  const encodedOutputIndex = encodeVarint(BigInt(sendOutputIndex)).varint
+  const splitIdString = runeId.split(':')
+  const block = Number(splitIdString[0])
+  const blockTx = Number(splitIdString[1])
+
+  const encodedBlock = encodeVarint(BigInt(block)).varint
+  const encodedBlockTxNumber = encodeVarint(BigInt(blockTx)).varint
+
+  const runeStone = Buffer.concat([
+    pointerFlag,
+    pointerVarint,
+    bodyFlag,
+    encodedBlock,
+    encodedBlockTxNumber,
+    amountToSend,
+    encodedOutputIndex,
+  ])
+
+  let runeStoneLength: string = runeStone.byteLength.toString(16)
+
+  if (runeStone.byteLength < 16) {
+    runeStoneLength = '0' + runeStone.byteLength.toString(16)
+  }
+
+  const script: Buffer = Buffer.concat([
+    Buffer.from('6a', 'hex'),
+    Buffer.from('5d', 'hex'),
+    Buffer.from(runeStoneLength, 'hex'),
+    runeStone,
+  ])
+  return script
+}
+
+export const createRuneMintScript = ({
+  runeId,
+  amountToMint,
+  mintOutPutIndex = 1,
+  pointer = 0,
+}: {
+  runeId: string
+  amountToMint: number
+  mintOutPutIndex: number
+  pointer?: number
+}) => {
+  const pointerFlag = encodeVarint(BigInt(22)).varint
+  const pointerVarint = encodeVarint(BigInt(pointer)).varint
+  const bodyFlag = encodeVarint(BigInt(0)).varint
+  const mintFlag = encodeVarint(BigInt(20)).varint
+
+  const mintAmount = encodeVarint(BigInt(amountToMint)).varint
+  const encodedOutputIndex = encodeVarint(BigInt(mintOutPutIndex)).varint
+  const splitIdString = runeId.split(':')
+  const block = Number(splitIdString[0])
+  const blockTx = Number(splitIdString[1])
+
+  const encodedBlock = encodeVarint(BigInt(block)).varint
+  const encodedBlockTxNumber = encodeVarint(BigInt(blockTx)).varint
+
+  const runeStone = Buffer.concat([
+    //  pointerFlag,
+    //pointerVarint,
+    mintFlag,
+    encodedBlock,
+    mintFlag,
+    encodedBlockTxNumber,
+    bodyFlag,
+    encodedBlock,
+    encodedBlockTxNumber,
+    mintAmount,
+    encodedOutputIndex,
+  ])
+
+  let runeStoneLength: string = runeStone.byteLength.toString(16)
+
+  if (runeStone.byteLength < 16) {
+    runeStoneLength = '0' + runeStone.byteLength.toString(16)
+  }
+
+  const script = Buffer.concat([
+    Buffer.from('6a', 'hex'),
+    Buffer.from('5d', 'hex'),
+    // Buffer.from(runeStoneLength, 'hex'),
+    runeStone,
+  ])
+  return script
 }
 
 export let RPC_ADDR =

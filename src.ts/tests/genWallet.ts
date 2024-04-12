@@ -89,4 +89,7 @@ export const generateWallet = (testnet: boolean, mnemonic?: string) => {
   console.log('address: ', addressTaproot.address)
 }
 
-generateWallet(true)
+generateWallet(
+  true,
+  'fiction drop width clap mask require that toe treat crater hand section'
+)
