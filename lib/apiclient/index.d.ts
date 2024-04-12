@@ -1,4 +1,4 @@
-import { SwapBrcBid, SignedBid } from '../shared/interface';
+import { SwapBrcBid, SignedBid, OkxBid } from '../shared/interface';
 /**
  * Represents the client for interacting with the Oyl API.
  */
@@ -96,6 +96,15 @@ export declare class OylApiClient {
         testnet?: boolean;
     }): Promise<any>;
     /**
+     * Get BRC-20 offers.
+     * @param ticker - The ticker to query.
+     * @param limit - The limit of offers to return (Default = 5).
+     */
+    getBrc20Offers({ ticker, limit, }: {
+        ticker: string;
+        limit?: number;
+    }): Promise<any>;
+    /**
      * Get Okx ticker offers.
      * @param _ticker - The ticker to query.
      */
@@ -109,6 +118,11 @@ export declare class OylApiClient {
     getOkxOfferPsbt({ offerId }: {
         offerId: number;
     }): Promise<any>;
+    /**
+     * Submit a signed bid for OKX marketplace.
+     * @param params - Parameters for the signed bid.
+     */
+    submitOkxBid(bidDetails: OkxBid): Promise<any>;
     /**
      * Get BTC price.
      */

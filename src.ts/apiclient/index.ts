@@ -1,5 +1,5 @@
 import fetch from 'node-fetch'
-import { SwapBrcBid, SignedBid } from '../shared/interface'
+import { SwapBrcBid, SignedBid, OkxBid } from '../shared/interface'
 import { getAllInscriptionsByAddressRegtest } from '../tests/regtestApi'
 import { Signer } from '../signer'
 
@@ -133,6 +133,7 @@ export class OylApiClient {
         exclude_brc20: false,
         count: 20,
         order: 'desc',
+        test: this.testnet,
       })
     }
   }
@@ -240,6 +241,26 @@ export class OylApiClient {
   }
 
   /**
+   * Get BRC-20 offers.
+   * @param ticker - The ticker to query.
+   * @param limit - The limit of offers to return (Default = 5).
+   */
+  async getBrc20Offers({
+    ticker,
+    limit = 5,
+  }: {
+    ticker: string
+    limit?: number
+  }): Promise<any> {
+    const response = await this._call('/get-brc20-offers', 'post', {
+      ticker,
+      limit,
+    })
+    if (response.error) throw Error(response.error)
+    return response
+  }
+
+  /**
    * Get Okx ticker offers.
    * @param _ticker - The ticker to query.
    */
@@ -256,9 +277,18 @@ export class OylApiClient {
    * @param offerId - The offer Id to query.
    */
   async getOkxOfferPsbt({ offerId }: { offerId: number }): Promise<any> {
-    const response = await this._call('/get-token-okx-offers', 'post', {
+    const response = await this._call('/get-okx-offer-psbt', 'post', {
       offerId: offerId,
     })
+    return response
+  }
+
+  /**
+   * Submit a signed bid for OKX marketplace.
+   * @param params - Parameters for the signed bid.
+   */
+  async submitOkxBid(bidDetails: OkxBid): Promise<any> {
+    const response = await this._call('/finalize-okx-bid', 'post', bidDetails)
     return response
   }
 

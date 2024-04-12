@@ -194,7 +194,6 @@ export class SandshrewBitcoinClient {
       walletPassPhrase: 'string int',
       walletPassphraseChange: '',
       walletProcessPSBT: 'str',
-      getRuneBalanceForAddress: 'str',
     }
 
     for (const methodName in rpcMethods) {

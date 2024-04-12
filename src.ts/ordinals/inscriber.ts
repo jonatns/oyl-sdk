@@ -42,7 +42,7 @@ export class Inscriber {
     mediaType,
     outputs = [],
     meta = {},
-    network
+    network,
   }: {
     address: string
     destinationAddress: string
