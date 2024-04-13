@@ -79,7 +79,7 @@ export declare const callBTCRPCEndpoint: (method: string, params: string | strin
 export declare function waitForTransaction({ txId, sandshrewBtcClient, }: {
     txId: string;
     sandshrewBtcClient: SandshrewBitcoinClient;
-}): Promise<[boolean, any?]>;
+}): Promise<void>;
 export declare function getOutputValueByVOutIndex({ txId, vOut, esploraRpc, }: {
     txId: string;
     vOut: number;

@@ -461,27 +461,23 @@ export async function waitForTransaction({
 }: {
   txId: string
   sandshrewBtcClient: SandshrewBitcoinClient
-}): Promise<[boolean, any?]> {
-  console.log('WAITING FOR TRANSACTION: ', txId)
-  const timeout: number = 60000 // 1 minute in milliseconds
-
-  const startTime: number = Date.now()
+}) {
+  const timeout = 60000 // 1 minute in milliseconds
+  const startTime = Date.now()
 
   while (true) {
     try {
-      // Call the endpoint to check the transaction
       const result = await sandshrewBtcClient.bitcoindRpc.getMemPoolEntry(txId)
 
-      // Check if the transaction is found
       if (result) {
-        console.log('Transaction found in mempool:', txId)
-        return [true, result]
+        break
       }
 
       // Check for timeout
       if (Date.now() - startTime > timeout) {
-        console.log('Timeout reached, stopping search.')
-        return [false]
+        throw new Error(
+          `Timeout: Could not find transaction in mempool: ${txId}`
+        )
       }
 
       // Wait for 5 seconds before retrying
@@ -489,8 +485,9 @@ export async function waitForTransaction({
     } catch (error) {
       // Check for timeout
       if (Date.now() - startTime > timeout) {
-        console.log('Timeout reached, stopping search.')
-        return [false]
+        throw new Error(
+          `Timeout: Could not find transaction in mempool: ${txId}`
+        )
       }
 
       // Wait for 5 seconds before retrying

@@ -42,6 +42,7 @@ import { getAddressType } from './transactions'
 import { Signer } from './signer'
 import { Address, Tap, Tx } from '@cmdcode/tapscript'
 import * as cmdcode from '@cmdcode/tapscript'
+import { OylTransactionError } from './errors'
 
 export const NESTED_SEGWIT_HD_PATH = "m/49'/0'/0'/0"
 export const TAPROOT_HD_PATH = "m/86'/0'/0'/0"
@@ -604,9 +605,7 @@ export class Oyl {
       finalize: true,
     })
 
-    const sendResponse = await this.pushPsbt({ psbtBase64: taprootSigned })
-
-    return sendResponse
+    return this.pushPsbt({ psbtBase64: taprootSigned })
   }
 
   async createBtcTx({
@@ -1228,14 +1227,13 @@ export class Oyl {
     spendAddress?: string
     altSpendAddress?: string
     signer: Signer
-    feeRate?: number
+    feeRate: number
     token?: string
     amount?: number
   }) {
+    let successTxIds = []
+
     try {
-      if (!feeRate) {
-        feeRate = (await this.esploraRpc.getFeeEstimates())['1']
-      }
       const content = `{"p":"brc-20","op":"transfer","tick":"${token}","amt":"${amount}"}`
 
       const { commitPsbt, utxosUsedForFees } = await this.inscriptionCommitTx({
@@ -1261,13 +1259,13 @@ export class Oyl {
       const { txId: commitTxId } = await this.pushPsbt({
         psbtBase64: taprootSigned,
       })
-      const txResult = await waitForTransaction({
+
+      successTxIds.push(commitTxId)
+
+      await waitForTransaction({
         txId: commitTxId,
         sandshrewBtcClient: this.sandshrewBtcClient,
       })
-      if (!txResult) {
-        throw new Error('ERROR WAITING FOR COMMIT TX')
-      }
 
       const { revealTx } = await this.inscriptionRevealTx({
         receiverAddress: fromAddress,
@@ -1280,13 +1278,17 @@ export class Oyl {
       const revealTxId =
         await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(revealTx)
 
-      const revealResult = await waitForTransaction({
+      if (!revealTxId) {
+        throw new Error('Unable to reveal inscription.')
+      }
+
+      successTxIds.push(revealTxId)
+
+      await waitForTransaction({
         txId: revealTxId,
         sandshrewBtcClient: this.sandshrewBtcClient,
       })
-      if (!revealResult) {
-        throw new Error('ERROR WAITING FOR COMMIT TX')
-      }
+
       await delay(5000)
 
       const { sentPsbt: sentRawPsbt } = await this.inscriptionSendTx({
@@ -1316,14 +1318,14 @@ export class Oyl {
       const { txId: sentPsbtTxId } = await this.pushPsbt({
         psbtBase64: taprootSendSignedPsbt,
       })
+
       return {
         txId: sentPsbtTxId,
         rawTxn: taprootSendSignedPsbt,
-        sendBrc20Txids: [commitTxId, revealTxId, sentPsbtTxId],
+        sendBrc20Txids: [...successTxIds, sentPsbtTxId],
       }
     } catch (err) {
-      console.error(err)
-      throw new Error(err)
+      throw new OylTransactionError(err, successTxIds)
     }
   }
 
@@ -1519,7 +1521,7 @@ export class Oyl {
       finalize: true,
     })
 
-    return await this.pushPsbt({ psbtBase64: taprootSigned })
+    return this.pushPsbt({ psbtBase64: taprootSigned })
   }
 
   async createOrdCollectibleTx({
