@@ -536,7 +536,7 @@ export class Marketplace {
     const message = `Please confirm that\nPayment Address: ${this.selectedSpendAddress}\nOrdinals Address: ${this.receiveAddress}`
     if (getAddressType(this.receiveAddress) == AddressType.P2WPKH){
       const keyPair = this.signer.segwitKeyPair;
-      const privateKey = keyPair.toWIF()
+      const privateKey = keyPair.privateKey
       const signature = await signBip322Message({
         message,
         network: testnet? 'testnet' : 'mainnet',
@@ -547,7 +547,7 @@ export class Marketplace {
       
     } else if (getAddressType(this.receiveAddress) == AddressType.P2TR){
       const keyPair =  this.signer.taprootKeyPair;
-      const privateKey = keyPair.toWIF()
+      const privateKey = keyPair.privateKey
       const signature = await signBip322Message({
         message,
         network: testnet? 'testnet' : 'mainnet',
