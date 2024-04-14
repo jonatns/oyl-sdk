@@ -93,13 +93,13 @@ export const signBip322Message = async ({
 
   const { type } = getAddressInfo(signatureAddress);
     const ecpairPk = privateKey
-    privateKey = privateKey.toString('hex')
+    const newPk = privateKey.toString('hex');
     if (type === AddressType.p2sh) {
       return (await signAsync(message, ecpairPk, false, { segwitType: 'p2sh(p2wpkh)' })).toString('base64');
     }
 
  
-    const publicKey = getSigningPk(type, privateKey);
+    const publicKey = getSigningPk(type, newPk);
     const txScript = getSignerScript(type, publicKey, getBtcNetwork(network));
     const inputHash = hex.decode('0000000000000000000000000000000000000000000000000000000000000000');
     const txVersion = 0;
@@ -138,7 +138,8 @@ export const signBip322Message = async ({
       redeemScript: AddressType.p2sh ? txScript.redeemScript : Buffer.alloc(0),
     });
     txToSign.addOutput({ script: btc.Script.encode(['RETURN']), amount: BigInt(0) });
-    txToSign.sign(hex.decode(privateKey));
+    console.log(newPk)
+    txToSign.sign(hex.decode(newPk));
     txToSign.finalize();
 
     // formulate-signature
