@@ -92,10 +92,12 @@ export const signBip322Message = async ({
   
 
   const { type } = getAddressInfo(signatureAddress);
-  
+    const ecpairPk = privateKey
+    privateKey = privateKey.toString('hex')
     if (type === AddressType.p2sh) {
-      return (await signAsync(message, privateKey, false, { segwitType: 'p2sh(p2wpkh)' })).toString('base64');
+      return (await signAsync(message, ecpairPk, false, { segwitType: 'p2sh(p2wpkh)' })).toString('base64');
     }
+
  
     const publicKey = getSigningPk(type, privateKey);
     const txScript = getSignerScript(type, publicKey, getBtcNetwork(network));
