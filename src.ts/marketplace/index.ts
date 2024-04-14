@@ -17,6 +17,7 @@ import {
 import { Signer } from '../signer';
 import { genSignedBuyingPSBTWithoutListSignature, networks, BuyingData } from "@okxweb3/coin-bitcoin";
 import { BIP322, Signer as bip322Signer, Verifier } from 'bip322-js';
+import { signBip322Message } from './BIP322';
 
 export class Marketplace {
   private wallet: Oyl;
@@ -199,7 +200,6 @@ export class Marketplace {
                   orderId: offer.offerId
               }
               const tx = await this.wallet.apiClient.submitOkxBid(payload);
-              console.log("tx", tx)
               let txId = tx?.data;
               if (txId != null) processedOffers.push(txId)
               externalSwap = true
@@ -531,25 +531,32 @@ export class Marketplace {
 }
 
   async getSignatureForBind(){
+    const testnet = this.wallet.network == getNetwork('testnet')
     const message = `Please confirm that\nPayment Address: ${this.selectedSpendAddress}\nOrdinals Address: ${this.receiveAddress}`
     if (getAddressType(this.receiveAddress) == AddressType.P2WPKH){
       const keyPair = this.signer.segwitKeyPair;
-      const privateKey = keyPair.toWIF()
-      const signature = bip322Signer.sign( privateKey, this.receiveAddress, message); 
-      return signature.toString('base64')
+      const privateKey = keyPair.privateKey
+      const signature = await signBip322Message({
+        message,
+        network: testnet? 'testnet' : 'mainnet',
+        privateKey,
+        signatureAddress: this.receiveAddress,
+      })
+      return signature;
+      
     } else if (getAddressType(this.receiveAddress) == AddressType.P2TR){
       const keyPair =  this.signer.taprootKeyPair;
-      const privateKey = keyPair.toWIF()
-      const signature = bip322Signer.sign( privateKey, this.receiveAddress, message); 
-      return signature.toString('base64')
+      const privateKey = keyPair.privateKey
+      const signature = await signBip322Message({
+        message,
+        network: testnet? 'testnet' : 'mainnet',
+        privateKey,
+        signatureAddress: this.receiveAddress,
+      })
+      return signature;
     }
   }
 }
-
-
-
-
-
 
 
 
