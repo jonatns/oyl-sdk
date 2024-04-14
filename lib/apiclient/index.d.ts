@@ -213,4 +213,10 @@ export declare class OylApiClient {
         altSpendAddress?: string;
         testnet: boolean;
     }): Promise<any>;
+    sendRuneEstimate({ spendAddress, altSpendAddress, feeRate, testnet, }: {
+        feeRate?: number;
+        spendAddress: string;
+        altSpendAddress?: string;
+        testnet: boolean;
+    }): Promise<any>;
 }

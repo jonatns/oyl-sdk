@@ -448,6 +448,11 @@ export declare class Oyl {
         altSpendAddress?: string;
         spendAddress?: string;
     }): Promise<any>;
+    sendRuneEstimate({ spendAddress, altSpendAddress, feeRate, }: {
+        feeRate?: number;
+        altSpendAddress?: string;
+        spendAddress?: string;
+    }): Promise<any>;
     sendBrc20Estimate({ spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, }: {
         spendPubKey: string;
         altSpendPubKey?: string;
