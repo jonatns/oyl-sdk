@@ -304,9 +304,9 @@
     which "^3.0.0"
 
 "@okxweb3/coin-base@^1.0.5":
-  version "1.0.6"
-  resolved "https://registry.yarnpkg.com/@okxweb3/coin-base/-/coin-base-1.0.6.tgz#cca78c1b5cdddce8253cc8ad88acd3a189ee9f0a"
-  integrity sha512-aZvldwsz+8GZy6pkoLVbjrc7t3DI/ZHT4rfcCJsQ4eGSfdRNLtwmU5/9052666gpatvQUp6QgvoZvYhpmVpNpA==
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/@okxweb3/coin-base/-/coin-base-1.0.7.tgz#f541aac2306616449704095c812988ec31988912"
+  integrity sha512-Wb9yB7YNZ4XdqikCyEe73eYZAa4gQEfLcuSqLJS+B5U11zLnJwbc8eYuqZzL+F7d1QSHrDwAehDqiBibzYga7A==
   dependencies:
     "@okxweb3/crypto-lib" "^1.0.0"
 
@@ -506,9 +506,9 @@
   integrity sha512-N+0kuo9KgrUQ1Sn/ifDXsvg0TTleP7rIy4zOBGECxAljqvqfqpTfzx0Q1NUedOixRMBfe2Whhb056a42cWs26Q==
 
 "@types/node@>=13.7.0":
-  version "20.12.5"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.12.5.tgz#74c4f31ab17955d0b5808cdc8fd2839526ad00b3"
-  integrity sha512-BD+BjQ9LS/D8ST9p5uqBxghlN+S42iuNxjsUGjeZobe/ciXzk2qb1B6IXc6AnRLS+yFJRpN2IPEHMzwspfDJNw==
+  version "20.12.7"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.12.7.tgz#04080362fa3dd6c5822061aa3124f5c152cff384"
+  integrity sha512-wq0cICSkRLVaf3UGLMGItu/PtdY7oaXaI/RVU+xliKVOtRna3PRY57ZDfztpDL0n11vfymMUnXv8QwYCO7L1wg==
   dependencies:
     undici-types "~5.26.4"
 
@@ -1220,11 +1220,14 @@ create-hmac@^1.1.4:
     safe-buffer "^5.0.1"
     sha.js "^2.4.8"
 
+<<<<<<< Updated upstream
 create-require@^1.1.0:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/create-require/-/create-require-1.1.1.tgz#c1d7e8f1e5f6cfc9ff65f9cd352d37348756c333"
   integrity sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==
 
+=======
+>>>>>>> Stashed changes
 cross-fetch@^3.1.8:
   version "3.1.8"
   resolved "https://registry.yarnpkg.com/cross-fetch/-/cross-fetch-3.1.8.tgz#0327eba65fd68a7d119f8fb2bf9334a1a7956f82"

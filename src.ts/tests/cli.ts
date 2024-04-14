@@ -58,8 +58,6 @@ export async function testMarketplaceBuy() {
     wallet: wallet,
   }
 
- 
-
   const offers = await wallet.apiClient.getAggregatedOffers({
     ticker: 'ordi',
     limitOrderAmount: 2,
@@ -502,7 +500,15 @@ export async function runCLI() {
 
       console.log(sendCollectibleEstimateResponse)
       return sendCollectibleEstimateResponse
+    case 'send-rune-estimate':
+      const sendRuneEstimate = await networkConfig.wallet.sendRuneEstimate({
+        feeRate,
+        spendAddress: networkConfig.segwitAddress,
+        altSpendAddress: networkConfig.taprootAddress,
+      })
 
+      console.log(sendRuneEstimate)
+      return sendCollectibleEstimateResponse
     case 'send-brc-20':
       const sendBrc20Response = await networkConfig.wallet.sendBRC20({
         token: ticker,
@@ -689,97 +695,97 @@ export async function runCLI() {
         return
       }
     case 'buy-offer':
-      // try {
-      //   const orderToBeBought = bitcoin.Psbt.fromBase64(psbtBase64)
-      //   const price = orderToBeBought.txOutputs[2].value
+    // try {
+    //   const orderToBeBought = bitcoin.Psbt.fromBase64(psbtBase64)
+    //   const price = orderToBeBought.txOutputs[2].value
 
-      //   const marketplace = new BuildMarketplaceTransaction({
-      //     address: networkConfig.taprootAddress,
-      //     price: price,
-      //     psbtBase64: psbtBase64,
-      //     pubKey: networkConfig.taprootPubKey,
-      //     wallet: networkConfig.wallet,
-      //   })
+    //   const marketplace = new BuildMarketplaceTransaction({
+    //     address: networkConfig.taprootAddress,
+    //     price: price,
+    //     psbtBase64: psbtBase64,
+    //     pubKey: networkConfig.taprootPubKey,
+    //     wallet: networkConfig.wallet,
+    //   })
 
-      //   if (!(await marketplace.isWalletPrepared())) {
-      //     console.log('WALLET NOT PREPARED')
-      //     const { psbtBase64: preparedPsbtBase64 } =
-      //       await marketplace.prepareWallet()
-      //     const preparationUtxo = bitcoin.Psbt.fromBase64(preparedPsbtBase64)
-      //     const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
-      //       _psbt: preparationUtxo,
-      //       pubkey: networkConfig.taprootPubKey,
-      //       segwitPubkey: networkConfig.segwitPubKey,
-      //       segwitAddress: networkConfig.segwitAddress,
-      //       taprootAddress: networkConfig.fromAddress,
-      //       network: getNetwork(network),
-      //     })
+    //   if (!(await marketplace.isWalletPrepared())) {
+    //     console.log('WALLET NOT PREPARED')
+    //     const { psbtBase64: preparedPsbtBase64 } =
+    //       await marketplace.prepareWallet()
+    //     const preparationUtxo = bitcoin.Psbt.fromBase64(preparedPsbtBase64)
+    //     const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
+    //       _psbt: preparationUtxo,
+    //       pubkey: networkConfig.taprootPubKey,
+    //       segwitPubkey: networkConfig.segwitPubKey,
+    //       segwitAddress: networkConfig.segwitAddress,
+    //       taprootAddress: networkConfig.fromAddress,
+    //       network: getNetwork(network),
+    //     })
 
-      //     const signedSendPsbt = await signInputs(
-      //       preparationUtxo,
-      //       toSignInputs,
-      //       networkConfig.taprootPubKey,
-      //       networkConfig.segwitPubKey,
-      //       segwitSigner,
-      //       taprootSigner
-      //     )
-      //     signedSendPsbt.finalizeAllInputs()
+    //     const signedSendPsbt = await signInputs(
+    //       preparationUtxo,
+    //       toSignInputs,
+    //       networkConfig.taprootPubKey,
+    //       networkConfig.segwitPubKey,
+    //       segwitSigner,
+    //       taprootSigner
+    //     )
+    //     signedSendPsbt.finalizeAllInputs()
 
-      //     const extractedTx = signedSendPsbt.extractTransaction().toHex()
+    //     const extractedTx = signedSendPsbt.extractTransaction().toHex()
 
-      //     console.log({ extractedTx })
-      //     return
-      //   } else {
-      //     console.log('WALLET PREPARED')
-      //     console.log('WALLET PREPARED')
-      //     console.log('WALLET PREPARED')
-      //     console.log('WALLET PREPARED')
-      //     console.log('WALLET PREPARED')
-      //   }
+    //     console.log({ extractedTx })
+    //     return
+    //   } else {
+    //     console.log('WALLET PREPARED')
+    //     console.log('WALLET PREPARED')
+    //     console.log('WALLET PREPARED')
+    //     console.log('WALLET PREPARED')
+    //     console.log('WALLET PREPARED')
+    //   }
 
-      //   const { psbtHex: buildOrderHex, psbtBase64: builtOrderBase64 } =
-      //     await marketplace.psbtBuilder()
+    //   const { psbtHex: buildOrderHex, psbtBase64: builtOrderBase64 } =
+    //     await marketplace.psbtBuilder()
 
-      //   console.log({ builtOrderBase64 })
+    //   console.log({ builtOrderBase64 })
 
-      //   const filledOrderPsbt = bitcoin.Psbt.fromBase64(builtOrderBase64)
-      //   const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
-      //     _psbt: filledOrderPsbt,
-      //     pubkey: networkConfig.taprootPubKey,
-      //     segwitPubkey: networkConfig.segwitPubKey,
-      //     segwitAddress: networkConfig.segwitAddress,
-      //     taprootAddress: networkConfig.taprootAddress,
-      //     network: getNetwork(network),
-      //   })
+    //   const filledOrderPsbt = bitcoin.Psbt.fromBase64(builtOrderBase64)
+    //   const toSignInputs: ToSignInput[] = await formatOptionsToSignInputs({
+    //     _psbt: filledOrderPsbt,
+    //     pubkey: networkConfig.taprootPubKey,
+    //     segwitPubkey: networkConfig.segwitPubKey,
+    //     segwitAddress: networkConfig.segwitAddress,
+    //     taprootAddress: networkConfig.taprootAddress,
+    //     network: getNetwork(network),
+    //   })
 
-      //   const signedSendPsbt = await signInputs(
-      //     filledOrderPsbt,
-      //     toSignInputs,
-      //     networkConfig.taprootPubKey,
-      //     networkConfig.segwitPubKey,
-      //     segwitSigner,
-      //     taprootSigner
-      //   )
+    //   const signedSendPsbt = await signInputs(
+    //     filledOrderPsbt,
+    //     toSignInputs,
+    //     networkConfig.taprootPubKey,
+    //     networkConfig.segwitPubKey,
+    //     segwitSigner,
+    //     taprootSigner
+    //   )
 
-      //   signedSendPsbt.finalizeInput(0)
-      //   signedSendPsbt.finalizeInput(1)
-      //   signedSendPsbt.finalizeInput(3)
+    //   signedSendPsbt.finalizeInput(0)
+    //   signedSendPsbt.finalizeInput(1)
+    //   signedSendPsbt.finalizeInput(3)
 
-      //   const extractedTx = signedSendPsbt.extractTransaction().toHex()
+    //   const extractedTx = signedSendPsbt.extractTransaction().toHex()
 
-      //   console.log({ signedSendPsbt: signedSendPsbt.toBase64() })
-      //   console.log({ extractedTx })
+    //   console.log({ signedSendPsbt: signedSendPsbt.toBase64() })
+    //   console.log({ extractedTx })
 
-      //   const { result: offerBuyTxId, error: inscriptionError } =
-      //     await callBTCRPCEndpoint('sendrawtransaction', extractedTx, network)
+    //   const { result: offerBuyTxId, error: inscriptionError } =
+    //     await callBTCRPCEndpoint('sendrawtransaction', extractedTx, network)
 
-      //   console.log({ offerBuyTxId, inscriptionError })
+    //   console.log({ offerBuyTxId, inscriptionError })
 
-      //   return offerBuyTxId
-      // } catch (error) {
-      //   console.error(error)
-      //   return
-      // }
+    //   return offerBuyTxId
+    // } catch (error) {
+    //   console.error(error)
+    //   return
+    // }
 
     case 'view':
       return await viewPsbt()

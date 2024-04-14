@@ -1771,6 +1771,25 @@ export class Oyl {
     return result
   }
 
+  async sendRuneEstimate({
+    spendAddress,
+    altSpendAddress,
+    feeRate,
+  }: {
+    feeRate?: number
+    altSpendAddress?: string
+    spendAddress?: string
+  }) {
+    const testnet = this.network == getNetwork('testnet')
+    const result = await this.apiClient.sendRuneEstimate({
+      spendAddress,
+      altSpendAddress,
+      feeRate,
+      testnet,
+    })
+    return result
+  }
+
   async sendBrc20Estimate({
     spendPubKey,
     feeRate,

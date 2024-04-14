@@ -503,4 +503,23 @@ export class OylApiClient {
       testnet,
     })
   }
+
+  async sendRuneEstimate({
+    spendAddress,
+    altSpendAddress,
+    feeRate,
+    testnet,
+  }: {
+    feeRate?: number
+    spendAddress: string
+    altSpendAddress?: string
+    testnet: boolean
+  }): Promise<any> {
+    return await this._call('/send-rune-estimate', 'post', {
+      spendAddress,
+      altSpendAddress,
+      feeRate,
+      testnet,
+    })
+  }
 }
