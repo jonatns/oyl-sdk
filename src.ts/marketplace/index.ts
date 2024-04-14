@@ -200,7 +200,6 @@ export class Marketplace {
                   orderId: offer.offerId
               }
               const tx = await this.wallet.apiClient.submitOkxBid(payload);
-              console.log("tx", tx)
               let txId = tx?.data;
               if (txId != null) processedOffers.push(txId)
               externalSwap = true

@@ -138,7 +138,6 @@ export const signBip322Message = async ({
       redeemScript: AddressType.p2sh ? txScript.redeemScript : Buffer.alloc(0),
     });
     txToSign.addOutput({ script: btc.Script.encode(['RETURN']), amount: BigInt(0) });
-    console.log(newPk)
     txToSign.sign(hex.decode(newPk));
     txToSign.finalize();
 
@@ -152,11 +151,4 @@ export const signBip322Message = async ({
       return '';
     }
 }
-
-const seedPhrase= 'drift radio firm ostrich inherit egg someone invite type mom owner dream'
-
-const paymentAddress = "bc1qy7qt5qskm5228pu2veqprkseqj3xenqzzu8yxq";
-const ordinalsAddress = "bc1plwsq345eh0525nlwakuxc6qvgpma298v350y9adpx4vkunfeg0ws385vd8";
-
-const message = `Please confirm that\nPayment Address: ${paymentAddress}\nOrdinals Address: ${ordinalsAddress}`
 
