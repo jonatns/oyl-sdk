@@ -93,4 +93,7 @@ export class OrdRpc {
   async getRuneById(runeId: string) {
     return await this._call('ord_rune', [runeId])
   }
+  async getRunes() {
+    return await this._call('ord_runes', [])
+  }
 }
