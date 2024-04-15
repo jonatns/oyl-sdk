@@ -4,3 +4,4 @@ export * from './shared/constants';
 export * from './shared/interface';
 export * from './txbuilder';
 export * from './transactions';
+export * from './errors';

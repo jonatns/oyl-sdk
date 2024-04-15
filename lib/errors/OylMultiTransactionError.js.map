@@ -1,0 +1,1 @@
+{"version":3,"file":"OylMultiTransactionError.js","sourceRoot":"","sources":["../../src.ts/errors/OylMultiTransactionError.ts"],"names":[],"mappings":";;;AAAA,MAAa,wBAAyB,SAAQ,KAAK;IAGjD,YAAY,OAAe,EAAE,YAAuB;QAClD,KAAK,CAAC,OAAO,CAAC,CAAA;QACd,IAAI,CAAC,IAAI,GAAG,qBAAqB,CAAA;QACjC,IAAI,CAAC,YAAY,GAAG,YAAY,IAAI,EAAE,CAAA;IACxC,CAAC;CACF;AARD,4DAQC"}
