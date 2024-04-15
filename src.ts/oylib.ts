@@ -1031,6 +1031,22 @@ export class Oyl {
     return taprootSigner
   }
 
+  async getRuneBalance({ address }: { address: string }) {
+    const testnet = this.network == getNetwork('testnet')
+    await this.apiClient.getRuneBalance({
+      address,
+      testnet: testnet,
+    })
+  }
+
+  async getRuneOutpoints({ address }: { address: string }) {
+    const testnet = this.network == getNetwork('testnet')
+    await this.apiClient.getRuneOutpoints({
+      address,
+      testnet: testnet,
+    })
+  }
+
   async inscriptionCommitTx({
     content,
     spendAddress,

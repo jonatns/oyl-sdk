@@ -354,6 +354,12 @@ export declare class Oyl {
         fromAddress: string;
         hdPathWithIndex: string;
     }): Promise<any>;
+    getRuneBalance({ address }: {
+        address: string;
+    }): Promise<void>;
+    getRuneOutpoints({ address }: {
+        address: string;
+    }): Promise<void>;
     inscriptionCommitTx({ content, spendAddress, spendPubKey, signer, altSpendPubKey, altSpendAddress, feeRate, }: {
         spendPubKey: string;
         altSpendPubKey?: string;
