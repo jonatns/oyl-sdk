@@ -550,6 +550,7 @@ export async function runCLI() {
         signer,
         amount: 1000,
         feeRate: 12,
+        fromAddress: networkConfig.taprootAddress,
         spendAddress: networkConfig.taprootAddress,
         spendPubKey: networkConfig.taprootPubKey,
         altSpendPubKey: networkConfig.segwitPubKey,

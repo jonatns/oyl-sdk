@@ -17,7 +17,6 @@ import {
   inscriptionSats,
   createInscriptionScript,
   getOutputValueByVOutIndex,
-  encodeVarint,
   createRuneSendScript,
   createRuneMintScript,
   findRuneUtxosToSpend,
@@ -1819,6 +1818,7 @@ export class Oyl {
   }
 
   async sendRune({
+    fromAddress,
     toAddress,
     spendPubKey,
     feeRate,
@@ -1829,6 +1829,7 @@ export class Oyl {
     runeId,
     amount,
   }: {
+    fromAddress: string
     toAddress: string
     spendPubKey: string
     altSpendPubKey?: string
@@ -1839,15 +1840,15 @@ export class Oyl {
     runeId?: string
     amount?: number
   }) {
+    const testnet = this.network == getNetwork('testnet')
     if (!feeRate) {
       feeRate = (await this.esploraRpc.getFeeEstimates())['1']
     }
 
-    const runeBalances: any[] = await (
-      await fetch(
-        `https://testnet.sandshrew.io:8443/rune_balances?address=eq.${spendAddress}`
-      )
-    ).json()
+    const runeBalances: any[] = await this.apiClient.getRuneBalance({
+      address: fromAddress,
+      testnet: testnet,
+    })
 
     for await (const rune of runeBalances) {
       if (amount > rune.balance && runeId === rune.rune_id) {
@@ -1856,11 +1857,10 @@ export class Oyl {
     }
 
     const runeUtxos: RuneUtxo[] = []
-    const runeUtxoOuptoints: any[] = await (
-      await fetch(
-        `https://testnet.sandshrew.io:8443/outpoints?address=eq.${spendAddress}`
-      )
-    ).json()
+    const runeUtxoOuptoints: any[] = await this.apiClient.getRuneOutpoints({
+      address: fromAddress,
+      testnet: testnet,
+    })
 
     for await (const rune of runeUtxoOuptoints) {
       if (runeId === rune.rune_id) {

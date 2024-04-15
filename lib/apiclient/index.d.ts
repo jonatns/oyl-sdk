@@ -219,4 +219,12 @@ export declare class OylApiClient {
         altSpendAddress?: string;
         testnet: boolean;
     }): Promise<any>;
+    getRuneOutpoints({ address, testnet, }: {
+        address: string;
+        testnet: boolean;
+    }): Promise<any>;
+    getRuneBalance({ address, testnet, }: {
+        address: string;
+        testnet: boolean;
+    }): Promise<any>;
 }

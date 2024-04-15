@@ -522,4 +522,30 @@ export class OylApiClient {
       testnet,
     })
   }
+
+  async getRuneOutpoints({
+    address,
+    testnet,
+  }: {
+    address: string
+    testnet: boolean
+  }): Promise<any> {
+    return await this._call('/get-rune-outpoints', 'post', {
+      address,
+      testnet,
+    })
+  }
+
+  async getRuneBalance({
+    address,
+    testnet,
+  }: {
+    address: string
+    testnet: boolean
+  }): Promise<any> {
+    return await this._call('/get-rune-balance', 'post', {
+      address,
+      testnet,
+    })
+  }
 }

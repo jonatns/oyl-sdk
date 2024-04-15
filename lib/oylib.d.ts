@@ -460,7 +460,8 @@ export declare class Oyl {
         altSpendAddress?: string;
         feeRate?: number;
     }): Promise<any>;
-    sendRune({ toAddress, spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, runeId, amount, }: {
+    sendRune({ fromAddress, toAddress, spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, runeId, amount, }: {
+        fromAddress: string;
         toAddress: string;
         spendPubKey: string;
         altSpendPubKey?: string;
