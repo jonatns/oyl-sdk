@@ -1874,21 +1874,9 @@ export class Oyl {
       }
     }
 
-    const runeUtxos: RuneUtxo[] = []
-    const runeUtxoOutpoints: any[] = await this.apiClient.getRuneOutpoints({
-      address: fromAddress,
-      testnet: testnet,
-    })
-
-    for await (const rune of runeUtxoOutpoints) {
-      if (runeId === rune.rune_id) {
-        runeUtxos.push({ outpointId: rune.outpoint_id, amount: rune.amount })
-      }
-    }
-
     const { sendPsbt } = await this.runeSendTx({
       runeId,
-      runeUtxos,
+      fromAddress,
       toAddress,
       amount,
       spendAddress,
@@ -1920,7 +1908,7 @@ export class Oyl {
 
   async runeSendTx({
     runeId,
-    runeUtxos,
+    fromAddress,
     toAddress,
     amount,
     spendAddress,
@@ -1930,7 +1918,7 @@ export class Oyl {
     feeRate,
   }: {
     runeId: string
-    runeUtxos: RuneUtxo[]
+    fromAddress: string
     toAddress: string
     amount: number
     spendPubKey: string
@@ -1940,9 +1928,10 @@ export class Oyl {
     feeRate?: number
   }) {
     let usingAlt = false
-
     let spendUtxos: Utxo[] | undefined
     let altSpendUtxos: Utxo[] | undefined
+
+    const testnet = this.network == getNetwork('testnet')
 
     spendUtxos = await this.getUtxosArtifacts({
       address: spendAddress,
@@ -1963,6 +1952,18 @@ export class Oyl {
     })
 
     const psbt = new bitcoin.Psbt({ network: this.network })
+
+    const runeUtxos: RuneUtxo[] = []
+    const runeUtxoOutpoints: any[] = await this.apiClient.getRuneOutpoints({
+      address: fromAddress,
+      testnet: testnet,
+    })
+
+    for await (const rune of runeUtxoOutpoints) {
+      if (runeId === rune.rune_id) {
+        runeUtxos.push({ outpointId: rune.outpoint_id, amount: rune.amount })
+      }
+    }
 
     const useableUtxos = findRuneUtxosToSpend(runeUtxos, amount)
 
