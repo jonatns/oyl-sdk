@@ -1,7 +1,7 @@
 import { Utxo } from './txbuilder';
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
-import { AddressType, IBlockchainInfoUTXO, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
+import { AddressType, IBlockchainInfoUTXO, Providers, RecoverAccountOptions, RuneUtxo, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
 import * as bitcoin from 'bitcoinjs-lib';
 import { OrdRpc } from './rpclient/ord';
@@ -474,8 +474,9 @@ export declare class Oyl {
         txId: string;
         rawTxn: string;
     }>;
-    runeSendTx({ runeId, toAddress, amount, spendAddress, spendPubKey, altSpendPubKey, altSpendAddress, feeRate, }: {
+    runeSendTx({ runeId, runeUtxos, toAddress, amount, spendAddress, spendPubKey, altSpendPubKey, altSpendAddress, feeRate, }: {
         runeId: string;
+        runeUtxos: RuneUtxo[];
         toAddress: string;
         amount: number;
         spendPubKey: string;

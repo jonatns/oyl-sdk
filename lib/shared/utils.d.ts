@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import * as bitcoin from 'bitcoinjs-lib';
-import { BitcoinPaymentType, IBlockchainInfoUTXO, Network, ToSignInput, TxInput, UnspentOutput } from '../shared/interface';
+import { BitcoinPaymentType, IBlockchainInfoUTXO, Network, RuneUtxo, ToSignInput, TxInput, UnspentOutput } from '../shared/interface';
 import { Utxo } from '../txbuilder/buildOrdTx';
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew';
 import { EsploraRpc } from '../rpclient/esplora';
@@ -151,4 +151,8 @@ export declare const addBtcUtxo: ({ spendUtxos, toAddress, psbt, amount, feeRate
 export declare const isValidJSON: (str: string) => boolean;
 export declare const encodeVarint: (bigIntValue: any) => {
     varint: Buffer;
+};
+export declare function findRuneUtxosToSpend(utxos: RuneUtxo[], target: number): {
+    selectedUtxos: RuneUtxo[];
+    change: number;
 };

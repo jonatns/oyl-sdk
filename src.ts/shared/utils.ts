@@ -6,6 +6,7 @@ import {
   BitcoinPaymentType,
   IBlockchainInfoUTXO,
   Network,
+  RuneUtxo,
   ToSignInput,
   TxInput,
   UnspentOutput,
@@ -470,7 +471,7 @@ export const createRuneSendScript = ({
 
   let runeStoneLength: string = runeStone.byteLength.toString(16)
 
-  if (runeStone.byteLength < 16) {
+  if (runeStone.byteLength % 2 !== 0) {
     runeStoneLength = '0' + runeStone.byteLength.toString(16)
   }
 
@@ -509,8 +510,8 @@ export const createRuneMintScript = ({
   const encodedBlockTxNumber = encodeVarint(BigInt(blockTx)).varint
 
   const runeStone = Buffer.concat([
-    //  pointerFlag,
-    //pointerVarint,
+    pointerFlag,
+    pointerVarint,
     mintFlag,
     encodedBlock,
     mintFlag,
@@ -524,14 +525,14 @@ export const createRuneMintScript = ({
 
   let runeStoneLength: string = runeStone.byteLength.toString(16)
 
-  if (runeStone.byteLength < 16) {
+  if (runeStone.byteLength % 2 !== 0) {
     runeStoneLength = '0' + runeStone.byteLength.toString(16)
   }
 
   const script = Buffer.concat([
     Buffer.from('6a', 'hex'),
     Buffer.from('5d', 'hex'),
-    // Buffer.from(runeStoneLength, 'hex'),
+    Buffer.from(runeStoneLength, 'hex'),
     runeStone,
   ])
   return script
@@ -924,13 +925,13 @@ export const addBtcUtxo = async ({
   const spendableUtxos = await filterTaprootUtxos({
     taprootUtxos: spendUtxos,
   })
-  const txSize = calculateTaprootTxSize(2, 0, 2)
+  const txSize = calculateTaprootTxSize(1, 0, 2)
   let fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
   let utxosToSend: any = findUtxosToCoverAmount(spendableUtxos, amount + fee)
   let usingAlt = false
 
-  if (utxosToSend?.selectedUtxos.length > 2) {
+  if (utxosToSend?.selectedUtxos.length > 1) {
     const txSize = calculateTaprootTxSize(
       utxosToSend.selectedUtxos.length,
       0,
@@ -947,7 +948,7 @@ export const addBtcUtxo = async ({
     })
     utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, amount + fee)
 
-    if (utxosToSend?.selectedUtxos.length > 2) {
+    if (utxosToSend?.selectedUtxos.length > 1) {
       const txSize = calculateTaprootTxSize(
         utxosToSend.selectedUtxos.length,
         0,
@@ -1021,4 +1022,28 @@ export const encodeVarint = (bigIntValue: any) => {
   } while (num !== BigInt(0))
 
   return { varint: Buffer.from(bufferArray) }
+}
+
+export function findRuneUtxosToSpend(utxos: RuneUtxo[], target: number) {
+  if (!utxos || utxos.length === 0) {
+    return undefined
+  }
+  let totalAmount = 0
+  const selectedUtxos: RuneUtxo[] = []
+
+  for (const utxo of utxos) {
+    if (totalAmount >= target) break
+
+    selectedUtxos.push(utxo)
+    totalAmount += utxo.amount
+  }
+
+  if (totalAmount >= target) {
+    return {
+      selectedUtxos,
+      change: totalAmount - target,
+    }
+  } else {
+    return undefined
+  }
 }

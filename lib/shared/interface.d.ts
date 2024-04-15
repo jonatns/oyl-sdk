@@ -261,6 +261,10 @@ export declare const addressNameToType: {
     readonly 'nested-segwit': "p2sh";
     readonly segwit: "p2wpkh";
 };
+export type RuneUtxo = {
+    outpointId: string;
+    amount: number;
+};
 export type AddressTypes = keyof typeof addressTypeToName;
 export type AddressFormats = (typeof addressTypeToName)[AddressTypes];
 export interface BitcoinPaymentType {
