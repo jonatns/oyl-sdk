@@ -1875,12 +1875,12 @@ export class Oyl {
     }
 
     const runeUtxos: RuneUtxo[] = []
-    const runeUtxoOuptoints: any[] = await this.apiClient.getRuneOutpoints({
+    const runeUtxoOutpoints: any[] = await this.apiClient.getRuneOutpoints({
       address: fromAddress,
       testnet: testnet,
     })
 
-    for await (const rune of runeUtxoOuptoints) {
+    for await (const rune of runeUtxoOutpoints) {
       if (runeId === rune.rune_id) {
         runeUtxos.push({ outpointId: rune.outpoint_id, amount: rune.amount })
       }
