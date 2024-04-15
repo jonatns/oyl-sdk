@@ -391,7 +391,7 @@ export declare class Oyl {
         spendAddress?: string;
         altSpendAddress?: string;
         signer: Signer;
-        feeRate?: number;
+        feeRate: number;
         token?: string;
         amount?: number;
     }): Promise<{
