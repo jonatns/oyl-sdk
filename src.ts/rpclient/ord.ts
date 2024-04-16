@@ -87,4 +87,13 @@ export class OrdRpc {
   async getSatByPercentage(percentage: string) {
     return await this._call('ord_sat', [percentage])
   }
+  async getRuneByName(runeName: string) {
+    return await this._call('ord_rune', [runeName])
+  }
+  async getRuneById(runeId: string) {
+    return await this._call('ord_rune', [runeId])
+  }
+  async getRunes() {
+    return await this._call('ord_runes', [])
+  }
 }

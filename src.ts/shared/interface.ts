@@ -131,7 +131,7 @@ export enum AddressType {
 
 export interface MarketplaceOffer {
   ticker: string
-  offerId: any 
+  offerId: any
   amount?: string
   address?: string
   marketplace: string
@@ -148,13 +148,13 @@ export interface ExternalSwap {
 }
 
 export interface OkxBid {
-    ticker: string;
-    amount: number;
-    fromAddress: string;
-    toAddress: string;
-    inscriptionId: string;
-    buyerPsbt: string;
-    orderId: number;
+  ticker: string
+  amount: number
+  fromAddress: string
+  toAddress: string
+  inscriptionId: string
+  buyerPsbt: string
+  orderId: number
 }
 
 export interface MarketplaceAccount {
@@ -166,8 +166,7 @@ export interface MarketplaceAccount {
   signer: Signer
   receiveAddress: string
   feeRate: number
-  }
-
+}
 
 export interface MarketplaceOffers {
   offerId: string
@@ -239,6 +238,14 @@ export interface IBlockchainInfoUTXO {
   tx_index: number
 }
 
+export interface txOutputs {
+  scriptpubkey: string
+  scriptpubkey_asm: string
+  scriptpubkey_type: string
+  scriptpubkey_address: string
+  value: number
+}
+
 export interface InscribeTransfer {
   fromAddress: string
   taprootPublicKey: string
@@ -284,6 +291,8 @@ export const addressNameToType = {
   'nested-segwit': 'p2sh',
   segwit: 'p2wpkh',
 } as const
+
+export type RuneUtxo = { outpointId: string; amount: number; script: string }
 
 export type AddressTypes = keyof typeof addressTypeToName
 

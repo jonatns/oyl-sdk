@@ -145,10 +145,11 @@ export declare class Oyl {
      * @returns {Promise<Array<any>>} A promise that resolves to an array of inscription details.
      */
     getInscriptions({ address }: {
-        address: any;
+        address: string;
     }): Promise<{
         collectibles: any[];
         brc20: any[];
+        runes: any[];
     }>;
     /**
      * Retrieves UTXO artifacts for a given address.
@@ -167,7 +168,19 @@ export declare class Oyl {
         addressType: number;
         address: string;
         inscriptions: Array<{
-            brc20: {
+            brc20?: {
+                id: string;
+                address: string;
+                content: string;
+                location: string;
+            };
+            runes?: {
+                id: string;
+                address: string;
+                content: string;
+                location: string;
+            };
+            collectible?: {
                 id: string;
                 address: string;
                 content: string;
@@ -198,6 +211,10 @@ export declare class Oyl {
     }): Promise<{
         txId: string;
         rawTx: string;
+        size: number;
+        weight: number;
+        fee: number;
+        satsPerVByte: string;
     }>;
     createBtcTx({ toAddress, spendPubKey, feeRate, amount, network, spendUtxos, spendAddress, altSpendAddress, altSpendPubKey, altSpendUtxos, }: {
         toAddress: string;
@@ -260,10 +277,9 @@ export declare class Oyl {
      * @param {}
      * @returns {Promise<any>} A promise that resolves to an array of offers.
      */
-    getAggregatedBrcOffers({ ticker, limitOrderAmount, marketPrice, }: {
+    getAggregatedBrcOffers({ ticker, limitOrderAmount, }: {
         ticker: string;
         limitOrderAmount: number;
-        marketPrice: number;
     }): Promise<any>;
     /**
      * Lists BRC20 tokens associated with an address.
@@ -320,6 +336,10 @@ export declare class Oyl {
     }): Promise<{
         txId: string;
         rawTx: string;
+        size: number;
+        weight: number;
+        fee: number;
+        satsPerVByte: string;
     }>;
     finalizePsbtBase64(psbtBase64: any): Promise<any>;
     sendPsbt(txData: string, isDry?: boolean): Promise<{
@@ -341,6 +361,12 @@ export declare class Oyl {
         fromAddress: string;
         hdPathWithIndex: string;
     }): Promise<any>;
+    getRuneBalance({ address }: {
+        address: string;
+    }): Promise<void>;
+    getRuneOutpoints({ address }: {
+        address: string;
+    }): Promise<void>;
     inscriptionCommitTx({ content, spendAddress, spendPubKey, signer, altSpendPubKey, altSpendAddress, feeRate, }: {
         spendPubKey: string;
         altSpendPubKey?: string;
@@ -379,6 +405,10 @@ export declare class Oyl {
         txId: string;
         rawTxn: string;
         sendBrc20Txids: any[];
+        totalFee: number;
+        totalSize: number;
+        totalWeight: number;
+        totalSatsPerVByte: number;
     }>;
     inscriptionSendTx({ toAddress, fromPubKey, spendPubKey, spendAddress, altSpendAddress, altSpendPubKey, feeRate, utxoId, utxosUsedForFees, }: {
         toAddress: string;
@@ -407,6 +437,10 @@ export declare class Oyl {
     }): Promise<{
         txId: string;
         rawTx: string;
+        size: number;
+        weight: number;
+        fee: number;
+        satsPerVByte: string;
     }>;
     createOrdCollectibleTx({ inscriptionId, fromAddress, fromPubKey, spendPubKey, spendAddress, toAddress, altSpendAddress, altSpendPubKey, feeRate, }: {
         fromAddress?: string;
@@ -435,6 +469,11 @@ export declare class Oyl {
         altSpendAddress?: string;
         spendAddress?: string;
     }): Promise<any>;
+    sendRuneEstimate({ spendAddress, altSpendAddress, feeRate, }: {
+        feeRate?: number;
+        altSpendAddress?: string;
+        spendAddress?: string;
+    }): Promise<any>;
     sendBrc20Estimate({ spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, }: {
         spendPubKey: string;
         altSpendPubKey?: string;
@@ -442,4 +481,62 @@ export declare class Oyl {
         altSpendAddress?: string;
         feeRate?: number;
     }): Promise<any>;
+    sendRune({ fromAddress, toAddress, spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, runeId, amount, }: {
+        fromAddress: string;
+        toAddress: string;
+        spendPubKey: string;
+        altSpendPubKey?: string;
+        spendAddress?: string;
+        altSpendAddress?: string;
+        signer: Signer;
+        feeRate?: number;
+        runeId?: string;
+        amount?: number;
+    }): Promise<{
+        txId: string;
+        rawTxn: string;
+        weight: number;
+        size: number;
+        fee: number;
+        satsPerVByte: string;
+    }>;
+    runeSendTx({ runeId, fromAddress, toAddress, amount, spendAddress, spendPubKey, altSpendPubKey, altSpendAddress, feeRate, }: {
+        runeId: string;
+        fromAddress: string;
+        toAddress: string;
+        amount: number;
+        spendPubKey: string;
+        altSpendPubKey?: string;
+        spendAddress?: string;
+        altSpendAddress?: string;
+        feeRate?: number;
+    }): Promise<{
+        sendPsbt: string;
+    }>;
+    mintRune({ toAddress, spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, runeId, amount, }: {
+        toAddress: string;
+        spendPubKey: string;
+        altSpendPubKey?: string;
+        spendAddress?: string;
+        altSpendAddress?: string;
+        signer: Signer;
+        feeRate?: number;
+        runeId?: string;
+        amount?: number;
+    }): Promise<{
+        txId: string;
+        rawTxn: string;
+    }>;
+    runeMintTx({ runeId, toAddress, amount, spendAddress, spendPubKey, altSpendPubKey, altSpendAddress, feeRate, }: {
+        runeId: string;
+        toAddress: string;
+        amount: number;
+        spendPubKey: string;
+        altSpendPubKey?: string;
+        spendAddress?: string;
+        altSpendAddress?: string;
+        feeRate?: number;
+    }): Promise<{
+        sendPsbt: string;
+    }>;
 }

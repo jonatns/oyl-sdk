@@ -12,3 +12,4 @@ export declare const validateSegwitAddress: ({ address, type }: {
     address: any;
     type: any;
 }) => boolean;
+export declare const decodePayload: (payload: any) => any;

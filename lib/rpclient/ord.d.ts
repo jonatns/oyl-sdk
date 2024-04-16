@@ -18,4 +18,7 @@ export declare class OrdRpc {
     getSatByDegree(degree: string): Promise<any>;
     getSatByBase26(base26: string): Promise<any>;
     getSatByPercentage(percentage: string): Promise<any>;
+    getRuneByName(runeName: string): Promise<any>;
+    getRuneById(runeId: string): Promise<any>;
+    getRunes(): Promise<any>;
 }

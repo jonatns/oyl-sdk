@@ -213,6 +213,13 @@ export interface IBlockchainInfoUTXO {
     confirmations: number;
     tx_index: number;
 }
+export interface txOutputs {
+    scriptpubkey: string;
+    scriptpubkey_asm: string;
+    scriptpubkey_type: string;
+    scriptpubkey_address: string;
+    value: number;
+}
 export interface InscribeTransfer {
     fromAddress: string;
     taprootPublicKey: string;
@@ -253,6 +260,11 @@ export declare const addressNameToType: {
     readonly taproot: "p2tr";
     readonly 'nested-segwit': "p2sh";
     readonly segwit: "p2wpkh";
+};
+export type RuneUtxo = {
+    outpointId: string;
+    amount: number;
+    script: string;
 };
 export type AddressTypes = keyof typeof addressTypeToName;
 export type AddressFormats = (typeof addressTypeToName)[AddressTypes];

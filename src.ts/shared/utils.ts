@@ -6,6 +6,7 @@ import {
   BitcoinPaymentType,
   IBlockchainInfoUTXO,
   Network,
+  RuneUtxo,
   ToSignInput,
   TxInput,
   UnspentOutput,
@@ -419,6 +420,124 @@ export const createInscriptionScript = (pubKey: any, content: any) => {
   ] as string[]
 }
 
+function encodeToBase26(inputString: string): string {
+  const baseCharCode = 'a'.charCodeAt(0)
+  return inputString
+    .toLowerCase()
+    .split('')
+    .map((char) => {
+      const charCode = char.charCodeAt(0)
+      if (charCode >= baseCharCode && charCode < baseCharCode + 26) {
+        return String.fromCharCode(charCode - baseCharCode + 97) // Convert to base26 (a-z)
+      } else {
+        return char
+      }
+    })
+    .join('')
+}
+
+export const createRuneSendScript = ({
+  runeId,
+  amount,
+  sendOutputIndex = 1,
+  pointer = 0,
+}: {
+  runeId: string
+  amount: number
+  sendOutputIndex?: number
+  pointer: number
+}) => {
+  const pointerFlag = encodeVarint(BigInt(22)).varint
+  const pointerVarint = encodeVarint(BigInt(pointer)).varint
+  const bodyFlag = encodeVarint(BigInt(0)).varint
+  const amountToSend = encodeVarint(BigInt(amount)).varint
+  const encodedOutputIndex = encodeVarint(BigInt(sendOutputIndex)).varint
+  const splitIdString = runeId.split(':')
+  const block = Number(splitIdString[0])
+  const blockTx = Number(splitIdString[1])
+
+  const encodedBlock = encodeVarint(BigInt(block)).varint
+  const encodedBlockTxNumber = encodeVarint(BigInt(blockTx)).varint
+
+  const runeStone = Buffer.concat([
+    pointerFlag,
+    pointerVarint,
+    bodyFlag,
+    encodedBlock,
+    encodedBlockTxNumber,
+    amountToSend,
+    encodedOutputIndex,
+  ])
+
+  let runeStoneLength: string = runeStone.byteLength.toString(16)
+
+  if (runeStone.byteLength % 2 !== 0) {
+    runeStoneLength = '0' + runeStone.byteLength.toString(16)
+  }
+
+  const script: Buffer = Buffer.concat([
+    Buffer.from('6a', 'hex'),
+    Buffer.from('5d', 'hex'),
+    Buffer.from(runeStoneLength, 'hex'),
+    runeStone,
+  ])
+  return script
+}
+
+export const createRuneMintScript = ({
+  runeId,
+  amountToMint,
+  mintOutPutIndex = 1,
+  pointer = 1,
+}: {
+  runeId: string
+  amountToMint: number
+  mintOutPutIndex: number
+  pointer?: number
+}) => {
+  const pointerFlag = encodeVarint(BigInt(22)).varint
+  const pointerVarint = encodeVarint(BigInt(pointer)).varint
+  const bodyFlag = encodeVarint(BigInt(0)).varint
+  const mintFlag = encodeVarint(BigInt(20)).varint
+
+  const mintAmount = encodeVarint(BigInt(amountToMint)).varint
+  const encodedOutputIndex = encodeVarint(BigInt(mintOutPutIndex)).varint
+  const splitIdString = runeId.split(':')
+  const block = Number(splitIdString[0])
+  const blockTx = Number(splitIdString[1])
+
+  const encodedBlock = encodeVarint(BigInt(block)).varint
+  const encodedBlockTxNumber = encodeVarint(BigInt(blockTx)).varint
+
+  const runeStone = Buffer.concat([
+    pointerFlag,
+    pointerVarint,
+    mintFlag,
+    encodedBlock,
+    mintFlag,
+    encodedBlockTxNumber,
+    bodyFlag,
+    encodedBlock,
+    encodedBlockTxNumber,
+    mintAmount,
+    encodedOutputIndex,
+  ])
+
+  let runeStoneLength: string = runeStone.byteLength.toString(16)
+
+  if (runeStone.byteLength % 2 !== 0) {
+    runeStoneLength = '0' + runeStone.byteLength.toString(16)
+  }
+
+  const script = Buffer.concat([
+    Buffer.from('6a', 'hex'),
+    Buffer.from('5d', 'hex'),
+    Buffer.from(runeStoneLength, 'hex'),
+    runeStone,
+  ])
+  return script
+}
+
 export let RPC_ADDR =
   'https://mainnet.sandshrew.io/v1/6e3bc3c289591bb447c116fda149b094'
 
@@ -803,13 +922,13 @@ export const addBtcUtxo = async ({
   const spendableUtxos = await filterTaprootUtxos({
     taprootUtxos: spendUtxos,
   })
-  const txSize = calculateTaprootTxSize(2, 0, 2)
+  const txSize = calculateTaprootTxSize(1, 0, 2)
   let fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
   let utxosToSend: any = findUtxosToCoverAmount(spendableUtxos, amount + fee)
   let usingAlt = false
 
-  if (utxosToSend?.selectedUtxos.length > 2) {
+  if (utxosToSend?.selectedUtxos.length > 1) {
     const txSize = calculateTaprootTxSize(
       utxosToSend.selectedUtxos.length,
       0,
@@ -826,7 +945,7 @@ export const addBtcUtxo = async ({
     })
     utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, amount + fee)
 
-    if (utxosToSend?.selectedUtxos.length > 2) {
+    if (utxosToSend?.selectedUtxos.length > 1) {
       const txSize = calculateTaprootTxSize(
         utxosToSend.selectedUtxos.length,
         0,
@@ -882,5 +1001,46 @@ export const isValidJSON = (str: string) => {
     return true
   } catch (e) {
     return false
+  }
+}
+
+export const encodeVarint = (bigIntValue: any) => {
+  const bufferArray = []
+  let num = bigIntValue
+
+  do {
+    let byte = num & BigInt(0x7f) // Get the next 7 bits of the number.
+    num >>= BigInt(7) // Remove the 7 bits we just processed.
+    if (num !== BigInt(0)) {
+      // If there are more bits to process,
+      byte |= BigInt(0x80) // set the continuation bit.
+    }
+    bufferArray.push(Number(byte))
+  } while (num !== BigInt(0))
+
+  return { varint: Buffer.from(bufferArray) }
+}
+
+export function findRuneUtxosToSpend(utxos: RuneUtxo[], target: number) {
+  if (!utxos || utxos.length === 0) {
+    return undefined
+  }
+  let totalAmount = 0
+  const selectedUtxos: RuneUtxo[] = []
+
+  for (const utxo of utxos) {
+    if (totalAmount >= target) break
+
+    selectedUtxos.push(utxo)
+    totalAmount += utxo.amount
+  }
+
+  if (totalAmount >= target) {
+    return {
+      selectedUtxos,
+      change: totalAmount - target,
+    }
+  } else {
+    return undefined
   }
 }

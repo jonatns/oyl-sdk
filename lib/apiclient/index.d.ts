@@ -89,11 +89,9 @@ export declare class OylApiClient {
      * @param marketPrice - The limit order market price.
      * @param testnet - mainnet/testnet network toggle.
      */
-    getAggregatedOffers({ ticker, limitOrderAmount, marketPrice, testnet, }: {
+    getAggregatedOffers({ ticker, limitOrderAmount, }: {
         ticker: string;
         limitOrderAmount: number;
-        marketPrice?: number;
-        testnet?: boolean;
     }): Promise<any>;
     /**
      * Get BRC-20 offers.
@@ -175,10 +173,9 @@ export declare class OylApiClient {
      * Get Omnisat offer psbt.
      * @param offerId - The offer Id to query.
      */
-    getOmnisatOfferPsbt({ offerId, ticker, testnet, }: {
+    getOmnisatOfferPsbt({ offerId, ticker, }: {
         offerId: string;
         ticker: string;
-        testnet?: boolean;
     }): Promise<any>;
     /**
      * Initialize a swap bid.
@@ -190,27 +187,35 @@ export declare class OylApiClient {
      * @param params - Parameters for the signed bid.
      */
     submitSignedBid(params: SignedBid): Promise<any>;
-    sendBtcEstimate({ feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, testnet, }: {
+    sendBtcEstimate({ feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, }: {
         feeRate?: number;
         amount: number;
         altSpendPubKey?: string;
         spendAddress: string;
         spendPubKey: string;
         altSpendAddress?: string;
-        testnet: boolean;
     }): Promise<any>;
-    sendBrc20Estimate({ feeRate, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, testnet, }: {
+    sendBrc20Estimate({ feeRate, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, }: {
         feeRate?: number;
         altSpendPubKey?: string;
         spendAddress: string;
         spendPubKey: string;
         altSpendAddress?: string;
-        testnet: boolean;
     }): Promise<any>;
-    sendCollectibleEstimate({ spendAddress, altSpendAddress, feeRate, testnet, }: {
+    sendCollectibleEstimate({ spendAddress, altSpendAddress, feeRate, }: {
         feeRate?: number;
         spendAddress: string;
         altSpendAddress?: string;
-        testnet: boolean;
+    }): Promise<any>;
+    sendRuneEstimate({ spendAddress, altSpendAddress, feeRate, }: {
+        feeRate?: number;
+        spendAddress: string;
+        altSpendAddress?: string;
+    }): Promise<any>;
+    getRuneOutpoints({ address }: {
+        address: string;
+    }): Promise<any>;
+    getRuneBalance({ address }: {
+        address: string;
     }): Promise<any>;
 }
