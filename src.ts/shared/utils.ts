@@ -488,7 +488,7 @@ export const createRuneMintScript = ({
   runeId,
   amountToMint,
   mintOutPutIndex = 1,
-  pointer = 0,
+  pointer = 1,
 }: {
   runeId: string
   amountToMint: number

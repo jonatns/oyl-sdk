@@ -264,6 +264,7 @@ export declare const addressNameToType: {
 export type RuneUtxo = {
     outpointId: string;
     amount: number;
+    script: string;
 };
 export type AddressTypes = keyof typeof addressTypeToName;
 export type AddressFormats = (typeof addressTypeToName)[AddressTypes];

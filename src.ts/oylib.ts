@@ -909,10 +909,18 @@ export class Oyl {
     if (!result.allowed) {
       throw new Error(result['reject-reason'])
     }
-
     await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(rawTx)
 
-    return { txId, rawTx }
+    const { size, weight, fee } = await this.esploraRpc.getTxInfo(txId)
+
+    return {
+      txId,
+      rawTx,
+      size: size,
+      weight: weight,
+      fee: fee,
+      satsPerVByte: (fee / (weight / 4)).toFixed(2),
+    }
   }
 
   async finalizePsbtBase64(psbtBase64) {
@@ -1383,11 +1391,30 @@ export class Oyl {
       const { txId: sentPsbtTxId } = await this.pushPsbt({
         psbtBase64: taprootSendSignedPsbt,
       })
+      const feeTxPromise = successTxIds.map((txId) =>
+        this.esploraRpc.getTxInfo(txId)
+      )
+
+      const feeData = await Promise.all(feeTxPromise)
+      let totalFee = 0
+      let totalSize = 0
+      let totalWeight = 0
+      let totalSatsPerVByte = 0
+      for (const tx of feeData) {
+        totalSize += tx.size
+        totalWeight += tx.weight
+        totalFee += tx.fee
+        totalSatsPerVByte += Number((tx.fee / (tx.weight / 4)).toFixed(2))
+      }
 
       return {
         txId: sentPsbtTxId,
         rawTxn: taprootSendSignedPsbt,
         sendBrc20Txids: [...successTxIds, sentPsbtTxId],
+        totalFee: totalFee,
+        totalSize: totalSize,
+        totalWeight: totalWeight,
+        totalSatsPerVByte: totalSatsPerVByte,
       }
     } catch (err) {
       throw new OylTransactionError(err, successTxIds)
@@ -1869,7 +1896,7 @@ export class Oyl {
     })
 
     for await (const rune of runeBalances) {
-      if (amount > rune.balance && runeId === rune.rune_id) {
+      if (amount > rune.total_balance && runeId === rune.rune_id) {
         throw new Error('Insufficient Balance')
       }
     }
@@ -1896,13 +1923,17 @@ export class Oyl {
       finalize: true,
     })
 
-    const { txId } = await this.pushPsbt({
+    const { txId, weight, size, fee, satsPerVByte } = await this.pushPsbt({
       psbtBase64: taprootSigned,
     })
 
     return {
       txId: txId,
       rawTxn: taprootSigned,
+      weight: weight,
+      size: size,
+      fee: fee,
+      satsPerVByte: satsPerVByte,
     }
   }
 
@@ -1959,14 +1990,18 @@ export class Oyl {
       testnet: testnet,
     })
 
-    for await (const rune of runeUtxoOutpoints) {
-      if (runeId === rune.rune_id) {
-        runeUtxos.push({ outpointId: rune.outpoint_id, amount: rune.amount })
+    for (const rune of runeUtxoOutpoints) {
+      const index = rune.rune_ids.indexOf(runeId)
+      if (index !== -1) {
+        runeUtxos.push({
+          script: rune.pkscript,
+          outpointId: rune.output,
+          amount: rune.balances[index],
+        })
       }
     }
 
     const useableUtxos = findRuneUtxosToSpend(runeUtxos, amount)
-
     if (!useableUtxos) {
       throw new Error(
         'No utxos with runes attached to them to spend for this address.'
@@ -1977,9 +2012,8 @@ export class Oyl {
       const txSplit = useableUtxos.selectedUtxos[i].outpointId.split(':')
       const txHash = txSplit[0]
       const txIndex = txSplit[1]
-      const script = (await this.esploraRpc.getTxInfo(txHash)).vout[txIndex][
-        'scriptpubkey'
-      ]
+      const script = useableUtxos.selectedUtxos[i].script
+
       psbt.addInput({
         hash: txHash,
         index: Number(txIndex),

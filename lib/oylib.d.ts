@@ -211,6 +211,10 @@ export declare class Oyl {
     }): Promise<{
         txId: string;
         rawTx: string;
+        size: number;
+        weight: number;
+        fee: number;
+        satsPerVByte: string;
     }>;
     createBtcTx({ toAddress, spendPubKey, feeRate, amount, network, spendUtxos, spendAddress, altSpendAddress, altSpendPubKey, altSpendUtxos, }: {
         toAddress: string;
@@ -333,6 +337,10 @@ export declare class Oyl {
     }): Promise<{
         txId: string;
         rawTx: string;
+        size: number;
+        weight: number;
+        fee: number;
+        satsPerVByte: string;
     }>;
     finalizePsbtBase64(psbtBase64: any): Promise<any>;
     sendPsbt(txData: string, isDry?: boolean): Promise<{
@@ -398,6 +406,10 @@ export declare class Oyl {
         txId: string;
         rawTxn: string;
         sendBrc20Txids: any[];
+        totalFee: number;
+        totalSize: number;
+        totalWeight: number;
+        totalSatsPerVByte: number;
     }>;
     inscriptionSendTx({ toAddress, fromPubKey, spendPubKey, spendAddress, altSpendAddress, altSpendPubKey, feeRate, utxoId, utxosUsedForFees, }: {
         toAddress: string;
@@ -426,6 +438,10 @@ export declare class Oyl {
     }): Promise<{
         txId: string;
         rawTx: string;
+        size: number;
+        weight: number;
+        fee: number;
+        satsPerVByte: string;
     }>;
     createOrdCollectibleTx({ inscriptionId, fromAddress, fromPubKey, spendPubKey, spendAddress, toAddress, altSpendAddress, altSpendPubKey, feeRate, }: {
         fromAddress?: string;
@@ -480,6 +496,10 @@ export declare class Oyl {
     }): Promise<{
         txId: string;
         rawTxn: string;
+        weight: number;
+        size: number;
+        fee: number;
+        satsPerVByte: string;
     }>;
     runeSendTx({ runeId, fromAddress, toAddress, amount, spendAddress, spendPubKey, altSpendPubKey, altSpendAddress, feeRate, }: {
         runeId: string;

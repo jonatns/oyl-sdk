@@ -546,10 +546,10 @@ export async function runCLI() {
       const sendRuneResponse = await networkConfig.wallet.sendRune({
         runeId: '2585328:8',
         toAddress:
-          'tb1pdz8aul7226284e57e9yn4mpyd8f52zpxc7z0gz392e6amrf0s4uq6s3sw6',
+          'tb1pdykkv4ldhmw2n9mpehffjk7dszltheqkhjtg3hj7p97u33jja8cq4fuph7',
         signer,
-        amount: 1000,
-        feeRate: 12,
+        amount: 400,
+        feeRate: 30,
         fromAddress: networkConfig.taprootAddress,
         spendAddress: networkConfig.taprootAddress,
         spendPubKey: networkConfig.taprootPubKey,
@@ -564,7 +564,7 @@ export async function runCLI() {
         toAddress: networkConfig.taprootAddress,
         signer,
         amount: 1000,
-        feeRate: 1,
+        feeRate: 20,
         spendAddress: networkConfig.taprootAddress,
         spendPubKey: networkConfig.taprootPubKey,
         altSpendPubKey: networkConfig.segwitPubKey,
