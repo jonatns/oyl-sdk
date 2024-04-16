@@ -277,10 +277,9 @@ export declare class Oyl {
      * @param {}
      * @returns {Promise<any>} A promise that resolves to an array of offers.
      */
-    getAggregatedBrcOffers({ ticker, limitOrderAmount, marketPrice, }: {
+    getAggregatedBrcOffers({ ticker, limitOrderAmount, }: {
         ticker: string;
         limitOrderAmount: number;
-        marketPrice: number;
     }): Promise<any>;
     /**
      * Lists BRC20 tokens associated with an address.

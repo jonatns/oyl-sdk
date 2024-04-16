@@ -1,7 +1,6 @@
 import fetch from 'node-fetch'
 import { SwapBrcBid, SignedBid, OkxBid } from '../shared/interface'
 import { getAllInscriptionsByAddressRegtest } from '../tests/regtestApi'
-import { Signer } from '../signer'
 
 /**
  * Represents the client for interacting with the Oyl API.
@@ -133,7 +132,6 @@ export class OylApiClient {
         exclude_brc20: false,
         count: 20,
         order: 'desc',
-        test: this.testnet,
       })
     }
   }
@@ -141,7 +139,6 @@ export class OylApiClient {
   async getInscriptionsForTxn(txn_id: string): Promise<any> {
     const res = await this._call('/get-inscriptions-for-txn', 'post', {
       tx_id: txn_id,
-      testnet: this.testnet,
     })
 
     return res.data
@@ -159,7 +156,6 @@ export class OylApiClient {
   async getTaprootBalance(address: string): Promise<any> {
     const res = await this._call('/get-taproot-balance', 'post', {
       address: address,
-      testnet: this.testnet,
     })
     if (res.data) {
       return res.data
@@ -171,7 +167,6 @@ export class OylApiClient {
   async getAddressBalance(address: string): Promise<any> {
     const res = await this._call('/get-address-balance', 'post', {
       address: address,
-      testnet: this.testnet,
     })
     if (res.data) {
       return res.data
@@ -223,18 +218,13 @@ export class OylApiClient {
   async getAggregatedOffers({
     ticker,
     limitOrderAmount,
-    marketPrice,
-    testnet,
   }: {
     ticker: string
     limitOrderAmount: number
-    marketPrice?: number
-    testnet?: boolean
   }): Promise<any> {
     const response = await this._call('/get-brc20-aggregate-offers', 'post', {
       ticker: ticker,
       limitOrderAmount,
-      testnet,
     })
     if (response.error) throw Error(response.error)
     return response
@@ -402,16 +392,13 @@ export class OylApiClient {
   async getOmnisatOfferPsbt({
     offerId,
     ticker,
-    testnet,
   }: {
     offerId: string
     ticker: string
-    testnet?: boolean
   }): Promise<any> {
     const response = await this._call('/get-omnisat-offer-psbt', 'post', {
       offerId: offerId,
       ticker: ticker,
-      testnet,
     })
     return response
   }
@@ -439,7 +426,6 @@ export class OylApiClient {
     spendAddress,
     spendPubKey,
     altSpendAddress,
-    testnet,
   }: {
     feeRate?: number
     amount: number
@@ -447,7 +433,6 @@ export class OylApiClient {
     spendAddress: string
     spendPubKey: string
     altSpendAddress?: string
-    testnet: boolean
   }): Promise<any> {
     return await this._call('/send-btc-estimate', 'post', {
       feeRate,
@@ -456,7 +441,6 @@ export class OylApiClient {
       spendAddress,
       spendPubKey,
       altSpendAddress,
-      testnet,
     })
   }
 
@@ -466,14 +450,12 @@ export class OylApiClient {
     spendAddress,
     spendPubKey,
     altSpendAddress,
-    testnet,
   }: {
     feeRate?: number
     altSpendPubKey?: string
     spendAddress: string
     spendPubKey: string
     altSpendAddress?: string
-    testnet: boolean
   }): Promise<any> {
     return await this._call('/send-brc20-estimate', 'post', {
       spendPubKey,
@@ -481,7 +463,6 @@ export class OylApiClient {
       altSpendPubKey,
       spendAddress,
       altSpendAddress,
-      testnet,
     })
   }
 
@@ -489,18 +470,15 @@ export class OylApiClient {
     spendAddress,
     altSpendAddress,
     feeRate,
-    testnet,
   }: {
     feeRate?: number
     spendAddress: string
     altSpendAddress?: string
-    testnet: boolean
   }): Promise<any> {
     return await this._call('/send-collectible-estimate', 'post', {
       spendAddress,
       altSpendAddress,
       feeRate,
-      testnet,
     })
   }
 
@@ -508,47 +486,30 @@ export class OylApiClient {
     spendAddress,
     altSpendAddress,
     feeRate,
-    testnet,
   }: {
     feeRate?: number
     spendAddress: string
     altSpendAddress?: string
-    testnet: boolean
   }): Promise<any> {
     return await this._call('/send-rune-estimate', 'post', {
       spendAddress,
       altSpendAddress,
       feeRate,
-      testnet,
     })
   }
 
-  async getRuneOutpoints({
-    address,
-    testnet,
-  }: {
-    address: string
-    testnet: boolean
-  }): Promise<any> {
+  async getRuneOutpoints({ address }: { address: string }): Promise<any> {
     return (
       await this._call('/get-rune-outpoints', 'post', {
         address,
-        testnet,
       })
     ).data
   }
 
-  async getRuneBalance({
-    address,
-    testnet,
-  }: {
-    address: string
-    testnet: boolean
-  }): Promise<any> {
+  async getRuneBalance({ address }: { address: string }): Promise<any> {
     return (
       await this._call('/get-rune-balance', 'post', {
         address,
-        testnet,
       })
     ).data
   }

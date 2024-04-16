@@ -774,18 +774,13 @@ export class Oyl {
   async getAggregatedBrcOffers({
     ticker,
     limitOrderAmount,
-    marketPrice,
   }: {
     ticker: string
     limitOrderAmount: number
-    marketPrice: number
   }) {
-    const testnet = this.network == getNetwork('testnet')
     const offers = await this.apiClient.getAggregatedOffers({
       ticker,
       limitOrderAmount,
-      marketPrice,
-      testnet,
     })
     return offers
   }
@@ -1039,18 +1034,14 @@ export class Oyl {
   }
 
   async getRuneBalance({ address }: { address: string }) {
-    const testnet = this.network == getNetwork('testnet')
     await this.apiClient.getRuneBalance({
       address,
-      testnet: testnet,
     })
   }
 
   async getRuneOutpoints({ address }: { address: string }) {
-    const testnet = this.network == getNetwork('testnet')
     await this.apiClient.getRuneOutpoints({
       address,
-      testnet: testnet,
     })
   }
 
@@ -1784,7 +1775,6 @@ export class Oyl {
     spendPubKey: string
     altSpendAddress?: string
   }) {
-    const testnet = this.network == getNetwork('testnet')
     const result = await this.apiClient.sendBtcEstimate({
       feeRate,
       amount,
@@ -1792,7 +1782,6 @@ export class Oyl {
       spendAddress,
       spendPubKey,
       altSpendAddress,
-      testnet,
     })
 
     return result
@@ -1807,12 +1796,10 @@ export class Oyl {
     altSpendAddress?: string
     spendAddress?: string
   }) {
-    const testnet = this.network == getNetwork('testnet')
     const result = await this.apiClient.sendCollectibleEstimate({
       spendAddress,
       altSpendAddress,
       feeRate,
-      testnet,
     })
     return result
   }
@@ -1826,12 +1813,10 @@ export class Oyl {
     altSpendAddress?: string
     spendAddress?: string
   }) {
-    const testnet = this.network == getNetwork('testnet')
     const result = await this.apiClient.sendRuneEstimate({
       spendAddress,
       altSpendAddress,
       feeRate,
-      testnet,
     })
     return result
   }
@@ -1849,14 +1834,12 @@ export class Oyl {
     altSpendAddress?: string
     feeRate?: number
   }) {
-    const testnet = this.network == getNetwork('testnet')
     const result = await this.apiClient.sendBrc20Estimate({
       spendPubKey,
       feeRate,
       altSpendPubKey,
       spendAddress,
       altSpendAddress,
-      testnet,
     })
 
     return result
@@ -1885,14 +1868,12 @@ export class Oyl {
     runeId?: string
     amount?: number
   }) {
-    const testnet = this.network == getNetwork('testnet')
     if (!feeRate) {
       feeRate = (await this.esploraRpc.getFeeEstimates())['1']
     }
 
     const runeBalances: any[] = await this.apiClient.getRuneBalance({
       address: fromAddress,
-      testnet: testnet,
     })
 
     for await (const rune of runeBalances) {
@@ -1962,8 +1943,6 @@ export class Oyl {
     let spendUtxos: Utxo[] | undefined
     let altSpendUtxos: Utxo[] | undefined
 
-    const testnet = this.network == getNetwork('testnet')
-
     spendUtxos = await this.getUtxosArtifacts({
       address: spendAddress,
     })
@@ -1987,7 +1966,6 @@ export class Oyl {
     const runeUtxos: RuneUtxo[] = []
     const runeUtxoOutpoints: any[] = await this.apiClient.getRuneOutpoints({
       address: fromAddress,
-      testnet: testnet,
     })
 
     for (const rune of runeUtxoOutpoints) {
