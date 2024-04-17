@@ -471,7 +471,7 @@ export const createRuneSendScript = ({
 
   let runeStoneLength: string = runeStone.byteLength.toString(16)
 
-  if (runeStone.byteLength % 2 !== 0) {
+  if (runeStoneLength.length % 2 !== 0) {
     runeStoneLength = '0' + runeStone.byteLength.toString(16)
   }
 
@@ -525,7 +525,7 @@ export const createRuneMintScript = ({
 
   let runeStoneLength: string = runeStone.byteLength.toString(16)
 
-  if (runeStone.byteLength % 2 !== 0) {
+  if (runeStoneLength.length % 2 !== 0) {
     runeStoneLength = '0' + runeStone.byteLength.toString(16)
   }
 
