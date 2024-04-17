@@ -906,15 +906,22 @@ export class Oyl {
     }
     await this.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(rawTx)
 
-    const { size, weight, fee } = await this.esploraRpc.getTxInfo(txId)
+    await waitForTransaction({
+      txId,
+      sandshrewBtcClient: this.sandshrewBtcClient,
+    })
+
+    const txInMemPool =
+      await this.sandshrewBtcClient.bitcoindRpc.getMemPoolEntry(txId)
+    const fee = txInMemPool.fees['base'] * 10 ** 8
 
     return {
       txId,
       rawTx,
-      size: size,
-      weight: weight,
+      size: txInMemPool.vsize,
+      weight: txInMemPool.weight,
       fee: fee,
-      satsPerVByte: (fee / (weight / 4)).toFixed(2),
+      satsPerVByte: (fee / (txInMemPool.weight / 4)).toFixed(2),
     }
   }
 
@@ -1382,8 +1389,9 @@ export class Oyl {
       const { txId: sentPsbtTxId } = await this.pushPsbt({
         psbtBase64: taprootSendSignedPsbt,
       })
+
       const feeTxPromise = successTxIds.map((txId) =>
-        this.esploraRpc.getTxInfo(txId)
+        this.sandshrewBtcClient.bitcoindRpc.getMemPoolEntry(txId)
       )
 
       const feeData = await Promise.all(feeTxPromise)
@@ -1392,10 +1400,12 @@ export class Oyl {
       let totalWeight = 0
       let totalSatsPerVByte = 0
       for (const tx of feeData) {
-        totalSize += tx.size
+        totalSize += tx.vsize
         totalWeight += tx.weight
-        totalFee += tx.fee
-        totalSatsPerVByte += Number((tx.fee / (tx.weight / 4)).toFixed(2))
+        totalFee += tx.fees['base'] * 10 ** 8
+        totalSatsPerVByte += Number(
+          ((tx.fees['base'] * 10 ** 8) / (tx.weight / 4)).toFixed(2)
+        )
       }
 
       return {
