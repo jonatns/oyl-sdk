@@ -1,7 +1,7 @@
 {
   "name": "@oyl/sdk",
-  "version": "0.5.0",
-  "description": "OYL framework and supporting libraries",
+  "version": "1.0.0",
+  "description": "Oyl SDK",
   "main": "lib/index.js",
   "repository": "https://github.com/oyl-wallet/oyl-sdk",
   "scripts": {
