@@ -13,7 +13,7 @@
   "bin": {
     "oyl-cli": "./bin/cli.js"
   },
-  "author": "Oyl Foundation",
+  "author": "Oyl Dynamics",
   "license": "MIT",
   "private": false,
   "devDependencies": {
