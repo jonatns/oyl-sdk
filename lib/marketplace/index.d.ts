@@ -11,6 +11,7 @@ export declare class Marketplace {
     private altSpendPubKey;
     private signer;
     feeRate: number;
+    txIds: string[];
     addressesBound: boolean;
     constructor(options: MarketplaceAccount);
     /**
