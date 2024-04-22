@@ -216,7 +216,7 @@ export declare class Oyl {
         fee: number;
         satsPerVByte: string;
     }>;
-    createBtcTx({ toAddress, spendPubKey, feeRate, amount, network, spendUtxos, spendAddress, altSpendAddress, altSpendPubKey, altSpendUtxos, }: {
+    createBtcTx({ toAddress, spendPubKey, feeRate, amount, network, spendUtxos, spendAddress, altSpendAddress, altSpendPubKey, altSpendUtxos, fee, }: {
         toAddress: string;
         spendPubKey: string;
         feeRate: number;
@@ -227,9 +227,9 @@ export declare class Oyl {
         altSpendAddress?: string;
         altSpendPubKey?: string;
         altSpendUtxos?: Utxo[];
+        fee?: number;
     }): Promise<{
         rawPsbt: string;
-        fee: number;
     }>;
     /**
      * Retrieves information about a SegWit address.

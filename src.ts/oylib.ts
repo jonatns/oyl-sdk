@@ -653,8 +653,36 @@ export class Oyl {
       rawPsbt: segwitSigned,
       finalize: true,
     })
+    const estimatePsbt = bitcoin.Psbt.fromBase64(taprootSigned, {
+      network: this.network,
+    })
+    const fee = estimatePsbt.getFee()
 
-    return this.pushPsbt({ psbtBase64: taprootSigned })
+    const { rawPsbt: finalRawPsbt } = await this.createBtcTx({
+      toAddress,
+      spendPubKey,
+      feeRate,
+      amount,
+      network: this.network,
+      spendUtxos,
+      spendAddress,
+      altSpendPubKey,
+      altSpendAddress,
+      altSpendUtxos,
+      fee,
+    })
+
+    const { signedPsbt: segwitSigned1 } = await signer.signAllSegwitInputs({
+      rawPsbt: finalRawPsbt,
+      finalize: true,
+    })
+
+    const { signedPsbt: taprootSigned1 } = await signer.signAllTaprootInputs({
+      rawPsbt: segwitSigned1,
+      finalize: true,
+    })
+
+    return this.pushPsbt({ psbtBase64: taprootSigned1 })
   }
 
   async createBtcTx({
@@ -668,6 +696,7 @@ export class Oyl {
     altSpendAddress,
     altSpendPubKey,
     altSpendUtxos,
+    fee,
   }: {
     toAddress: string
     spendPubKey: string
@@ -679,6 +708,7 @@ export class Oyl {
     altSpendAddress?: string
     altSpendPubKey?: string
     altSpendUtxos?: Utxo[]
+    fee?: number
   }) {
     const psbt = new bitcoin.Psbt({ network: network })
 
@@ -692,7 +722,7 @@ export class Oyl {
       )
     }
 
-    let { psbt: updatedPsbt, fee } = await addBtcUtxo({
+    let { psbt: updatedPsbt } = await addBtcUtxo({
       spendUtxos,
       psbt: psbt,
       toAddress,
@@ -704,11 +734,11 @@ export class Oyl {
       altSpendAddress,
       altSpendPubKey,
       altSpendUtxos,
+      fee,
     })
 
     return {
       rawPsbt: updatedPsbt.toBase64(),
-      fee,
     }
   }
 

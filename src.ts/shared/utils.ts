@@ -906,6 +906,7 @@ export const addBtcUtxo = async ({
   altSpendAddress,
   altSpendPubKey,
   altSpendUtxos,
+  fee
 }: {
   spendUtxos: any[]
   toAddress: string
@@ -918,14 +919,15 @@ export const addBtcUtxo = async ({
   altSpendAddress?: string
   altSpendPubKey?: string
   altSpendUtxos?: Utxo[]
+  fee?: number
 }) => {
   const spendableUtxos = await filterTaprootUtxos({
     taprootUtxos: spendUtxos,
   })
   const txSize = calculateTaprootTxSize(1, 0, 2)
-  let fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
-
-  let utxosToSend: any = findUtxosToCoverAmount(spendableUtxos, amount + fee)
+  let calculatedFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
+  let finalFee = fee ? fee : calculatedFee
+  let utxosToSend: any = findUtxosToCoverAmount(spendableUtxos, amount + finalFee)
   let usingAlt = false
 
   if (utxosToSend?.selectedUtxos.length > 1) {
@@ -936,14 +938,14 @@ export const addBtcUtxo = async ({
     )
     fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
-    utxosToSend = findUtxosToCoverAmount(spendableUtxos, amount + fee)
+    utxosToSend = findUtxosToCoverAmount(spendableUtxos, amount + finalFee)
   }
 
   if (!utxosToSend) {
     const unFilteredAltUtxos = await filterTaprootUtxos({
       taprootUtxos: altSpendUtxos,
     })
-    utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, amount + fee)
+    utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, amount + finalFee)
 
     if (utxosToSend?.selectedUtxos.length > 1) {
       const txSize = calculateTaprootTxSize(
@@ -953,7 +955,7 @@ export const addBtcUtxo = async ({
       )
       fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
-      utxosToSend = findUtxosToCoverAmount(spendableUtxos, amount + fee)
+      utxosToSend = findUtxosToCoverAmount(spendableUtxos, amount + finalFee)
     }
     if (!utxosToSend) {
       throw new Error('Insufficient Balance')
@@ -978,7 +980,7 @@ export const addBtcUtxo = async ({
     value: amount,
   })
 
-  const changeAmount = amountGathered - amount - fee
+  const changeAmount = amountGathered - amount - finalFee
   if (changeAmount > 546) {
     psbt.addOutput({
       address: spendAddress,
