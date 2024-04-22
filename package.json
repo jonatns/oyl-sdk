@@ -1,7 +1,7 @@
 {
   "name": "@oyl/sdk",
-  "version": "0.5.0",
-  "description": "OYL framework and supporting libraries",
+  "version": "1.0.0",
+  "description": "Oyl SDK",
   "main": "lib/index.js",
   "repository": "https://github.com/oyl-wallet/oyl-sdk",
   "scripts": {
@@ -13,7 +13,7 @@
   "bin": {
     "oyl-cli": "./bin/cli.js"
   },
-  "author": "Oyl Foundation",
+  "author": "Oyl Dynamics",
   "license": "MIT",
   "private": false,
   "devDependencies": {
