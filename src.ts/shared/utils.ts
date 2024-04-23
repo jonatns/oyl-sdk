@@ -623,7 +623,7 @@ export async function getOutputValueByVOutIndex({
   txId: string
   vOut: number
   esploraRpc: EsploraRpc
-}): Promise<any[] | null> {
+}): Promise<{ value: number; script: string } | null> {
   const timeout: number = 60000 // 1 minute in milliseconds
   const startTime: number = Date.now()
 
@@ -631,7 +631,10 @@ export async function getOutputValueByVOutIndex({
     const txDetails = await esploraRpc.getTxInfo(txId)
 
     if (txDetails?.vout && txDetails.vout.length > 0) {
-      return [txDetails.vout[vOut].value, txDetails.vout[vOut].scriptpubkey]
+      return {
+        value: txDetails.vout[vOut].value,
+        script: txDetails.vout[vOut].scriptpubkey,
+      }
     }
 
     // Check for timeout
