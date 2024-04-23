@@ -903,7 +903,6 @@ export const addBtcUtxo = async ({
   network,
   spendAddress,
   spendPubKey,
-  altSpendAddress,
   altSpendPubKey,
   altSpendUtxos,
   fee,
@@ -916,12 +915,10 @@ export const addBtcUtxo = async ({
   network: bitcoin.Network
   spendAddress: string
   spendPubKey: string
-  altSpendAddress?: string
   altSpendPubKey?: string
   altSpendUtxos?: Utxo[]
   fee?: number
 }) => {
-  console.log(fee)
   const spendableUtxos = await filterTaprootUtxos({
     taprootUtxos: spendUtxos,
   })
