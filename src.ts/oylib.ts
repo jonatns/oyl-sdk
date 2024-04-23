@@ -649,14 +649,14 @@ export class Oyl {
       finalize: true,
     })
 
-    const { signedPsbt: taprootSigned } = await signer.signAllTaprootInputs({
+    const { raw } = await signer.signAllTaprootInputs({
       rawPsbt: segwitSigned,
       finalize: true,
     })
-    const estimatePsbt = bitcoin.Psbt.fromBase64(taprootSigned, {
-      network: this.network,
-    })
-    const fee = estimatePsbt.getFee()
+
+    const fee = raw.getFee()
+    const fee3 = raw.getFeeRate()
+    console.log(fee3)
 
     const { rawPsbt: finalRawPsbt } = await this.createBtcTx({
       toAddress,
@@ -677,10 +677,15 @@ export class Oyl {
       finalize: true,
     })
 
-    const { signedPsbt: taprootSigned1 } = await signer.signAllTaprootInputs({
-      rawPsbt: segwitSigned1,
-      finalize: true,
-    })
+    const { signedPsbt: taprootSigned1, raw: raw2 } =
+      await signer.signAllTaprootInputs({
+        rawPsbt: segwitSigned1,
+        finalize: true,
+      })
+
+    const fee1 = raw2.getFeeRate()
+    const fee2 = raw2.getFee()
+    console.log(fee1, fee2)
 
     return this.pushPsbt({ psbtBase64: taprootSigned1 })
   }

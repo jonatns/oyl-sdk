@@ -906,7 +906,7 @@ export const addBtcUtxo = async ({
   altSpendAddress,
   altSpendPubKey,
   altSpendUtxos,
-  fee
+  fee,
 }: {
   spendUtxos: any[]
   toAddress: string
@@ -921,13 +921,17 @@ export const addBtcUtxo = async ({
   altSpendUtxos?: Utxo[]
   fee?: number
 }) => {
+  console.log(fee)
   const spendableUtxos = await filterTaprootUtxos({
     taprootUtxos: spendUtxos,
   })
   const txSize = calculateTaprootTxSize(1, 0, 2)
   let calculatedFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
   let finalFee = fee ? fee : calculatedFee
-  let utxosToSend: any = findUtxosToCoverAmount(spendableUtxos, amount + finalFee)
+  let utxosToSend: any = findUtxosToCoverAmount(
+    spendableUtxos,
+    amount + finalFee
+  )
   let usingAlt = false
 
   if (utxosToSend?.selectedUtxos.length > 1) {
@@ -980,13 +984,13 @@ export const addBtcUtxo = async ({
     value: amount,
   })
 
-  const changeAmount = amountGathered - amount - finalFee
-  if (changeAmount > 546) {
-    psbt.addOutput({
-      address: spendAddress,
-      value: changeAmount,
-    })
-  }
+  const changeAmount = amountGathered - (finalFee + amount)
+  console.log(amount + finalFee, amountGathered)
+  console.log('finalFee', finalFee, 'amount', amount)
+  psbt.addOutput({
+    address: spendAddress,
+    value: changeAmount,
+  })
 
   const updatedPsbt = await formatInputsToSign({
     _psbt: psbt,
