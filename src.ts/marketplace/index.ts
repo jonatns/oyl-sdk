@@ -184,7 +184,7 @@ export class Marketplace {
         if (newOffer != false) {
           processedOffers.push(newOffer)
         }
-      } else if (offer.marketplace == 'unisat' && !testnet) {
+      } else if (offer.marketplace == 'unisat') {
         let txId = await this.externalSwap({
           auctionId: offer.offerId,
           bidPrice: offer.totalPrice,
