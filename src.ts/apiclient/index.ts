@@ -10,6 +10,7 @@ export class OylApiClient {
   private testnet: boolean
   private regtest: boolean
   private apiKey: string
+  private authKey: string = ""
 
   /**
    * Create an instance of the OylApiClient.
@@ -40,6 +41,10 @@ export class OylApiClient {
     return new this(data)
   }
 
+  setAuthToken(token: string){
+    this.authKey = token;
+  }
+
   /**
    * Convert this OylApiClient instance to a plain object.
    * @returns The plain object representation.
@@ -58,7 +63,7 @@ export class OylApiClient {
         method: method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: this.apiKey,
+          Authorization: this.authKey,
         },
         cache: 'no-cache',
       }
