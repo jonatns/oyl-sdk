@@ -10,7 +10,7 @@ export class OylApiClient {
   private testnet: boolean
   private regtest: boolean
   private apiKey: string
-  private authKey: string = ""
+  private authToken: string = ''
 
   /**
    * Create an instance of the OylApiClient.
@@ -41,8 +41,8 @@ export class OylApiClient {
     return new this(data)
   }
 
-  setAuthToken(token: string){
-    this.authKey = token;
+  setAuthToken(token: string) {
+    this.authToken = token
   }
 
   /**
@@ -63,7 +63,7 @@ export class OylApiClient {
         method: method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: this.authKey,
+          Authorization: this.authToken ? `Bearer ${this.authToken}` : '',
         },
         cache: 'no-cache',
       }
@@ -80,6 +80,18 @@ export class OylApiClient {
     } catch (err) {
       throw err
     }
+  }
+
+  /**
+   * Check beta access code.
+   * @param code - Access code.
+   * @param userId - User id.
+   */
+  async checkAccessCode({ code, userId }: { code: string; userId: string }) {
+    return await this._call('/check-access-code', 'post', {
+      code,
+      userId,
+    })
   }
 
   /**

@@ -7,7 +7,7 @@ export declare class OylApiClient {
     private testnet;
     private regtest;
     private apiKey;
-    private authKey;
+    private authToken;
     /**
      * Create an instance of the OylApiClient.
      * @param options - Configuration object containing the API host.
@@ -39,6 +39,15 @@ export declare class OylApiClient {
         apiKey: string;
     };
     private _call;
+    /**
+     * Check beta access code.
+     * @param code - Access code.
+     * @param userId - User id.
+     */
+    checkAccessCode({ code, userId }: {
+        code: string;
+        userId: string;
+    }): Promise<any>;
     /**
      * Get brc20 info by ticker.
      * @param ticker - The ticker to query.
