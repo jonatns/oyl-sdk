@@ -511,13 +511,13 @@ export class Oyl {
       const detail = {
         runeId: rune_id,
         outpoint_id: outpoint_id,
-        name: entry.spaced_rune,
-        symbol: entry.symbol,
-        divisibility: entry.divisibility,
+        name: entry?.spaced_rune,
+        symbol: entry?.symbol,
+        divisibility: entry?.divisibility,
         amount: amount,
-        mints: entry.mints,
-        burned: entry.burned,
-        terms: entry.terms,
+        mints: entry?.mints,
+        burned: entry?.burned,
+        terms: entry?.terms,
       }
       runes.push({
         txId: outpoint_id.split(':')[0],
@@ -656,7 +656,7 @@ export class Oyl {
       finalize: true,
     })
 
-    const fee = raw.extractTransaction().virtualSize() * feeRate
+    const fee = Math.ceil(raw.extractTransaction().weight() / 4) * feeRate
 
     const { rawPsbt: finalRawPsbt } = await this.createBtcTx({
       toAddress,
@@ -1097,11 +1097,11 @@ export class Oyl {
     content: string
     fee?: number
   }) {
-    const commitTxSize = calculateTaprootTxSize(1, 0, 2)
+    const commitTxSize = calculateTaprootTxSize(2, 0, 2)
     const feeForCommit =
       commitTxSize * feeRate < 250 ? 250 : commitTxSize * feeRate
 
-    const revealTxSize = calculateTaprootTxSize(1, 0, 1)
+    const revealTxSize = calculateTaprootTxSize(2, 0, 2)
     const feeForReveal =
       revealTxSize * feeRate < 250 ? 250 : revealTxSize * feeRate
 
@@ -1135,26 +1135,30 @@ export class Oyl {
     })
 
     const psbt = new bitcoin.Psbt({ network: this.network })
-    const secret = signer.taprootKeyPair.privateKey.toString('hex')
 
-    const pubKey = ecc2.keys.get_pubkey(String(secret), true)
-
-    const script = createInscriptionScript(pubKey, content)
-    const tapleaf = Tap.encodeScript(script)
-    const [tpubkey] = Tap.getPubKey(pubKey, { target: tapleaf })
-    const inscriberAddress = Address.p2tr.fromPubKey(
-      tpubkey,
-      this.currentNetwork
+    const script = createInscriptionScript(
+      toXOnly(tweakSigner(signer.taprootKeyPair).publicKey).toString('hex'),
+      content
     )
+    const finalScript = bitcoin.script.fromASM(script)
+
+    const inscriberInfo = bitcoin.payments.p2tr({
+      internalPubkey: toXOnly(tweakSigner(signer.taprootKeyPair).publicKey),
+      scriptTree: { output: finalScript },
+      network: this.network,
+    })
+
     psbt.addOutput({
       value: Number(feeForReveal) + inscriptionSats,
-      address: inscriberAddress,
+      address: inscriberInfo.address,
     })
 
     let utxosToPayFee = findUtxosToCoverAmount(
       spendableUtxos,
       amountNeededForInscribe
     )
+
+    console.log(utxosToPayFee)
 
     if (utxosToPayFee?.selectedUtxos.length > 1) {
       const txSize = calculateTaprootTxSize(
@@ -1210,6 +1214,11 @@ export class Oyl {
     )
     const changeAmount = feeAmountGathered - amountNeededForInscribe
 
+    console.log(
+      feeAmountGathered,
+      amountNeededForInscribe,
+      feeForReveal + inscriptionSats + feeForCommit
+    )
     for (let i = 0; i < utxosToPayFee.selectedUtxos.length; i++) {
       utxosUsedForFees.push(utxosToPayFee.selectedUtxos[i].txId)
       psbt.addInput({
@@ -1235,7 +1244,7 @@ export class Oyl {
     return {
       commitPsbt: formattedPsbt.toBase64(),
       utxosUsedForFees: utxosUsedForFees,
-      fee: amountNeededForInscribe,
+      script: finalScript,
     }
   }
 
@@ -1244,14 +1253,20 @@ export class Oyl {
     script,
     signer,
     commitTxId,
-    fee,
+    fee = 0,
+    feeRate,
   }: {
     receiverAddress: string
     signer: Signer
     script: Buffer
     commitTxId: string
     fee?: number
+    feeRate: number
   }) {
+    const revealTxSize = calculateTaprootTxSize(2, 0, 2)
+    const revealTxBaseFee =
+      revealTxSize * feeRate < 250 ? 250 : revealTxSize * feeRate
+    const revealTxFinalFee = Number(revealTxBaseFee) - fee
     const commitTxOutput = await getOutputValueByVOutIndex({
       txId: commitTxId,
       vOut: 0,
@@ -1290,14 +1305,21 @@ export class Oyl {
     })
 
     psbt.addOutput({
-      value: 546,
+      value: inscriptionSats,
       address: receiverAddress,
     })
+
+    psbt.addOutput({
+      value: revealTxFinalFee,
+      address: receiverAddress,
+    })
+
     psbt.signInput(0, tweakSigner(signer.taprootKeyPair))
     psbt.finalizeInput(0)
 
     return {
       revealPsbt: psbt.toBase64(),
+      revealRaw: psbt,
     }
   }
 
@@ -1331,15 +1353,16 @@ export class Oyl {
     try {
       const content = `{"p":"brc-20","op":"transfer","tick":"${token}","amt":"${amount}"}`
 
-      const { commitPsbt, utxosUsedForFees } = await this.inscriptionCommitTx({
-        content,
-        spendAddress,
-        spendPubKey,
-        signer,
-        altSpendPubKey,
-        altSpendAddress,
-        feeRate,
-      })
+      const { commitPsbt, utxosUsedForFees, script } =
+        await this.inscriptionCommitTx({
+          content,
+          spendAddress,
+          spendPubKey,
+          signer,
+          altSpendPubKey,
+          altSpendAddress,
+          feeRate,
+        })
 
       const { signedPsbt: segwitSigned } = await signer.signAllSegwitInputs({
         rawPsbt: commitPsbt,
@@ -1351,7 +1374,8 @@ export class Oyl {
         finalize: true,
       })
 
-      const commitFee = raw.extractTransaction().virtualSize() * feeRate
+      const commitFee =
+        Math.ceil(raw.extractTransaction().weight() / 4) * feeRate
 
       const { commitPsbt: finalCommitPsbt } = await this.inscriptionCommitTx({
         content,
@@ -1373,41 +1397,44 @@ export class Oyl {
         rawPsbt: segwitSigned1,
         finalize: true,
       })
-      const { txId: commitTxId } = await this.pushPsbt({
-        psbtBase64: taprootSigned1,
-      })
+      // const { txId: commitTxId } = await this.pushPsbt({
+      //   psbtBase64: taprootSigned1,
+      // })
 
-      successTxIds.push(commitTxId)
+      // successTxIds.push(commitTxId)
 
-      await waitForTransaction({
-        txId: commitTxId,
-        sandshrewBtcClient: this.sandshrewBtcClient,
-      })
+      // await waitForTransaction({
+      //   txId: commitTxId,
+      //   sandshrewBtcClient: this.sandshrewBtcClient,
+      // })
 
-      const { revealRaw } = await this.inscriptionRevealTx({
-        receiverAddress: fromAddress,
-        signer,
-        script,
-        commitTxId: commitTxId,
-      })
-      const revealFee = revealRaw.extractTransaction().virtualSize() * feeRate
+      // const { revealRaw } = await this.inscriptionRevealTx({
+      //   receiverAddress: fromAddress,
+      //   signer,
+      //   script,
+      //   commitTxId: commitTxId,
+      //   feeRate,
+      // })
+      // const revealFee =
+      //   Math.ceil(revealRaw.extractTransaction().weight() / 4) * feeRate
 
-      const { revealPsbt } = await this.inscriptionRevealTx({
-        receiverAddress: fromAddress,
-        signer,
-        script,
-        commitTxId: commitTxId,
-        fee: revealFee,
-      })
+      // const { revealPsbt } = await this.inscriptionRevealTx({
+      //   receiverAddress: fromAddress,
+      //   signer,
+      //   script,
+      //   commitTxId: commitTxId,
+      //   fee: revealFee,
+      //   feeRate,
+      // })
 
-      const { signedPsbt: taprootRevealSigned } =
-        await signer.signAllTaprootInputs({
-          rawPsbt: revealPsbt,
-          finalize: true,
-        })
+      // const { signedPsbt: taprootRevealSigned } =
+      //   await signer.signAllTaprootInputs({
+      //     rawPsbt: revealPsbt,
+      //     finalize: true,
+      //   })
 
       const { txId: revealTxId } = await this.pushPsbt({
-        psbtBase64: taprootRevealSigned,
+        psbtBase64: '', //taprootRevealSigned,
       })
 
       if (!revealTxId) {
@@ -1416,12 +1443,12 @@ export class Oyl {
 
       successTxIds.push(revealTxId)
 
-      await waitForTransaction({
-        txId: revealTxId,
-        sandshrewBtcClient: this.sandshrewBtcClient,
-      })
+      // await waitForTransaction({
+      //   txId: revealTxId,
+      //   sandshrewBtcClient: this.sandshrewBtcClient,
+      // })
 
-      await delay(5000)
+      // await delay(5000)
 
       const { sentPsbt: sentRawPsbt } = await this.inscriptionSendTx({
         toAddress,
@@ -1446,7 +1473,8 @@ export class Oyl {
         finalize: true,
       })
 
-      const sendFee = rawSend.extractTransaction().virtualSize() * feeRate
+      const sendFee =
+        Math.ceil(rawSend.extractTransaction().weight() / 4) * feeRate
 
       const { sentPsbt: sentRawPsbt1 } = await this.inscriptionSendTx({
         toAddress,
@@ -1477,8 +1505,16 @@ export class Oyl {
         psbtBase64: taprootSendSignedPsbt1,
       })
 
-      const feeTxPromise = successTxIds.map((txId) =>
-        this.sandshrewBtcClient.bitcoindRpc.getMemPoolEntry(txId)
+      // await waitForTransaction({
+      //   txId: sentPsbtTxId,
+      //   sandshrewBtcClient: this.sandshrewBtcClient,
+      // })
+
+      // await delay(5000)
+
+      const feeTxPromise = successTxIds.map(
+        (txId) => delay(1)
+        //this.sandshrewBtcClient.bitcoindRpc.getMemPoolEntry(txId)
       )
 
       const feeData = await Promise.all(feeTxPromise)
@@ -1487,12 +1523,12 @@ export class Oyl {
       let totalWeight = 0
       let totalSatsPerVByte = 0
       for (const tx of feeData) {
-        totalSize += tx.vsize
-        totalWeight += tx.weight
-        totalFee += tx.fees['base'] * 10 ** 8
-        totalSatsPerVByte += Number(
-          ((tx.fees['base'] * 10 ** 8) / (tx.weight / 4)).toFixed(2)
-        )
+        // totalSize += tx.vsize
+        // totalWeight += tx.weight
+        // totalFee += tx.fees['base'] * 10 ** 8
+        // totalSatsPerVByte += Number(
+        //   ((tx.fees['base'] * 10 ** 8) / (tx.weight / 4)).toFixed(2)
+        // )
       }
 
       return {
@@ -1519,7 +1555,7 @@ export class Oyl {
     feeRate,
     utxoId,
     utxosUsedForFees,
-    fee,
+    fee = 0,
   }: {
     toAddress: string
     fromPubKey: string
@@ -1536,8 +1572,10 @@ export class Oyl {
       feeRate = (await this.esploraRpc.getFeeEstimates())['1']
     }
 
-    const txSize = calculateTaprootTxSize(1, 0, 2)
-    let finalFee = fee ? fee : txSize * feeRate < 300 ? 300 : txSize * feeRate
+    const txSize = calculateTaprootTxSize(2, 0, 2)
+    const sendTxFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
+    let finalFee = fee ? fee : sendTxFee
+
     let usingAlt = false
 
     let spendUtxos: Utxo[] | undefined
@@ -1590,7 +1628,8 @@ export class Oyl {
         0,
         2
       )
-      finalFee = fee ? fee : txSize * feeRate < 250 ? 250 : txSize * feeRate
+      const sendTxFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
+      const finalFee = sendTxFee - fee
       utxosToPayFee = findUtxosToCoverAmount(availableUtxos, finalFee)
     }
 
@@ -1601,15 +1640,16 @@ export class Oyl {
       let availableUtxos = filteredAltUtxos.filter(
         (utxo: any) => !utxosUsedForFees.includes(utxo.txId)
       )
-      utxosToPayFee = findUtxosToCoverAmount(availableUtxos, fee)
+      utxosToPayFee = findUtxosToCoverAmount(availableUtxos, finalFee)
       if (utxosToPayFee?.selectedUtxos.length > 1) {
         const txSize = calculateTaprootTxSize(
           utxosToPayFee.selectedUtxos.length,
           0,
           2
         )
-        finalFee = fee ? fee : txSize * feeRate < 250 ? 250 : txSize * feeRate
-        utxosToPayFee = findUtxosToCoverAmount(availableUtxos, fee)
+        const sendTxFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
+        const finalFee = sendTxFee - fee
+        utxosToPayFee = findUtxosToCoverAmount(availableUtxos, finalFee)
       }
 
       if (!utxosToPayFee) {
@@ -1621,10 +1661,9 @@ export class Oyl {
       utxosToPayFee.selectedUtxos
     )
 
-    const changeAmount = amountGathered - fee
+    const changeAmount = amountGathered - finalFee
 
     for (let i = 0; i < utxosToPayFee.selectedUtxos.length; i++) {
-      utxosUsedForFees.push(utxosToPayFee.selectedUtxos[i].txId)
       psbt.addInput({
         hash: utxosToPayFee.selectedUtxos[i].txId,
         index: utxosToPayFee.selectedUtxos[i].outputIndex,
@@ -1698,12 +1737,37 @@ export class Oyl {
       finalize: true,
     })
 
-    const { signedPsbt: taprootSigned } = await signer.signAllTaprootInputs({
+    const { raw } = await signer.signAllTaprootInputs({
       rawPsbt: segwitSigned,
       finalize: true,
     })
 
-    return this.pushPsbt({ psbtBase64: taprootSigned })
+    const fee = Math.ceil(raw.extractTransaction().weight() / 4) * feeRate
+
+    const { rawPsbt: finalRawPsbt } = await this.createOrdCollectibleTx({
+      inscriptionId,
+      fromAddress,
+      fromPubKey,
+      spendPubKey,
+      spendAddress,
+      toAddress,
+      altSpendAddress,
+      altSpendPubKey,
+      feeRate,
+      fee,
+    })
+
+    const { signedPsbt: segwitSigned1 } = await signer.signAllSegwitInputs({
+      rawPsbt: finalRawPsbt,
+      finalize: true,
+    })
+
+    const { signedPsbt: taprootSigned1 } = await signer.signAllTaprootInputs({
+      rawPsbt: segwitSigned1,
+      finalize: true,
+    })
+
+    return this.pushPsbt({ psbtBase64: taprootSigned1 })
   }
 
   async createOrdCollectibleTx({
@@ -1716,6 +1780,7 @@ export class Oyl {
     altSpendAddress,
     altSpendPubKey,
     feeRate,
+    fee,
   }: {
     fromAddress?: string
     fromPubKey: string
@@ -1726,9 +1791,10 @@ export class Oyl {
     spendAddress?: string
     altSpendAddress?: string
     inscriptionId: string
+    fee?: number
   }) {
     const sendTxSize = calculateTaprootTxSize(1, 0, 2)
-    let fee = sendTxSize * feeRate < 250 ? 250 : sendTxSize * feeRate
+    let estimate = sendTxSize * feeRate < 250 ? 250 : sendTxSize * feeRate
     let usingAlt = false
 
     let spendUtxos: Utxo[] | undefined
@@ -1790,7 +1856,10 @@ export class Oyl {
     const availableUtxos = await filterTaprootUtxos({
       taprootUtxos: spendUtxos,
     })
-    let utxosToSend = findUtxosToCoverAmount(availableUtxos, fee)
+    let utxosToSend = findUtxosToCoverAmount(
+      availableUtxos,
+      fee ? fee : estimate
+    )
 
     if (utxosToSend?.selectedUtxos.length > 1) {
       const txSize = calculateTaprootTxSize(
@@ -1798,15 +1867,21 @@ export class Oyl {
         0,
         2
       )
-      fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
-      utxosToSend = findUtxosToCoverAmount(availableUtxos, fee)
+      const estimate = txSize * feeRate < 250 ? 250 : txSize * feeRate
+      utxosToSend = findUtxosToCoverAmount(availableUtxos, fee ? fee : estimate)
     }
 
     if (!utxosToSend) {
       const unFilteredAltUtxos = await filterTaprootUtxos({
         taprootUtxos: altSpendUtxos,
       })
-      utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, fee)
+
+      const txSize = calculateTaprootTxSize(1, 0, 2)
+      const estimate = txSize * feeRate < 250 ? 250 : txSize * feeRate
+      utxosToSend = findUtxosToCoverAmount(
+        unFilteredAltUtxos,
+        fee ? fee : estimate
+      )
 
       if (utxosToSend?.selectedUtxos.length > 1) {
         const txSize = calculateTaprootTxSize(
@@ -1814,8 +1889,11 @@ export class Oyl {
           0,
           2
         )
-        fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
-        utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, fee)
+        const estimate = txSize * feeRate < 250 ? 250 : txSize * feeRate
+        utxosToSend = findUtxosToCoverAmount(
+          unFilteredAltUtxos,
+          fee ? fee : estimate
+        )
       }
       if (!utxosToSend) {
         throw new Error('Insufficient Balance')
@@ -1836,13 +1914,11 @@ export class Oyl {
         },
       })
     }
-    const changeAmount = amountGathered - fee
-    if (changeAmount > 546) {
-      psbtTx.addOutput({
-        address: spendAddress,
-        value: amountGathered - fee,
-      })
-    }
+    const changeAmount = amountGathered - (fee ? fee : estimate)
+    psbtTx.addOutput({
+      address: spendAddress,
+      value: changeAmount,
+    })
 
     const partiallyFormattedPsbtTx = await formatInputsToSign({
       _psbt: psbtTx,
@@ -1998,23 +2074,39 @@ export class Oyl {
       finalize: true,
     })
 
-    const { signedPsbt: taprootSigned } = await signer.signAllTaprootInputs({
+    const { raw } = await signer.signAllTaprootInputs({
       rawPsbt: segwitSigned,
       finalize: true,
     })
 
-    const { txId, weight, size, fee, satsPerVByte } = await this.pushPsbt({
-      psbtBase64: taprootSigned,
+    const fee = (raw.extractTransaction().weight() / 4) * feeRate
+
+    const { sendPsbt: finalSendPsbt } = await this.runeSendTx({
+      runeId,
+      fromAddress,
+      toAddress,
+      amount,
+      spendAddress,
+      spendPubKey,
+      altSpendPubKey,
+      altSpendAddress,
+      feeRate,
+      fee,
     })
 
-    return {
-      txId: txId,
-      rawTxn: taprootSigned,
-      weight: weight,
-      size: size,
-      fee: fee,
-      satsPerVByte: satsPerVByte,
-    }
+    const { signedPsbt: segwitSigned1 } = await signer.signAllSegwitInputs({
+      rawPsbt: finalSendPsbt,
+      finalize: true,
+    })
+
+    const { signedPsbt: taprootSigned1 } = await signer.signAllTaprootInputs({
+      rawPsbt: segwitSigned1,
+      finalize: true,
+    })
+
+    return await this.pushPsbt({
+      psbtBase64: taprootSigned1,
+    })
   }
 
   async runeSendTx({
@@ -2027,6 +2119,7 @@ export class Oyl {
     altSpendPubKey,
     altSpendAddress,
     feeRate,
+    fee,
   }: {
     runeId: string
     fromAddress: string
@@ -2037,6 +2130,7 @@ export class Oyl {
     spendAddress?: string
     altSpendAddress?: string
     feeRate?: number
+    fee?: number
   }) {
     let usingAlt = false
     let spendUtxos: Utxo[] | undefined
@@ -2101,7 +2195,7 @@ export class Oyl {
       })
     }
     const txSize = calculateTaprootTxSize(1 + psbt.inputCount, 0, 3)
-    let feeForSend = txSize * feeRate < 250 ? 250 : txSize * feeRate
+    let feeForSend = fee ? fee : txSize * feeRate < 250 ? 250 : txSize * feeRate
 
     let utxosToPayFee = findUtxosToCoverAmount(
       spendableUtxos,
@@ -2113,7 +2207,7 @@ export class Oyl {
         0,
         3
       )
-      feeForSend = txSize * feeRate < 250 ? 250 : txSize * feeRate
+      feeForSend = fee ? fee : txSize * feeRate < 250 ? 250 : txSize * feeRate
 
       utxosToPayFee = findUtxosToCoverAmount(
         spendableUtxos,
@@ -2125,6 +2219,8 @@ export class Oyl {
       const unFilteredAltUtxos = await filterTaprootUtxos({
         taprootUtxos: altSpendUtxos,
       })
+      const txSize = calculateTaprootTxSize(1 + psbt.inputCount, 0, 3)
+      feeForSend = fee ? fee : txSize * feeRate < 250 ? 250 : txSize * feeRate
       utxosToPayFee = findUtxosToCoverAmount(
         unFilteredAltUtxos,
         feeForSend + inscriptionSats
@@ -2136,7 +2232,7 @@ export class Oyl {
           0,
           3
         )
-        feeForSend = txSize * feeRate < 250 ? 250 : txSize * feeRate
+        feeForSend = fee ? fee : txSize * feeRate < 250 ? 250 : txSize * feeRate
 
         utxosToPayFee = findUtxosToCoverAmount(
           spendableUtxos,

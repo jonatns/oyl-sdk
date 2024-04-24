@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { Utxo } from './txbuilder';
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
@@ -378,18 +379,18 @@ export declare class Oyl {
     }): Promise<{
         commitPsbt: string;
         utxosUsedForFees: string[];
-        fee: number;
+        script: Buffer;
     }>;
-    inscriptionRevealTx({ receiverAddress, signer, content, feeRate, commitTxId, fee, }: {
+    inscriptionRevealTx({ receiverAddress, script, signer, commitTxId, fee, feeRate, }: {
         receiverAddress: string;
         signer: Signer;
-        content: string;
-        feeRate: number;
+        script: Buffer;
         commitTxId: string;
         fee?: number;
+        feeRate: number;
     }): Promise<{
-        revealTx: string;
-        revealTxHex: string;
+        revealPsbt: string;
+        revealRaw: bitcoin.Psbt;
     }>;
     sendBRC20({ fromAddress, fromPubKey, toAddress, spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, token, amount, }: {
         fromAddress: string;
@@ -445,7 +446,7 @@ export declare class Oyl {
         fee: number;
         satsPerVByte: string;
     }>;
-    createOrdCollectibleTx({ inscriptionId, fromAddress, fromPubKey, spendPubKey, spendAddress, toAddress, altSpendAddress, altSpendPubKey, feeRate, }: {
+    createOrdCollectibleTx({ inscriptionId, fromAddress, fromPubKey, spendPubKey, spendAddress, toAddress, altSpendAddress, altSpendPubKey, feeRate, fee, }: {
         fromAddress?: string;
         fromPubKey: string;
         toAddress: string;
@@ -455,6 +456,7 @@ export declare class Oyl {
         spendAddress?: string;
         altSpendAddress?: string;
         inscriptionId: string;
+        fee?: number;
     }): Promise<{
         rawPsbt: string;
         fee: number;
@@ -497,13 +499,13 @@ export declare class Oyl {
         amount?: number;
     }): Promise<{
         txId: string;
-        rawTxn: string;
-        weight: any;
+        rawTx: string;
         size: any;
+        weight: any;
         fee: number;
         satsPerVByte: string;
     }>;
-    runeSendTx({ runeId, fromAddress, toAddress, amount, spendAddress, spendPubKey, altSpendPubKey, altSpendAddress, feeRate, }: {
+    runeSendTx({ runeId, fromAddress, toAddress, amount, spendAddress, spendPubKey, altSpendPubKey, altSpendAddress, feeRate, fee, }: {
         runeId: string;
         fromAddress: string;
         toAddress: string;
@@ -513,6 +515,7 @@ export declare class Oyl {
         spendAddress?: string;
         altSpendAddress?: string;
         feeRate?: number;
+        fee?: number;
     }): Promise<{
         sendPsbt: string;
     }>;

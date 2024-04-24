@@ -453,8 +453,8 @@ export async function runCLI() {
       return await testMarketplaceBuy()
     case 'send':
       const res = await networkConfig.wallet.sendBtc({
-        toAddress: networkConfig.segwitAddress,
-        feeRate: 71,
+        toAddress: networkConfig.destinationTaprootAddress,
+        feeRate: 67,
         amount: 50,
         spendAddress: networkConfig.taprootAddress,
         spendPubKey: networkConfig.taprootPubKey,
@@ -513,7 +513,7 @@ export async function runCLI() {
         token: ticker,
         amount,
         signer,
-        feeRate: 60,
+        feeRate: 63,
         fromAddress: networkConfig.taprootAddress,
         fromPubKey: networkConfig.taprootPubKey,
         toAddress: to,
@@ -529,7 +529,7 @@ export async function runCLI() {
       const sendInscriptionResponse =
         await networkConfig.wallet.sendOrdCollectible({
           signer,
-          feeRate,
+          feeRate: 60,
           fromAddress: networkConfig.taprootAddress,
           fromPubKey: networkConfig.taprootPubKey,
           toAddress: to,
