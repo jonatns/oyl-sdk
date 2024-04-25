@@ -34,7 +34,7 @@ export class Marketplace {
   private altSpendPubKey: string
   private signer: Signer
   public feeRate: number
-  public txIds : string[]
+  public txIds: string[]
   public addressesBound: boolean = false
 
   constructor(options: MarketplaceAccount) {
@@ -89,7 +89,7 @@ export class Marketplace {
     index = 1,
     psbtBase64s: string[] = [],
     psbtHexs = [],
-    txIds = []
+    txIds: string[]
   ) {
     if (index >= orders.length) {
       return { txIds, psbtHexs, psbtBase64s }
@@ -171,8 +171,10 @@ export class Marketplace {
   }
 
   async processAllOffers(offers: MarketplaceOffer[]) {
-    await this.selectSpendAddress(offers)
     const processedOffers = []
+    this.txIds = []
+    
+    await this.selectSpendAddress(offers)
     let externalSwap = false
     const testnet = this.wallet.network == getNetwork('testnet')
     for (const offer of offers) {
@@ -266,7 +268,7 @@ export class Marketplace {
 
   async buyMarketPlaceOffers(pOffers) {
     if (pOffers.processed) {
-      return pOffers.processedOffers
+      return { txIds: this.txIds }
     }
     const offers = pOffers.processedOffers
     if (offers.length < 1) throw new OylTransactionError('No offers to buy', this.txIds)
@@ -314,11 +316,13 @@ export class Marketplace {
       offers,
       txId,
       remainingSats,
-      1
+      1,
+      [],
+      [],
+      this.txIds
     )
-    const marketplaceTxns = []
+
     this.txIds.push(txId)
-    marketplaceTxns.push(txId)
 
     for (let i = 0; i < multipleBuys.psbtHexs.length; i++) {
       await timeout(30000)
@@ -330,18 +334,15 @@ export class Marketplace {
         console.log('Error in broadcasting tx: ' + multipleBuys.txIds[i])
         console.log(broadcast)
         console.log(result['reject-reason'])
-        return {
-          marketplaceTxns,
-        }
+        throw new OylTransactionError(result['reject-reason'], this.txIds)
       }
       await this.wallet.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(
         multipleBuys.psbtHexs[i]
       )
       this.txIds.push(multipleBuys.txIds[i])
-      marketplaceTxns.push(multipleBuys.txIds[i])
     }
     return {
-      marketplaceTxns,
+      txIds: this.txIds,
     }
   }
 
