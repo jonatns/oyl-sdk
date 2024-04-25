@@ -48,10 +48,9 @@
     "nice-repl": "^0.1.2",
     "noble-secp256k1": "^1.2.14",
     "node-fetch": "^2.7.0",
-    "npm": "^9.6.7",
     "prettier": "^2.8.8",
-    "ts-node": "^10.9.2",
     "tiny-secp256k1": "^2.2.3",
+    "ts-node": "^10.9.2",
     "wrap-ansi": "^9.0.0",
     "yargs": "^17.7.2"
   }
