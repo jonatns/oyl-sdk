@@ -20,8 +20,8 @@ import {
   networks,
   BuyingData,
 } from '@okxweb3/coin-bitcoin'
-import { BIP322, Signer as bip322Signer, Verifier } from 'bip322-js'
 import { signBip322Message } from './BIP322'
+import { OylTransactionError } from '../errors'
 
 export class Marketplace {
   private wallet: Oyl
@@ -34,6 +34,7 @@ export class Marketplace {
   private altSpendPubKey: string
   private signer: Signer
   public feeRate: number
+  public txIds : string[]
   public addressesBound: boolean = false
 
   constructor(options: MarketplaceAccount) {
@@ -73,10 +74,10 @@ export class Marketplace {
       this.selectedSpendAddress = this.altSpendAddress
       this.selectedSpendPubkey = this.altSpendPubKey
     } else {
-      throw new Error(
+      throw new OylTransactionError(
         'Not enough sats available to buy marketplace offers, need  ' +
           estimatedCost +
-          ' sats'
+          ' sats', this.txIds
       )
     }
   }
@@ -183,16 +184,18 @@ export class Marketplace {
         if (newOffer != false) {
           processedOffers.push(newOffer)
         }
-      } else if (offer.marketplace == 'unisat' && !testnet) {
+      } else if (offer.marketplace == 'unisat') {
         let txId = await this.externalSwap({
           auctionId: offer.offerId,
           bidPrice: offer.totalPrice,
         })
-        if (txId != null) processedOffers.push(txId)
+        if (txId != null) {
+          this.txIds.push(txId)
+          processedOffers.push(txId)
+        }
         externalSwap = true
         await timeout(2000)
       } else if (offer.marketplace == 'okx' && !testnet) {
-        console.log('offer', offer)
         const offerPsbt = await this.wallet.apiClient.getOkxOfferPsbt({
           offerId: offer.offerId,
         })
@@ -211,12 +214,15 @@ export class Marketplace {
         }
         const tx = await this.wallet.apiClient.submitOkxBid(payload)
         let txId = tx?.data
-        if (txId != null) processedOffers.push(txId)
+        if (txId != null) {
+          this.txIds.push(txId)
+          processedOffers.push(txId)
+        }
         externalSwap = true
       }
     }
     if (processedOffers.length < 1) {
-      throw new Error('Offers  unavailable')
+      throw new OylTransactionError('Offers  unavailable', this.txIds)
     }
     return {
       processed: externalSwap,
@@ -263,7 +269,7 @@ export class Marketplace {
       return pOffers.processedOffers
     }
     const offers = pOffers.processedOffers
-    if (offers.length < 1) throw Error('No offers to buy')
+    if (offers.length < 1) throw new OylTransactionError('No offers to buy', this.txIds)
 
     const marketPlaceBuy = new BuildMarketplaceTransaction({
       address: this.selectedSpendAddress,
@@ -277,7 +283,7 @@ export class Marketplace {
     const preparedWallet = await this.prepareAddress(marketPlaceBuy)
     await timeout(30000)
     if (!preparedWallet) {
-      throw new Error('Address not prepared to buy marketplace offers')
+      throw new OylTransactionError('Address not prepared to buy marketplace offers', this.txIds)
     }
 
     const { psbtBase64, remainder } = await marketPlaceBuy.psbtBuilder()
@@ -293,7 +299,7 @@ export class Marketplace {
 
     if (!broadcast.allowed) {
       console.log('in buyMarketPlaceOffers', broadcast)
-      throw new Error(result['reject-reason'])
+      throw new OylTransactionError(result['reject-reason'], this.txIds)
     }
     await this.wallet.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(
       result.hex
@@ -311,6 +317,7 @@ export class Marketplace {
       1
     )
     const marketplaceTxns = []
+    this.txIds.push(txId)
     marketplaceTxns.push(txId)
 
     for (let i = 0; i < multipleBuys.psbtHexs.length; i++) {
@@ -330,6 +337,7 @@ export class Marketplace {
       await this.wallet.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(
         multipleBuys.psbtHexs[i]
       )
+      this.txIds.push(multipleBuys.txIds[i])
       marketplaceTxns.push(multipleBuys.txIds[i])
     }
     return {
@@ -356,18 +364,23 @@ export class Marketplace {
 
         if (!broadcast.allowed) {
           console.log('in prepareAddress', broadcast)
-          throw new Error(result['reject-reason'])
+          throw new OylTransactionError(result['reject-reason'], this.txIds)
         }
         await this.wallet.sandshrewBtcClient.bitcoindRpc.sendRawTransaction(
           result.hex
         )
+        const txPayload = await this.wallet.sandshrewBtcClient.bitcoindRpc.decodeRawTransaction(
+        result.hex
+        )
+        const txId = txPayload.txid
+        this.txIds.push(txId)
         return true
       }
       return true
     } catch (err) {
       console.log('Error', err)
-      throw Error(
-        'An error occured while preparing address for marketplace buy'
+      throw new OylTransactionError(
+        'An error occured while preparing address for marketplace buy', this.txIds
       )
     }
   }
@@ -397,7 +410,7 @@ export class Marketplace {
         .getAddressUtxo(address)
         .then((unspents) => unspents?.filter((utxo) => utxo.value > 546))
     } catch (e: any) {
-      throw new Error(e)
+      throw new OylTransactionError(e, this.txIds)
     }
   }
 
@@ -465,7 +478,7 @@ export class Marketplace {
       }
       return []
     } catch (e: any) {
-      throw new Error(e)
+      throw new OylTransactionError(e, this.txIds)
     }
   }
 
@@ -478,7 +491,7 @@ export class Marketplace {
   async buildDummyAndPaymentUtxos(orderPrice: number) {
     const allUtxosWorth600 = await this.getAllUTXOsWorthASpecificValue(600)
     if (allUtxosWorth600.length < 2) {
-      throw Error('not enough padding utxos (600 sat) for marketplace buy')
+      throw new OylTransactionError('not enough padding utxos (600 sat) for marketplace buy', this.txIds)
     }
 
     const dummyUtxos = []
@@ -497,7 +510,7 @@ export class Marketplace {
       dummyUtxos
     )
     if (retrievedUtxos.length === 0) {
-      throw Error('Not enough funds to purchase this offer')
+      throw new OylTransactionError('Not enough funds to purchase this offer', this.txIds)
     }
 
     const paymentUtxos = []
@@ -527,7 +540,7 @@ export class Marketplace {
     const preparedWallet = await this.prepareAddress(marketPlaceBuy)
     await timeout(30000)
     if (!preparedWallet) {
-      throw new Error('Address not prepared to buy marketplace offers')
+      throw new OylTransactionError('Address not prepared to buy marketplace offers', this.txIds)
     }
     const keyPair =
       getAddressType(this.selectedSpendAddress) == AddressType.P2WPKH
