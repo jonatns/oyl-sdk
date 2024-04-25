@@ -533,7 +533,7 @@ export declare class Oyl {
         txId: string;
         rawTxn: string;
     }>;
-    runeMintTx({ runeId, toAddress, amount, spendAddress, spendPubKey, altSpendPubKey, altSpendAddress, feeRate, }: {
+    runeMintTx({ runeId, toAddress, amount, spendAddress, spendPubKey, altSpendPubKey, altSpendAddress, feeRate, fee, }: {
         runeId: string;
         toAddress: string;
         amount: number;
@@ -542,7 +542,8 @@ export declare class Oyl {
         spendAddress?: string;
         altSpendAddress?: string;
         feeRate?: number;
+        fee?: number;
     }): Promise<{
-        sendPsbt: string;
+        mintPsbt: string;
     }>;
 }
