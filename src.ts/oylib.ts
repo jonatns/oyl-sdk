@@ -2314,7 +2314,7 @@ export class Oyl {
       feeRate = (await this.esploraRpc.getFeeEstimates())['1']
     }
 
-    const { sendPsbt } = await this.runeMintTx({
+    const { mintPsbt } = await this.runeMintTx({
       runeId,
       toAddress,
       amount,
@@ -2326,12 +2326,36 @@ export class Oyl {
     })
 
     const { signedPsbt: segwitSigned } = await signer.signAllSegwitInputs({
-      rawPsbt: sendPsbt,
+      rawPsbt: mintPsbt,
+      finalize: true,
+    })
+
+    const { raw } = await signer.signAllTaprootInputs({
+      rawPsbt: segwitSigned,
+      finalize: true,
+    })
+
+    const fee = Math.ceil(raw.extractTransaction().weight() / 4) * feeRate
+
+    const { mintPsbt: finalPsbt } = await this.runeMintTx({
+      runeId,
+      toAddress,
+      amount,
+      spendAddress,
+      spendPubKey,
+      altSpendPubKey,
+      altSpendAddress,
+      feeRate,
+      fee,
+    })
+
+    const { signedPsbt: segwitSigned1 } = await signer.signAllSegwitInputs({
+      rawPsbt: finalPsbt,
       finalize: true,
     })
 
     const { signedPsbt: taprootSigned } = await signer.signAllTaprootInputs({
-      rawPsbt: segwitSigned,
+      rawPsbt: segwitSigned1,
       finalize: true,
     })
 
@@ -2354,6 +2378,7 @@ export class Oyl {
     altSpendPubKey,
     altSpendAddress,
     feeRate,
+    fee,
   }: {
     runeId: string
     toAddress: string
@@ -2363,9 +2388,10 @@ export class Oyl {
     spendAddress?: string
     altSpendAddress?: string
     feeRate?: number
+    fee?: number
   }) {
     const txSize = calculateTaprootTxSize(1, 0, 3)
-    let feeForSend = txSize * feeRate < 250 ? 250 : txSize * feeRate
+    let feeForSend = fee ? fee : txSize * feeRate < 250 ? 250 : txSize * feeRate
 
     let usingAlt = false
 
@@ -2402,7 +2428,7 @@ export class Oyl {
         0,
         3
       )
-      feeForSend = txSize * feeRate < 250 ? 250 : txSize * feeRate
+      feeForSend = fee ? fee : txSize * feeRate < 250 ? 250 : txSize * feeRate
 
       utxosToPayFee = findUtxosToCoverAmount(
         spendableUtxos,
@@ -2425,7 +2451,7 @@ export class Oyl {
           0,
           3
         )
-        feeForSend = txSize * feeRate < 250 ? 250 : txSize * feeRate
+        feeForSend = fee ? fee : txSize * feeRate < 250 ? 250 : txSize * feeRate
 
         utxosToPayFee = findUtxosToCoverAmount(
           spendableUtxos,
@@ -2478,7 +2504,7 @@ export class Oyl {
     })
 
     return {
-      sendPsbt: formattedPsbt.toBase64(),
+      mintPsbt: formattedPsbt.toBase64(),
     }
   }
 }
