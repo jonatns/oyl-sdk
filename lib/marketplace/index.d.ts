@@ -19,14 +19,16 @@ export declare class Marketplace {
      **/
     getOffersCostEstimate(offers: MarketplaceOffer[]): Promise<number>;
     selectSpendAddress(offers: MarketplaceOffer[]): Promise<void>;
-    processMultipleBuys(orders: any, previousOrderTxId: string, remainingSats: number, index?: number, psbtBase64s?: string[], psbtHexs?: any[], txIds?: any[]): any;
+    processMultipleBuys(orders: any, previousOrderTxId: string, remainingSats: number, index: number, psbtBase64s: string[], psbtHexs: any[], txIds: string[]): any;
     signMarketplacePsbt(psbt: string, finalize?: boolean): Promise<any>;
     processAllOffers(offers: MarketplaceOffer[]): Promise<{
         processed: boolean;
         processedOffers: any[];
     }>;
     externalSwap(bid: ExternalSwap): Promise<any>;
-    buyMarketPlaceOffers(pOffers: any): Promise<any>;
+    buyMarketPlaceOffers(pOffers: any): Promise<{
+        txIds: string[];
+    }>;
     prepareAddress(marketPlaceBuy: BuildMarketplaceTransaction): Promise<Boolean>;
     canAddressAffordOffers(address: string, estimatedCost: number): Promise<boolean>;
     externalSign(options: any): Promise<any>;
