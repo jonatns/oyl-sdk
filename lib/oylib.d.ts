@@ -459,7 +459,6 @@ export declare class Oyl {
         fee?: number;
     }): Promise<{
         rawPsbt: string;
-        fee: number;
     }>;
     sendBtcEstimate({ feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, }: {
         feeRate?: number;

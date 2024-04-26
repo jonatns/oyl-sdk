@@ -305,6 +305,8 @@ const argv = yargs(hideBin(process.argv))
         describe: 'Inscription to be sent',
         type: 'string',
         demandOption: true,
+        default:
+          '615e568c9dd877635743439ea50df6fe11f6aef583f066fc2f917a1d62d03c5di0',
       })
       .option('feeRate', {
         alias: 'f',
@@ -453,9 +455,9 @@ export async function runCLI() {
       return await testMarketplaceBuy()
     case 'send':
       const res = await networkConfig.wallet.sendBtc({
-        toAddress: networkConfig.destinationTaprootAddress,
-        feeRate: 67,
-        amount: 50,
+        toAddress: 'tb1qwxnhtpp07dwh8y9s4dej9zplfksewz73xkfgje',
+        feeRate: 47,
+        amount: 30000,
         spendAddress: networkConfig.taprootAddress,
         spendPubKey: networkConfig.taprootPubKey,
         altSpendAddress: networkConfig.segwitAddress,
@@ -529,7 +531,9 @@ export async function runCLI() {
       const sendInscriptionResponse =
         await networkConfig.wallet.sendOrdCollectible({
           signer,
-          feeRate: 60,
+          inscriptionId:
+            '615e568c9dd877635743439ea50df6fe11f6aef583f066fc2f917a1d62d03c5di0',
+          feeRate: 47,
           fromAddress: networkConfig.taprootAddress,
           fromPubKey: networkConfig.taprootPubKey,
           toAddress: to,

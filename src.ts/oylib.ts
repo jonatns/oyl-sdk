@@ -457,74 +457,74 @@ export class Oyl {
       await this.apiClient.getAllInscriptionsByAddress(address)
     ).data
 
-    const allCollectibles: any[] = allOrdinals.filter(
+    const allCollectibles: any[] = allOrdinals?.filter(
       (ordinal: any) =>
         ordinal.mime_type === 'image/png' || ordinal.mime_type.includes('html')
     )
 
-    const allBrc20s: any[] = allOrdinals.filter(
+    const allBrc20s: any[] = allOrdinals?.filter(
       (ordinal: any) => ordinal.mime_type === 'text/plain;charset=utf-8'
     )
 
-    for (const artifact of allCollectibles) {
-      const { inscription_id, inscription_number, satpoint } = artifact
-      const content = await this.ordRpc.getInscriptionContent(inscription_id)
+    // for (const artifact of allCollectibles) {
+    //   const { inscription_id, inscription_number, satpoint } = artifact
+    //   const content = await this.ordRpc.getInscriptionContent(inscription_id)
 
-      const detail = {
-        id: inscription_id,
-        address: artifact.owner_wallet_addr,
-        content: content,
-        location: satpoint,
-      }
+    //   const detail = {
+    //     id: inscription_id,
+    //     address: artifact.owner_wallet_addr,
+    //     content: content,
+    //     location: satpoint,
+    //   }
 
-      collectibles.push({
-        id: inscription_id,
-        inscription_number,
-        detail,
-      })
-    }
+    //   collectibles.push({
+    //     id: inscription_id,
+    //     inscription_number,
+    //     detail,
+    //   })
+    // }
 
-    for (const artifact of allBrc20s) {
-      const { inscription_id, inscription_number, satpoint } = artifact
-      const content = await this.ordRpc.getInscriptionContent(inscription_id)
-      const decodedContent = atob(content)
+    // for (const artifact of allBrc20s) {
+    //   const { inscription_id, inscription_number, satpoint } = artifact
+    //   const content = await this.ordRpc.getInscriptionContent(inscription_id)
+    //   const decodedContent = atob(content)
 
-      if (isValidJSON(decodedContent) && JSON.parse(decodedContent)) {
-        const detail = {
-          id: inscription_id,
-          address: artifact.owner_wallet_addr,
-          content: content,
-          location: satpoint,
-        }
+    //   if (isValidJSON(decodedContent) && JSON.parse(decodedContent)) {
+    //     const detail = {
+    //       id: inscription_id,
+    //       address: artifact.owner_wallet_addr,
+    //       content: content,
+    //       location: satpoint,
+    //     }
 
-        brc20.push({
-          id: inscription_id,
-          inscription_number,
-          detail,
-        })
-      }
-    }
+    //     brc20.push({
+    //       id: inscription_id,
+    //       inscription_number,
+    //       detail,
+    //     })
+    //   }
+    // }
 
-    for (const artifact of allRunes) {
-      const { outpoint_id, rune_id, amount } = artifact
-      const { entry } = await this.ordRpc.getRuneById(rune_id)
-      const detail = {
-        runeId: rune_id,
-        outpoint_id: outpoint_id,
-        name: entry?.spaced_rune,
-        symbol: entry?.symbol,
-        divisibility: entry?.divisibility,
-        amount: amount,
-        mints: entry?.mints,
-        burned: entry?.burned,
-        terms: entry?.terms,
-      }
-      runes.push({
-        txId: outpoint_id.split(':')[0],
-        outputIndex: outpoint_id.split(':')[1],
-        detail,
-      })
-    }
+    // for (const artifact of allRunes) {
+    //   const { outpoint_id, rune_id, amount } = artifact
+    //   const { entry } = await this.ordRpc.getRuneById(rune_id)
+    //   const detail = {
+    //     runeId: rune_id,
+    //     outpoint_id: outpoint_id,
+    //     name: entry?.spaced_rune,
+    //     symbol: entry?.symbol,
+    //     divisibility: entry?.divisibility,
+    //     amount: amount,
+    //     mints: entry?.mints,
+    //     burned: entry?.burned,
+    //     terms: entry?.terms,
+    //   }
+    //   runes.push({
+    //     txId: outpoint_id.split(':')[0],
+    //     outputIndex: outpoint_id.split(':')[1],
+    //     detail,
+    //   })
+    // }
     return { collectibles, brc20, runes }
   }
 
@@ -545,6 +545,7 @@ export class Oyl {
       unspent_outputs,
       inscriptions
     )
+
     return utxoArtifacts as Array<{
       txId: string
       outputIndex: number
@@ -1397,44 +1398,44 @@ export class Oyl {
         rawPsbt: segwitSigned1,
         finalize: true,
       })
-      // const { txId: commitTxId } = await this.pushPsbt({
-      //   psbtBase64: taprootSigned1,
-      // })
+      const { txId: commitTxId } = await this.pushPsbt({
+        psbtBase64: taprootSigned1,
+      })
 
-      // successTxIds.push(commitTxId)
+      successTxIds.push(commitTxId)
 
-      // await waitForTransaction({
-      //   txId: commitTxId,
-      //   sandshrewBtcClient: this.sandshrewBtcClient,
-      // })
+      await waitForTransaction({
+        txId: commitTxId,
+        sandshrewBtcClient: this.sandshrewBtcClient,
+      })
 
-      // const { revealRaw } = await this.inscriptionRevealTx({
-      //   receiverAddress: fromAddress,
-      //   signer,
-      //   script,
-      //   commitTxId: commitTxId,
-      //   feeRate,
-      // })
-      // const revealFee =
-      //   Math.ceil(revealRaw.extractTransaction().weight() / 4) * feeRate
+      const { revealRaw } = await this.inscriptionRevealTx({
+        receiverAddress: fromAddress,
+        signer,
+        script,
+        commitTxId: commitTxId,
+        feeRate,
+      })
+      const revealFee =
+        Math.ceil(revealRaw.extractTransaction().weight() / 4) * feeRate
 
-      // const { revealPsbt } = await this.inscriptionRevealTx({
-      //   receiverAddress: fromAddress,
-      //   signer,
-      //   script,
-      //   commitTxId: commitTxId,
-      //   fee: revealFee,
-      //   feeRate,
-      // })
+      const { revealPsbt } = await this.inscriptionRevealTx({
+        receiverAddress: fromAddress,
+        signer,
+        script,
+        commitTxId: commitTxId,
+        fee: revealFee,
+        feeRate,
+      })
 
-      // const { signedPsbt: taprootRevealSigned } =
-      //   await signer.signAllTaprootInputs({
-      //     rawPsbt: revealPsbt,
-      //     finalize: true,
-      //   })
+      const { signedPsbt: taprootRevealSigned } =
+        await signer.signAllTaprootInputs({
+          rawPsbt: revealPsbt,
+          finalize: true,
+        })
 
       const { txId: revealTxId } = await this.pushPsbt({
-        psbtBase64: '', //taprootRevealSigned,
+        psbtBase64: taprootRevealSigned,
       })
 
       if (!revealTxId) {
@@ -1814,6 +1815,7 @@ export class Oyl {
     }
 
     const collectibleData = await this.getCollectibleById(inscriptionId)
+
     if (fromAddress && collectibleData.address !== fromAddress) {
       throw new Error('Inscription does not belong to fromAddress')
     }
@@ -1836,7 +1838,9 @@ export class Oyl {
     let psbtTx = new bitcoin.Psbt({ network: this.network })
     const { unspent_outputs } = await this.getUtxos(fromAddress, true)
     const inscriptionTx = unspent_outputs.find(
-      (utxo) => inscriptionTxId === utxo.tx_hash_big_endian
+      (utxo) =>
+        inscriptionTxId === utxo.tx_hash_big_endian &&
+        Number(inscriptionTxVOutIndex) === utxo.tx_output_n
     )
 
     psbtTx.addInput({
@@ -1914,7 +1918,9 @@ export class Oyl {
         },
       })
     }
-    const changeAmount = amountGathered - (fee ? fee : estimate)
+    console.log(amountGathered)
+    const changeAmount = fee ? amountGathered - fee : amountGathered - estimate
+    console.log(changeAmount, amountGathered - fee, amountGathered - estimate)
     psbtTx.addOutput({
       address: spendAddress,
       value: changeAmount,
@@ -1932,7 +1938,7 @@ export class Oyl {
       network: this.network,
     })
 
-    return { rawPsbt: psbtTx.toBase64(), fee: fee }
+    return { rawPsbt: psbtTx.toBase64() }
   }
 
   async sendBtcEstimate({
