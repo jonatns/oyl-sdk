@@ -457,9 +457,10 @@ export async function runCLI() {
       return await testMarketplaceBuy()
     case 'send':
       const res = await networkConfig.wallet.sendBtc({
-        toAddress: 'tb1qwxnhtpp07dwh8y9s4dej9zplfksewz73xkfgje',
+        toAddress:
+          'tb1pdz8aul7226284e57e9yn4mpyd8f52zpxc7z0gz392e6amrf0s4uq6s3sw6',
         feeRate: 47,
-        amount: 30000,
+        amount: 500,
         spendAddress: networkConfig.taprootAddress,
         spendPubKey: networkConfig.taprootPubKey,
         altSpendAddress: networkConfig.segwitAddress,
@@ -520,7 +521,8 @@ export async function runCLI() {
         feeRate: 47,
         fromAddress: networkConfig.taprootAddress,
         fromPubKey: networkConfig.taprootPubKey,
-        toAddress: to,
+        toAddress:
+          'tb1pdz8aul7226284e57e9yn4mpyd8f52zpxc7z0gz392e6amrf0s4uq6s3sw6',
         spendAddress: networkConfig.taprootAddress,
         spendPubKey: networkConfig.taprootPubKey,
         altSpendAddress: networkConfig.segwitAddress,
@@ -534,11 +536,12 @@ export async function runCLI() {
         await networkConfig.wallet.sendOrdCollectible({
           signer,
           inscriptionId:
-            '615e568c9dd877635743439ea50df6fe11f6aef583f066fc2f917a1d62d03c5di0',
+            '0d039cdbcb23a119b9c7841394ce8e1ffd7b1aadb292e7b88802f2881077ce2fi0',
           feeRate: 57,
           fromAddress: networkConfig.taprootAddress,
           fromPubKey: networkConfig.taprootPubKey,
-          toAddress: to,
+          toAddress:
+            'tb1pdz8aul7226284e57e9yn4mpyd8f52zpxc7z0gz392e6amrf0s4uq6s3sw6',
           spendAddress: networkConfig.segwitAddress,
           spendPubKey: networkConfig.segwitPubKey,
           altSpendPubKey: networkConfig.taprootPubKey,

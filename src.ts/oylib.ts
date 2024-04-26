@@ -1505,8 +1505,6 @@ export class Oyl {
         sandshrewBtcClient: this.sandshrewBtcClient,
       })
 
-      // await delay(5000)
-
       const feeTxPromise = successTxIds.map((txId) =>
         this.sandshrewBtcClient.bitcoindRpc.getMemPoolEntry(txId)
       )
