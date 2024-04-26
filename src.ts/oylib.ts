@@ -457,6 +457,8 @@ export class Oyl {
       await this.apiClient.getAllInscriptionsByAddress(address)
     ).data
 
+    console.log(allOrdinals)
+
     const allCollectibles: any[] = allOrdinals?.filter(
       (ordinal: any) =>
         ordinal.mime_type === 'image/png' || ordinal.mime_type.includes('html')
@@ -1394,144 +1396,144 @@ export class Oyl {
         rawPsbt: segwitSigned1,
         finalize: true,
       })
-      // const { txId: commitTxId } = await this.pushPsbt({
-      //   psbtBase64: taprootSigned1,
-      // })
+      const { txId: commitTxId } = await this.pushPsbt({
+        psbtBase64: taprootSigned1,
+      })
 
-      // successTxIds.push(commitTxId)
+      successTxIds.push(commitTxId)
 
-      // await waitForTransaction({
-      //   txId: commitTxId,
-      //   sandshrewBtcClient: this.sandshrewBtcClient,
-      // })
+      await waitForTransaction({
+        txId: commitTxId,
+        sandshrewBtcClient: this.sandshrewBtcClient,
+      })
 
-      // const { revealRaw } = await this.inscriptionRevealTx({
-      //   receiverAddress: fromAddress,
-      //   signer,
-      //   script,
-      //   commitTxId: commitTxId,
-      //   feeRate,
-      // })
-      // const revealFee =
-      //   Math.ceil(revealRaw.extractTransaction().weight() / 4) * feeRate
+      const { revealRaw } = await this.inscriptionRevealTx({
+        receiverAddress: fromAddress,
+        signer,
+        script,
+        commitTxId: commitTxId,
+        feeRate,
+      })
+      const revealFee =
+        Math.ceil(revealRaw.extractTransaction().weight() / 4) * feeRate
 
-      // const { revealPsbt } = await this.inscriptionRevealTx({
-      //   receiverAddress: fromAddress,
-      //   signer,
-      //   script,
-      //   commitTxId: commitTxId,
-      //   fee: revealFee,
-      //   feeRate,
-      // })
+      const { revealPsbt } = await this.inscriptionRevealTx({
+        receiverAddress: fromAddress,
+        signer,
+        script,
+        commitTxId: commitTxId,
+        fee: revealFee,
+        feeRate,
+      })
 
-      // const { signedPsbt: taprootRevealSigned } =
-      //   await signer.signAllTaprootInputs({
-      //     rawPsbt: revealPsbt,
-      //     finalize: true,
-      //   })
+      const { signedPsbt: taprootRevealSigned } =
+        await signer.signAllTaprootInputs({
+          rawPsbt: revealPsbt,
+          finalize: true,
+        })
 
-      // const { txId: revealTxId } = await this.pushPsbt({
-      //   psbtBase64: taprootRevealSigned,
-      // })
+      const { txId: revealTxId } = await this.pushPsbt({
+        psbtBase64: taprootRevealSigned,
+      })
 
-      // if (!revealTxId) {
-      //   throw new Error('Unable to reveal inscription.')
-      // }
+      if (!revealTxId) {
+        throw new Error('Unable to reveal inscription.')
+      }
 
-      // successTxIds.push(revealTxId)
+      successTxIds.push(revealTxId)
 
-      // await waitForTransaction({
-      //   txId: revealTxId,
-      //   sandshrewBtcClient: this.sandshrewBtcClient,
-      // })
+      await waitForTransaction({
+        txId: revealTxId,
+        sandshrewBtcClient: this.sandshrewBtcClient,
+      })
 
-      // await delay(5000)
+      await delay(5000)
 
-      // const { sentPsbt: sentRawPsbt } = await this.inscriptionSendTx({
-      //   toAddress,
-      //   fromPubKey,
-      //   spendPubKey,
-      //   spendAddress,
-      //   altSpendAddress,
-      //   altSpendPubKey,
-      //   feeRate,
-      //   utxoId: revealTxId,
-      //   utxosUsedForFees: utxosUsedForFees,
-      // })
+      const { sentPsbt: sentRawPsbt } = await this.inscriptionSendTx({
+        toAddress,
+        fromPubKey,
+        spendPubKey,
+        spendAddress,
+        altSpendAddress,
+        altSpendPubKey,
+        feeRate,
+        utxoId: revealTxId,
+        utxosUsedForFees: utxosUsedForFees,
+      })
 
-      // const { signedPsbt: segwitSendSignedPsbt } =
-      //   await signer.signAllSegwitInputs({
-      //     rawPsbt: sentRawPsbt,
-      //     finalize: true,
-      //   })
+      const { signedPsbt: segwitSendSignedPsbt } =
+        await signer.signAllSegwitInputs({
+          rawPsbt: sentRawPsbt,
+          finalize: true,
+        })
 
-      // const { raw: rawSend } = await signer.signAllTaprootInputs({
-      //   rawPsbt: segwitSendSignedPsbt,
-      //   finalize: true,
-      // })
+      const { raw: rawSend } = await signer.signAllTaprootInputs({
+        rawPsbt: segwitSendSignedPsbt,
+        finalize: true,
+      })
 
-      // const sendFee =
-      //   Math.ceil(rawSend.extractTransaction().weight() / 4) * feeRate
+      const sendFee =
+        Math.ceil(rawSend.extractTransaction().weight() / 4) * feeRate
 
-      // const { sentPsbt: sentRawPsbt1 } = await this.inscriptionSendTx({
-      //   toAddress,
-      //   fromPubKey,
-      //   spendPubKey,
-      //   spendAddress,
-      //   altSpendAddress,
-      //   altSpendPubKey,
-      //   feeRate,
-      //   utxoId: revealTxId,
-      //   utxosUsedForFees: utxosUsedForFees,
-      //   fee: sendFee,
-      // })
+      const { sentPsbt: sentRawPsbt1 } = await this.inscriptionSendTx({
+        toAddress,
+        fromPubKey,
+        spendPubKey,
+        spendAddress,
+        altSpendAddress,
+        altSpendPubKey,
+        feeRate,
+        utxoId: revealTxId,
+        utxosUsedForFees: utxosUsedForFees,
+        fee: sendFee,
+      })
 
-      // const { signedPsbt: segwitSendSignedPsbt1 } =
-      //   await signer.signAllSegwitInputs({
-      //     rawPsbt: sentRawPsbt1,
-      //     finalize: true,
-      //   })
+      const { signedPsbt: segwitSendSignedPsbt1 } =
+        await signer.signAllSegwitInputs({
+          rawPsbt: sentRawPsbt1,
+          finalize: true,
+        })
 
-      // const { signedPsbt: taprootSendSignedPsbt1 } =
-      //   await signer.signAllTaprootInputs({
-      //     rawPsbt: segwitSendSignedPsbt1,
-      //     finalize: true,
-      //   })
+      const { signedPsbt: taprootSendSignedPsbt1 } =
+        await signer.signAllTaprootInputs({
+          rawPsbt: segwitSendSignedPsbt1,
+          finalize: true,
+        })
 
-      // const { txId: sentPsbtTxId } = await this.pushPsbt({
-      //   psbtBase64: taprootSendSignedPsbt1,
-      // })
+      const { txId: sentPsbtTxId } = await this.pushPsbt({
+        psbtBase64: taprootSendSignedPsbt1,
+      })
 
-      // await waitForTransaction({
-      //   txId: sentPsbtTxId,
-      //   sandshrewBtcClient: this.sandshrewBtcClient,
-      // })
+      await waitForTransaction({
+        txId: sentPsbtTxId,
+        sandshrewBtcClient: this.sandshrewBtcClient,
+      })
 
-      // await delay(5000)
+      await delay(5000)
 
-      // const feeTxPromise = successTxIds.map((txId) =>
-      //   this.sandshrewBtcClient.bitcoindRpc.getMemPoolEntry(txId)
-      // )
+      const feeTxPromise = successTxIds.map((txId) =>
+        this.sandshrewBtcClient.bitcoindRpc.getMemPoolEntry(txId)
+      )
 
-      // const feeData = await Promise.all(feeTxPromise)
-      // let totalFee = 0
-      // let totalSize = 0
-      // let totalWeight = 0
-      // for (const tx of feeData) {
-      //   totalSize += tx.vsize
-      //   totalWeight += tx.weight
-      //   totalFee += tx.fees['base'] * 10 ** 8
-      // }
+      const feeData = await Promise.all(feeTxPromise)
+      let totalFee = 0
+      let totalSize = 0
+      let totalWeight = 0
+      for (const tx of feeData) {
+        totalSize += tx.vsize
+        totalWeight += tx.weight
+        totalFee += tx.fees['base'] * 10 ** 8
+      }
 
-      // return {
-      //   txId: sentPsbtTxId,
-      //   rawTxn: taprootSendSignedPsbt1,
-      //   sendBrc20Txids: [...successTxIds, sentPsbtTxId],
-      //   totalFee: totalFee,
-      //   totalSize: totalSize,
-      //   totalWeight: totalWeight,
-      //   totalSatsPerVByte: Math.ceil(totalFee / totalSize),
-      // }
+      return {
+        txId: sentPsbtTxId,
+        rawTxn: taprootSendSignedPsbt1,
+        sendBrc20Txids: [...successTxIds, sentPsbtTxId],
+        totalFee: totalFee,
+        totalSize: totalSize,
+        totalWeight: totalWeight,
+        totalSatsPerVByte: Math.ceil(totalFee / totalSize),
+      }
     } catch (err) {
       throw new OylTransactionError(err, successTxIds)
     }

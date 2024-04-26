@@ -405,7 +405,15 @@ export declare class Oyl {
         feeRate: number;
         token?: string;
         amount?: number;
-    }): Promise<void>;
+    }): Promise<{
+        txId: string;
+        rawTxn: string;
+        sendBrc20Txids: any[];
+        totalFee: number;
+        totalSize: number;
+        totalWeight: number;
+        totalSatsPerVByte: number;
+    }>;
     inscriptionSendTx({ toAddress, fromPubKey, spendPubKey, spendAddress, altSpendAddress, altSpendPubKey, feeRate, utxoId, utxosUsedForFees, fee, }: {
         toAddress: string;
         fromPubKey: string;

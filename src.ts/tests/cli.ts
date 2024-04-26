@@ -175,6 +175,8 @@ const testWallet = new Oyl({
   projectId: process.env.SANDSHREW_PROJECT_ID,
 })
 
+testWallet.
+
 const XVERSE = 'xverse'
 const UNISAT = 'unisat'
 const MAINNET = 'mainnet'

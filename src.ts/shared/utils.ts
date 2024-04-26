@@ -407,11 +407,9 @@ export const createInscriptionScript = (pubKey: string, content: any) => {
   const textEncoder = new TextEncoder()
   const mimeTypeHex = Buffer.from(textEncoder.encode(mimeType)).toString('hex')
   const contentHex = Buffer.from(textEncoder.encode(content)).toString('hex')
-  const markerHex = '00'
-  const lengthMimeTypeHex = mimeTypeHex.length.toString(16).padStart(2, '0')
-  const lengthContentHex = contentHex.length.toString(16).padStart(2, '0')
+  const markerHex = '6f7264'
 
-  return `${pubKey} OP_CHECKSIG OP_0 OP_IF ${markerHex} ${lengthMimeTypeHex} ${mimeTypeHex} ${lengthContentHex} ${contentHex} OP_ENDIF`
+  return `${pubKey} OP_CHECKSIG OP_0 OP_IF ${markerHex} ${mimeTypeHex} OP_0 ${contentHex} OP_ENDIF`
 }
 
 function encodeToBase26(inputString: string): string {
