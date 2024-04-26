@@ -230,6 +230,7 @@ export declare class Oyl {
         fee?: number;
     }): Promise<{
         rawPsbt: string;
+        fee: number;
     }>;
     /**
      * Retrieves information about a SegWit address.
