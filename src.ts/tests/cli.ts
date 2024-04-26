@@ -515,7 +515,7 @@ export async function runCLI() {
         token: ticker,
         amount,
         signer,
-        feeRate: 63,
+        feeRate: 47,
         fromAddress: networkConfig.taprootAddress,
         fromPubKey: networkConfig.taprootPubKey,
         toAddress: to,
@@ -533,7 +533,7 @@ export async function runCLI() {
           signer,
           inscriptionId:
             '615e568c9dd877635743439ea50df6fe11f6aef583f066fc2f917a1d62d03c5di0',
-          feeRate: 47,
+          feeRate: 57,
           fromAddress: networkConfig.taprootAddress,
           fromPubKey: networkConfig.taprootPubKey,
           toAddress: to,

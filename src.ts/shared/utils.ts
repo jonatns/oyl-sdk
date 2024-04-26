@@ -875,7 +875,11 @@ export const filterTaprootUtxos = async ({
     },
     { metaUtxos: [], nonMetaUtxos: [] }
   )
-  return nonMetaUtxos
+  const sortedNonMetaUtxos = nonMetaUtxos.sort(
+    (a, b) => b.satoshis - a.satoshis
+  )
+
+  return sortedNonMetaUtxos
 }
 
 export const filterUtxos = async ({ utxos }: { utxos: any[] }) => {
