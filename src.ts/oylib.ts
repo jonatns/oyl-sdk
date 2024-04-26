@@ -466,65 +466,65 @@ export class Oyl {
       (ordinal: any) => ordinal.mime_type === 'text/plain;charset=utf-8'
     )
 
-    // for (const artifact of allCollectibles) {
-    //   const { inscription_id, inscription_number, satpoint } = artifact
-    //   const content = await this.ordRpc.getInscriptionContent(inscription_id)
+    for (const artifact of allCollectibles) {
+      const { inscription_id, inscription_number, satpoint } = artifact
+      const content = await this.ordRpc.getInscriptionContent(inscription_id)
 
-    //   const detail = {
-    //     id: inscription_id,
-    //     address: artifact.owner_wallet_addr,
-    //     content: content,
-    //     location: satpoint,
-    //   }
+      const detail = {
+        id: inscription_id,
+        address: artifact.owner_wallet_addr,
+        content: content,
+        location: satpoint,
+      }
 
-    //   collectibles.push({
-    //     id: inscription_id,
-    //     inscription_number,
-    //     detail,
-    //   })
-    // }
+      collectibles.push({
+        id: inscription_id,
+        inscription_number,
+        detail,
+      })
+    }
 
-    // for (const artifact of allBrc20s) {
-    //   const { inscription_id, inscription_number, satpoint } = artifact
-    //   const content = await this.ordRpc.getInscriptionContent(inscription_id)
-    //   const decodedContent = atob(content)
+    for (const artifact of allBrc20s) {
+      const { inscription_id, inscription_number, satpoint } = artifact
+      const content = await this.ordRpc.getInscriptionContent(inscription_id)
+      const decodedContent = atob(content)
 
-    //   if (isValidJSON(decodedContent) && JSON.parse(decodedContent)) {
-    //     const detail = {
-    //       id: inscription_id,
-    //       address: artifact.owner_wallet_addr,
-    //       content: content,
-    //       location: satpoint,
-    //     }
+      if (isValidJSON(decodedContent) && JSON.parse(decodedContent)) {
+        const detail = {
+          id: inscription_id,
+          address: artifact.owner_wallet_addr,
+          content: content,
+          location: satpoint,
+        }
 
-    //     brc20.push({
-    //       id: inscription_id,
-    //       inscription_number,
-    //       detail,
-    //     })
-    //   }
-    // }
+        brc20.push({
+          id: inscription_id,
+          inscription_number,
+          detail,
+        })
+      }
+    }
 
-    // for (const artifact of allRunes) {
-    //   const { outpoint_id, rune_id, amount } = artifact
-    //   const { entry } = await this.ordRpc.getRuneById(rune_id)
-    //   const detail = {
-    //     runeId: rune_id,
-    //     outpoint_id: outpoint_id,
-    //     name: entry?.spaced_rune,
-    //     symbol: entry?.symbol,
-    //     divisibility: entry?.divisibility,
-    //     amount: amount,
-    //     mints: entry?.mints,
-    //     burned: entry?.burned,
-    //     terms: entry?.terms,
-    //   }
-    //   runes.push({
-    //     txId: outpoint_id.split(':')[0],
-    //     outputIndex: outpoint_id.split(':')[1],
-    //     detail,
-    //   })
-    // }
+    for (const artifact of allRunes) {
+      const { outpoint_id, rune_id, amount } = artifact
+      const { entry } = await this.ordRpc.getRuneById(rune_id)
+      const detail = {
+        runeId: rune_id,
+        outpoint_id: outpoint_id,
+        name: entry?.spaced_rune,
+        symbol: entry?.symbol,
+        divisibility: entry?.divisibility,
+        amount: amount,
+        mints: entry?.mints,
+        burned: entry?.burned,
+        terms: entry?.terms,
+      }
+      runes.push({
+        txId: outpoint_id.split(':')[0],
+        outputIndex: outpoint_id.split(':')[1],
+        detail,
+      })
+    }
     return { collectibles, brc20, runes }
   }
 
@@ -720,7 +720,7 @@ export class Oyl {
       )
     }
 
-    let { psbt: updatedPsbt } = await addBtcUtxo({
+    let { psbt: updatedPsbt, fee: estimateFee } = await addBtcUtxo({
       spendUtxos,
       psbt: psbt,
       toAddress,
@@ -736,6 +736,7 @@ export class Oyl {
 
     return {
       rawPsbt: updatedPsbt.toBase64(),
+      fee: estimateFee,
     }
   }
 
@@ -1141,8 +1142,9 @@ export class Oyl {
       toXOnly(tweakSigner(signer.taprootKeyPair).publicKey).toString('hex'),
       content
     )
-    const finalScript = bitcoin.script.fromASM(script)
 
+    const finalScript = bitcoin.script.fromASM(script)
+    console.log(finalScript.toString('hex'))
     const inscriberInfo = bitcoin.payments.p2tr({
       internalPubkey: toXOnly(tweakSigner(signer.taprootKeyPair).publicKey),
       scriptTree: { output: finalScript },
@@ -1342,6 +1344,7 @@ export class Oyl {
     token?: string
     amount?: number
   }) {
+    console.log(token)
     let successTxIds = []
 
     try {
@@ -1391,144 +1394,144 @@ export class Oyl {
         rawPsbt: segwitSigned1,
         finalize: true,
       })
-      const { txId: commitTxId } = await this.pushPsbt({
-        psbtBase64: taprootSigned1,
-      })
+      // const { txId: commitTxId } = await this.pushPsbt({
+      //   psbtBase64: taprootSigned1,
+      // })
 
-      successTxIds.push(commitTxId)
+      // successTxIds.push(commitTxId)
 
-      await waitForTransaction({
-        txId: commitTxId,
-        sandshrewBtcClient: this.sandshrewBtcClient,
-      })
+      // await waitForTransaction({
+      //   txId: commitTxId,
+      //   sandshrewBtcClient: this.sandshrewBtcClient,
+      // })
 
-      const { revealRaw } = await this.inscriptionRevealTx({
-        receiverAddress: fromAddress,
-        signer,
-        script,
-        commitTxId: commitTxId,
-        feeRate,
-      })
-      const revealFee =
-        Math.ceil(revealRaw.extractTransaction().weight() / 4) * feeRate
+      // const { revealRaw } = await this.inscriptionRevealTx({
+      //   receiverAddress: fromAddress,
+      //   signer,
+      //   script,
+      //   commitTxId: commitTxId,
+      //   feeRate,
+      // })
+      // const revealFee =
+      //   Math.ceil(revealRaw.extractTransaction().weight() / 4) * feeRate
 
-      const { revealPsbt } = await this.inscriptionRevealTx({
-        receiverAddress: fromAddress,
-        signer,
-        script,
-        commitTxId: commitTxId,
-        fee: revealFee,
-        feeRate,
-      })
+      // const { revealPsbt } = await this.inscriptionRevealTx({
+      //   receiverAddress: fromAddress,
+      //   signer,
+      //   script,
+      //   commitTxId: commitTxId,
+      //   fee: revealFee,
+      //   feeRate,
+      // })
 
-      const { signedPsbt: taprootRevealSigned } =
-        await signer.signAllTaprootInputs({
-          rawPsbt: revealPsbt,
-          finalize: true,
-        })
+      // const { signedPsbt: taprootRevealSigned } =
+      //   await signer.signAllTaprootInputs({
+      //     rawPsbt: revealPsbt,
+      //     finalize: true,
+      //   })
 
-      const { txId: revealTxId } = await this.pushPsbt({
-        psbtBase64: taprootRevealSigned,
-      })
+      // const { txId: revealTxId } = await this.pushPsbt({
+      //   psbtBase64: taprootRevealSigned,
+      // })
 
-      if (!revealTxId) {
-        throw new Error('Unable to reveal inscription.')
-      }
+      // if (!revealTxId) {
+      //   throw new Error('Unable to reveal inscription.')
+      // }
 
-      successTxIds.push(revealTxId)
+      // successTxIds.push(revealTxId)
 
-      await waitForTransaction({
-        txId: revealTxId,
-        sandshrewBtcClient: this.sandshrewBtcClient,
-      })
+      // await waitForTransaction({
+      //   txId: revealTxId,
+      //   sandshrewBtcClient: this.sandshrewBtcClient,
+      // })
 
-      await delay(5000)
+      // await delay(5000)
 
-      const { sentPsbt: sentRawPsbt } = await this.inscriptionSendTx({
-        toAddress,
-        fromPubKey,
-        spendPubKey,
-        spendAddress,
-        altSpendAddress,
-        altSpendPubKey,
-        feeRate,
-        utxoId: revealTxId,
-        utxosUsedForFees: utxosUsedForFees,
-      })
+      // const { sentPsbt: sentRawPsbt } = await this.inscriptionSendTx({
+      //   toAddress,
+      //   fromPubKey,
+      //   spendPubKey,
+      //   spendAddress,
+      //   altSpendAddress,
+      //   altSpendPubKey,
+      //   feeRate,
+      //   utxoId: revealTxId,
+      //   utxosUsedForFees: utxosUsedForFees,
+      // })
 
-      const { signedPsbt: segwitSendSignedPsbt } =
-        await signer.signAllSegwitInputs({
-          rawPsbt: sentRawPsbt,
-          finalize: true,
-        })
+      // const { signedPsbt: segwitSendSignedPsbt } =
+      //   await signer.signAllSegwitInputs({
+      //     rawPsbt: sentRawPsbt,
+      //     finalize: true,
+      //   })
 
-      const { raw: rawSend } = await signer.signAllTaprootInputs({
-        rawPsbt: segwitSendSignedPsbt,
-        finalize: true,
-      })
+      // const { raw: rawSend } = await signer.signAllTaprootInputs({
+      //   rawPsbt: segwitSendSignedPsbt,
+      //   finalize: true,
+      // })
 
-      const sendFee =
-        Math.ceil(rawSend.extractTransaction().weight() / 4) * feeRate
+      // const sendFee =
+      //   Math.ceil(rawSend.extractTransaction().weight() / 4) * feeRate
 
-      const { sentPsbt: sentRawPsbt1 } = await this.inscriptionSendTx({
-        toAddress,
-        fromPubKey,
-        spendPubKey,
-        spendAddress,
-        altSpendAddress,
-        altSpendPubKey,
-        feeRate,
-        utxoId: revealTxId,
-        utxosUsedForFees: utxosUsedForFees,
-        fee: sendFee,
-      })
+      // const { sentPsbt: sentRawPsbt1 } = await this.inscriptionSendTx({
+      //   toAddress,
+      //   fromPubKey,
+      //   spendPubKey,
+      //   spendAddress,
+      //   altSpendAddress,
+      //   altSpendPubKey,
+      //   feeRate,
+      //   utxoId: revealTxId,
+      //   utxosUsedForFees: utxosUsedForFees,
+      //   fee: sendFee,
+      // })
 
-      const { signedPsbt: segwitSendSignedPsbt1 } =
-        await signer.signAllSegwitInputs({
-          rawPsbt: sentRawPsbt1,
-          finalize: true,
-        })
+      // const { signedPsbt: segwitSendSignedPsbt1 } =
+      //   await signer.signAllSegwitInputs({
+      //     rawPsbt: sentRawPsbt1,
+      //     finalize: true,
+      //   })
 
-      const { signedPsbt: taprootSendSignedPsbt1 } =
-        await signer.signAllTaprootInputs({
-          rawPsbt: segwitSendSignedPsbt1,
-          finalize: true,
-        })
+      // const { signedPsbt: taprootSendSignedPsbt1 } =
+      //   await signer.signAllTaprootInputs({
+      //     rawPsbt: segwitSendSignedPsbt1,
+      //     finalize: true,
+      //   })
 
-      const { txId: sentPsbtTxId } = await this.pushPsbt({
-        psbtBase64: taprootSendSignedPsbt1,
-      })
+      // const { txId: sentPsbtTxId } = await this.pushPsbt({
+      //   psbtBase64: taprootSendSignedPsbt1,
+      // })
 
-      await waitForTransaction({
-        txId: sentPsbtTxId,
-        sandshrewBtcClient: this.sandshrewBtcClient,
-      })
+      // await waitForTransaction({
+      //   txId: sentPsbtTxId,
+      //   sandshrewBtcClient: this.sandshrewBtcClient,
+      // })
 
-      await delay(5000)
+      // await delay(5000)
 
-      const feeTxPromise = successTxIds.map((txId) =>
-        this.sandshrewBtcClient.bitcoindRpc.getMemPoolEntry(txId)
-      )
+      // const feeTxPromise = successTxIds.map((txId) =>
+      //   this.sandshrewBtcClient.bitcoindRpc.getMemPoolEntry(txId)
+      // )
 
-      const feeData = await Promise.all(feeTxPromise)
-      let totalFee = 0
-      let totalSize = 0
-      let totalWeight = 0
-      for (const tx of feeData) {
-        totalSize += tx.vsize
-        totalWeight += tx.weight
-        totalFee += tx.fees['base'] * 10 ** 8
-      }
+      // const feeData = await Promise.all(feeTxPromise)
+      // let totalFee = 0
+      // let totalSize = 0
+      // let totalWeight = 0
+      // for (const tx of feeData) {
+      //   totalSize += tx.vsize
+      //   totalWeight += tx.weight
+      //   totalFee += tx.fees['base'] * 10 ** 8
+      // }
 
-      return {
-        txId: sentPsbtTxId,
-        rawTxn: taprootSendSignedPsbt1,
-        sendBrc20Txids: [...successTxIds, sentPsbtTxId],
-        totalFee: totalFee,
-        totalSize: totalSize,
-        totalWeight: totalWeight,
-        totalSatsPerVByte: Math.ceil(totalFee / totalSize),
-      }
+      // return {
+      //   txId: sentPsbtTxId,
+      //   rawTxn: taprootSendSignedPsbt1,
+      //   sendBrc20Txids: [...successTxIds, sentPsbtTxId],
+      //   totalFee: totalFee,
+      //   totalSize: totalSize,
+      //   totalWeight: totalWeight,
+      //   totalSatsPerVByte: Math.ceil(totalFee / totalSize),
+      // }
     } catch (err) {
       throw new OylTransactionError(err, successTxIds)
     }

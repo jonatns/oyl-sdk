@@ -983,8 +983,7 @@ export const addBtcUtxo = async ({
   })
 
   const changeAmount = amountGathered - (finalFee + amount)
-  console.log(amount + finalFee, amountGathered)
-  console.log('finalFee', finalFee, 'amount', amount)
+
   psbt.addOutput({
     address: spendAddress,
     value: changeAmount,
@@ -996,7 +995,7 @@ export const addBtcUtxo = async ({
     network,
   })
 
-  return { psbt: updatedPsbt, fee: fee }
+  return { psbt: updatedPsbt, fee: finalFee }
 }
 
 export const isValidJSON = (str: string) => {
