@@ -4,5 +4,5 @@ curl -s 'https://testnet.sandshrew.io/v1/6e3bc3c289591bb447c116fda149b094' \
     "jsonrpc": "2.0",
     "id": 1,
     "method": "ord_inscription",
-    "params": ["b25dfaeea88930616332bc97b9bde3bbfcfbe62e35e763a07cc4706a2be1ed17i0"]
+    "params": ["615e568c9dd877635743439ea50df6fe11f6aef583f066fc2f917a1d62d03c5di0"]
 }' | jq .

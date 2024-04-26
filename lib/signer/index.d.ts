@@ -30,7 +30,7 @@ export declare class Signer {
         finalize: boolean;
     }): Promise<{
         signedPsbt: string;
-        signedHexPsbt: string;
+        raw: bitcoin.Psbt;
     }>;
     signAllSegwitInputs({ rawPsbt, finalize, }: {
         rawPsbt: string;

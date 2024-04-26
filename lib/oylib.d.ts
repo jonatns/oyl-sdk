@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { Utxo } from './txbuilder';
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
@@ -216,7 +217,7 @@ export declare class Oyl {
         fee: number;
         satsPerVByte: string;
     }>;
-    createBtcTx({ toAddress, spendPubKey, feeRate, amount, network, spendUtxos, spendAddress, altSpendAddress, altSpendPubKey, altSpendUtxos, }: {
+    createBtcTx({ toAddress, spendPubKey, feeRate, amount, network, spendUtxos, spendAddress, altSpendPubKey, altSpendUtxos, fee, }: {
         toAddress: string;
         spendPubKey: string;
         feeRate: number;
@@ -224,9 +225,9 @@ export declare class Oyl {
         network: bitcoin.Network;
         spendUtxos: Utxo[];
         spendAddress: string;
-        altSpendAddress?: string;
         altSpendPubKey?: string;
         altSpendUtxos?: Utxo[];
+        fee?: number;
     }): Promise<{
         rawPsbt: string;
         fee: number;
@@ -367,7 +368,7 @@ export declare class Oyl {
     getRuneOutpoints({ address }: {
         address: string;
     }): Promise<void>;
-    inscriptionCommitTx({ content, spendAddress, spendPubKey, signer, altSpendPubKey, altSpendAddress, feeRate, }: {
+    inscriptionCommitTx({ content, spendAddress, spendPubKey, signer, altSpendPubKey, altSpendAddress, feeRate, fee, }: {
         spendPubKey: string;
         altSpendPubKey?: string;
         spendAddress?: string;
@@ -375,19 +376,22 @@ export declare class Oyl {
         signer: Signer;
         feeRate?: number;
         content: string;
+        fee?: number;
     }): Promise<{
         commitPsbt: string;
         utxosUsedForFees: string[];
-        fee: number;
+        script: Buffer;
     }>;
-    inscriptionRevealTx({ receiverAddress, signer, content, feeRate, commitTxId, }: {
+    inscriptionRevealTx({ receiverAddress, script, signer, commitTxId, fee, feeRate, }: {
         receiverAddress: string;
         signer: Signer;
-        content: string;
-        feeRate: number;
+        script: Buffer;
         commitTxId: string;
+        fee?: number;
+        feeRate: number;
     }): Promise<{
-        revealTx: string;
+        revealPsbt: string;
+        revealRaw: bitcoin.Psbt;
     }>;
     sendBRC20({ fromAddress, fromPubKey, toAddress, spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, token, amount, }: {
         fromAddress: string;
@@ -410,7 +414,7 @@ export declare class Oyl {
         totalWeight: number;
         totalSatsPerVByte: number;
     }>;
-    inscriptionSendTx({ toAddress, fromPubKey, spendPubKey, spendAddress, altSpendAddress, altSpendPubKey, feeRate, utxoId, utxosUsedForFees, }: {
+    inscriptionSendTx({ toAddress, fromPubKey, spendPubKey, spendAddress, altSpendAddress, altSpendPubKey, feeRate, utxoId, utxosUsedForFees, fee, }: {
         toAddress: string;
         fromPubKey: string;
         altSpendAddress: string;
@@ -420,6 +424,7 @@ export declare class Oyl {
         feeRate?: number;
         utxoId: string;
         utxosUsedForFees: string[];
+        fee?: number;
     }): Promise<{
         sentPsbt: string;
     }>;
@@ -442,7 +447,7 @@ export declare class Oyl {
         fee: number;
         satsPerVByte: string;
     }>;
-    createOrdCollectibleTx({ inscriptionId, fromAddress, fromPubKey, spendPubKey, spendAddress, toAddress, altSpendAddress, altSpendPubKey, feeRate, }: {
+    createOrdCollectibleTx({ inscriptionId, fromAddress, fromPubKey, spendPubKey, spendAddress, toAddress, altSpendAddress, altSpendPubKey, feeRate, fee, }: {
         fromAddress?: string;
         fromPubKey: string;
         toAddress: string;
@@ -452,9 +457,9 @@ export declare class Oyl {
         spendAddress?: string;
         altSpendAddress?: string;
         inscriptionId: string;
+        fee?: number;
     }): Promise<{
         rawPsbt: string;
-        fee: number;
     }>;
     sendBtcEstimate({ feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, }: {
         feeRate?: number;
@@ -494,13 +499,13 @@ export declare class Oyl {
         amount?: number;
     }): Promise<{
         txId: string;
-        rawTxn: string;
-        weight: any;
+        rawTx: string;
         size: any;
+        weight: any;
         fee: number;
         satsPerVByte: string;
     }>;
-    runeSendTx({ runeId, fromAddress, toAddress, amount, spendAddress, spendPubKey, altSpendPubKey, altSpendAddress, feeRate, }: {
+    runeSendTx({ runeId, fromAddress, toAddress, amount, spendAddress, spendPubKey, altSpendPubKey, altSpendAddress, feeRate, fee, }: {
         runeId: string;
         fromAddress: string;
         toAddress: string;
@@ -510,6 +515,7 @@ export declare class Oyl {
         spendAddress?: string;
         altSpendAddress?: string;
         feeRate?: number;
+        fee?: number;
     }): Promise<{
         sendPsbt: string;
     }>;
@@ -527,7 +533,7 @@ export declare class Oyl {
         txId: string;
         rawTxn: string;
     }>;
-    runeMintTx({ runeId, toAddress, amount, spendAddress, spendPubKey, altSpendPubKey, altSpendAddress, feeRate, }: {
+    runeMintTx({ runeId, toAddress, amount, spendAddress, spendPubKey, altSpendPubKey, altSpendAddress, feeRate, fee, }: {
         runeId: string;
         toAddress: string;
         amount: number;
@@ -536,7 +542,8 @@ export declare class Oyl {
         spendAddress?: string;
         altSpendAddress?: string;
         feeRate?: number;
+        fee?: number;
     }): Promise<{
-        sendPsbt: string;
+        mintPsbt: string;
     }>;
 }
