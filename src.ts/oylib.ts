@@ -457,8 +457,6 @@ export class Oyl {
       await this.apiClient.getAllInscriptionsByAddress(address)
     ).data
 
-    console.log(allOrdinals)
-
     const allCollectibles: any[] = allOrdinals?.filter(
       (ordinal: any) =>
         ordinal.mime_type === 'image/png' || ordinal.mime_type.includes('html')
@@ -1146,7 +1144,6 @@ export class Oyl {
     )
 
     const finalScript = bitcoin.script.fromASM(script)
-    console.log(finalScript.toString('hex'))
     const inscriberInfo = bitcoin.payments.p2tr({
       internalPubkey: toXOnly(tweakSigner(signer.taprootKeyPair).publicKey),
       scriptTree: { output: finalScript },
@@ -1346,7 +1343,6 @@ export class Oyl {
     token?: string
     amount?: number
   }) {
-    console.log(token)
     let successTxIds = []
 
     try {
@@ -1509,7 +1505,7 @@ export class Oyl {
         sandshrewBtcClient: this.sandshrewBtcClient,
       })
 
-      await delay(5000)
+      // await delay(5000)
 
       const feeTxPromise = successTxIds.map((txId) =>
         this.sandshrewBtcClient.bitcoindRpc.getMemPoolEntry(txId)

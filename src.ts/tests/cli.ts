@@ -175,7 +175,7 @@ const testWallet = new Oyl({
   projectId: process.env.SANDSHREW_PROJECT_ID,
 })
 
-testWallet.
+testWallet.apiClient.setAuthToken(process.env.API_TOKEN)
 
 const XVERSE = 'xverse'
 const UNISAT = 'unisat'
