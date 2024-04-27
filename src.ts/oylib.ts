@@ -457,12 +457,8 @@ export class Oyl {
       await this.apiClient.getAllInscriptionsByAddress(address)
     ).data
 
-    const allCollectibles: any[] = allOrdinals?.filter(
-      (ordinal: any) =>
-        ordinal.mime_type === 'image/png' ||
-        ordinal.mime_type.includes('html') ||
-        ordinal.mime_type === 'gif' ||
-        ordinal.mime_type === 'image/jpeg'
+    const allCollectibles: any[] = allOrdinals?.filter((ordinal: any) =>
+      ordinal.mime_type.includes('image')
     )
 
     const allBrc20s: any[] = allOrdinals?.filter(
