@@ -459,12 +459,23 @@ export class Oyl {
 
     const allCollectibles: any[] = allOrdinals?.filter(
       (ordinal: any) =>
-        ordinal.mime_type === 'image/png' || ordinal.mime_type.includes('html')
+        ordinal.mime_type === 'image/png' ||
+        ordinal.mime_type.includes('html') ||
+        ordinal.mime_type === 'gif' ||
+        ordinal.mime_type === 'image/jpeg'
     )
 
     const allBrc20s: any[] = allOrdinals?.filter(
       (ordinal: any) => ordinal.mime_type === 'text/plain;charset=utf-8'
     )
+
+    if (!allBrc20s) {
+      throw new Error('Error fetching brc20s')
+    }
+
+    if (!allCollectibles) {
+      throw new Error('Error fetching collectibles')
+    }
 
     for (const artifact of allCollectibles) {
       const { inscription_id, inscription_number, satpoint } = artifact
