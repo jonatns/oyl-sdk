@@ -2379,18 +2379,14 @@ export class Oyl {
     let spendUtxos: Utxo[] | undefined
     let altSpendUtxos: Utxo[] | undefined
 
-    spendUtxos = await this.getUtxosArtifacts({
-      address: spendAddress,
-    })
+    spendUtxos = await this.getSpendableUtxos(spendAddress)
 
     if (!spendUtxos) {
       throw new Error('No utxos for this address')
     }
 
     if (altSpendAddress) {
-      altSpendUtxos = await this.getUtxosArtifacts({
-        address: altSpendAddress,
-      })
+      altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
     }
 
     const spendableUtxos = await filterTaprootUtxos({
@@ -2641,18 +2637,14 @@ export class Oyl {
     let spendUtxos: Utxo[] | undefined
     let altSpendUtxos: Utxo[] | undefined
 
-    spendUtxos = await this.getUtxosArtifacts({
-      address: spendAddress,
-    })
+    spendUtxos = await this.getSpendableUtxos(spendAddress)
 
     if (!spendUtxos) {
       throw new Error('No utxos for this address')
     }
 
     if (altSpendAddress) {
-      altSpendUtxos = await this.getUtxosArtifacts({
-        address: altSpendAddress,
-      })
+      altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
     }
 
     const spendableUtxos = await filterTaprootUtxos({
