@@ -647,10 +647,10 @@ export function calculateTaprootTxSize(
   const baseTxSize = 10 // Base transaction size without inputs/outputs
 
   // Size contributions from inputs
-  const taprootInputSize = 64 // Average size of a Taproot input (can vary)
-  const nonTaprootInputSize = 45 // Average size of a non-Taproot input (can vary)
+  const taprootInputSize = 60 // Average size of a Taproot input (can vary)
+  const nonTaprootInputSize = 42 // Average size of a non-Taproot input (can vary)
 
-  const outputSize = 40
+  const outputSize = 38
 
   const totalInputSize =
     taprootInputCount * taprootInputSize +
