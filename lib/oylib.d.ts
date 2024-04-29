@@ -189,6 +189,7 @@ export declare class Oyl {
             };
         }>;
     }[]>;
+    getSpendableUtxos(address: string): Promise<Utxo[]>;
     /**
      * Creates a Partially Signed Bitcoin Transaction (PSBT) to send regular satoshis, signs and broadcasts it.
      * @param {Object} params - The parameters for creating the PSBT.
@@ -409,10 +410,6 @@ export declare class Oyl {
         txId: string;
         rawTxn: string;
         sendBrc20Txids: any[];
-        totalFee: number;
-        totalSize: number;
-        totalWeight: number;
-        totalSatsPerVByte: number;
     }>;
     inscriptionSendTx({ toAddress, fromPubKey, spendPubKey, spendAddress, altSpendAddress, altSpendPubKey, feeRate, utxoId, utxosUsedForFees, fee, }: {
         toAddress: string;

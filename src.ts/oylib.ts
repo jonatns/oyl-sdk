@@ -447,11 +447,7 @@ export class Oyl {
     const brc20 = []
     const runes = []
 
-    const allRunes = await (
-      await fetch(
-        `https://testnet.sandshrew.io:8443/outpoints?address=eq.${address}`
-      )
-    ).json()
+    const allRunes: any[] = await this.apiClient.getRuneOutpoints({ address })
 
     const allOrdinals: any[] = (
       await this.apiClient.getAllInscriptionsByAddress(address)
@@ -577,6 +573,43 @@ export class Oyl {
     }>
   }
 
+  async getSpendableUtxos(address: string) {
+    const addressType = getAddressType(address)
+    const utxosResponse: any[] = await this.esploraRpc.getAddressUtxo(address)
+    const formattedUtxos: Utxo[] = []
+    let filtered = utxosResponse
+
+    for (const utxo of filtered) {
+      const hasInscription = await this.ordRpc.getTxOutput(
+        utxo.txid + ':' + utxo.vout
+      )
+
+      if (
+        hasInscription.inscriptions.length === 0 &&
+        hasInscription.runes.length === 0 &&
+        hasInscription.value !== 546
+      ) {
+        const transactionDetails = await this.esploraRpc.getTxInfo(utxo.txid)
+        const voutEntry = transactionDetails.vout.find(
+          (v) => v.scriptpubkey_address === address
+        )
+
+        formattedUtxos.push({
+          txId: utxo.txid,
+          outputIndex: utxo.vout,
+          satoshis: utxo.value,
+          confirmations: utxo.status.confirmed ? 3 : 0,
+          scriptPk: voutEntry.scriptpubkey,
+          address: address,
+          addressType: addressType,
+          inscriptions: [],
+        })
+      }
+    }
+
+    return formattedUtxos
+  }
+
   /**
    * Creates a Partially Signed Bitcoin Transaction (PSBT) to send regular satoshis, signs and broadcasts it.
    * @param {Object} params - The parameters for creating the PSBT.
@@ -619,17 +652,13 @@ export class Oyl {
     let spendUtxos: Utxo[] | undefined
     let altSpendUtxos: Utxo[] | undefined
 
-    spendUtxos = await this.getUtxosArtifacts({
-      address: spendAddress,
-    })
+    spendUtxos = await this.getSpendableUtxos(spendAddress)
 
     if (!spendUtxos) {
       throw new Error('Insufficient Balance')
     }
     if (altSpendAddress) {
-      altSpendUtxos = await this.getUtxosArtifacts({
-        address: altSpendAddress,
-      })
+      altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
     }
 
     if (!feeRate) {
@@ -1107,10 +1136,10 @@ export class Oyl {
     const feeForReveal =
       revealTxSize * feeRate < 250 ? 250 : revealTxSize * feeRate
 
-    let amountNeededForInscribe = fee
+    const amountNeededForInscribe = fee
       ? fee + Number(feeForReveal) + inscriptionSats
       : Number(feeForCommit) + Number(feeForReveal) + inscriptionSats
-
+    let finalFee: number
     const utxosUsedForFees: string[] = []
 
     let usingAlt = false
@@ -1118,23 +1147,15 @@ export class Oyl {
     let spendUtxos: Utxo[] | undefined
     let altSpendUtxos: Utxo[] | undefined
 
-    spendUtxos = await this.getUtxosArtifacts({
-      address: spendAddress,
-    })
+    spendUtxos = await this.getSpendableUtxos(spendAddress)
 
     if (!spendUtxos) {
       throw new Error('No utxos for this address')
     }
 
     if (altSpendAddress) {
-      altSpendUtxos = await this.getUtxosArtifacts({
-        address: altSpendAddress,
-      })
+      altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
     }
-
-    const spendableUtxos = await filterTaprootUtxos({
-      taprootUtxos: spendUtxos,
-    })
 
     const psbt = new bitcoin.Psbt({ network: this.network })
 
@@ -1156,7 +1177,7 @@ export class Oyl {
     })
 
     let utxosToPayFee = findUtxosToCoverAmount(
-      spendableUtxos,
+      spendUtxos,
       amountNeededForInscribe
     )
 
@@ -1166,15 +1187,16 @@ export class Oyl {
         0,
         2
       )
-      amountNeededForInscribe = fee
+      const newAmountNeededForInscribe = fee
         ? fee + Number(feeForReveal) + inscriptionSats
         : Number(txSize * feeRate < 250 ? 250 : txSize * feeRate) +
           Number(feeForReveal) +
           inscriptionSats
       utxosToPayFee = findUtxosToCoverAmount(
-        spendableUtxos,
-        amountNeededForInscribe
+        spendUtxos,
+        newAmountNeededForInscribe
       )
+      finalFee = newAmountNeededForInscribe
     }
 
     if (!utxosToPayFee) {
@@ -1192,27 +1214,28 @@ export class Oyl {
           0,
           2
         )
-        amountNeededForInscribe = fee
+        const newAltAmountNeededForInscribe = fee
           ? fee + Number(feeForReveal) + inscriptionSats
           : Number(txSize * feeRate < 250 ? 250 : txSize * feeRate) +
             Number(feeForReveal) +
             inscriptionSats
+        utxosToPayFee = findUtxosToCoverAmount(
+          filteredAltUtxos,
+          newAltAmountNeededForInscribe
+        )
+        if (!utxosToPayFee) {
+          throw new Error('Insufficient Balance')
+        }
+        finalFee = newAltAmountNeededForInscribe
+        usingAlt = true
       }
-
-      utxosToPayFee = findUtxosToCoverAmount(
-        filteredAltUtxos,
-        amountNeededForInscribe
-      )
-      if (!utxosToPayFee) {
-        throw new Error('Insufficient Balance')
-      }
-      usingAlt = true
     }
 
     const feeAmountGathered = calculateAmountGatheredUtxo(
       utxosToPayFee.selectedUtxos
     )
-    const changeAmount = feeAmountGathered - amountNeededForInscribe
+    const changeAmount =
+      feeAmountGathered - (finalFee ? finalFee : amountNeededForInscribe)
 
     for (let i = 0; i < utxosToPayFee.selectedUtxos.length; i++) {
       utxosUsedForFees.push(utxosToPayFee.selectedUtxos[i].txId)
@@ -1443,7 +1466,7 @@ export class Oyl {
         sandshrewBtcClient: this.sandshrewBtcClient,
       })
 
-      await delay(5000)
+      // await delay(5000)
 
       const { sentPsbt: sentRawPsbt } = await this.inscriptionSendTx({
         toAddress,
@@ -1500,33 +1523,10 @@ export class Oyl {
         psbtBase64: taprootSendSignedPsbt1,
       })
 
-      await waitForTransaction({
-        txId: sentPsbtTxId,
-        sandshrewBtcClient: this.sandshrewBtcClient,
-      })
-
-      const feeTxPromise = successTxIds.map((txId) =>
-        this.sandshrewBtcClient.bitcoindRpc.getMemPoolEntry(txId)
-      )
-
-      const feeData = await Promise.all(feeTxPromise)
-      let totalFee = 0
-      let totalSize = 0
-      let totalWeight = 0
-      for (const tx of feeData) {
-        totalSize += tx.vsize
-        totalWeight += tx.weight
-        totalFee += tx.fees['base'] * 10 ** 8
-      }
-
       return {
         txId: sentPsbtTxId,
         rawTxn: taprootSendSignedPsbt1,
         sendBrc20Txids: [...successTxIds, sentPsbtTxId],
-        totalFee: totalFee,
-        totalSize: totalSize,
-        totalWeight: totalWeight,
-        totalSatsPerVByte: Math.ceil(totalFee / totalSize),
       }
     } catch (err) {
       throw new OylTransactionError(err, successTxIds)
@@ -1563,24 +1563,20 @@ export class Oyl {
     const txSize = calculateTaprootTxSize(2, 0, 2)
     const sendTxFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
     let finalFee = fee ? fee : sendTxFee
-
+    console.log('estimateSendFee', sendTxFee)
     let usingAlt = false
 
     let spendUtxos: Utxo[] | undefined
     let altSpendUtxos: Utxo[] | undefined
 
-    spendUtxos = await this.getUtxosArtifacts({
-      address: spendAddress,
-    })
+    spendUtxos = await this.getSpendableUtxos(spendAddress)
 
     if (!spendUtxos) {
       throw new Error('No utxos for this address')
     }
 
     if (altSpendAddress) {
-      altSpendUtxos = await this.getUtxosArtifacts({
-        address: altSpendAddress,
-      })
+      altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
     }
 
     const spendableUtxos = await filterTaprootUtxos({
@@ -1661,6 +1657,7 @@ export class Oyl {
         },
       })
     }
+
     psbt.addOutput({
       address: spendAddress,
       value: changeAmount,
@@ -1788,17 +1785,13 @@ export class Oyl {
     let spendUtxos: Utxo[] | undefined
     let altSpendUtxos: Utxo[] | undefined
 
-    spendUtxos = await this.getUtxosArtifacts({
-      address: spendAddress,
-    })
+    spendUtxos = await this.getSpendableUtxos(spendAddress)
 
     if (!spendUtxos) {
       throw new Error('No utxos for this address')
     }
     if (altSpendAddress) {
-      altSpendUtxos = await this.getUtxosArtifacts({
-        address: altSpendAddress,
-      })
+      altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
     }
 
     const collectibleData = await this.getCollectibleById(inscriptionId)

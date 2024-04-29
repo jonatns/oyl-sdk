@@ -518,11 +518,10 @@ export async function runCLI() {
         token: ticker,
         amount: 10,
         signer,
-        feeRate: 47,
+        feeRate: 40,
         fromAddress: networkConfig.taprootAddress,
         fromPubKey: networkConfig.taprootPubKey,
-        toAddress:
-          'tb1pdz8aul7226284e57e9yn4mpyd8f52zpxc7z0gz392e6amrf0s4uq6s3sw6',
+        toAddress: to,
         spendAddress: networkConfig.taprootAddress,
         spendPubKey: networkConfig.taprootPubKey,
         altSpendAddress: networkConfig.segwitAddress,
@@ -536,12 +535,12 @@ export async function runCLI() {
         await networkConfig.wallet.sendOrdCollectible({
           signer,
           inscriptionId:
-            '0d039cdbcb23a119b9c7841394ce8e1ffd7b1aadb292e7b88802f2881077ce2fi0',
-          feeRate: 57,
+            '7b0bc2bd44bc336b4730c1c761c4355918adfaec664a99f68f218a0a0e8b9538i0',
+          feeRate: 40,
           fromAddress: networkConfig.taprootAddress,
           fromPubKey: networkConfig.taprootPubKey,
           toAddress:
-            'tb1pdz8aul7226284e57e9yn4mpyd8f52zpxc7z0gz392e6amrf0s4uq6s3sw6',
+            'tb1pstyemhl9n2hydg079rgrh8jhj9s7zdxh2g5u8apwk0c8yc9ge4eqp59l22',
           spendAddress: networkConfig.segwitAddress,
           spendPubKey: networkConfig.segwitPubKey,
           altSpendPubKey: networkConfig.taprootPubKey,
