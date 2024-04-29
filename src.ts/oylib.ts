@@ -1132,7 +1132,7 @@ export class Oyl {
     const feeForCommit =
       commitTxSize * feeRate < 250 ? 250 : commitTxSize * feeRate
 
-    const revealTxSize = calculateTaprootTxSize(1, 0, 2)
+    const revealTxSize = calculateTaprootTxSize(2, 0, 2)
     const feeForReveal =
       revealTxSize * feeRate < 250 ? 250 : revealTxSize * feeRate
 
@@ -1148,14 +1148,18 @@ export class Oyl {
     let spendUtxos: Utxo[] | undefined
     let altSpendUtxos: Utxo[] | undefined
 
-    spendUtxos = await this.getSpendableUtxos(spendAddress)
+    spendUtxos = (await this.getSpendableUtxos(spendAddress))?.sort(
+      (a, b) => b.satoshis - a.satoshis
+    )
 
     if (!spendUtxos) {
       throw new Error('No utxos for this address')
     }
 
     if (altSpendAddress) {
-      altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
+      altSpendUtxos = (await this.getSpendableUtxos(altSpendAddress))?.sort(
+        (a, b) => b.satoshis - a.satoshis
+      )
     }
 
     const psbt = new bitcoin.Psbt({ network: this.network })
@@ -1235,15 +1239,7 @@ export class Oyl {
     )
 
     const changeAmount =
-      feeAmountGathered - (inscriptionSats + Number(feeForReveal))
-    console.log('change amount', changeAmount)
-    let finalChange: number
-    if (fee !== 0) {
-      finalChange = changeAmount - fee
-    } else {
-      finalChange = changeAmount - feeForCommit
-    }
-    console.log(baseEstimate, finalChange, feeAmountGathered)
+      feeAmountGathered - (fee + inscriptionSats + Number(feeForReveal))
 
     for (let i = 0; i < utxosToPayFee.selectedUtxos.length; i++) {
       utxosUsedForFees.push(utxosToPayFee.selectedUtxos[i].txId)
@@ -1258,7 +1254,7 @@ export class Oyl {
     }
     psbt.addOutput({
       address: spendAddress,
-      value: finalChange,
+      value: changeAmount,
     })
 
     const formattedPsbt: bitcoin.Psbt = await formatInputsToSign({
@@ -1289,7 +1285,7 @@ export class Oyl {
     fee?: number
     feeRate: number
   }) {
-    const revealTxSize = calculateTaprootTxSize(1, 0, 2)
+    const revealTxSize = calculateTaprootTxSize(2, 0, 2)
     const revealTxBaseFee =
       revealTxSize * feeRate < 250 ? 250 : revealTxSize * feeRate
     const revealTxFinalFee = Number(revealTxBaseFee) - fee
@@ -1403,8 +1399,6 @@ export class Oyl {
       const commitFee =
         Math.ceil(raw.extractTransaction().weight() / 4) * feeRate
 
-      console.log('here', commitFee)
-
       const { commitPsbt: finalCommitPsbt } = await this.inscriptionCommitTx({
         content,
         spendAddress,
@@ -1421,125 +1415,122 @@ export class Oyl {
         finalize: true,
       })
 
-      const { signedPsbt: taprootSigned1, raw: raw2 } =
+      const { signedPsbt: taprootSigned1 } = await signer.signAllTaprootInputs({
+        rawPsbt: segwitSigned1,
+        finalize: true,
+      })
+
+      const { txId: commitTxId } = await this.pushPsbt({
+        psbtBase64: taprootSigned1,
+      })
+
+      successTxIds.push(commitTxId)
+
+      await waitForTransaction({
+        txId: commitTxId,
+        sandshrewBtcClient: this.sandshrewBtcClient,
+      })
+
+      const { revealRaw } = await this.inscriptionRevealTx({
+        receiverAddress: fromAddress,
+        signer,
+        script,
+        commitTxId: commitTxId,
+        feeRate,
+      })
+      const revealFee =
+        Math.ceil(revealRaw.extractTransaction().weight() / 4) * feeRate
+
+      const { revealPsbt } = await this.inscriptionRevealTx({
+        receiverAddress: fromAddress,
+        signer,
+        script,
+        commitTxId: commitTxId,
+        fee: revealFee,
+        feeRate,
+      })
+
+      const { signedPsbt: taprootRevealSigned } =
         await signer.signAllTaprootInputs({
-          rawPsbt: segwitSigned1,
+          rawPsbt: revealPsbt,
           finalize: true,
         })
 
-      console.log(raw2.extractTransaction().weight() / 4)
+      const { txId: revealTxId } = await this.pushPsbt({
+        psbtBase64: taprootRevealSigned,
+      })
 
-      // const { txId: commitTxId } = await this.pushPsbt({
-      //   psbtBase64: taprootSigned1,
-      // })
+      if (!revealTxId) {
+        throw new Error('Unable to reveal inscription.')
+      }
 
-      // successTxIds.push(commitTxId)
+      successTxIds.push(revealTxId)
 
-      // await waitForTransaction({
-      //   txId: commitTxId,
-      //   sandshrewBtcClient: this.sandshrewBtcClient,
-      // })
+      await waitForTransaction({
+        txId: revealTxId,
+        sandshrewBtcClient: this.sandshrewBtcClient,
+      })
 
-      // const { revealRaw } = await this.inscriptionRevealTx({
-      //   receiverAddress: fromAddress,
-      //   signer,
-      //   script,
-      //   commitTxId: commitTxId,
-      //   feeRate,
-      // })
-      // const revealFee =
-      //   Math.ceil(revealRaw.extractTransaction().weight() / 4) * feeRate
+      const { sentPsbt: sentRawPsbt } = await this.inscriptionSendTx({
+        toAddress,
+        fromPubKey,
+        spendPubKey,
+        spendAddress,
+        altSpendAddress,
+        altSpendPubKey,
+        feeRate,
+        utxoId: revealTxId,
+        utxosUsedForFees: utxosUsedForFees,
+      })
 
-      // const { revealPsbt } = await this.inscriptionRevealTx({
-      //   receiverAddress: fromAddress,
-      //   signer,
-      //   script,
-      //   commitTxId: commitTxId,
-      //   fee: revealFee,
-      //   feeRate,
-      // })
+      const { signedPsbt: segwitSendSignedPsbt } =
+        await signer.signAllSegwitInputs({
+          rawPsbt: sentRawPsbt,
+          finalize: true,
+        })
 
-      // const { signedPsbt: taprootRevealSigned } =
-      //   await signer.signAllTaprootInputs({
-      //     rawPsbt: revealPsbt,
-      //     finalize: true,
-      //   })
+      const { raw: rawSend } = await signer.signAllTaprootInputs({
+        rawPsbt: segwitSendSignedPsbt,
+        finalize: true,
+      })
 
-      // const { txId: revealTxId } = await this.pushPsbt({
-      //   psbtBase64: taprootRevealSigned,
-      // })
+      const sendFee =
+        Math.ceil(rawSend.extractTransaction().weight() / 4) * feeRate
 
-      // if (!revealTxId) {
-      //   throw new Error('Unable to reveal inscription.')
-      // }
+      const { sentPsbt: sentRawPsbt1 } = await this.inscriptionSendTx({
+        toAddress,
+        fromPubKey,
+        spendPubKey,
+        spendAddress,
+        altSpendAddress,
+        altSpendPubKey,
+        feeRate,
+        utxoId: revealTxId,
+        utxosUsedForFees: utxosUsedForFees,
+        fee: sendFee,
+      })
 
-      // successTxIds.push(revealTxId)
+      const { signedPsbt: segwitSendSignedPsbt1 } =
+        await signer.signAllSegwitInputs({
+          rawPsbt: sentRawPsbt1,
+          finalize: true,
+        })
 
-      // await waitForTransaction({
-      //   txId: revealTxId,
-      //   sandshrewBtcClient: this.sandshrewBtcClient,
-      // })
+      const { signedPsbt: taprootSendSignedPsbt1 } =
+        await signer.signAllTaprootInputs({
+          rawPsbt: segwitSendSignedPsbt1,
+          finalize: true,
+        })
 
-      // const { sentPsbt: sentRawPsbt } = await this.inscriptionSendTx({
-      //   toAddress,
-      //   fromPubKey,
-      //   spendPubKey,
-      //   spendAddress,
-      //   altSpendAddress,
-      //   altSpendPubKey,
-      //   feeRate,
-      //   utxoId: revealTxId,
-      //   utxosUsedForFees: utxosUsedForFees,
-      // })
+      const { txId: sentPsbtTxId } = await this.pushPsbt({
+        psbtBase64: taprootSendSignedPsbt1,
+      })
 
-      // const { signedPsbt: segwitSendSignedPsbt } =
-      //   await signer.signAllSegwitInputs({
-      //     rawPsbt: sentRawPsbt,
-      //     finalize: true,
-      //   })
-
-      // const { raw: rawSend } = await signer.signAllTaprootInputs({
-      //   rawPsbt: segwitSendSignedPsbt,
-      //   finalize: true,
-      // })
-
-      // const sendFee =
-      //   Math.ceil(rawSend.extractTransaction().weight() / 4) * feeRate
-
-      // const { sentPsbt: sentRawPsbt1 } = await this.inscriptionSendTx({
-      //   toAddress,
-      //   fromPubKey,
-      //   spendPubKey,
-      //   spendAddress,
-      //   altSpendAddress,
-      //   altSpendPubKey,
-      //   feeRate,
-      //   utxoId: revealTxId,
-      //   utxosUsedForFees: utxosUsedForFees,
-      //   fee: sendFee,
-      // })
-
-      // const { signedPsbt: segwitSendSignedPsbt1 } =
-      //   await signer.signAllSegwitInputs({
-      //     rawPsbt: sentRawPsbt1,
-      //     finalize: true,
-      //   })
-
-      // const { signedPsbt: taprootSendSignedPsbt1 } =
-      //   await signer.signAllTaprootInputs({
-      //     rawPsbt: segwitSendSignedPsbt1,
-      //     finalize: true,
-      //   })
-
-      // const { txId: sentPsbtTxId } = await this.pushPsbt({
-      //   psbtBase64: taprootSendSignedPsbt1,
-      // })
-
-      // return {
-      //   txId: sentPsbtTxId,
-      //   rawTxn: taprootSendSignedPsbt1,
-      //   sendBrc20Txids: [...successTxIds, sentPsbtTxId],
-      // }
+      return {
+        txId: sentPsbtTxId,
+        rawTxn: taprootSendSignedPsbt1,
+        sendBrc20Txids: [...successTxIds, sentPsbtTxId],
+      }
     } catch (err) {
       throw new OylTransactionError(err, successTxIds)
     }
