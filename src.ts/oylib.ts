@@ -453,14 +453,21 @@ export class Oyl {
       await this.apiClient.getAllInscriptionsByAddress(address)
     ).data
 
-    const allCollectibles: any[] = allOrdinals?.filter(
-      (ordinal: any) =>
-        ordinal.mime_type === 'image/png' || ordinal.mime_type.includes('html')
+    const allCollectibles: any[] = allOrdinals?.filter((ordinal: any) =>
+      ordinal.mime_type.includes('image')
     )
 
-    const allBrc20s: any[] = allOrdinals?.filter(
-      (ordinal: any) => ordinal.mime_type === 'text/plain;charset=utf-8'
+    const allBrc20s: any[] = allOrdinals?.filter((ordinal: any) =>
+      ordinal.mime_type.includes('text/plain')
     )
+
+    if (!allBrc20s) {
+      throw new Error('Error fetching brc20s')
+    }
+
+    if (!allCollectibles) {
+      throw new Error('Error fetching collectibles')
+    }
 
     for (const artifact of allCollectibles) {
       const { inscription_id, inscription_number, satpoint } = artifact
