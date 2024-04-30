@@ -189,6 +189,7 @@ export declare class Oyl {
             };
         }>;
     }[]>;
+    getSpendableUtxos(address: string): Promise<Utxo[]>;
     /**
      * Creates a Partially Signed Bitcoin Transaction (PSBT) to send regular satoshis, signs and broadcasts it.
      * @param {Object} params - The parameters for creating the PSBT.
@@ -409,10 +410,6 @@ export declare class Oyl {
         txId: string;
         rawTxn: string;
         sendBrc20Txids: any[];
-        totalFee: number;
-        totalSize: number;
-        totalWeight: number;
-        totalSatsPerVByte: number;
     }>;
     inscriptionSendTx({ toAddress, fromPubKey, spendPubKey, spendAddress, altSpendAddress, altSpendPubKey, feeRate, utxoId, utxosUsedForFees, fee, }: {
         toAddress: string;
@@ -462,30 +459,39 @@ export declare class Oyl {
         rawPsbt: string;
     }>;
     sendBtcEstimate({ feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, }: {
+        token?: string;
         feeRate?: number;
         amount: number;
         altSpendPubKey?: string;
         spendAddress: string;
         spendPubKey: string;
         altSpendAddress?: string;
-    }): Promise<any>;
+    }): Promise<{
+        fee: number;
+    }>;
     sendCollectibleEstimate({ spendAddress, altSpendAddress, feeRate, }: {
-        feeRate?: number;
-        altSpendAddress?: string;
         spendAddress?: string;
-    }): Promise<any>;
+        altSpendAddress?: string;
+        feeRate?: number;
+    }): Promise<{
+        fee: number;
+    }>;
     sendRuneEstimate({ spendAddress, altSpendAddress, feeRate, }: {
-        feeRate?: number;
-        altSpendAddress?: string;
-        spendAddress?: string;
-    }): Promise<any>;
-    sendBrc20Estimate({ spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, }: {
-        spendPubKey: string;
-        altSpendPubKey?: string;
         spendAddress?: string;
         altSpendAddress?: string;
         feeRate?: number;
-    }): Promise<any>;
+    }): Promise<{
+        fee: number;
+    }>;
+    sendBrc20Estimate({ spendAddress, altSpendAddress, feeRate, }: {
+        spendAddress?: string;
+        altSpendAddress?: string;
+        feeRate?: number;
+    }): Promise<{
+        commitAndRevealTxFee: number;
+        sendTxFee: number;
+        total: number;
+    }>;
     sendRune({ fromAddress, toAddress, spendPubKey, feeRate, altSpendPubKey, spendAddress, altSpendAddress, signer, runeId, amount, }: {
         fromAddress: string;
         toAddress: string;
