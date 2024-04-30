@@ -2327,7 +2327,7 @@ export class Oyl {
       finalize: true,
     })
 
-    const fee = (raw.extractTransaction().weight() / 4) * feeRate
+    const fee = Math.ceil(raw.extractTransaction().weight() / 4) * feeRate
 
     const { sendPsbt: finalSendPsbt } = await this.runeSendTx({
       runeId,
