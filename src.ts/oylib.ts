@@ -2007,9 +2007,7 @@ export class Oyl {
     }
 
     if (altSpendAddress) {
-      altSpendUtxos = await this.getUtxosArtifacts({
-        address: altSpendAddress,
-      })
+      altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
     }
 
     if (!feeRate) {
