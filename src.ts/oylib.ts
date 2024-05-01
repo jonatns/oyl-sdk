@@ -1480,6 +1480,8 @@ export class Oyl {
         sandshrewBtcClient: this.sandshrewBtcClient,
       })
 
+      await delay(3000)
+
       const { sentPsbt: sentRawPsbt } = await this.inscriptionSendTx({
         toAddress,
         fromPubKey,
