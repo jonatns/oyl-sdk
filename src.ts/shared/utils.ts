@@ -647,10 +647,10 @@ export function calculateTaprootTxSize(
   const baseTxSize = 10 // Base transaction size without inputs/outputs
 
   // Size contributions from inputs
-  const taprootInputSize = 60 // Average size of a Taproot input (can vary)
+  const taprootInputSize = 64 // Average size of a Taproot input (can vary)
   const nonTaprootInputSize = 42 // Average size of a non-Taproot input (can vary)
 
-  const outputSize = 38
+  const outputSize = 40
 
   const totalInputSize =
     taprootInputCount * taprootInputSize +
@@ -918,16 +918,10 @@ export const addBtcUtxo = async ({
   altSpendUtxos?: Utxo[]
   fee?: number
 }) => {
-  const spendableUtxos = await filterTaprootUtxos({
-    taprootUtxos: spendUtxos,
-  })
   const txSize = calculateTaprootTxSize(1, 0, 2)
   let calculatedFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
   let finalFee = fee ? fee : calculatedFee
-  let utxosToSend: any = findUtxosToCoverAmount(
-    spendableUtxos,
-    amount + finalFee
-  )
+  let utxosToSend: any = findUtxosToCoverAmount(spendUtxos, amount + finalFee)
   let usingAlt = false
 
   if (utxosToSend?.selectedUtxos.length > 1) {
@@ -938,14 +932,11 @@ export const addBtcUtxo = async ({
     )
     fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
-    utxosToSend = findUtxosToCoverAmount(spendableUtxos, amount + finalFee)
+    utxosToSend = findUtxosToCoverAmount(spendUtxos, amount + finalFee)
   }
 
   if (!utxosToSend) {
-    const unFilteredAltUtxos = await filterTaprootUtxos({
-      taprootUtxos: altSpendUtxos,
-    })
-    utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, amount + finalFee)
+    utxosToSend = findUtxosToCoverAmount(altSpendUtxos, amount + finalFee)
 
     if (utxosToSend?.selectedUtxos.length > 1) {
       const txSize = calculateTaprootTxSize(
@@ -955,7 +946,7 @@ export const addBtcUtxo = async ({
       )
       fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
-      utxosToSend = findUtxosToCoverAmount(spendableUtxos, amount + finalFee)
+      utxosToSend = findUtxosToCoverAmount(spendUtxos, amount + finalFee)
     }
     if (!utxosToSend) {
       throw new Error('Insufficient Balance')
