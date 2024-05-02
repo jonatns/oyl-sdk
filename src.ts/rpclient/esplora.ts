@@ -31,7 +31,7 @@ export class EsploraRpc {
 
       if (responseData.error) {
         console.error('Esplora JSON-RPC Error:', responseData.error)
-        return null
+        throw new Error (responseData.error)
       }
 
       return responseData.result
