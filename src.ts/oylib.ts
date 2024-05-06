@@ -582,7 +582,7 @@ export class Oyl {
 
   async getSpendableUtxos(address: string) {
     const addressType = getAddressType(address)
-    const utxosResponse: any[] = await this.esploraRpc.getAddressUtxo(address)
+    const utxosResponse: any[] = await this.esploraRpc.getAddressUtxo(address) 
     const formattedUtxos: Utxo[] = []
     let filtered = utxosResponse
 
@@ -591,10 +591,12 @@ export class Oyl {
         utxo.txid + ':' + utxo.vout
       )
 
+      const hasRune = await this.apiClient.getOutputRune({output: utxo.txid + ':' + utxo.vout})
+
       if (
         hasInscription.inscriptions.length === 0 &&
         hasInscription.runes.length === 0 &&
-        hasInscription.value !== 546
+        hasInscription.value !== 546 && !hasRune?.output
       ) {
         const transactionDetails = await this.esploraRpc.getTxInfo(utxo.txid)
         const voutEntry = transactionDetails.vout.find(
