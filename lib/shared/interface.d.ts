@@ -240,6 +240,7 @@ export interface SwapBrcBid {
     address: String;
     auctionId: String;
     bidPrice: Number;
+    feerate: number;
     pubKey: String;
     receiveAddress: string;
     signature?: string;
