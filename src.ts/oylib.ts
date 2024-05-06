@@ -72,7 +72,7 @@ export class Oyl {
   public provider: Providers
   public apiClient: OylApiClient
   public derivPath: String
-  public currentNetwork: 'testnet' | 'main' | 'regtest'
+  public currentNetwork: 'testnet' | 'main' | 'regtest' | 'signet'
 
   /**
    * Initializes a new instance of the Wallet class.

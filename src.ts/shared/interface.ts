@@ -11,7 +11,7 @@ export interface InscriptionResponse {
   value: string
 }
 
-export type Network = 'mainnet' | 'testnet' | 'regtest'
+export type Network = 'mainnet' | 'testnet' | 'regtest' | 'signet'
 
 export type WitnessScriptOptions = {
   pubKeyHex: string

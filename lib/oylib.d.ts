@@ -20,7 +20,7 @@ export declare class Oyl {
     provider: Providers;
     apiClient: OylApiClient;
     derivPath: String;
-    currentNetwork: 'testnet' | 'main' | 'regtest';
+    currentNetwork: 'testnet' | 'main' | 'regtest' | 'signet';
     /**
      * Initializes a new instance of the Wallet class.
      */
