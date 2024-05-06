@@ -233,4 +233,7 @@ export declare class OylApiClient {
     getRuneBalance({ address }: {
         address: string;
     }): Promise<any>;
+    getOutputRune({ output }: {
+        output: string;
+    }): Promise<any>;
 }

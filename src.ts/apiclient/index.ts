@@ -541,4 +541,12 @@ export class OylApiClient {
       })
     ).data
   }
+
+  async getOutputRune({ output }: { output: string }): Promise<any> {
+    return (
+      await this._call('/get-output-rune-info', 'post', {
+        output,
+      })
+    ).data
+  }
 }
