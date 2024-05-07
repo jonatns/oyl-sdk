@@ -590,9 +590,10 @@ export class Oyl {
       const hasInscription = await this.ordRpc.getTxOutput(
         utxo.txid + ':' + utxo.vout
       )
-
-      const hasRune = await this.apiClient.getOutputRune({output: utxo.txid + ':' + utxo.vout})
-
+      let hasRune: any = false
+      if (this.currentNetwork != 'regtest') {
+        hasRune = await this.apiClient.getOutputRune({output: utxo.txid + ':' + utxo.vout})
+      }
       if (
         hasInscription.inscriptions.length === 0 &&
         hasInscription.runes.length === 0 &&
