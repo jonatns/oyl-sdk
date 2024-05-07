@@ -585,7 +585,7 @@ export class Oyl {
     const utxosResponse: any[] = await this.esploraRpc.getAddressUtxo(address) 
     const formattedUtxos: Utxo[] = []
     let filtered = utxosResponse
-
+  
     for (const utxo of filtered) {
       const hasInscription = await this.ordRpc.getTxOutput(
         utxo.txid + ':' + utxo.vout
@@ -603,12 +603,7 @@ export class Oyl {
         const voutEntry = transactionDetails.vout.find(
           (v) => v.scriptpubkey_address === address
         )
-        try {
-          //const txInMemPool =
-          await this.sandshrewBtcClient.bitcoindRpc.getMemPoolEntry(utxo.txid)
-          } catch (error) {
-            // tx not in mempool
-            //if (!txInMemPool) {
+            if (utxo.status.confirmed) {
               formattedUtxos.push({
                 txId: utxo.txid,
                 outputIndex: utxo.vout,
@@ -619,17 +614,17 @@ export class Oyl {
                 addressType: addressType,
                 inscriptions: [],
               })
-            //}
-          }
+            }
       }
     }
     if (formattedUtxos.length === 0) {
       return undefined
     }
     const sortedUtxos = formattedUtxos.sort((a, b) => b.satoshis - a.satoshis)
-
+  
     return sortedUtxos
   }
+  
 
   /**
    * Creates a Partially Signed Bitcoin Transaction (PSBT) to send regular satoshis, signs and broadcasts it.
