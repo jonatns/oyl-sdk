@@ -54,13 +54,13 @@ export class Marketplace {
   async getOffersCostEstimate(offers: MarketplaceOffer[]) {
     let costEstimate = 0
     for (let i = 0; i < offers.length; i++) {
-      //50000 represents total fees, 546 for dust provision, 1200 for dummy utxos
       let offerPrice = offers[i]?.price
         ? offers[i].price
         : offers[i]?.totalPrice
-      costEstimate += offerPrice + 30000 + 546 + 1200
+      costEstimate += offerPrice 
     }
-    return costEstimate
+    const totalCost = 482 * this.feeRate + costEstimate
+    return totalCost
   }
 
   async selectSpendAddress(offers: MarketplaceOffer[]) {
@@ -240,6 +240,7 @@ export class Marketplace {
       bidPrice: bid.bidPrice,
       pubKey: this.selectedSpendPubkey,
       receiveAddress: this.receiveAddress,
+      feerate: this.feeRate
     }
     if (
       this.selectedSpendAddress != this.receiveAddress &&
