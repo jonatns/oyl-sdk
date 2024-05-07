@@ -585,14 +585,15 @@ export class Oyl {
     const utxosResponse: any[] = await this.esploraRpc.getAddressUtxo(address) 
     const formattedUtxos: Utxo[] = []
     let filtered = utxosResponse
-
+  
     for (const utxo of filtered) {
       const hasInscription = await this.ordRpc.getTxOutput(
         utxo.txid + ':' + utxo.vout
       )
-
-      const hasRune = await this.apiClient.getOutputRune({output: utxo.txid + ':' + utxo.vout})
-
+      let hasRune: any = false
+      if (this.currentNetwork != 'regtest') {
+        hasRune = await this.apiClient.getOutputRune({output: utxo.txid + ':' + utxo.vout})
+      }
       if (
         hasInscription.inscriptions.length === 0 &&
         hasInscription.runes.length === 0 &&
@@ -602,30 +603,28 @@ export class Oyl {
         const voutEntry = transactionDetails.vout.find(
           (v) => v.scriptpubkey_address === address
         )
-        const txInMemPool =
-          await this.sandshrewBtcClient.bitcoindRpc.getMemPoolEntry(utxo.txid)
-
-        if (!txInMemPool) {
-          formattedUtxos.push({
-            txId: utxo.txid,
-            outputIndex: utxo.vout,
-            satoshis: utxo.value,
-            confirmations: utxo.status.confirmed ? 3 : 0,
-            scriptPk: voutEntry.scriptpubkey,
-            address: address,
-            addressType: addressType,
-            inscriptions: [],
-          })
-        }
+            if (utxo.status.confirmed) {
+              formattedUtxos.push({
+                txId: utxo.txid,
+                outputIndex: utxo.vout,
+                satoshis: utxo.value,
+                confirmations: utxo.status.confirmed ? 3 : 0,
+                scriptPk: voutEntry.scriptpubkey,
+                address: address,
+                addressType: addressType,
+                inscriptions: [],
+              })
+            }
       }
     }
     if (formattedUtxos.length === 0) {
       return undefined
     }
     const sortedUtxos = formattedUtxos.sort((a, b) => b.satoshis - a.satoshis)
-
+  
     return sortedUtxos
   }
+  
 
   /**
    * Creates a Partially Signed Bitcoin Transaction (PSBT) to send regular satoshis, signs and broadcasts it.
