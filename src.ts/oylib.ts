@@ -603,21 +603,24 @@ export class Oyl {
         const voutEntry = transactionDetails.vout.find(
           (v) => v.scriptpubkey_address === address
         )
-        const txInMemPool =
+        try {
+          //const txInMemPool =
           await this.sandshrewBtcClient.bitcoindRpc.getMemPoolEntry(utxo.txid)
-
-        if (!txInMemPool) {
-          formattedUtxos.push({
-            txId: utxo.txid,
-            outputIndex: utxo.vout,
-            satoshis: utxo.value,
-            confirmations: utxo.status.confirmed ? 3 : 0,
-            scriptPk: voutEntry.scriptpubkey,
-            address: address,
-            addressType: addressType,
-            inscriptions: [],
-          })
-        }
+          } catch (error) {
+            // tx not in mempool
+            //if (!txInMemPool) {
+              formattedUtxos.push({
+                txId: utxo.txid,
+                outputIndex: utxo.vout,
+                satoshis: utxo.value,
+                confirmations: utxo.status.confirmed ? 3 : 0,
+                scriptPk: voutEntry.scriptpubkey,
+                address: address,
+                addressType: addressType,
+                inscriptions: [],
+              })
+            //}
+          }
       }
     }
     if (formattedUtxos.length === 0) {
