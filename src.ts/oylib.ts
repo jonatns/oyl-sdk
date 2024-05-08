@@ -2406,7 +2406,7 @@ export class Oyl {
         hash: txHash,
         index: Number(txIndex),
         witnessUtxo: {
-          value: 546,
+          value: useableUtxos.selectedUtxos[i].amount,
           script: Buffer.from(script, 'hex'),
         },
       })
