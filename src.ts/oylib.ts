@@ -582,17 +582,17 @@ export class Oyl {
 
   async getSpendableUtxos(address: string) {
     const addressType = getAddressType(address)
-    const utxosResponse: any[] = await this.esploraRpc.getAddressUtxo(address) 
+    const utxosResponse: any[] = await this.esploraRpc.getAddressUtxo(address)
     const formattedUtxos: Utxo[] = []
     let filtered = utxosResponse
-  
+
     for (const utxo of filtered) {
       const hasInscription = await this.ordRpc.getTxOutput(
         utxo.txid + ':' + utxo.vout
       )
       let hasRune: any = false
       if (this.currentNetwork != 'regtest') {
-        hasRune = await this.apiClient.getOutputRune({output: utxo.txid + ':' + utxo.vout})
+        hasRune = await this.apiClient.getOutputRune({ output: utxo.txid + ':' + utxo.vout })
       }
       if (
         hasInscription.inscriptions.length === 0 &&
@@ -603,28 +603,28 @@ export class Oyl {
         const voutEntry = transactionDetails.vout.find(
           (v) => v.scriptpubkey_address === address
         )
-            if (utxo.status.confirmed) {
-              formattedUtxos.push({
-                txId: utxo.txid,
-                outputIndex: utxo.vout,
-                satoshis: utxo.value,
-                confirmations: utxo.status.confirmed ? 3 : 0,
-                scriptPk: voutEntry.scriptpubkey,
-                address: address,
-                addressType: addressType,
-                inscriptions: [],
-              })
-            }
+        if (utxo.status.confirmed) {
+          formattedUtxos.push({
+            txId: utxo.txid,
+            outputIndex: utxo.vout,
+            satoshis: utxo.value,
+            confirmations: utxo.status.confirmed ? 3 : 0,
+            scriptPk: voutEntry.scriptpubkey,
+            address: address,
+            addressType: addressType,
+            inscriptions: [],
+          })
+        }
       }
     }
     if (formattedUtxos.length === 0) {
       return undefined
     }
     const sortedUtxos = formattedUtxos.sort((a, b) => b.satoshis - a.satoshis)
-  
+
     return sortedUtxos
   }
-  
+
 
   /**
    * Creates a Partially Signed Bitcoin Transaction (PSBT) to send regular satoshis, signs and broadcasts it.
@@ -1207,8 +1207,8 @@ export class Oyl {
       amountNeededForInscribe = fee
         ? fee + Number(feeForReveal) + inscriptionSats
         : Number(txSize * feeRate < 250 ? 250 : txSize * feeRate) +
-          Number(feeForReveal) +
-          inscriptionSats
+        Number(feeForReveal) +
+        inscriptionSats
       utxosToPayFee = findUtxosToCoverAmount(
         spendUtxos,
         amountNeededForInscribe
@@ -1230,8 +1230,8 @@ export class Oyl {
         amountNeededForInscribe = fee
           ? fee + Number(feeForReveal) + inscriptionSats
           : Number(txSize * feeRate < 250 ? 250 : txSize * feeRate) +
-            Number(feeForReveal) +
-            inscriptionSats
+          Number(feeForReveal) +
+          inscriptionSats
         utxosToPayFee = findUtxosToCoverAmount(
           altSpendUtxos,
           amountNeededForInscribe
@@ -2401,12 +2401,16 @@ export class Oyl {
       const txHash = txSplit[0]
       const txIndex = txSplit[1]
       const script = useableUtxos.selectedUtxos[i].script
+      const txDetails = await this.esploraRpc.getTxInfo(txHash)
 
+      if (!txDetails?.vout || txDetails.vout.length < 1) {
+        throw new Error('Unable to find rune utxo')
+      }
       psbt.addInput({
         hash: txHash,
         index: Number(txIndex),
         witnessUtxo: {
-          value: useableUtxos.selectedUtxos[i].amount,
+          value: txDetails.vout[txIndex].value,
           script: Buffer.from(script, 'hex'),
         },
       })
