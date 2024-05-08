@@ -583,8 +583,10 @@ export class Oyl {
   async getSpendableUtxos(address: string) {
     const addressType = getAddressType(address)
     const utxosResponse: any[] = await this.esploraRpc.getAddressUtxo(address)
+    const utxosResponse: any[] = await this.esploraRpc.getAddressUtxo(address)
     const formattedUtxos: Utxo[] = []
     let filtered = utxosResponse
+
 
     for (const utxo of filtered) {
       const hasInscription = await this.ordRpc.getTxOutput(
@@ -597,7 +599,8 @@ export class Oyl {
       if (
         hasInscription.inscriptions.length === 0 &&
         hasInscription.runes.length === 0 &&
-        hasInscription.value !== 546 && !hasRune?.output
+        hasInscription.value !== 546 &&
+        !hasRune?.output
       ) {
         const transactionDetails = await this.esploraRpc.getTxInfo(utxo.txid)
         const voutEntry = transactionDetails.vout.find(
@@ -1177,14 +1180,15 @@ export class Oyl {
     const psbt = new bitcoin.Psbt({ network: this.network })
 
     const script = createInscriptionScript(
-      toXOnly(tweakSigner(signer.taprootKeyPair).publicKey).toString('hex'),
+      toXOnly(tweakSigner(signer.taprootKeyPair).publicKey),
       content
     )
 
-    const finalScript = bitcoin.script.fromASM(script)
+    const outputScript = bitcoin.script.compile(script)
+
     const inscriberInfo = bitcoin.payments.p2tr({
       internalPubkey: toXOnly(tweakSigner(signer.taprootKeyPair).publicKey),
-      scriptTree: { output: finalScript },
+      scriptTree: { output: outputScript },
       network: this.network,
     })
 
@@ -1275,7 +1279,7 @@ export class Oyl {
     return {
       commitPsbt: formattedPsbt.toBase64(),
       utxosUsedForFees: utxosUsedForFees,
-      script: finalScript,
+      script: outputScript,
     }
   }
 
