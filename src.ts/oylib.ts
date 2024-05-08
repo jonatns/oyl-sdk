@@ -583,7 +583,6 @@ export class Oyl {
   async getSpendableUtxos(address: string) {
     const addressType = getAddressType(address)
     const utxosResponse: any[] = await this.esploraRpc.getAddressUtxo(address)
-    const utxosResponse: any[] = await this.esploraRpc.getAddressUtxo(address)
     const formattedUtxos: Utxo[] = []
     let filtered = utxosResponse
 
