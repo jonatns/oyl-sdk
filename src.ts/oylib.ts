@@ -672,12 +672,10 @@ export class Oyl {
 
     spendUtxos = await this.getSpendableUtxos(spendAddress)
 
-    if (!spendUtxos) {
-      throw new Error('Insufficient Balance')
-    }
-    if (altSpendAddress) {
+    if (!spendUtxos && altSpendAddress) {
       altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
-    }
+      if (!altSpendUtxos) { throw new Error('No utxos to spend available') }
+    } 
 
     if (!feeRate) {
       feeRate = (await this.esploraRpc.getFeeEstimates())['1']
@@ -1167,14 +1165,10 @@ export class Oyl {
     let altSpendUtxos: Utxo[] | undefined
 
     spendUtxos = await this.getSpendableUtxos(spendAddress)
-
-    if (!spendUtxos) {
-      throw new Error('No utxos for this address')
-    }
-
-    if (altSpendAddress) {
+    if (!spendUtxos && altSpendAddress) {
       altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
-    }
+      if (!altSpendUtxos) { throw new Error('No utxos to spend available') }
+    } 
 
     const psbt = new bitcoin.Psbt({ network: this.network })
 
@@ -1589,13 +1583,10 @@ export class Oyl {
 
     spendUtxos = await this.getSpendableUtxos(spendAddress)
 
-    if (!spendUtxos) {
-      throw new Error('No utxos for this address')
-    }
-
-    if (altSpendAddress) {
+    if (!spendUtxos && altSpendAddress) {
       altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
-    }
+      if (!altSpendUtxos) { throw new Error('No utxos to spend available') }
+    } 
 
     const utxoInfo = await this.esploraRpc.getTxInfo(utxoId)
 
@@ -1798,11 +1789,9 @@ export class Oyl {
 
     spendUtxos = await this.getSpendableUtxos(spendAddress)
 
-    if (!spendUtxos) {
-      throw new Error('No utxos for this address')
-    }
-    if (altSpendAddress) {
+    if (!spendUtxos && altSpendAddress) {
       altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
+      if (!altSpendUtxos) { throw new Error('No utxos to spend available') }
     }
 
     const collectibleData = await this.getCollectibleById(inscriptionId)
@@ -1942,12 +1931,10 @@ export class Oyl {
 
     spendUtxos = await this.getSpendableUtxos(spendAddress)
 
-    if (!spendUtxos) {
-      throw new Error('Insufficient Balance')
-    }
-    if (altSpendAddress) {
+    if (!spendUtxos && altSpendAddress) {
       altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
-    }
+      if (!altSpendUtxos) { throw new Error('No utxos to spend available') }
+    } 
 
     if (!feeRate) {
       feeRate = (await this.esploraRpc.getFeeEstimates())['1']
@@ -1982,13 +1969,10 @@ export class Oyl {
 
     spendUtxos = await this.getSpendableUtxos(spendAddress)
 
-    if (!spendUtxos) {
-      throw new Error('Insufficient Balance')
-    }
-
-    if (altSpendAddress) {
+    if (!spendUtxos && altSpendAddress) {
       altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
-    }
+      if (!altSpendUtxos) { throw new Error('No utxos to spend available') }
+    } 
 
     if (!feeRate) {
       feeRate = (await this.esploraRpc.getFeeEstimates())['1']
@@ -2049,14 +2033,10 @@ export class Oyl {
     let altSpendUtxos: Utxo[] | undefined
 
     spendUtxos = await this.getSpendableUtxos(spendAddress)
-
-    if (!spendUtxos) {
-      throw new Error('Insufficient Balance')
-    }
-
-    if (altSpendAddress) {
+    if (!spendUtxos && altSpendAddress) {
       altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
-    }
+      if (!altSpendUtxos) { throw new Error('No utxos to spend available') }
+    } 
 
     if (!feeRate) {
       feeRate = (await this.esploraRpc.getFeeEstimates())['1']
@@ -2118,12 +2098,10 @@ export class Oyl {
 
     spendUtxos = await this.getSpendableUtxos(spendAddress)
 
-    if (!spendUtxos) {
-      throw new Error('Insufficient Balance')
-    }
-    if (altSpendAddress) {
+    if (!spendUtxos && altSpendAddress) {
       altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
-    }
+      if (!altSpendUtxos) { throw new Error('No utxos to spend available') }
+    } 
 
     if (!feeRate) {
       feeRate = (await this.esploraRpc.getFeeEstimates())['1']
@@ -2366,13 +2344,10 @@ export class Oyl {
 
     spendUtxos = await this.getSpendableUtxos(spendAddress)
 
-    if (!spendUtxos) {
-      throw new Error('No utxos for this address')
-    }
-
-    if (altSpendAddress) {
+    if (!spendUtxos && altSpendAddress) {
       altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
-    }
+      if (!altSpendUtxos) { throw new Error('No utxos to spend available') }
+    } 
 
     const psbt = new bitcoin.Psbt({ network: this.network })
 
@@ -2635,13 +2610,10 @@ export class Oyl {
 
     spendUtxos = await this.getSpendableUtxos(spendAddress)
 
-    if (!spendUtxos) {
-      throw new Error('No utxos for this address')
-    }
-
-    if (altSpendAddress) {
+    if (!spendUtxos && altSpendAddress) {
       altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
-    }
+      if (!altSpendUtxos) { throw new Error('No utxos to spend available') }
+    } 
 
     const spendableUtxos = await filterTaprootUtxos({
       taprootUtxos: spendUtxos,
