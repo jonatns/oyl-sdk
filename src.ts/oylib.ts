@@ -2491,9 +2491,23 @@ export class Oyl {
     })
     const output = { script: script, value: 0 }
     psbt.addOutput(output)
+    let fromPubKey = ''
+    if (fromAddress == spendAddress) {
+      fromPubKey = spendPubKey
+    } else if (fromAddress == altSpendAddress) {
+      fromPubKey = altSpendPubKey
+    }
+    if (fromPubKey === '')
+      throw new Error("No keypair to match sender's address")
+
+    const partiallyFormattedPsbtTx = await formatInputsToSign({
+      _psbt: psbt,
+      senderPublicKey: fromPubKey,
+      network: this.network,
+    })
 
     const formattedPsbt: bitcoin.Psbt = await formatInputsToSign({
-      _psbt: psbt,
+      _psbt: partiallyFormattedPsbtTx,
       senderPublicKey: usingAlt ? altSpendPubKey : spendPubKey,
       network: this.network,
     })
