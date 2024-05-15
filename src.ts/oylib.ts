@@ -658,78 +658,82 @@ export class Oyl {
     altSpendAddress?: string
     signer: Signer
   }) {
-    const addressType = getAddressType(toAddress)
-    if (addressTypeMap[addressType] === 'p2pkh') {
-      throw new Error('Sending bitcoin to legacy address is not supported')
-    }
-    if (addressTypeMap[addressType] === 'p2sh') {
-      throw new Error(
-        'Sending bitcoin to a nested-segwit address is not supported'
-      )
-    }
-    let spendUtxos: Utxo[] | undefined
-    let altSpendUtxos: Utxo[] | undefined
-
-    spendUtxos = await this.getSpendableUtxos(spendAddress)
-
-    if (!spendUtxos && altSpendAddress) {
-      altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
-      if (!altSpendUtxos) {
-        throw new Error('No utxos to spend available')
+    try {
+      const addressType = getAddressType(toAddress)
+      if (addressTypeMap[addressType] === 'p2pkh') {
+        throw new Error('Sending bitcoin to legacy address is not supported')
       }
+      if (addressTypeMap[addressType] === 'p2sh') {
+        throw new Error(
+          'Sending bitcoin to a nested-segwit address is not supported'
+        )
+      }
+      let spendUtxos: Utxo[] | undefined
+      let altSpendUtxos: Utxo[] | undefined
+
+      spendUtxos = await this.getSpendableUtxos(spendAddress)
+
+      if (!spendUtxos && altSpendAddress) {
+        altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
+        if (!altSpendUtxos) {
+          throw new Error('No utxos to spend available')
+        }
+      }
+
+      if (!feeRate) {
+        feeRate = (await this.esploraRpc.getFeeEstimates())['1']
+      }
+
+      const { rawPsbt } = await this.createBtcTx({
+        toAddress,
+        spendPubKey,
+        feeRate,
+        amount,
+        network: this.network,
+        spendUtxos,
+        spendAddress,
+        altSpendPubKey,
+        altSpendUtxos,
+      })
+      const { signedPsbt: segwitSigned } = await signer.signAllSegwitInputs({
+        rawPsbt: rawPsbt,
+        finalize: true,
+      })
+
+      const { raw } = await signer.signAllTaprootInputs({
+        rawPsbt: segwitSigned,
+        finalize: true,
+      })
+
+      const fee = Math.ceil(raw.extractTransaction().weight() / 4) * feeRate
+
+      const { rawPsbt: finalRawPsbt } = await this.createBtcTx({
+        toAddress,
+        spendPubKey,
+        feeRate,
+        amount,
+        network: this.network,
+        spendUtxos,
+        spendAddress,
+        altSpendPubKey,
+        altSpendUtxos,
+        fee,
+      })
+
+      const { signedPsbt: segwitSigned1 } = await signer.signAllSegwitInputs({
+        rawPsbt: finalRawPsbt,
+        finalize: true,
+      })
+
+      const { signedPsbt: taprootSigned1 } = await signer.signAllTaprootInputs({
+        rawPsbt: segwitSigned1,
+        finalize: true,
+      })
+
+      return this.pushPsbt({ psbtBase64: taprootSigned1 })
+    } catch (error) {
+      throw new OylTransactionError(error)
     }
-
-    if (!feeRate) {
-      feeRate = (await this.esploraRpc.getFeeEstimates())['1']
-    }
-
-    const { rawPsbt } = await this.createBtcTx({
-      toAddress,
-      spendPubKey,
-      feeRate,
-      amount,
-      network: this.network,
-      spendUtxos,
-      spendAddress,
-      altSpendPubKey,
-      altSpendUtxos,
-    })
-    const { signedPsbt: segwitSigned } = await signer.signAllSegwitInputs({
-      rawPsbt: rawPsbt,
-      finalize: true,
-    })
-
-    const { raw } = await signer.signAllTaprootInputs({
-      rawPsbt: segwitSigned,
-      finalize: true,
-    })
-
-    const fee = Math.ceil(raw.extractTransaction().weight() / 4) * feeRate
-
-    const { rawPsbt: finalRawPsbt } = await this.createBtcTx({
-      toAddress,
-      spendPubKey,
-      feeRate,
-      amount,
-      network: this.network,
-      spendUtxos,
-      spendAddress,
-      altSpendPubKey,
-      altSpendUtxos,
-      fee,
-    })
-
-    const { signedPsbt: segwitSigned1 } = await signer.signAllSegwitInputs({
-      rawPsbt: finalRawPsbt,
-      finalize: true,
-    })
-
-    const { signedPsbt: taprootSigned1 } = await signer.signAllTaprootInputs({
-      rawPsbt: segwitSigned1,
-      finalize: true,
-    })
-
-    return this.pushPsbt({ psbtBase64: taprootSigned1 })
   }
 
   async createBtcTx({
@@ -1630,7 +1634,7 @@ export class Oyl {
       utxosToPayFee = findUtxosToCoverAmount(availableUtxos, finalFee)
     }
 
-    if (!utxosToPayFee) {
+    if (!utxosToPayFee && altSpendUtxos) {
       let availableUtxos = altSpendUtxos.filter(
         (utxo: any) => !utxosUsedForFees.includes(utxo.txId)
       )
@@ -1646,11 +1650,13 @@ export class Oyl {
         utxosToPayFee = findUtxosToCoverAmount(availableUtxos, finalFee)
       }
 
-      if (!utxosToPayFee) {
-        throw new Error('Insufficient Balance')
-      }
       usingAlt = true
     }
+
+    if (!utxosToPayFee) {
+      throw new Error('Insufficient Balance')
+    }
+
     const amountGathered = calculateAmountGatheredUtxo(
       utxosToPayFee.selectedUtxos
     )
@@ -1711,57 +1717,61 @@ export class Oyl {
     signer: Signer
     inscriptionId: string
   }) {
-    if (!feeRate) {
-      feeRate = (await this.esploraRpc.getFeeEstimates())['1']
+    try {
+      if (!feeRate) {
+        feeRate = (await this.esploraRpc.getFeeEstimates())['1']
+      }
+
+      const { rawPsbt } = await this.createOrdCollectibleTx({
+        inscriptionId,
+        fromAddress,
+        fromPubKey,
+        spendPubKey,
+        spendAddress,
+        toAddress,
+        altSpendAddress,
+        altSpendPubKey,
+        feeRate,
+      })
+
+      const { signedPsbt: segwitSigned } = await signer.signAllSegwitInputs({
+        rawPsbt: rawPsbt,
+        finalize: true,
+      })
+
+      const { raw } = await signer.signAllTaprootInputs({
+        rawPsbt: segwitSigned,
+        finalize: true,
+      })
+
+      const fee = Math.ceil(raw.extractTransaction().virtualSize()) * feeRate
+      const { rawPsbt: finalRawPsbt } = await this.createOrdCollectibleTx({
+        inscriptionId,
+        fromAddress,
+        fromPubKey,
+        spendPubKey,
+        spendAddress,
+        toAddress,
+        altSpendAddress,
+        altSpendPubKey,
+        feeRate,
+        fee,
+      })
+
+      const { signedPsbt: segwitSigned1 } = await signer.signAllSegwitInputs({
+        rawPsbt: finalRawPsbt,
+        finalize: true,
+      })
+
+      const { signedPsbt: taprootSigned1 } = await signer.signAllTaprootInputs({
+        rawPsbt: segwitSigned1,
+        finalize: true,
+      })
+
+      return this.pushPsbt({ psbtBase64: taprootSigned1 })
+    } catch (error) {
+      throw new OylTransactionError(error)
     }
-
-    const { rawPsbt } = await this.createOrdCollectibleTx({
-      inscriptionId,
-      fromAddress,
-      fromPubKey,
-      spendPubKey,
-      spendAddress,
-      toAddress,
-      altSpendAddress,
-      altSpendPubKey,
-      feeRate,
-    })
-
-    const { signedPsbt: segwitSigned } = await signer.signAllSegwitInputs({
-      rawPsbt: rawPsbt,
-      finalize: true,
-    })
-
-    const { raw } = await signer.signAllTaprootInputs({
-      rawPsbt: segwitSigned,
-      finalize: true,
-    })
-
-    const fee = Math.ceil(raw.extractTransaction().virtualSize()) * feeRate
-    const { rawPsbt: finalRawPsbt } = await this.createOrdCollectibleTx({
-      inscriptionId,
-      fromAddress,
-      fromPubKey,
-      spendPubKey,
-      spendAddress,
-      toAddress,
-      altSpendAddress,
-      altSpendPubKey,
-      feeRate,
-      fee,
-    })
-
-    const { signedPsbt: segwitSigned1 } = await signer.signAllSegwitInputs({
-      rawPsbt: finalRawPsbt,
-      finalize: true,
-    })
-
-    const { signedPsbt: taprootSigned1 } = await signer.signAllTaprootInputs({
-      rawPsbt: segwitSigned1,
-      finalize: true,
-    })
-
-    return this.pushPsbt({ psbtBase64: taprootSigned1 })
   }
 
   async createOrdCollectibleTx({
@@ -1876,11 +1886,13 @@ export class Oyl {
           fee ? fee : newEstimate
         )
       }
-      if (!utxosToSend) {
-        throw new Error('Insufficient Balance')
-      }
       usingAlt = true
     }
+
+    if (!utxosToSend) {
+      throw new Error('Insufficient Balance')
+    }
+
     const amountGathered = calculateAmountGatheredUtxo(
       utxosToSend.selectedUtxos
     )
@@ -2267,70 +2279,74 @@ export class Oyl {
     runeId?: string
     amount?: number
   }) {
-    if (!feeRate) {
-      feeRate = (await this.esploraRpc.getFeeEstimates())['1']
-    }
-
-    const runeBalances: any[] = await this.apiClient.getRuneBalance({
-      address: fromAddress,
-    })
-
-    for await (const rune of runeBalances) {
-      if (amount > rune.total_balance && runeId === rune.rune_id) {
-        throw new Error('Insufficient Balance')
+    try {
+      if (!feeRate) {
+        feeRate = (await this.esploraRpc.getFeeEstimates())['1']
       }
+
+      const runeBalances: any[] = await this.apiClient.getRuneBalance({
+        address: fromAddress,
+      })
+
+      for await (const rune of runeBalances) {
+        if (amount > rune.total_balance && runeId === rune.rune_id) {
+          throw new Error('Insufficient Balance')
+        }
+      }
+
+      const { sendPsbt } = await this.runeSendTx({
+        runeId,
+        fromAddress,
+        toAddress,
+        amount,
+        spendAddress,
+        spendPubKey,
+        altSpendPubKey,
+        altSpendAddress,
+        feeRate,
+      })
+
+      const { signedPsbt: segwitSigned } = await signer.signAllSegwitInputs({
+        rawPsbt: sendPsbt,
+        finalize: true,
+      })
+
+      const { raw } = await signer.signAllTaprootInputs({
+        rawPsbt: segwitSigned,
+        finalize: true,
+      })
+
+      const fee = Math.ceil(raw.extractTransaction().weight() / 4) * feeRate
+
+      const { sendPsbt: finalSendPsbt } = await this.runeSendTx({
+        runeId,
+        fromAddress,
+        toAddress,
+        amount,
+        spendAddress,
+        spendPubKey,
+        altSpendPubKey,
+        altSpendAddress,
+        feeRate,
+        fee,
+      })
+
+      const { signedPsbt: segwitSigned1 } = await signer.signAllSegwitInputs({
+        rawPsbt: finalSendPsbt,
+        finalize: true,
+      })
+
+      const { signedPsbt: taprootSigned1 } = await signer.signAllTaprootInputs({
+        rawPsbt: segwitSigned1,
+        finalize: true,
+      })
+
+      return await this.pushPsbt({
+        psbtBase64: taprootSigned1,
+      })
+    } catch (error) {
+      throw new OylTransactionError(error)
     }
-
-    const { sendPsbt } = await this.runeSendTx({
-      runeId,
-      fromAddress,
-      toAddress,
-      amount,
-      spendAddress,
-      spendPubKey,
-      altSpendPubKey,
-      altSpendAddress,
-      feeRate,
-    })
-
-    const { signedPsbt: segwitSigned } = await signer.signAllSegwitInputs({
-      rawPsbt: sendPsbt,
-      finalize: true,
-    })
-
-    const { raw } = await signer.signAllTaprootInputs({
-      rawPsbt: segwitSigned,
-      finalize: true,
-    })
-
-    const fee = Math.ceil(raw.extractTransaction().weight() / 4) * feeRate
-
-    const { sendPsbt: finalSendPsbt } = await this.runeSendTx({
-      runeId,
-      fromAddress,
-      toAddress,
-      amount,
-      spendAddress,
-      spendPubKey,
-      altSpendPubKey,
-      altSpendAddress,
-      feeRate,
-      fee,
-    })
-
-    const { signedPsbt: segwitSigned1 } = await signer.signAllSegwitInputs({
-      rawPsbt: finalSendPsbt,
-      finalize: true,
-    })
-
-    const { signedPsbt: taprootSigned1 } = await signer.signAllTaprootInputs({
-      rawPsbt: segwitSigned1,
-      finalize: true,
-    })
-
-    return await this.pushPsbt({
-      psbtBase64: taprootSigned1,
-    })
   }
 
   async runeSendTx({
