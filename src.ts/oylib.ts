@@ -2380,14 +2380,20 @@ export class Oyl {
 
     for (const rune of runeUtxoOutpoints) {
       const index = rune.rune_ids.indexOf(runeId)
-      const tx = 
-      this.esploraRpc.getTxInfo()
       if (index !== -1) {
+        const txSplit = rune.output.split(':')
+        const txHash = txSplit[0]
+        const txIndex = txSplit[1]
+        const txDetails = await this.esploraRpc.getTxInfo(txHash)
+        if (!txDetails?.vout || txDetails.vout.length < 1) {
+          throw new Error('Unable to find rune utxo')
+        }
+        const satoshis = txDetails.vout[txIndex].value
         runeUtxos.push({
           script: rune.pkscript,
           outpointId: rune.output,
           amount: rune.balances[index],
-          satoshis: 
+          satoshis: satoshis,
         })
       }
     }
@@ -2468,7 +2474,7 @@ export class Oyl {
     const feeAmountGathered = calculateAmountGatheredUtxo(
       utxosToPayFee.selectedUtxos
     )
-    const changeAmount = feeAmountGathered - (feeForSend + inscriptionSats)
+    const changeAmount = feeAmountGathered - feeForSend
 
     for (let i = 0; i < utxosToPayFee.selectedUtxos.length; i++) {
       psbt.addInput({
@@ -2482,7 +2488,7 @@ export class Oyl {
     }
     psbt.addOutput({
       address: spendAddress,
-      value: changeAmount + useableUtxos.totalSatoshis,
+      value: changeAmount + (useableUtxos.totalSatoshis - inscriptionSats),
     })
 
     psbt.addOutput({
