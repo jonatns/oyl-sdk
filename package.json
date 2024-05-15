@@ -18,7 +18,7 @@
   "private": false,
   "resolutions": {
     "crypto-js": "^4.2.0",
-    "jsrasign": "^11.0.0"
+    "jsrsasign": "^11.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.18.8",
