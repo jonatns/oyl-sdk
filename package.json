@@ -16,6 +16,10 @@
   "author": "Oyl Dynamics",
   "license": "MIT",
   "private": false,
+  "resolutions": {
+    "crypto-js": "^4.2.0",
+    "jsrasign": "^11.0.0"
+  },
   "devDependencies": {
     "@types/node": "^18.18.8",
     "@types/yargs": "^17.0.32",
