@@ -551,8 +551,9 @@ export async function runCLI() {
       return sendInscriptionResponse
     case 'send-rune':
       const sendRuneResponse = await networkConfig.wallet.sendRune({
-        runeId: '',
-        toAddress: networkConfig.destinationTaprootAddress,
+        runeId: '840000:142',
+        toAddress:
+          'bc1pstyemhl9n2hydg079rgrh8jhj9s7zdxh2g5u8apwk0c8yc9ge4eqkunss9',
         signer,
         amount: 100,
         feeRate: 14,
