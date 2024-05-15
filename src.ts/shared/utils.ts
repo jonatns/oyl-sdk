@@ -402,14 +402,29 @@ export const signInputs = async (
   return psbt
 }
 
-export const createInscriptionScript = (pubKey: string, content: any) => {
+export const createInscriptionScript = (
+  pubKey: Buffer,
+  content: string
+): bitcoin.Stack => {
   const mimeType = 'text/plain;charset=utf-8'
   const textEncoder = new TextEncoder()
-  const mimeTypeHex = Buffer.from(textEncoder.encode(mimeType)).toString('hex')
-  const contentHex = Buffer.from(textEncoder.encode(content)).toString('hex')
-  const markerHex = '6f7264'
+  const mimeTypeBuff = Buffer.from(textEncoder.encode(mimeType))
+  const contentBuff = Buffer.from(textEncoder.encode(content))
+  const markerBuff = Buffer.from(textEncoder.encode('ord'))
 
-  return `${pubKey} OP_CHECKSIG OP_0 OP_IF ${markerHex} 01 ${mimeTypeHex} OP_0 ${contentHex} OP_ENDIF`
+  return [
+    pubKey,
+    bitcoin.opcodes.OP_CHECKSIG,
+    bitcoin.opcodes.OP_0,
+    bitcoin.opcodes.OP_IF,
+    markerBuff,
+    1,
+    1,
+    mimeTypeBuff,
+    bitcoin.opcodes.OP_0,
+    contentBuff,
+    bitcoin.opcodes.OP_ENDIF,
+  ]
 }
 
 function encodeToBase26(inputString: string): string {
