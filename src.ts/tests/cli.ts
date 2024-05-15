@@ -186,11 +186,11 @@ const config = {
   [MAINNET]: {
     mnemonic: process.env.MAINNET_MNEMONIC,
     wallet: tapWallet as Oyl,
-    segwitPrivateKey: process.env.TESTNET_SEGWIT_PRIVATEKEY,
-    taprootPrivateKey: process.env.TESTNET_TAPROOT_PRIVATEKEY,
+    segwitPrivateKey: process.env.MAINNET_SEGWIT_PRIVATEKEY,
+    taprootPrivateKey: process.env.MAINNET_TAPROOT_PRIVATEKEY,
     taprootAddress:
       'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-    taprootPubkey:
+    taprootPubKey:
       '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
     segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
     segwitPubKey:
@@ -225,7 +225,7 @@ const argv = yargs(hideBin(process.argv))
     alias: 'n',
     describe: 'Choose network type',
     choices: ['mainnet', 'testnet'],
-    default: 'testnet',
+    default: 'mainnet',
   })
   .command('load', 'Load RPC command', {})
   .command('send', 'Send btc', (yargs) => {
@@ -435,7 +435,7 @@ const argv = yargs(hideBin(process.argv))
 
 export async function runCLI() {
   const [command] = argv._
-  const { _, network = TESTNET } = yargs.argv as YargsArguments
+  const { _, network = MAINNET } = yargs.argv as YargsArguments
   const options = Object.assign({}, yargs.argv) as YargsArguments
   const networkConfig = config[network]
 
@@ -446,7 +446,7 @@ export async function runCLI() {
   })
 
   const { to, amount, feeRate, ticker, psbtBase64, price } = options
-  const signer: Signer = new Signer(bitcoin.networks.testnet, {
+  const signer: Signer = new Signer(bitcoin.networks.bitcoin, {
     segwitPrivateKey: networkConfig.segwitPrivateKey,
     taprootPrivateKey: networkConfig.taprootPrivateKey,
   })
@@ -458,8 +458,8 @@ export async function runCLI() {
     case 'send':
       const res = await networkConfig.wallet.sendBtc({
         toAddress:
-          'tb1pdz8aul7226284e57e9yn4mpyd8f52zpxc7z0gz392e6amrf0s4uq6s3sw6',
-        feeRate: 67,
+          'bc1p948d2jqudflcu8ze2qlme29t63u9wpzvkdxamq545xvfg620mfjs48llv0',
+        feeRate: 14,
         amount: 50,
         spendAddress: networkConfig.taprootAddress,
         spendPubKey: networkConfig.taprootPubKey,

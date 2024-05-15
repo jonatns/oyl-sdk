@@ -210,14 +210,7 @@ export declare class Oyl {
         spendPubKey: string;
         altSpendAddress?: string;
         signer: Signer;
-    }): Promise<{
-        txId: string;
-        rawTx: string;
-        size: any;
-        weight: any;
-        fee: number;
-        satsPerVByte: string;
-    }>;
+    }): Promise<void>;
     createBtcTx({ toAddress, spendPubKey, feeRate, amount, network, spendUtxos, spendAddress, altSpendPubKey, altSpendUtxos, fee, }: {
         toAddress: string;
         spendPubKey: string;
