@@ -2036,9 +2036,10 @@ export class Oyl {
         fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
         utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, fee)
       }
-      if (!utxosToSend) {
-        throw new Error('Insufficient Balance')
-      }
+    }
+
+    if (!utxosToSend) {
+      throw new Error('Insufficient Balance')
     }
 
     const sendTxFee = fee
@@ -2102,9 +2103,10 @@ export class Oyl {
         fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
         utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, fee)
       }
-      if (!utxosToSend) {
-        throw new Error('Insufficient Balance')
-      }
+    }
+
+    if (!utxosToSend) {
+      throw new Error('Insufficient Balance')
     }
 
     const sendTxFee = fee
@@ -2240,10 +2242,10 @@ export class Oyl {
         fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
         utxosToSend = findUtxosToCoverAmount(availableUtxos, fee)
       }
+    }
 
-      if (!utxosToSend) {
-        throw new Error('Insufficient Balance')
-      }
+    if (!utxosToSend) {
+      throw new Error('Insufficient Balance')
     }
 
     const commitTxFee =
