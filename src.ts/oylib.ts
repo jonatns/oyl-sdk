@@ -2498,13 +2498,13 @@ export class Oyl {
     })
 
     psbt.addOutput({
-      address: spendAddress,
-      value: changeAmount + (useableUtxos.totalSatoshis - inscriptionSats),
+      value: inscriptionSats,
+      address: toAddress,
     })
 
     psbt.addOutput({
-      value: inscriptionSats,
-      address: toAddress,
+      address: spendAddress,
+      value: changeAmount + (useableUtxos.totalSatoshis - inscriptionSats),
     })
 
     const script = createRuneSendScript({
