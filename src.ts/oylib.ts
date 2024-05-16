@@ -699,14 +699,17 @@ export class Oyl {
       finalize: true,
     })
 
-    const { signedPsbt: taprootSigned } = await signer.signAllTaprootInputs({
+    const { raw } = await signer.signAllTaprootInputs({
       rawPsbt: segwitSigned,
       finalize: true,
     })
+    const vsize = (
+      await this.sandshrewBtcClient.bitcoindRpc.decodeRawTransaction(
+        raw.extractTransaction().toHex()
+      )
+    ).vsize
 
-    const fee =
-      (await this.sandshrewBtcClient.bitcoindRpc.decodePSBT(taprootSigned)).tx
-        .vsize * feeRate
+    const fee = vsize * feeRate
 
     const { rawPsbt: finalRawPsbt } = await this.createBtcTx({
       toAddress,
