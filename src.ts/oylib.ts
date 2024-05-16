@@ -975,6 +975,7 @@ export class Oyl {
     }
     const txId = extractedTx.getId()
     const rawTx = extractedTx.toHex()
+
     const [result] =
       await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([rawTx])
 
@@ -2298,11 +2299,10 @@ export class Oyl {
       finalize: true,
     })
 
-    const { signedPsbt: taprootSigned, raw } =
-      await signer.signAllTaprootInputs({
-        rawPsbt: segwitSigned,
-        finalize: true,
-      })
+    const { raw } = await signer.signAllTaprootInputs({
+      rawPsbt: segwitSigned,
+      finalize: true,
+    })
 
     const vsize = (
       await this.sandshrewBtcClient.bitcoindRpc.decodeRawTransaction(
@@ -2310,7 +2310,6 @@ export class Oyl {
       )
     ).vsize
     const fee = vsize * feeRate
-    console.log(vsize, fee)
 
     const { sendPsbt: finalSendPsbt } = await this.runeSendTx({
       runeId,
@@ -2330,22 +2329,14 @@ export class Oyl {
       finalize: true,
     })
 
-    const { signedPsbt: taprootSigned1, raw: raw2 } =
-      await signer.signAllTaprootInputs({
-        rawPsbt: segwitSigned1,
-        finalize: true,
-      })
-    const vsize2 = (
-      await this.sandshrewBtcClient.bitcoindRpc.decodeRawTransaction(
-        raw2.extractTransaction().toHex()
-      )
-    ).vsize
-    const fee2 = vsize * feeRate
-    console.log(vsize2, fee2, taprootSigned1)
+    const { signedPsbt: taprootSigned1 } = await signer.signAllTaprootInputs({
+      rawPsbt: segwitSigned1,
+      finalize: true,
+    })
 
-    // return await this.pushPsbt({
-    //   psbtBase64: taprootSigned1,
-    // })
+    return await this.pushPsbt({
+      psbtBase64: taprootSigned1,
+    })
   }
 
   async runeSendTx({

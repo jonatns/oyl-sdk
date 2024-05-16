@@ -503,7 +503,14 @@ export declare class Oyl {
         feeRate?: number;
         runeId?: string;
         amount?: number;
-    }): Promise<void>;
+    }): Promise<{
+        txId: string;
+        rawTx: string;
+        size: any;
+        weight: any;
+        fee: number;
+        satsPerVByte: string;
+    }>;
     runeSendTx({ runeId, fromAddress, toAddress, amount, spendAddress, spendPubKey, altSpendPubKey, altSpendAddress, feeRate, fee, }: {
         runeId: string;
         fromAddress: string;
