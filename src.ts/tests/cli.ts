@@ -149,7 +149,7 @@ const INSCRIPTION_PREPARE_SAT_AMOUNT = 4000
 // Define an interface to represent the expected structure of the arguments.
 interface YargsArguments {
   _: string[]
-  network?: 'testnet' | 'regtest'
+  network?: 'testnet' | 'regtest' | 'mainnet'
   to?: string
   ticker?: string
   amount?: number
@@ -176,6 +176,7 @@ const testWallet = new Oyl({
 })
 
 testWallet.apiClient.setAuthToken(process.env.API_TOKEN)
+tapWallet.apiClient.setAuthToken(process.env.API_TOKEN)
 
 const XVERSE = 'xverse'
 const UNISAT = 'unisat'
@@ -186,18 +187,18 @@ const config = {
   [MAINNET]: {
     mnemonic: process.env.MAINNET_MNEMONIC,
     wallet: tapWallet as Oyl,
-    segwitPrivateKey: process.env.TESTNET_SEGWIT_PRIVATEKEY,
-    taprootPrivateKey: process.env.TESTNET_TAPROOT_PRIVATEKEY,
+    segwitPrivateKey: process.env.MAINNET_SEGWIT_PRIVATEKEY,
+    taprootPrivateKey: process.env.MAINNET_TAPROOT_PRIVATEKEY,
     taprootAddress:
       'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
-    taprootPubkey:
+    taprootPubKey:
       '02ebb592b5f1a2450766487d451f3a6fb2a584703ef64c6acb613db62797f943be',
-    segwitAddress: '3By5YxrxR7eE32ANZSA1Cw45Bf7f68nDic',
+    segwitAddress: 'bc1qac6u4rxej8n275tmk8k4aeadxulwlxxa72dxhr',
     segwitPubKey:
-      '03ad1e146771ae624b49b463560766f5950a9341964a936ae6bf1627fda8d3b83b',
+      '03ea758e8b0d4da67e1f784d7c01cbec13e7f109fe12093332b7df31d65b308bad',
     destinationTaprootAddress:
       'bc1p5pvvfjtnhl32llttswchrtyd9mdzd3p7yps98tlydh2dm6zj6gqsfkmcnd',
-    feeRate: 25,
+    feeRate: 15,
   },
   [TESTNET]: {
     mnemonic: process.env.TESTNET_MNEMONIC,
@@ -225,7 +226,7 @@ const argv = yargs(hideBin(process.argv))
     alias: 'n',
     describe: 'Choose network type',
     choices: ['mainnet', 'testnet'],
-    default: 'testnet',
+    default: 'mainnet',
   })
   .command('load', 'Load RPC command', {})
   .command('send', 'Send btc', (yargs) => {
@@ -435,7 +436,7 @@ const argv = yargs(hideBin(process.argv))
 
 export async function runCLI() {
   const [command] = argv._
-  const { _, network = TESTNET } = yargs.argv as YargsArguments
+  const { _, network } = yargs.argv as YargsArguments
   const options = Object.assign({}, yargs.argv) as YargsArguments
   const networkConfig = config[network]
 
@@ -446,7 +447,7 @@ export async function runCLI() {
   })
 
   const { to, amount, feeRate, ticker, psbtBase64, price } = options
-  const signer: Signer = new Signer(bitcoin.networks.testnet, {
+  const signer: Signer = new Signer(bitcoin.networks.bitcoin, {
     segwitPrivateKey: networkConfig.segwitPrivateKey,
     taprootPrivateKey: networkConfig.taprootPrivateKey,
   })
@@ -458,9 +459,9 @@ export async function runCLI() {
     case 'send':
       const res = await networkConfig.wallet.sendBtc({
         toAddress:
-          'tb1pdz8aul7226284e57e9yn4mpyd8f52zpxc7z0gz392e6amrf0s4uq6s3sw6',
-        feeRate: 67,
-        amount: 50,
+          'bc1p948d2jqudflcu8ze2qlme29t63u9wpzvkdxamq545xvfg620mfjs48llv0',
+        feeRate: 16,
+        amount: 100,
         spendAddress: networkConfig.taprootAddress,
         spendPubKey: networkConfig.taprootPubKey,
         altSpendAddress: networkConfig.segwitAddress,
@@ -551,17 +552,17 @@ export async function runCLI() {
       return sendInscriptionResponse
     case 'send-rune':
       const sendRuneResponse = await networkConfig.wallet.sendRune({
-        runeId: '2585328:8',
+        runeId: '840000:3',
         toAddress:
-          'tb1pdykkv4ldhmw2n9mpehffjk7dszltheqkhjtg3hj7p97u33jja8cq4fuph7',
+          'bc1pstyemhl9n2hydg079rgrh8jhj9s7zdxh2g5u8apwk0c8yc9ge4eqkunss9',
         signer,
-        amount: 400,
-        feeRate: 40,
+        amount: 100,
+        feeRate: 15,
         fromAddress: networkConfig.taprootAddress,
-        spendAddress: networkConfig.taprootAddress,
-        spendPubKey: networkConfig.taprootPubKey,
-        altSpendPubKey: networkConfig.segwitPubKey,
-        altSpendAddress: networkConfig.segwitAddress,
+        spendAddress: networkConfig.segwitAddress,
+        spendPubKey: networkConfig.segwitPubKey,
+        altSpendPubKey: networkConfig.taprootPubKey,
+        altSpendAddress: networkConfig.taprootAddress,
       })
       console.log(sendRuneResponse)
       return sendRuneResponse

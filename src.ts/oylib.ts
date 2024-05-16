@@ -660,9 +660,6 @@ export class Oyl {
   }) {
     try {
       const addressType = getAddressType(toAddress)
-      if (addressTypeMap[addressType] === 'p2pkh') {
-        throw new Error('Sending bitcoin to legacy address is not supported')
-      }
       if (addressTypeMap[addressType] === 'p2sh') {
         throw new Error(
           'Sending bitcoin to a nested-segwit address is not supported'
@@ -704,8 +701,13 @@ export class Oyl {
         rawPsbt: segwitSigned,
         finalize: true,
       })
+      const vsize = (
+        await this.sandshrewBtcClient.bitcoindRpc.decodeRawTransaction(
+          raw.extractTransaction().toHex()
+        )
+      ).vsize
 
-      const fee = Math.ceil(raw.extractTransaction().weight() / 4) * feeRate
+      const fee = vsize * feeRate
 
       const { rawPsbt: finalRawPsbt } = await this.createBtcTx({
         toAddress,
@@ -977,6 +979,7 @@ export class Oyl {
     }
     const txId = extractedTx.getId()
     const rawTx = extractedTx.toHex()
+
     const [result] =
       await this.sandshrewBtcClient.bitcoindRpc.testMemPoolAccept([rawTx])
 
@@ -2070,7 +2073,7 @@ export class Oyl {
     if (!feeRate) {
       feeRate = (await this.esploraRpc.getFeeEstimates())['1']
     }
-    const sendTxSize = calculateTaprootTxSize(1, 0, 3)
+    const sendTxSize = calculateTaprootTxSize(2, 0, 4)
     let fee = sendTxSize * feeRate < 250 ? 250 : sendTxSize * feeRate
 
     const availableUtxos = await filterTaprootUtxos({
@@ -2080,9 +2083,9 @@ export class Oyl {
 
     if (utxosToSend?.selectedUtxos.length > 1) {
       const txSize = calculateTaprootTxSize(
-        utxosToSend.selectedUtxos.length,
+        1 + utxosToSend.selectedUtxos.length,
         0,
-        2
+        4
       )
       fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
       utxosToSend = findUtxosToCoverAmount(availableUtxos, fee)
@@ -2096,9 +2099,9 @@ export class Oyl {
 
       if (utxosToSend?.selectedUtxos.length > 1) {
         const txSize = calculateTaprootTxSize(
-          utxosToSend.selectedUtxos.length,
+          1 + utxosToSend.selectedUtxos.length,
           0,
-          3
+          4
         )
         fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
         utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, fee)
@@ -2274,28 +2277,14 @@ export class Oyl {
     toAddress: string
     spendPubKey: string
     altSpendPubKey?: string
-    spendAddress?: string
+    spendAddress: string
     altSpendAddress?: string
     signer: Signer
     feeRate?: number
-    runeId?: string
-    amount?: number
+    runeId: string
+    amount: number
   }) {
     try {
-      if (!feeRate) {
-        feeRate = (await this.esploraRpc.getFeeEstimates())['1']
-      }
-
-      const runeBalances: any[] = await this.apiClient.getRuneBalance({
-        address: fromAddress,
-      })
-
-      for await (const rune of runeBalances) {
-        if (amount > rune.total_balance && runeId === rune.rune_id) {
-          throw new Error('Insufficient Balance')
-        }
-      }
-
       const { sendPsbt } = await this.runeSendTx({
         runeId,
         fromAddress,
@@ -2318,7 +2307,12 @@ export class Oyl {
         finalize: true,
       })
 
-      const fee = Math.ceil(raw.extractTransaction().weight() / 4) * feeRate
+      const vsize = (
+        await this.sandshrewBtcClient.bitcoindRpc.decodeRawTransaction(
+          raw.extractTransaction().toHex()
+        )
+      ).vsize
+      const fee = vsize * feeRate
 
       const { sendPsbt: finalSendPsbt } = await this.runeSendTx({
         runeId,
@@ -2380,13 +2374,6 @@ export class Oyl {
 
     spendUtxos = await this.getSpendableUtxos(spendAddress)
 
-    if (!spendUtxos && altSpendAddress) {
-      altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
-      if (!altSpendUtxos) {
-        throw new Error('No utxos to spend available')
-      }
-    }
-
     const psbt = new bitcoin.Psbt({ network: this.network })
 
     const runeUtxos: RuneUtxo[] = []
@@ -2397,10 +2384,19 @@ export class Oyl {
     for (const rune of runeUtxoOutpoints) {
       const index = rune.rune_ids.indexOf(runeId)
       if (index !== -1) {
+        const txSplit = rune.output.split(':')
+        const txHash = txSplit[0]
+        const txIndex = txSplit[1]
+        const txDetails = await this.esploraRpc.getTxInfo(txHash)
+        if (!txDetails?.vout || txDetails.vout.length < 1) {
+          throw new Error('Unable to find rune utxo')
+        }
+        const satoshis = txDetails.vout[txIndex].value
         runeUtxos.push({
           script: rune.pkscript,
           outpointId: rune.output,
           amount: rune.balances[index],
+          satoshis: satoshis,
         })
       }
     }
@@ -2431,9 +2427,8 @@ export class Oyl {
         },
       })
     }
-    const txSize = calculateTaprootTxSize(1 + psbt.inputCount, 0, 3)
+    const txSize = calculateTaprootTxSize(1 + psbt.inputCount, 0, 4)
     let feeForSend = fee ? fee : txSize * feeRate < 250 ? 250 : txSize * feeRate
-
     let utxosToPayFee = findUtxosToCoverAmount(
       spendUtxos,
       feeForSend + inscriptionSats
@@ -2442,7 +2437,7 @@ export class Oyl {
       const txSize = calculateTaprootTxSize(
         utxosToPayFee.selectedUtxos.length + psbt.inputCount,
         0,
-        3
+        4
       )
       feeForSend = fee ? fee : txSize * feeRate < 250 ? 250 : txSize * feeRate
 
@@ -2451,9 +2446,9 @@ export class Oyl {
         feeForSend + inscriptionSats
       )
     }
-
     if (!utxosToPayFee) {
-      const txSize = calculateTaprootTxSize(1 + psbt.inputCount, 0, 3)
+      altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
+      const txSize = calculateTaprootTxSize(1 + psbt.inputCount, 0, 4)
       feeForSend = fee ? fee : txSize * feeRate < 250 ? 250 : txSize * feeRate
       utxosToPayFee = findUtxosToCoverAmount(
         altSpendUtxos,
@@ -2464,12 +2459,12 @@ export class Oyl {
         const txSize = calculateTaprootTxSize(
           utxosToPayFee.selectedUtxos.length + psbt.inputCount,
           0,
-          3
+          4
         )
         feeForSend = fee ? fee : txSize * feeRate < 250 ? 250 : txSize * feeRate
 
         utxosToPayFee = findUtxosToCoverAmount(
-          spendUtxos,
+          altSpendUtxos,
           feeForSend + inscriptionSats
         )
       }
@@ -2493,14 +2488,20 @@ export class Oyl {
         },
       })
     }
+
     psbt.addOutput({
-      address: spendAddress,
-      value: changeAmount,
+      value: inscriptionSats,
+      address: fromAddress,
     })
 
     psbt.addOutput({
       value: inscriptionSats,
       address: toAddress,
+    })
+
+    psbt.addOutput({
+      address: spendAddress,
+      value: changeAmount + (useableUtxos.totalSatoshis - inscriptionSats),
     })
 
     const script = createRuneSendScript({
