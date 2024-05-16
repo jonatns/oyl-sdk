@@ -2263,12 +2263,12 @@ export class Oyl {
     toAddress: string
     spendPubKey: string
     altSpendPubKey?: string
-    spendAddress?: string
+    spendAddress: string
     altSpendAddress?: string
     signer: Signer
     feeRate?: number
-    runeId?: string
-    amount?: number
+    runeId: string
+    amount: number
   }) {
     if (!feeRate) {
       feeRate = (await this.esploraRpc.getFeeEstimates())['1']

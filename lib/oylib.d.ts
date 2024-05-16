@@ -497,12 +497,12 @@ export declare class Oyl {
         toAddress: string;
         spendPubKey: string;
         altSpendPubKey?: string;
-        spendAddress?: string;
+        spendAddress: string;
         altSpendAddress?: string;
         signer: Signer;
         feeRate?: number;
-        runeId?: string;
-        amount?: number;
+        runeId: string;
+        amount: number;
     }): Promise<{
         txId: string;
         rawTx: string;
