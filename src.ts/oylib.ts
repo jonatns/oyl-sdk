@@ -2061,7 +2061,7 @@ export class Oyl {
     if (!feeRate) {
       feeRate = (await this.esploraRpc.getFeeEstimates())['1']
     }
-    const sendTxSize = calculateTaprootTxSize(1, 0, 3)
+    const sendTxSize = calculateTaprootTxSize(2, 0, 4)
     let fee = sendTxSize * feeRate < 250 ? 250 : sendTxSize * feeRate
 
     const availableUtxos = await filterTaprootUtxos({
@@ -2071,9 +2071,9 @@ export class Oyl {
 
     if (utxosToSend?.selectedUtxos.length > 1) {
       const txSize = calculateTaprootTxSize(
-        utxosToSend.selectedUtxos.length,
+        1 + utxosToSend.selectedUtxos.length,
         0,
-        2
+        4
       )
       fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
       utxosToSend = findUtxosToCoverAmount(availableUtxos, fee)
@@ -2087,9 +2087,9 @@ export class Oyl {
 
       if (utxosToSend?.selectedUtxos.length > 1) {
         const txSize = calculateTaprootTxSize(
-          utxosToSend.selectedUtxos.length,
+          1 + utxosToSend.selectedUtxos.length,
           0,
-          3
+          4
         )
         fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
         utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, fee)
@@ -2119,7 +2119,6 @@ export class Oyl {
     spendUtxos = await this.getSpendableUtxos(spendAddress)
 
     if (!spendUtxos && altSpendAddress) {
-      altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
       if (!altSpendUtxos) {
         throw new Error('No utxos to spend available')
       }
@@ -2371,13 +2370,6 @@ export class Oyl {
 
     spendUtxos = await this.getSpendableUtxos(spendAddress)
 
-    if (!spendUtxos && altSpendAddress) {
-      altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
-      if (!altSpendUtxos) {
-        throw new Error('No utxos to spend available')
-      }
-    }
-
     const psbt = new bitcoin.Psbt({ network: this.network })
 
     const runeUtxos: RuneUtxo[] = []
@@ -2451,6 +2443,7 @@ export class Oyl {
       )
     }
     if (!utxosToPayFee) {
+      altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
       const txSize = calculateTaprootTxSize(1 + psbt.inputCount, 0, 4)
       feeForSend = fee ? fee : txSize * feeRate < 250 ? 250 : txSize * feeRate
       utxosToPayFee = findUtxosToCoverAmount(
