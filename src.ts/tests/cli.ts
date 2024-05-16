@@ -149,7 +149,7 @@ const INSCRIPTION_PREPARE_SAT_AMOUNT = 4000
 // Define an interface to represent the expected structure of the arguments.
 interface YargsArguments {
   _: string[]
-  network?: 'testnet' | 'regtest'
+  network?: 'testnet' | 'regtest' | 'mainnet'
   to?: string
   ticker?: string
   amount?: number
@@ -176,6 +176,7 @@ const testWallet = new Oyl({
 })
 
 testWallet.apiClient.setAuthToken(process.env.API_TOKEN)
+tapWallet.apiClient.setAuthToken(process.env.API_TOKEN)
 
 const XVERSE = 'xverse'
 const UNISAT = 'unisat'
@@ -435,7 +436,7 @@ const argv = yargs(hideBin(process.argv))
 
 export async function runCLI() {
   const [command] = argv._
-  const { _, network = MAINNET } = yargs.argv as YargsArguments
+  const { _, network } = yargs.argv as YargsArguments
   const options = Object.assign({}, yargs.argv) as YargsArguments
   const networkConfig = config[network]
 
@@ -551,17 +552,17 @@ export async function runCLI() {
       return sendInscriptionResponse
     case 'send-rune':
       const sendRuneResponse = await networkConfig.wallet.sendRune({
-        runeId: '840000:142',
+        runeId: '840000:3',
         toAddress:
           'bc1pstyemhl9n2hydg079rgrh8jhj9s7zdxh2g5u8apwk0c8yc9ge4eqkunss9',
         signer,
         amount: 100,
         feeRate: 14,
         fromAddress: networkConfig.taprootAddress,
-        spendAddress: networkConfig.taprootAddress,
-        spendPubKey: networkConfig.taprootPubKey,
-        altSpendPubKey: networkConfig.segwitPubKey,
-        altSpendAddress: networkConfig.segwitAddress,
+        spendAddress: networkConfig.segwitAddress,
+        spendPubKey: networkConfig.segwitPubKey,
+        altSpendPubKey: networkConfig.taprootPubKey,
+        altSpendAddress: networkConfig.taprootAddress,
       })
       console.log(sendRuneResponse)
       return sendRuneResponse
