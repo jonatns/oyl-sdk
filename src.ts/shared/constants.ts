@@ -36,4 +36,10 @@ export const defaultNetworkOptions: Record<Network, NetworkOptions> = {
     projectId: 'regtest',
     network: 'regtest',
   },
+  signet: {
+    baseUrl: 'https://signet.sandshrew.io',
+    version: 'v1',
+    projectId: process.env.SANDSHREW_PROJECT_ID, 
+    network: 'testnet',
+  }
 }
