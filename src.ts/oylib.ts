@@ -2467,7 +2467,7 @@ export class Oyl {
         feeForSend = fee ? fee : txSize * feeRate < 250 ? 250 : txSize * feeRate
 
         utxosToPayFee = findUtxosToCoverAmount(
-          spendUtxos,
+          altSpendUtxos,
           feeForSend + inscriptionSats
         )
       }
