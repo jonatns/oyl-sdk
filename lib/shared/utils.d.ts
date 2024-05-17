@@ -135,22 +135,6 @@ export declare const filterTaprootUtxos: ({ taprootUtxos, }: {
 export declare const filterUtxos: ({ utxos }: {
     utxos: any[];
 }) => Promise<any>;
-export declare const addBtcUtxo: ({ spendUtxos, toAddress, psbt, amount, feeRate, network, spendAddress, spendPubKey, altSpendPubKey, altSpendUtxos, fee, }: {
-    spendUtxos: any[];
-    toAddress: string;
-    psbt: bitcoin.Psbt;
-    feeRate: number;
-    amount: number;
-    network: bitcoin.Network;
-    spendAddress: string;
-    spendPubKey: string;
-    altSpendPubKey?: string;
-    altSpendUtxos?: Utxo[];
-    fee?: number;
-}) => Promise<{
-    psbt: bitcoin.Psbt;
-    fee: number;
-}>;
 export declare const isValidJSON: (str: string) => boolean;
 export declare const encodeVarint: (bigIntValue: any) => {
     varint: Buffer;

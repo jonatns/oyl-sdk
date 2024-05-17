@@ -218,19 +218,18 @@ export declare class Oyl {
         fee: number;
         satsPerVByte: string;
     }>;
-    createBtcTx({ toAddress, spendPubKey, feeRate, amount, network, spendUtxos, spendAddress, altSpendPubKey, altSpendUtxos, fee, }: {
+    createBtcTx({ toAddress, amount, feeRate, network, spendAddress, spendPubKey, altSpendPubKey, altSpendAddress, fee, }: {
         toAddress: string;
-        spendPubKey: string;
         feeRate: number;
         amount: number;
         network: bitcoin.Network;
-        spendUtxos: Utxo[];
         spendAddress: string;
+        spendPubKey: string;
         altSpendPubKey?: string;
-        altSpendUtxos?: Utxo[];
+        altSpendAddress?: string;
         fee?: number;
     }): Promise<{
-        rawPsbt: string;
+        psbt: string;
         fee: number;
     }>;
     /**
