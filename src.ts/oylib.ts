@@ -1703,6 +1703,7 @@ export class Oyl {
     const psbt = new bitcoin.Psbt({ network: this.network })
     const utxoInfo = await this.esploraRpc.getTxInfo(commitChangeUtxoId)
     const revealInfo = await this.esploraRpc.getTxInfo(revealTxId)
+    let totalValue: number = 0
 
     psbt.addInput({
       hash: revealTxId,
@@ -1712,15 +1713,17 @@ export class Oyl {
         value: 546,
       },
     })
-
-    psbt.addInput({
-      hash: commitChangeUtxoId,
-      index: 1,
-      witnessUtxo: {
-        script: Buffer.from(utxoInfo.vout[1].scriptpubkey, 'hex'),
-        value: utxoInfo.vout[1].value,
-      },
-    })
+    for (let i = 1; i <= utxoInfo.vout.length - 1; i++) {
+      totalValue += utxoInfo.vout[i].value
+      psbt.addInput({
+        hash: commitChangeUtxoId,
+        index: i,
+        witnessUtxo: {
+          script: Buffer.from(utxoInfo.vout[i].scriptpubkey, 'hex'),
+          value: utxoInfo.vout[i].value,
+        },
+      })
+    }
 
     psbt.addOutput({
       address: toAddress,
@@ -1729,7 +1732,7 @@ export class Oyl {
 
     psbt.addOutput({
       address: spendAddress,
-      value: utxoInfo.vout[1].value - fee,
+      value: totalValue - fee,
     })
 
     const formattedPsbt = await formatInputsToSign({
