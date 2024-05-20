@@ -412,14 +412,14 @@ export declare class Oyl {
         rawTxn: string;
         sendBrc20Txids: any[];
     }>;
-    inscriptionTransfer({ commitChangeUtxoId, toAddress, fromPubKey, spendPubKey, altSpendPubKey, usingAlt, spendAddress, fee, }: {
+    inscriptionTransfer({ commitChangeUtxoId, toAddress, spendPubKey, altSpendPubKey, usingAlt, spendAddress, revealTxId, fee, }: {
         toAddress: string;
         commitChangeUtxoId: string;
-        fromPubKey: string;
         spendPubKey: string;
         altSpendPubKey: string;
         usingAlt: boolean;
         spendAddress: string;
+        revealTxId: string;
         fee: number;
     }): Promise<{
         sentPsbt: string;

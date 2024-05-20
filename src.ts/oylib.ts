@@ -1612,10 +1612,11 @@ export class Oyl {
         sandshrewBtcClient: this.sandshrewBtcClient,
       })
 
-      await delay(3000)
+      await delay(5000)
 
       const { sentPsbt: transferRawPsbt } = await this.inscriptionTransfer({
         commitChangeUtxoId: commitTxId,
+        revealTxId: revealTxId,
         toAddress,
         spendPubKey,
         altSpendPubKey,
@@ -1630,19 +1631,49 @@ export class Oyl {
           finalize: true,
         })
 
-      const { signedPsbt: taprootTransferRawPsbt } =
+      const { raw: rawTransferPsbt } = await signer.signAllTaprootInputs({
+        rawPsbt: segwitTransferRawPsbt,
+        finalize: true,
+      })
+
+      const transferVsize = (
+        await this.sandshrewBtcClient.bitcoindRpc.decodeRawTransaction(
+          rawTransferPsbt.extractTransaction().toHex()
+        )
+      ).vsize
+
+      const transferFee = transferVsize * feeRate
+
+      const { sentPsbt: transferRawPsbt1 } = await this.inscriptionTransfer({
+        commitChangeUtxoId: commitTxId,
+        revealTxId: revealTxId,
+        toAddress,
+        spendPubKey,
+        altSpendPubKey,
+        usingAlt,
+        spendAddress,
+        fee: transferFee,
+      })
+
+      const { signedPsbt: segwitTransferRawPsbt1 } =
+        await signer.signAllSegwitInputs({
+          rawPsbt: transferRawPsbt1,
+          finalize: true,
+        })
+
+      const { signedPsbt: taprootTransferRawPsbt1 } =
         await signer.signAllTaprootInputs({
-          rawPsbt: segwitTransferRawPsbt,
+          rawPsbt: segwitTransferRawPsbt1,
           finalize: true,
         })
 
       const { txId: transferTxId } = await this.pushPsbt({
-        psbtBase64: taprootTransferRawPsbt,
+        psbtBase64: taprootTransferRawPsbt1,
       })
 
       return {
         txId: transferTxId,
-        rawTxn: taprootTransferRawPsbt,
+        rawTxn: taprootTransferRawPsbt1,
         sendBrc20Txids: [...successTxIds, transferTxId],
       }
     } catch (err) {
@@ -1657,6 +1688,7 @@ export class Oyl {
     altSpendPubKey,
     usingAlt,
     spendAddress,
+    revealTxId,
     fee,
   }: {
     toAddress: string
@@ -1665,17 +1697,18 @@ export class Oyl {
     altSpendPubKey: string
     usingAlt: boolean
     spendAddress: string
+    revealTxId: string
     fee: number
   }) {
     const psbt = new bitcoin.Psbt({ network: this.network })
     const utxoInfo = await this.esploraRpc.getTxInfo(commitChangeUtxoId)
+    const revealInfo = await this.esploraRpc.getTxInfo(revealTxId)
 
-    console.log(utxoInfo.vout)
     psbt.addInput({
-      hash: commitChangeUtxoId,
+      hash: revealTxId,
       index: 0,
       witnessUtxo: {
-        script: Buffer.from(utxoInfo.vout[0].scriptpubkey, 'hex'),
+        script: Buffer.from(revealInfo.vout[0].scriptpubkey, 'hex'),
         value: 546,
       },
     })

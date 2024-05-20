@@ -519,7 +519,7 @@ export async function runCLI() {
         token: ticker,
         amount: 100,
         signer,
-        feeRate: 10,
+        feeRate: 11,
         fromAddress: networkConfig.taprootAddress,
         fromPubKey: networkConfig.taprootPubKey,
         toAddress: to,
