@@ -517,9 +517,9 @@ export async function runCLI() {
     case 'send-brc-20':
       const sendBrc20Response = await networkConfig.wallet.sendBRC20({
         token: ticker,
-        amount: 3,
+        amount: 100,
         signer,
-        feeRate: 30,
+        feeRate: 10,
         fromAddress: networkConfig.taprootAddress,
         fromPubKey: networkConfig.taprootPubKey,
         toAddress: to,

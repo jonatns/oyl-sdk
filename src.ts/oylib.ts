@@ -1485,8 +1485,15 @@ export class Oyl {
         fee: sendFee,
       })
 
+      const { signedPsbt: segwitSendSigned } = await signer.signAllSegwitInputs(
+        {
+          rawPsbt: sentRawPsbt1,
+          finalize: true,
+        }
+      )
+
       const { raw: finalRawSend } = await signer.signAllTaprootInputs({
-        rawPsbt: sentRawPsbt1,
+        rawPsbt: segwitSendSigned,
         finalize: true,
       })
 
@@ -1610,7 +1617,6 @@ export class Oyl {
       const { sentPsbt: transferRawPsbt } = await this.inscriptionTransfer({
         commitChangeUtxoId: commitTxId,
         toAddress,
-        fromPubKey,
         spendPubKey,
         altSpendPubKey,
         usingAlt,
@@ -1647,7 +1653,6 @@ export class Oyl {
   async inscriptionTransfer({
     commitChangeUtxoId,
     toAddress,
-    fromPubKey,
     spendPubKey,
     altSpendPubKey,
     usingAlt,
@@ -1656,7 +1661,6 @@ export class Oyl {
   }: {
     toAddress: string
     commitChangeUtxoId: string
-    fromPubKey: string
     spendPubKey: string
     altSpendPubKey: string
     usingAlt: boolean
@@ -1665,6 +1669,8 @@ export class Oyl {
   }) {
     const psbt = new bitcoin.Psbt({ network: this.network })
     const utxoInfo = await this.esploraRpc.getTxInfo(commitChangeUtxoId)
+
+    console.log(utxoInfo.vout)
     psbt.addInput({
       hash: commitChangeUtxoId,
       index: 0,
@@ -1693,14 +1699,8 @@ export class Oyl {
       value: utxoInfo.vout[1].value - fee,
     })
 
-    const partiallyFormattedPsbtTx = await formatInputsToSign({
-      _psbt: psbt,
-      senderPublicKey: fromPubKey,
-      network: this.network,
-    })
-
     const formattedPsbt = await formatInputsToSign({
-      _psbt: partiallyFormattedPsbtTx,
+      _psbt: psbt,
       senderPublicKey: usingAlt ? altSpendPubKey : spendPubKey,
       network: this.network,
     })
