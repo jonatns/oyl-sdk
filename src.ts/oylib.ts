@@ -579,6 +579,9 @@ export class Oyl {
   async getSpendableUtxos(address: string) {
     const addressType = getAddressType(address)
     const utxosResponse: any[] = await this.esploraRpc.getAddressUtxo(address)
+    if (!utxosResponse || utxosResponse?.length === 0) {
+      return []
+    }
     const formattedUtxos: Utxo[] = []
     let filtered = utxosResponse
 
@@ -778,6 +781,9 @@ export class Oyl {
     }
 
     if (!utxosToSend) {
+      if (!altSpendAddress) {
+        throw new Error('Insufficient Balance')
+      }
       altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
       utxosToSend = findUtxosToCoverAmount(altSpendUtxos, amount + finalFee)
 
