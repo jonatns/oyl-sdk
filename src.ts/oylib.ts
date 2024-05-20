@@ -1143,6 +1143,7 @@ export class Oyl {
     altSpendAddress,
     feeRate,
     fee = 0,
+    finalSendFee,
   }: {
     spendPubKey: string
     altSpendPubKey?: string
@@ -1152,6 +1153,7 @@ export class Oyl {
     feeRate?: number
     content: string
     fee?: number
+    finalSendFee: number
   }) {
     const commitTxSize = calculateTaprootTxSize(1, 0, 2)
     const feeForCommit =
@@ -1164,7 +1166,9 @@ export class Oyl {
     const baseEstimate =
       Number(feeForCommit) + Number(feeForReveal) + inscriptionSats
     let amountNeededForInscribe =
-      fee !== 0 ? fee + Number(feeForReveal) + inscriptionSats : baseEstimate
+      fee !== 0
+        ? fee + Number(feeForReveal) + inscriptionSats + finalSendFee
+        : baseEstimate
 
     const utxosUsedForFees: string[] = []
 
@@ -1416,8 +1420,13 @@ export class Oyl {
         finalize: true,
       })
 
-      const sendFee =
-        Math.ceil(rawSend.extractTransaction().weight() / 4) * feeRate
+      const sendVsize = (
+        await this.sandshrewBtcClient.bitcoindRpc.decodeRawTransaction(
+          rawSend.extractTransaction().toHex()
+        )
+      ).vsize
+
+      const sendFee = sendVsize * feeRate
 
       const { sentPsbt: sentRawPsbt1 } = await this.inscriptionSendTx({
         toAddress,
@@ -1430,16 +1439,30 @@ export class Oyl {
         fee: sendFee,
       })
 
-      const { commitPsbt, script } = await this.inscriptionCommitTx({
-        content,
-        spendAddress,
-        spendPubKey,
-        signer,
-        altSpendPubKey,
-        altSpendAddress,
-        feeRate,
-        sendFee,
+      const { raw: finalRawSend } = await signer.signAllTaprootInputs({
+        rawPsbt: sentRawPsbt1,
+        finalize: true,
       })
+
+      const finalSendVsize = (
+        await this.sandshrewBtcClient.bitcoindRpc.decodeRawTransaction(
+          finalRawSend.extractTransaction().toHex()
+        )
+      ).vsize
+
+      const finalSendFee = finalSendVsize * feeRate
+
+      const { commitPsbt, utxosUsedForFees, script } =
+        await this.inscriptionCommitTx({
+          content,
+          spendAddress,
+          spendPubKey,
+          signer,
+          altSpendPubKey,
+          altSpendAddress,
+          feeRate,
+          finalSendFee,
+        })
 
       const { signedPsbt: segwitSigned } = await signer.signAllSegwitInputs({
         rawPsbt: commitPsbt,
@@ -1451,8 +1474,13 @@ export class Oyl {
         finalize: true,
       })
 
-      const commitFee =
-        Math.ceil(raw.extractTransaction().weight() / 4) * feeRate
+      const commitVsize = (
+        await this.sandshrewBtcClient.bitcoindRpc.decodeRawTransaction(
+          raw.extractTransaction().toHex()
+        )
+      ).vsize
+
+      const commitFee = commitVsize * feeRate
 
       const { commitPsbt: finalCommitPsbt } = await this.inscriptionCommitTx({
         content,
@@ -1463,6 +1491,7 @@ export class Oyl {
         altSpendAddress,
         feeRate,
         fee: commitFee,
+        finalSendFee,
       })
 
       const { signedPsbt: segwitSigned1 } = await signer.signAllSegwitInputs({
@@ -1493,8 +1522,13 @@ export class Oyl {
         commitTxId: commitTxId,
         feeRate,
       })
-      const revealFee =
-        Math.ceil(revealRaw.extractTransaction().weight() / 4) * feeRate
+      const revealVsize = (
+        await this.sandshrewBtcClient.bitcoindRpc.decodeRawTransaction(
+          revealRaw.extractTransaction().toHex()
+        )
+      ).vsize
+
+      const revealFee = revealVsize * feeRate
 
       const { revealPsbt } = await this.inscriptionRevealTx({
         receiverAddress: fromAddress,
@@ -1553,6 +1587,7 @@ export class Oyl {
       throw new OylTransactionError(err, successTxIds)
     }
   }
+
   async inscriptionTransfer({
     commitChangeUtxoId,
     toAddress,
