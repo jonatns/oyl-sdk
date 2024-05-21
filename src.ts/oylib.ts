@@ -1624,7 +1624,6 @@ export class Oyl {
         toAddress,
         spendPubKey,
         altSpendPubKey,
-        fromPubKey,
         usingAlt,
         spendAddress,
         fee: finalSendFee,
@@ -1655,7 +1654,6 @@ export class Oyl {
         toAddress,
         spendPubKey,
         altSpendPubKey,
-        fromPubKey,
         usingAlt,
         spendAddress,
         fee: transferFee,
@@ -1691,7 +1689,6 @@ export class Oyl {
     commitChangeUtxoId,
     toAddress,
     spendPubKey,
-    fromPubKey,
     altSpendPubKey,
     usingAlt,
     spendAddress,
@@ -1701,7 +1698,6 @@ export class Oyl {
     toAddress: string
     commitChangeUtxoId: string
     spendPubKey: string
-    fromPubKey: string
     altSpendPubKey: string
     usingAlt: boolean
     spendAddress: string
@@ -1721,6 +1717,8 @@ export class Oyl {
         value: 546,
       },
     })
+
+    console.log('inscription', revealInfo.vout[0].scriptpubkey)
     for (let i = 1; i <= utxoInfo.vout.length - 1; i++) {
       totalValue += utxoInfo.vout[i].value
       psbt.addInput({
@@ -1731,6 +1729,7 @@ export class Oyl {
           value: utxoInfo.vout[i].value,
         },
       })
+      console.log('fee Utxo', utxoInfo.vout[i].scriptpubkey)
     }
 
     psbt.addOutput({
@@ -1743,14 +1742,8 @@ export class Oyl {
       value: totalValue - fee,
     })
 
-    const partiallyFormattedPsbtTx = await formatInputsToSign({
-      _psbt: psbt,
-      senderPublicKey: fromPubKey,
-      network: this.network,
-    })
-
     const formattedPsbt = await formatInputsToSign({
-      _psbt: partiallyFormattedPsbtTx,
+      _psbt: psbt,
       senderPublicKey: usingAlt ? altSpendPubKey : spendPubKey,
       network: this.network,
     })
