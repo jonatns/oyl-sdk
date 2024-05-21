@@ -1627,6 +1627,7 @@ export class Oyl {
         usingAlt,
         spendAddress,
         fee: finalSendFee,
+        fromPubKey,
       })
 
       const { signedPsbt: segwitTransferRawPsbt } =
@@ -1657,6 +1658,7 @@ export class Oyl {
         usingAlt,
         spendAddress,
         fee: transferFee,
+        fromPubKey,
       })
 
       const { signedPsbt: segwitTransferRawPsbt1 } =
@@ -1694,6 +1696,7 @@ export class Oyl {
     spendAddress,
     revealTxId,
     fee,
+    fromPubKey,
   }: {
     toAddress: string
     commitChangeUtxoId: string
@@ -1703,6 +1706,7 @@ export class Oyl {
     spendAddress: string
     revealTxId: string
     fee: number
+    fromPubKey: string
   }) {
     const psbt = new bitcoin.Psbt({ network: this.network })
     const utxoInfo = await this.esploraRpc.getTxInfo(commitChangeUtxoId)
@@ -1741,9 +1745,14 @@ export class Oyl {
       address: spendAddress,
       value: totalValue - fee,
     })
+    const partiallyFormattedPsbtTx = await formatInputsToSign({
+      _psbt: psbt,
+      senderPublicKey: fromPubKey,
+      network: this.network,
+    })
 
     const formattedPsbt = await formatInputsToSign({
-      _psbt: psbt,
+      _psbt: partiallyFormattedPsbtTx,
       senderPublicKey: usingAlt ? altSpendPubKey : spendPubKey,
       network: this.network,
     })
