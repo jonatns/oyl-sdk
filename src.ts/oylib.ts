@@ -1065,6 +1065,7 @@ export class Oyl {
       throw new Error(e)
     }
   }
+  
   async sendPsbt(txData: string, isDry?: boolean) {
     try {
       if (isDry) {
@@ -1271,6 +1272,9 @@ export class Oyl {
     }
 
     if (!utxosToPayFee) {
+      if (!altSpendAddress) {
+        throw new Error('Insufficient Balance');
+      }
       altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
       utxosToPayFee = findUtxosToCoverAmount(
         altSpendUtxos,
@@ -1794,6 +1798,9 @@ export class Oyl {
     }
 
     if (!utxosToPayFee) {
+      if (!altSpendAddress) {
+        throw new Error('Insufficient Balance');
+      }
       altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
       utxosToPayFee = findUtxosToCoverAmount(altSpendUtxos, finalFee)
       if (utxosToPayFee?.selectedUtxos.length > 1) {
