@@ -1722,7 +1722,6 @@ export class Oyl {
       },
     })
 
-    console.log('inscription', revealInfo.vout[0].scriptpubkey)
     for (let i = 1; i <= utxoInfo.vout.length - 1; i++) {
       totalValue += utxoInfo.vout[i].value
       psbt.addInput({
@@ -1733,7 +1732,6 @@ export class Oyl {
           value: utxoInfo.vout[i].value,
         },
       })
-      console.log('fee Utxo', utxoInfo.vout[i].scriptpubkey)
     }
 
     psbt.addOutput({
