@@ -1624,6 +1624,7 @@ export class Oyl {
         toAddress,
         spendPubKey,
         altSpendPubKey,
+        fromPubKey,
         usingAlt,
         spendAddress,
         fee: finalSendFee,
@@ -1654,6 +1655,7 @@ export class Oyl {
         toAddress,
         spendPubKey,
         altSpendPubKey,
+        fromPubKey,
         usingAlt,
         spendAddress,
         fee: transferFee,
@@ -1689,6 +1691,7 @@ export class Oyl {
     commitChangeUtxoId,
     toAddress,
     spendPubKey,
+    fromPubKey,
     altSpendPubKey,
     usingAlt,
     spendAddress,
@@ -1698,6 +1701,7 @@ export class Oyl {
     toAddress: string
     commitChangeUtxoId: string
     spendPubKey: string
+    fromPubKey: string
     altSpendPubKey: string
     usingAlt: boolean
     spendAddress: string
@@ -1739,10 +1743,14 @@ export class Oyl {
       value: totalValue - fee,
     })
 
-    console.log(usingAlt)
+    const partiallyFormattedPsbtTx = await formatInputsToSign({
+      _psbt: psbt,
+      senderPublicKey: fromPubKey,
+      network: this.network,
+    })
 
     const formattedPsbt = await formatInputsToSign({
-      _psbt: psbt,
+      _psbt: partiallyFormattedPsbtTx,
       senderPublicKey: usingAlt ? altSpendPubKey : spendPubKey,
       network: this.network,
     })
