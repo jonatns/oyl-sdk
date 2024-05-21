@@ -1281,6 +1281,8 @@ export class Oyl {
         amountNeededForInscribe
       )
 
+      usingAlt = true
+
       if (utxosToPayFee?.selectedUtxos.length > 1) {
         const txSize = calculateTaprootTxSize(
           utxosToPayFee.selectedUtxos.length,
@@ -1297,8 +1299,6 @@ export class Oyl {
           altSpendUtxos,
           amountNeededForInscribe
         )
-
-        usingAlt = true
       }
     }
 
