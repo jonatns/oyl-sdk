@@ -1065,7 +1065,7 @@ export class Oyl {
       throw new Error(e)
     }
   }
-  
+
   async sendPsbt(txData: string, isDry?: boolean) {
     try {
       if (isDry) {
@@ -1273,7 +1273,7 @@ export class Oyl {
 
     if (!utxosToPayFee) {
       if (!altSpendAddress) {
-        throw new Error('Insufficient Balance');
+        throw new Error('Insufficient Balance')
       }
       altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
       utxosToPayFee = findUtxosToCoverAmount(
@@ -1739,6 +1739,8 @@ export class Oyl {
       value: totalValue - fee,
     })
 
+    console.log(usingAlt)
+
     const formattedPsbt = await formatInputsToSign({
       _psbt: psbt,
       senderPublicKey: usingAlt ? altSpendPubKey : spendPubKey,
@@ -1799,7 +1801,7 @@ export class Oyl {
 
     if (!utxosToPayFee) {
       if (!altSpendAddress) {
-        throw new Error('Insufficient Balance');
+        throw new Error('Insufficient Balance')
       }
       altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
       utxosToPayFee = findUtxosToCoverAmount(altSpendUtxos, finalFee)
