@@ -2171,13 +2171,6 @@ export class Oyl {
 
     spendUtxos = await this.getSpendableUtxos(spendAddress)
 
-    if (!spendUtxos && altSpendAddress) {
-      altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
-      if (!altSpendUtxos) {
-        throw new Error('No utxos to spend available')
-      }
-    }
-
     if (!feeRate) {
       feeRate = (await this.esploraRpc.getFeeEstimates())['1']
     }
@@ -2199,11 +2192,9 @@ export class Oyl {
       utxosToSend = findUtxosToCoverAmount(availableUtxos, fee)
     }
 
-    if (!utxosToSend && altSpendUtxos) {
-      const unFilteredAltUtxos = await filterTaprootUtxos({
-        taprootUtxos: altSpendUtxos,
-      })
-      utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, fee)
+    if (!utxosToSend) {
+      altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
+      utxosToSend = findUtxosToCoverAmount(altSpendUtxos, fee)
 
       if (utxosToSend?.selectedUtxos.length > 1) {
         const txSize = calculateTaprootTxSize(
@@ -2212,7 +2203,7 @@ export class Oyl {
           2
         )
         fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
-        utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, fee)
+        utxosToSend = findUtxosToCoverAmount(altSpendUtxos, fee)
       }
     }
 
@@ -2238,12 +2229,6 @@ export class Oyl {
     let altSpendUtxos: Utxo[] | undefined
 
     spendUtxos = await this.getSpendableUtxos(spendAddress)
-    if (!spendUtxos && altSpendAddress) {
-      altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
-      if (!altSpendUtxos) {
-        throw new Error('No utxos to spend available')
-      }
-    }
 
     if (!feeRate) {
       feeRate = (await this.esploraRpc.getFeeEstimates())['1']
@@ -2266,11 +2251,10 @@ export class Oyl {
       utxosToSend = findUtxosToCoverAmount(availableUtxos, fee)
     }
 
-    if (!utxosToSend && altSpendUtxos) {
-      const unFilteredAltUtxos = await filterTaprootUtxos({
-        taprootUtxos: altSpendUtxos,
-      })
-      utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, fee)
+    if (!utxosToSend) {
+      altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
+
+      utxosToSend = findUtxosToCoverAmount(altSpendUtxos, fee)
 
       if (utxosToSend?.selectedUtxos.length > 1) {
         const txSize = calculateTaprootTxSize(
@@ -2279,7 +2263,7 @@ export class Oyl {
           4
         )
         fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
-        utxosToSend = findUtxosToCoverAmount(unFilteredAltUtxos, fee)
+        utxosToSend = findUtxosToCoverAmount(altSpendUtxos, fee)
       }
     }
 
@@ -2306,18 +2290,11 @@ export class Oyl {
 
     spendUtxos = await this.getSpendableUtxos(spendAddress)
 
-    if (!spendUtxos && altSpendAddress) {
-      altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
-      if (!altSpendUtxos) {
-        throw new Error('No utxos to spend available')
-      }
-    }
-
     if (!feeRate) {
       feeRate = (await this.esploraRpc.getFeeEstimates())['1']
     }
 
-    const sendTxSize = calculateTaprootTxSize(1, 0, 1)
+    const sendTxSize = calculateTaprootTxSize(2, 0, 2)
     let fee = sendTxSize * feeRate < 250 ? 250 : sendTxSize * feeRate
 
     const commitTxSize = calculateTaprootTxSize(1, 0, 2)
@@ -2329,14 +2306,10 @@ export class Oyl {
       revealTxSize * feeRate < 250 ? 250 : revealTxSize * feeRate
 
     const amountNeededForInscribe =
-      Number(feeForCommit) + Number(feeForReveal) + 546
-
-    const filteredSpendUtxos = await filterTaprootUtxos({
-      taprootUtxos: spendUtxos,
-    })
+      Number(feeForCommit) + Number(feeForReveal) + Number(sendTxSize) + 546
 
     let utxosForCommitandReveal = findUtxosToCoverAmount(
-      filteredSpendUtxos,
+      spendUtxos,
       amountNeededForInscribe
     )
 
@@ -2348,18 +2321,16 @@ export class Oyl {
       )
       fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
       utxosForCommitandReveal = findUtxosToCoverAmount(
-        filteredSpendUtxos,
+        spendUtxos,
         amountNeededForInscribe
       )
     }
 
-    if (!utxosForCommitandReveal && altSpendUtxos) {
-      const unFilteredAltUtxos = await filterTaprootUtxos({
-        taprootUtxos: altSpendUtxos,
-      })
+    if (!utxosForCommitandReveal) {
+      altSpendUtxos = await this.getSpendableUtxos(altSpendAddress)
 
       utxosForCommitandReveal = findUtxosToCoverAmount(
-        unFilteredAltUtxos,
+        altSpendUtxos,
         amountNeededForInscribe
       )
 
@@ -2371,7 +2342,7 @@ export class Oyl {
         )
         fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
         utxosForCommitandReveal = findUtxosToCoverAmount(
-          unFilteredAltUtxos,
+          altSpendUtxos,
           amountNeededForInscribe
         )
       }
@@ -2379,51 +2350,6 @@ export class Oyl {
       if (!utxosForCommitandReveal) {
         throw new Error('Insufficient Balance')
       }
-    }
-
-    const utxosUsedForFees: string[] =
-      utxosForCommitandReveal.selectedUtxos.map((utxo: Utxo) => {
-        return utxo.txId
-      })
-
-    let availableUtxos = filteredSpendUtxos.filter(
-      (utxo: any) => !utxosUsedForFees.includes(utxo.txId)
-    )
-
-    let utxosToSend = findUtxosToCoverAmount(availableUtxos, fee)
-
-    if (utxosToSend?.selectedUtxos.length > 1) {
-      const txSize = calculateTaprootTxSize(
-        utxosToSend.selectedUtxos.length,
-        0,
-        2
-      )
-      fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
-      utxosToSend = findUtxosToCoverAmount(availableUtxos, fee)
-    }
-
-    if (!utxosToSend && altSpendUtxos) {
-      const unFilteredAltUtxos = await filterTaprootUtxos({
-        taprootUtxos: altSpendUtxos,
-      })
-      const availableUtxos = unFilteredAltUtxos.filter(
-        (utxo: any) => !utxosUsedForFees.includes(utxo.txId)
-      )
-      utxosToSend = findUtxosToCoverAmount(availableUtxos, fee)
-
-      if (utxosToSend?.selectedUtxos.length > 1) {
-        const txSize = calculateTaprootTxSize(
-          utxosToSend.selectedUtxos.length,
-          0,
-          2
-        )
-        fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
-        utxosToSend = findUtxosToCoverAmount(availableUtxos, fee)
-      }
-    }
-
-    if (!utxosToSend) {
-      throw new Error('Insufficient Balance')
     }
 
     const commitTxFee =
