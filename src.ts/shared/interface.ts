@@ -286,10 +286,17 @@ export const addressTypeToName = {
   p2wpkh: 'segwit',
 } as const
 
+export const internalAddressTypeToName = {
+  [AddressType.P2PKH]: 'legacy',
+  [AddressType.P2TR]: 'taproot',
+  [AddressType.P2SH_P2WPKH]: 'nested-segwit',
+  [AddressType.P2WPKH]: 'segwit',
+} as const
+
 export const addressNameToType = {
   legacy: 'p2pkh',
   taproot: 'p2tr',
-  'nested-segwit': 'p2sh',
+  'nested-segwit': 'p2sh-p2wpkh',
   segwit: 'p2wpkh',
 } as const
 
