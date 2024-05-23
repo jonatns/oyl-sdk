@@ -49,17 +49,18 @@ const publicKeyToAddress = (
 }
 
 const hdPathToAddressType = (hdPath: string) => {
-  switch (hdPath) {
-    case SEGWIT_HD_PATH:
+  const matchesPath = true
+  switch (matchesPath) {
+    case hdPath.includes("m/84'/0'/0'/"):
       return AddressType.P2WPKH
-    case NESTED_SEGWIT_HD_PATH:
+    case hdPath.includes("m/49'/0'/0'/"):
       return AddressType.P2SH_P2WPKH
-    case TAPROOT_HD_PATH:
+    case hdPath.includes("m/86'/0'/0'/"):
       return AddressType.P2TR
-    case LEGACY_HD_PATH:
+    case hdPath.includes("m/44'/0'/0'/"):
       return AddressType.P2PKH
     default:
-      throw Error('unknown hd path')
+      throw new Error('unknown hd path')
   }
 }
 
@@ -100,13 +101,23 @@ export class Account {
     }
   }
 
-  allAddresses(network: bitcoin.Network): AllAccounts {
-    const paths = [
+  allAddresses(network: bitcoin.Network, accountIndex?: number): AllAccounts {
+    let paths: string[] = [
       SEGWIT_HD_PATH,
       TAPROOT_HD_PATH,
       NESTED_SEGWIT_HD_PATH,
       LEGACY_HD_PATH,
     ]
+
+    if (accountIndex) {
+      paths = [
+        "m/84'/0'/0'/" + String(accountIndex),
+        "m/49'/0'/0'/" + String(accountIndex),
+        "m/86'/0'/0'/" + String(accountIndex),
+        "m/44'/0'/0'/" + String(accountIndex),
+      ]
+    }
+
     const mnemonic = this.mnemonicObject
     let allAccounts = {} as AllAccounts
 

@@ -21,6 +21,6 @@ export declare class Account {
         addressType: "p2pkh" | "p2tr" | "p2wpkh" | "p2sh-p2wpkh";
         btcAddress: string;
     };
-    allAddresses(network: bitcoin.Network): AllAccounts;
+    allAddresses(network: bitcoin.Network, accountIndex?: number): AllAccounts;
 }
 export {};
