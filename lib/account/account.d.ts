@@ -1,26 +1,52 @@
 import * as bitcoin from 'bitcoinjs-lib';
-import Mnemonic from 'bitcore-mnemonic';
-interface SingleAccount {
-    [addressKeyValue: string]: {
-        pubkey: string;
-        addressType: string;
-        btcAddress: string;
-    };
-}
-interface AllAccounts {
-    segwit: SingleAccount;
-    taproot: SingleAccount;
-    nestedSegwit: SingleAccount;
-    legacy: SingleAccount;
-}
+import { AddressType } from '../shared/interface';
+import { Provider } from '../provider/provider';
 export declare class Account {
-    mnemonicObject: Mnemonic;
-    constructor(mnemonic: string);
-    mnemonicToAccount(network: bitcoin.Network, hdPath: string): {
+    mnemonic: string;
+    network: bitcoin.Network;
+    index?: number;
+    provider: Provider;
+    constructor({ mnemonic, network, index, provider, }: {
+        mnemonic: string;
+        network: bitcoin.Network;
+        index?: number;
+        provider: Provider;
+    });
+    hdPathToAddressType: ({ hdPath }: {
+        hdPath: string;
+    }) => AddressType;
+    mnemonicToAccount({ hdPath }: {
+        hdPath: string;
+    }): {
         pubkey: string;
         addressType: "p2pkh" | "p2tr" | "p2wpkh" | "p2sh-p2wpkh";
-        btcAddress: string;
+        address: string;
+        privateKey: string;
     };
-    allAddresses(network: bitcoin.Network, accountIndex?: number): AllAccounts;
+    addresses(): {
+        taproot: {
+            pubkey: string;
+            pubKeyXOnly: string;
+            privateKey: string;
+            address: string;
+        };
+        nativeSegwit: {
+            pubkey: string;
+            privateKey: string;
+            address: string;
+        };
+        nestedSegwit: {
+            pubkey: string;
+            privateKey: string;
+            address: string;
+        };
+        legacy: {
+            pubkey: string;
+            privateKey: string;
+            address: string;
+        };
+    };
+    spendableUtxos({ address }: {
+        address: string;
+    }): Promise<any>;
 }
-export {};

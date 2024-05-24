@@ -1,6 +1,5 @@
 import yargs from 'yargs'
 import { camelCase } from 'change-case'
-import 'dotenv/config'
 import {
   NESTED_SEGWIT_HD_PATH,
   Oyl,
@@ -27,6 +26,8 @@ import { customPaths } from '../wallet/accountsManager'
 import * as transactions from '../transactions'
 import { Marketplace } from '../marketplace'
 import { Account } from '../account/account'
+import * as dotenv from 'dotenv'
+dotenv.config()
 
 bitcoin.initEccLib(ecc2)
 
@@ -616,11 +617,18 @@ export async function runCLI() {
         })
       )
     case 'new-account':
-      const network = bitcoin.networks.testnet
-      const account = new Account(process.env.TESTNET_MNEMONIC)
-      const all = account.allAddresses(network, 2)
-      const single = account.mnemonicToAccount(network, "m/86'/0'/0'/2")
-      return console.log(single, all.taproot)
+      const network = bitcoin.networks.bitcoin
+      const account = new Account({
+        mnemonic: process.env.MAINNET_MNEMONIC.trim(),
+        network: network,
+        index: 0,
+        provider: tapWallet.provider,
+      })
+      const all = account.addresses()
+      const single = account.mnemonicToAccount({ hdPath: "m/84'/0'/0'/0/0" })
+      return console.log(
+        await account.spendableUtxos({ address: all.taproot.address })
+      )
     case 'inscriptions':
       return console.log(
         await networkConfig.wallet.getInscriptions({

@@ -4,8 +4,14 @@ const bip32 = BIP32Factory(ecc)
 import * as bip39 from 'bip39'
 import * as bitcoin from 'bitcoinjs-lib'
 bitcoin.initEccLib(ecc)
+import * as dotenv from 'dotenv'
+dotenv.config()
 
-export const generateWallet = (testnet: boolean, mnemonic?: string) => {
+export const generateWallet = (
+  testnet: boolean,
+  mnemonic?: string,
+  index?: number
+) => {
   const toXOnly = (pubKey: Buffer) =>
     pubKey.length === 32 ? pubKey : pubKey.slice(1, 33)
 
@@ -13,10 +19,10 @@ export const generateWallet = (testnet: boolean, mnemonic?: string) => {
     mnemonic = process.env.TESTNET_MNEMONIC
   }
 
-  let pathLegacy = "m/44'/0'/0'/0"
-  let pathSegwitNested = "m/49'/0'/0'/0/0"
-  let pathSegwit = "m/84'/0'/0'/0/0"
-  let pathTaproot = "m/86'/0'/0'/0/0"
+  let pathLegacy = `m/44'/0'/0'/0/${index}`
+  let pathSegwitNested = `m/49'/0'/0'/0/${index}`
+  let pathSegwit = `m/84'/0'/0'/0/${index}`
+  let pathTaproot = `m/86'/0'/0'/0/${index}`
   let network = bitcoin.networks.bitcoin
 
   /**
@@ -33,31 +39,37 @@ export const generateWallet = (testnet: boolean, mnemonic?: string) => {
 
   const seed = bip39.mnemonicToSeedSync(mnemonic)
   const root = bip32.fromSeed(seed)
-  console.log('\nxpriv: ', root.toBase58())
+  const xpriv = root.toBase58()
 
   // Legacy
-  const childSegwitLegacy = root.derivePath(pathLegacy)
-  const pubkeySegwitLegacy = childSegwitLegacy.publicKey
+  const childLegacy = root.derivePath(pathLegacy)
+  const pubkeyLegacy = childLegacy.publicKey
+  const privateKeyLegacy = childLegacy.privateKey
   const addressLegacy = bitcoin.payments.p2pkh({
-    pubkey: pubkeySegwitLegacy,
+    pubkey: pubkeyLegacy,
     network: network,
   })
-  console.log('\nLegacy: ')
-  console.log('pubkey: ', pubkeySegwitLegacy.toString('hex'))
-  console.log('address: ', addressLegacy.address)
+  const legacy = {
+    pubkey: pubkeyLegacy.toString('hex'),
+    privateKey: privateKeyLegacy.toString('hex'),
+    address: addressLegacy.address,
+  }
 
   // Nested Segwit
   const childSegwitNested = root.derivePath(pathSegwitNested)
   const pubkeySegwitNested = childSegwitNested.publicKey
+  const privateKey = childSegwitNested.privateKey
   const addressSegwitNested = bitcoin.payments.p2sh({
     redeem: bitcoin.payments.p2wpkh({
       pubkey: pubkeySegwitNested,
       network,
     }),
   })
-  console.log('\nNested Segwit: ')
-  console.log('pubkey: ', pubkeySegwitNested.toString('hex'))
-  console.log('address: ', addressSegwitNested.address)
+  const nestedSegwit = {
+    pubkey: pubkeySegwitNested.toString('hex'),
+    privateKey: privateKey.toString('hex'),
+    address: addressSegwitNested.address,
+  }
 
   // Native Segwit
   const childSegwit = root.derivePath(pathSegwit)
@@ -67,10 +79,11 @@ export const generateWallet = (testnet: boolean, mnemonic?: string) => {
     pubkey: pubkeySegwit,
     network,
   })
-  console.log('\nNative Segwit: ')
-  console.log('pubkey: ', pubkeySegwit.toString('hex'))
-  console.log('privateKey: ', privateKeySegwit.toString('hex'))
-  console.log('address: ', addressSegwit.address)
+  const nativeSegwit = {
+    pubkey: pubkeySegwit.toString('hex'),
+    privateKey: privateKeySegwit.toString('hex'),
+    address: addressSegwit.address,
+  }
 
   // Taproot
   const childTaproot = root.derivePath(pathTaproot)
@@ -82,14 +95,22 @@ export const generateWallet = (testnet: boolean, mnemonic?: string) => {
     internalPubkey: pubkeyTaprootXOnly,
     network,
   })
-  console.log('\nTaproot: ')
-  console.log('pubkey: ', pubkeyTaproot.toString('hex'))
-  console.log('privateKey: ', privateKeyTaproot.toString('hex'))
-  console.log('pubkey XOnly: ', pubkeyTaprootXOnly.toString('hex'))
-  console.log('address: ', addressTaproot.address)
+  const taproot = {
+    pubkey: pubkeySegwitNested.toString('hex'),
+    pubKeyXOnly: pubkeyTaprootXOnly.toString('hex'),
+    privateKey: privateKeyTaproot.toString('hex'),
+    address: addressTaproot.address,
+  }
+
+  return {
+    taproot,
+    nativeSegwit,
+    nestedSegwit,
+    legacy,
+  }
 }
 
 generateWallet(
   true,
-  'fiction drop width clap mask require that toe treat crater hand section'
+  process.env.MAINNET_MNEMONIC //'rich baby hotel region tape express recipe amazing chunk flavor oven obtain'
 )

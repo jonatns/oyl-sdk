@@ -5,13 +5,24 @@ import {
   internalAddressTypeToName,
 } from '../shared/interface'
 import { ECPair } from '../shared/utils'
-import Mnemonic from 'bitcore-mnemonic'
+import ecc from '@bitcoinerlab/secp256k1'
+import { BIP32API, BIP32Factory, BIP32Interface } from 'bip32'
+const bip32 = BIP32Factory(ecc)
+import * as bip39 from 'bip39'
+import * as dotenv from 'dotenv'
+dotenv.config()
+
+bitcoin.initEccLib(ecc)
+
 import {
   LEGACY_HD_PATH,
   NESTED_SEGWIT_HD_PATH,
+  Oyl,
   SEGWIT_HD_PATH,
   TAPROOT_HD_PATH,
 } from '../oylib'
+import { Provider } from '../provider/provider'
+import { generateWallet } from '../tests/genWallet'
 
 const publicKeyToAddress = (
   publicKey: string,
@@ -48,97 +59,72 @@ const publicKeyToAddress = (
   }
 }
 
-const hdPathToAddressType = (hdPath: string) => {
-  const matchesPath = true
-  switch (matchesPath) {
-    case hdPath.includes("m/84'/0'/0'/"):
-      return AddressType.P2WPKH
-    case hdPath.includes("m/49'/0'/0'/"):
-      return AddressType.P2SH_P2WPKH
-    case hdPath.includes("m/86'/0'/0'/"):
-      return AddressType.P2TR
-    case hdPath.includes("m/44'/0'/0'/"):
-      return AddressType.P2PKH
-    default:
-      throw new Error('unknown hd path')
-  }
-}
-
-interface SingleAccount {
-  [addressKeyValue: string]: {
-    pubkey: string
-    addressType: string
-    btcAddress: string
-  }
-}
-
-interface AllAccounts {
-  segwit: SingleAccount
-  taproot: SingleAccount
-  nestedSegwit: SingleAccount
-  legacy: SingleAccount
-}
-
 export class Account {
-  mnemonicObject: Mnemonic
-  constructor(mnemonic: string) {
-    this.mnemonicObject = new Mnemonic(mnemonic)
+  mnemonic: string
+  network: bitcoin.Network
+  index?: number = 0
+  provider: Provider
+  constructor({
+    mnemonic,
+    network,
+    index,
+    provider,
+  }: {
+    mnemonic: string
+    network: bitcoin.Network
+    index?: number
+    provider: Provider
+  }) {
+    this.mnemonic = mnemonic
+    this.network = network
+    this.index = index
+    this.provider = provider
   }
 
-  mnemonicToAccount(network: bitcoin.Network, hdPath: string) {
-    const child = this.mnemonicObject
-      .toHDPrivateKey(undefined, network)
-      .deriveChild(hdPath)
-    const ecpair = ECPair.fromPrivateKey(child.privateKey.toBuffer())
-    const pubkey = ecpair.publicKey.toString('hex')
-    const addressType = hdPathToAddressType(hdPath)
+  hdPathToAddressType = ({ hdPath }: { hdPath: string }) => {
+    if (hdPath.startsWith("m/84'/0'/0'/")) {
+      return AddressType.P2WPKH
+    }
+    if (hdPath.startsWith("m/49'/0'/0'/")) {
+      return AddressType.P2SH_P2WPKH
+    }
+    if (hdPath.startsWith("m/86'/0'/0'/")) {
+      return AddressType.P2TR
+    }
+    if (hdPath.startsWith("m/44'/0'/0'/")) {
+      return AddressType.P2PKH
+    }
+    throw new Error('unknown hd path')
+  }
+
+  mnemonicToAccount({ hdPath }: { hdPath: string }) {
+    const seed = bip39.mnemonicToSeedSync(this.mnemonic)
+    const root = bip32.fromSeed(seed)
+    const child = root.derivePath(hdPath)
+    const pubkey = child.publicKey.toString('hex')
+    const privateKey = child.privateKey.toString('hex')
+    const addressType = this.hdPathToAddressType({ hdPath })
     const addressKeyValue = internalAddressTypeToName[addressType]
-    const btcAddress = publicKeyToAddress(pubkey, addressType, network)
+    const btcAddress = publicKeyToAddress(pubkey, addressType, this.network)
     return {
       pubkey: pubkey,
       addressType: addressNameToType[addressKeyValue],
-      btcAddress: btcAddress,
+      address: btcAddress,
+      privateKey: privateKey,
     }
   }
 
-  allAddresses(network: bitcoin.Network, accountIndex?: number): AllAccounts {
-    let paths: string[] = [
-      SEGWIT_HD_PATH,
-      TAPROOT_HD_PATH,
-      NESTED_SEGWIT_HD_PATH,
-      LEGACY_HD_PATH,
-    ]
+  addresses() {
+    const accounts = generateWallet(
+      this.network === bitcoin.networks.testnet,
+      this.mnemonic,
+      this.index
+    )
+    return accounts
+  }
 
-    if (accountIndex) {
-      paths = [
-        "m/84'/0'/0'/" + String(accountIndex),
-        "m/49'/0'/0'/" + String(accountIndex),
-        "m/86'/0'/0'/" + String(accountIndex),
-        "m/44'/0'/0'/" + String(accountIndex),
-      ]
-    }
-
-    const mnemonic = this.mnemonicObject
-    let allAccounts = {} as AllAccounts
-
-    for (const path of paths) {
-      const hdObject = mnemonic
-        .toHDPrivateKey(undefined, network)
-        .deriveChild(path)
-      const ecpair = ECPair.fromPrivateKey(hdObject.privateKey.toBuffer())
-      const pubkey = ecpair.publicKey.toString('hex')
-      const addressType = hdPathToAddressType(path)
-      const addressKeyValue = internalAddressTypeToName[addressType]
-      const btcAddress = publicKeyToAddress(pubkey, addressType, network)
-      const additionalSingleAccount: SingleAccount = {
-        [addressKeyValue]: {
-          pubkey: pubkey,
-          addressType: addressNameToType[addressKeyValue],
-          btcAddress: btcAddress,
-        },
-      } as SingleAccount
-      allAccounts = { ...allAccounts, ...additionalSingleAccount }
-    }
-    return allAccounts
+  async spendableUtxos({ address }: { address: string }) {
+    const utxos = await this.provider.esplora.getAddressUtxo(address)
+    return utxos
   }
 }
