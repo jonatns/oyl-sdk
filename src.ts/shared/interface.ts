@@ -327,6 +327,8 @@ export interface NetworkOptions {
    */
   projectId?: string
 
+  staging? : boolean
+
   network: Network
 }
 

@@ -15,6 +15,7 @@ export class OylApiClient {
   private regtest: boolean
   private apiKey: string
   private authToken: string = ''
+  private network: string
 
   /**
    * Create an instance of the OylApiClient.
@@ -23,10 +24,12 @@ export class OylApiClient {
   constructor(options?: {
     host: string
     apiKey: string
+    network: string
     testnet?: boolean
     regtest?: boolean
   }) {
     this.host = options?.host || ''
+    this.network = options.network
     this.testnet = options.testnet == true
     this.regtest = options.regtest == true
     this.apiKey = options.apiKey
@@ -41,6 +44,7 @@ export class OylApiClient {
     host: string
     testnet?: boolean
     apiKey: string
+    network: string
   }): OylApiClient {
     return new this(data)
   }
@@ -68,6 +72,7 @@ export class OylApiClient {
         headers: {
           'Content-Type': 'application/json',
           Authorization: this.authToken ? `Bearer ${this.authToken}` : '',
+          'X-Bitcoin-Network': this.network
         },
         cache: 'no-cache',
       }
