@@ -81,7 +81,7 @@ export class Oyl {
     const apiKey = options.projectId
 
     this.apiClient = new OylApiClient({
-      host: options.staging? 'https://staging-api.oyl.gg' : 'https://api.oyl.gg',
+      host: options.apiUrl || 'https://api.oyl.gg',
       network: options.network,
       testnet: options.network == 'testnet' ? true : null,
       regtest: options.network == 'regtest' ? true : null,
