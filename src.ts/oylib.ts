@@ -1,5 +1,4 @@
 import { defaultNetworkOptions } from './shared/constants'
-import * as ecc2 from '@cmdcode/crypto-utils'
 
 import { findUtxosToCoverAmount, OGPSBTTransaction, Utxo } from './txbuilder'
 
@@ -82,7 +81,8 @@ export class Oyl {
     const apiKey = options.projectId
 
     this.apiClient = new OylApiClient({
-      host: 'https://api.oyl.gg',
+      host: options.apiUrl || 'https://api.oyl.gg',
+      network: options.network,
       testnet: options.network == 'testnet' ? true : null,
       regtest: options.network == 'regtest' ? true : null,
       apiKey: apiKey,
