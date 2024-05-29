@@ -473,11 +473,28 @@ export class OylApiClient {
     return await this._call('/initiate-unisat-bid', 'post', params)
   }
 
+   /**
+   * Initialize a Rune swap bid.
+   * @param params - Parameters for the bid.
+   */
+   async initRuneSwapBid(params: SwapBrcBid): Promise<any> {
+    return await this._call('/initiate-unisat-rune-bid', 'post', params)
+  }
+
   /**
    * Submit a signed bid.
    * @param params - Parameters for the signed bid.
    */
   async submitSignedBid(params: SignedBid): Promise<any> {
+    return await this._call('/finalize-unisat-bid', 'post', params)
+  }
+
+
+   /**
+   * Submit a signed Rune bid.
+   * @param params - Parameters for the signed bid.
+   */
+   async submitSignedRuneBid(params: SignedBid): Promise<any> {
     return await this._call('/finalize-unisat-bid', 'post', params)
   }
 

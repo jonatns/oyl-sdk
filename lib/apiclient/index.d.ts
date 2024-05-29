@@ -211,10 +211,20 @@ export declare class OylApiClient {
      */
     initSwapBid(params: SwapBrcBid): Promise<any>;
     /**
+    * Initialize a Rune swap bid.
+    * @param params - Parameters for the bid.
+    */
+    initRuneSwapBid(params: SwapBrcBid): Promise<any>;
+    /**
      * Submit a signed bid.
      * @param params - Parameters for the signed bid.
      */
     submitSignedBid(params: SignedBid): Promise<any>;
+    /**
+    * Submit a signed Rune bid.
+    * @param params - Parameters for the signed bid.
+    */
+    submitSignedRuneBid(params: SignedBid): Promise<any>;
     sendBtcEstimate({ feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, }: {
         feeRate?: number;
         amount: number;
