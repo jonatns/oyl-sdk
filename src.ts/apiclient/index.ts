@@ -271,6 +271,27 @@ export class OylApiClient {
     return response
   }
 
+
+   /**
+   * Get Rune offers.
+   * @param ticker - The ticker to query.
+   * @param limit - The limit of offers to return (Default = 5).
+   */
+   async getRuneOffers({
+    ticker,
+    limit = 5,
+  }: {
+    ticker: string
+    limit?: number
+  }): Promise<any> {
+    const response = await this._call('/get-rune-offers', 'post', {
+      ticker,
+      limit,
+    })
+    if (response.error) throw Error(response.error)
+    return response
+  }
+
   /**
    * Get Okx ticker offers.
    * @param _ticker - The ticker to query.
@@ -310,6 +331,15 @@ export class OylApiClient {
     const response = await this._call('/get-bitcoin-price', 'post', {
       ticker: null,
     })
+    return response
+  }
+
+
+   /**
+   * Get Mintable Runes
+   */
+   async getMintableRunes() {
+    const response = await this._call('/get-mintable-runes', 'post', {})
     return response
   }
 

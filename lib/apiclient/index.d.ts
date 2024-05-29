@@ -114,6 +114,15 @@ export declare class OylApiClient {
         limit?: number;
     }): Promise<any>;
     /**
+    * Get Rune offers.
+    * @param ticker - The ticker to query.
+    * @param limit - The limit of offers to return (Default = 5).
+    */
+    getRuneOffers({ ticker, limit, }: {
+        ticker: string;
+        limit?: number;
+    }): Promise<any>;
+    /**
      * Get Okx ticker offers.
      * @param _ticker - The ticker to query.
      */
@@ -136,6 +145,10 @@ export declare class OylApiClient {
      * Get BTC price.
      */
     getBtcPrice(): Promise<any>;
+    /**
+    * Get Mintable Runes
+    */
+    getMintableRunes(): Promise<any>;
     /**
     * Get faucet TBTC.
     */
