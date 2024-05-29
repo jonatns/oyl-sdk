@@ -9,10 +9,13 @@ import {
 import { BuildMarketplaceTransaction } from './buildMarketplaceTx'
 import * as bitcoin from 'bitcoinjs-lib'
 import {
+  AssetType,
   ExternalSwap,
   MarketplaceAccount,
   MarketplaceOffer,
   OkxBid,
+  SignedBid,
+  SwapPayload,
 } from '../shared/interface'
 import { Signer } from '../signer'
 import {
@@ -33,6 +36,7 @@ export class Marketplace {
   private altSpendAddress: string
   private altSpendPubKey: string
   private signer: Signer
+  public assetType: AssetType
   public feeRate: number
   public txIds: string[]
   public addressesBound: boolean = false
@@ -41,6 +45,7 @@ export class Marketplace {
     this.wallet = options.wallet
     this.receiveAddress = options.receiveAddress
     this.spendAddress = options.spendAddress
+    this.assetType = options.assetType
     this.spendPubKey = options.spendPubKey
     this.altSpendAddress = options.altSpendAddress
     this.altSpendPubKey = options.altSpendPubKey
@@ -239,8 +244,30 @@ export class Marketplace {
     }
   }
 
+  async getAssetPsbtPath (payload: SwapPayload ){
+    switch (this.assetType) {
+      case AssetType.BRC20:
+        return await this.wallet.apiClient.initSwapBid(payload)
+        break;
+      case AssetType.RUNES:
+         return await this.wallet.apiClient.initRuneSwapBid(payload)
+         break;
+    }
+  }
+
+  async getSubmitAssetPsbtPath (payload: SignedBid ){
+    switch (this.assetType) {
+      case AssetType.BRC20:
+        return await this.wallet.apiClient.submitSignedBid(payload)
+        break;
+      case AssetType.RUNES:
+         return await this.wallet.apiClient.submitSignedRuneBid(payload)
+         break;
+    }
+  }
+
   async externalSwap(bid: ExternalSwap) {
-    const payload = {
+    const payload: SwapPayload = {
       address: this.selectedSpendAddress,
       auctionId: bid.auctionId,
       bidPrice: bid.bidPrice,
@@ -256,7 +283,8 @@ export class Marketplace {
       payload['signature'] = signature
       this.addressesBound = true
     }
-    const psbt = await this.wallet.apiClient.initSwapBid(payload)
+    const psbt = await this.getAssetPsbtPath(payload)
+
     if (!psbt?.error) {
       const unsignedPsbt = psbt.psbtBid
 
@@ -264,7 +292,7 @@ export class Marketplace {
       swapOptions['psbt'] = unsignedPsbt
 
       const signedPsbt = await this.externalSign(swapOptions)
-      const data = await this.wallet.apiClient.submitSignedBid({
+      const data = await this.getSubmitAssetPsbtPath({
         psbtBid: signedPsbt,
         auctionId: bid.auctionId,
         bidId: psbt.bidId,

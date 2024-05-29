@@ -1,5 +1,5 @@
 import { BuildMarketplaceTransaction } from './buildMarketplaceTx';
-import { ExternalSwap, MarketplaceAccount, MarketplaceOffer } from '../shared/interface';
+import { AssetType, ExternalSwap, MarketplaceAccount, MarketplaceOffer, SignedBid, SwapPayload } from '../shared/interface';
 export declare class Marketplace {
     private wallet;
     private receiveAddress;
@@ -10,6 +10,7 @@ export declare class Marketplace {
     private altSpendAddress;
     private altSpendPubKey;
     private signer;
+    assetType: AssetType;
     feeRate: number;
     txIds: string[];
     addressesBound: boolean;
@@ -25,6 +26,8 @@ export declare class Marketplace {
         processed: boolean;
         processedOffers: any[];
     }>;
+    getAssetPsbtPath(payload: SwapPayload): Promise<any>;
+    getSubmitAssetPsbtPath(payload: SignedBid): Promise<any>;
     externalSwap(bid: ExternalSwap): Promise<any>;
     buyMarketPlaceOffers(pOffers: any): Promise<{
         txIds: string[];
