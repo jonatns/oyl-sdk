@@ -613,7 +613,6 @@ export class Oyl {
             confirmations: utxo.status.confirmed ? 3 : 0,
             scriptPk: voutEntry.scriptpubkey,
             address: address,
-            addressType: addressType,
             inscriptions: [],
           })
         }

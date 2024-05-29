@@ -25,8 +25,10 @@ import {
 import { customPaths } from '../wallet/accountsManager'
 import * as transactions from '../transactions'
 import { Marketplace } from '../marketplace'
-import { Account } from '../account/account'
 import * as dotenv from 'dotenv'
+import { Provider } from '../provider/provider'
+import { MnemonicToAccountOptions, mnemonicToAccount } from '../account'
+import { oylSpendableUtxos } from '../utxo'
 dotenv.config()
 
 bitcoin.initEccLib(ecc2)
@@ -168,6 +170,12 @@ const tapWallet = new Oyl({
   baseUrl: 'https://mainnet.sandshrew.io',
   version: 'v1',
   projectId: process.env.SANDSHREW_PROJECT_ID,
+})
+
+const provider = new Provider({
+  url: 'https://mainnet.sandshrew.io',
+  projectId: process.env.SANDSHREW_PROJECT_ID,
+  network: bitcoin.networks.bitcoin,
 })
 
 const testWallet = new Oyl({
@@ -618,16 +626,18 @@ export async function runCLI() {
       )
     case 'new-account':
       const network = bitcoin.networks.bitcoin
-      const account = new Account({
-        mnemonic: process.env.MAINNET_MNEMONIC.trim(),
+      const opts: MnemonicToAccountOptions = {
         network: network,
         index: 0,
-        provider: tapWallet.provider,
-      })
-      const all = account.addresses()
-      const single = account.mnemonicToAccount({ hdPath: "m/84'/0'/0'/0/0" })
+      }
+
+      const all = mnemonicToAccount(process.env.MAINNET_MNEMONIC.trim(), opts)
       return console.log(
-        await account.spendableUtxos({ address: all.taproot.address })
+        await oylSpendableUtxos({
+          accounts: all,
+          provider,
+          spendAmount: 65000,
+        })
       )
     case 'inscriptions':
       return console.log(
