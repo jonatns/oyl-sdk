@@ -76,11 +76,15 @@ function tapTweakHash(pubKey: Buffer, h: Buffer | undefined): Buffer {
 }
 
 export function getNetwork(
-  value: Network | 'main' | 'mainnet' | 'regtest' | 'testnet'
+  value: Network | 'main' | 'mainnet' | 'regtest' | 'testnet' | 'signet'
 ) {
   if (value === 'mainnet' || value === 'main') {
     return bitcoin.networks['bitcoin']
-  }
+  } 
+
+  if (value === 'signet') {
+    return bitcoin.networks['testnet']
+  } 
 
   return bitcoin.networks[value]
 }
