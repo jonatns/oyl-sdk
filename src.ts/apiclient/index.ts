@@ -276,6 +276,27 @@ export class OylApiClient {
     return response
   }
 
+
+   /**
+   * Get Rune offers.
+   * @param ticker - The ticker to query.
+   * @param limit - The limit of offers to return (Default = 5).
+   */
+   async getRuneOffers({
+    ticker,
+    limit = 5,
+  }: {
+    ticker: string
+    limit?: number
+  }): Promise<any> {
+    const response = await this._call('/get-rune-offers', 'post', {
+      ticker,
+      limit,
+    })
+    if (response.error) throw Error(response.error)
+    return response
+  }
+
   /**
    * Get Okx ticker offers.
    * @param _ticker - The ticker to query.
@@ -315,6 +336,15 @@ export class OylApiClient {
     const response = await this._call('/get-bitcoin-price', 'post', {
       ticker: null,
     })
+    return response
+  }
+
+
+   /**
+   * Get Mintable Runes
+   */
+   async getMintableRunes() {
+    const response = await this._call('/get-mintable-runes', 'post', {})
     return response
   }
 
@@ -448,11 +478,28 @@ export class OylApiClient {
     return await this._call('/initiate-unisat-bid', 'post', params)
   }
 
+   /**
+   * Initialize a Rune swap bid.
+   * @param params - Parameters for the bid.
+   */
+   async initRuneSwapBid(params: SwapBrcBid): Promise<any> {
+    return await this._call('/initiate-unisat-rune-bid', 'post', params)
+  }
+
   /**
    * Submit a signed bid.
    * @param params - Parameters for the signed bid.
    */
   async submitSignedBid(params: SignedBid): Promise<any> {
+    return await this._call('/finalize-unisat-bid', 'post', params)
+  }
+
+
+   /**
+   * Submit a signed Rune bid.
+   * @param params - Parameters for the signed bid.
+   */
+   async submitSignedRuneBid(params: SignedBid): Promise<any> {
     return await this._call('/finalize-unisat-bid', 'post', params)
   }
 

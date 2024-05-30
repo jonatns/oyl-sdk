@@ -142,9 +142,24 @@ export interface MarketplaceOffer {
   inscriptionId?: string
 }
 
+export enum AssetType {
+ BRC20,
+ COLLECTIBLE,
+ RUNES
+}
+
 export interface ExternalSwap {
-  auctionId: String
-  bidPrice: Number
+  auctionId: string
+  bidPrice: number
+}
+
+export interface SwapPayload {
+  address: string;
+  auctionId: string;
+  bidPrice: number;
+  pubKey: string;
+  receiveAddress: string;
+  feerate: number
 }
 
 export interface OkxBid {
@@ -164,6 +179,7 @@ export interface MarketplaceAccount {
   altSpendAddress: string
   altSpendPubKey: string
   signer: Signer
+  assetType: AssetType
   receiveAddress: string
   feeRate: number
 }
@@ -264,19 +280,19 @@ export interface InscribeTransfer {
 }
 
 export interface SwapBrcBid {
-  address: String
-  auctionId: String
-  bidPrice: Number
+  address: string
+  auctionId: string
+  bidPrice: number
   feerate: number
-  pubKey: String
+  pubKey: string
   receiveAddress: string
   signature?: string
 }
 
 export interface SignedBid {
-  psbtBid: String
-  auctionId: String
-  bidId: String
+  psbtBid: string
+  auctionId: string
+  bidId: string
 }
 
 export const addressTypeToName = {
