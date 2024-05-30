@@ -343,6 +343,8 @@ export interface NetworkOptions {
    */
   projectId?: string
 
+  apiUrl? : string
+
   network: Network
 }
 

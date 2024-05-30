@@ -8,7 +8,6 @@ import {
   TAPROOT_HD_PATH,
 } from '../oylib'
 import { Signer } from '../signer'
-import { Aggregator } from '../PSBTAggregator'
 import * as bitcoin from 'bitcoinjs-lib'
 import axios from 'axios'
 import * as ecc2 from '@bitcoinerlab/secp256k1'
@@ -72,27 +71,27 @@ export async function testMarketplaceBuy() {
 }
 
 export async function testAggregator() {
-  const aggregator = new Aggregator()
-  const aggregated = await aggregator.fetchAndAggregateOffers(
-    'ordi',
-    20,
-    110000
-  )
+  // const aggregator = new Aggregator()
+  // const aggregated = await aggregator.fetchAndAggregateOffers(
+  //   'ordi',
+  //   20,
+  //   110000
+  // )
 
-  const formatOffers = (offers) =>
-    offers.map((offer) => ({
-      amount: offer.amount,
-      unitPrice: offer.unitPrice,
-      nftId: offer.offerId,
-      marketplace: offer.marketplace,
-    }))
+  // const formatOffers = (offers) =>
+  //   offers.map((offer) => ({
+  //     amount: offer.amount,
+  //     unitPrice: offer.unitPrice,
+  //     nftId: offer.offerId,
+  //     marketplace: offer.marketplace,
+  //   }))
 
-  console.log('Aggregated Offers')
-  console.log('Best Price Offers:', formatOffers(aggregated.bestPrice.offers))
-  console.log(
-    'Closest Match Offers:',
-    formatOffers(aggregated.closestMatch.offers)
-  )
+  // console.log('Aggregated Offers')
+  // console.log('Best Price Offers:', formatOffers(aggregated.bestPrice.offers))
+  // console.log(
+  //   'Closest Match Offers:',
+  //   formatOffers(aggregated.closestMatch.offers)
+  // )
 }
 
 export async function viewPsbt() {
@@ -804,30 +803,30 @@ export async function runCLI() {
     // case 'convert':
     //   return await convertPsbt()
     case 'aggregate':
-      const aggregator = new Aggregator()
-      const aggregated = await aggregator.fetchAndAggregateOffers(
-        ticker,
-        20,
-        1000
-      )
+      // const aggregator = new Aggregator()
+      // const aggregated = await aggregator.fetchAndAggregateOffers(
+      //   ticker,
+      //   20,
+      //   1000
+      // )
 
-      const formatOffers = (offers) =>
-        offers.map((offer) => ({
-          amount: offer.amount,
-          unitPrice: offer.unitPrice,
-          nftId: offer.offerId,
-          marketplace: offer.marketplace,
-        }))
+      // const formatOffers = (offers) =>
+      //   offers.map((offer) => ({
+      //     amount: offer.amount,
+      //     unitPrice: offer.unitPrice,
+      //     nftId: offer.offerId,
+      //     marketplace: offer.marketplace,
+      //   }))
 
-      console.log('Aggregated Offers')
-      console.log(
-        'Best Price Offers:',
-        formatOffers(aggregated.bestPrice.offers)
-      )
-      console.log(
-        'Closest Match Offers:',
-        formatOffers(aggregated.closestMatch.offers)
-      )
+      // console.log('Aggregated Offers')
+      // console.log(
+      //   'Best Price Offers:',
+      //   formatOffers(aggregated.bestPrice.offers)
+      // )
+      // console.log(
+      //   'Closest Match Offers:',
+      //   formatOffers(aggregated.closestMatch.offers)
+      // )
       return
     case 'account-summary':
       return console.log(

@@ -303,6 +303,7 @@ export interface NetworkOptions {
      * ProjectId is used as an API key for local test servers. Defaults to mainnet API key
      */
     projectId?: string;
+    apiUrl?: string;
     network: Network;
 }
 export interface SwapBrc {

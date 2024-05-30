@@ -8,6 +8,7 @@ export declare class OylApiClient {
     private regtest;
     private apiKey;
     private authToken;
+    private network;
     /**
      * Create an instance of the OylApiClient.
      * @param options - Configuration object containing the API host.
@@ -15,6 +16,7 @@ export declare class OylApiClient {
     constructor(options?: {
         host: string;
         apiKey: string;
+        network: string;
         testnet?: boolean;
         regtest?: boolean;
     });
@@ -27,6 +29,7 @@ export declare class OylApiClient {
         host: string;
         testnet?: boolean;
         apiKey: string;
+        network: string;
     }): OylApiClient;
     setAuthToken(token: string): void;
     /**
