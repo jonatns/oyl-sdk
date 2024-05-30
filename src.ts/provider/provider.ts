@@ -15,11 +15,13 @@ export class Provider {
     url,
     projectId,
     network,
+    networkType,
     version = 'v1',
   }: {
     url: string
     projectId: string
     network: bitcoin.networks.Network
+    networkType: 'signet' | 'mainnet' | 'testnet'
     version?: string
   }) {
     let isTestnet: boolean
@@ -35,7 +37,7 @@ export class Provider {
     this.esplora = new EsploraRpc(masterUrl)
     this.ord = new OrdRpc(masterUrl)
     this.api = new OylApiClient({
-      network: 'mainnet',
+      network: networkType,
       host: 'https://api.oyl.gg',
       testnet: isTestnet ? true : null,
       regtest: isRegtest ? true : null,
