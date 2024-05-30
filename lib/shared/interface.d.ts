@@ -128,9 +128,22 @@ export interface MarketplaceOffer {
     psbt?: string;
     inscriptionId?: string;
 }
+export declare enum AssetType {
+    BRC20 = 0,
+    COLLECTIBLE = 1,
+    RUNES = 2
+}
 export interface ExternalSwap {
-    auctionId: String;
-    bidPrice: Number;
+    auctionId: string;
+    bidPrice: number;
+}
+export interface SwapPayload {
+    address: string;
+    auctionId: string;
+    bidPrice: number;
+    pubKey: string;
+    receiveAddress: string;
+    feerate: number;
 }
 export interface OkxBid {
     ticker: string;
@@ -148,6 +161,7 @@ export interface MarketplaceAccount {
     altSpendAddress: string;
     altSpendPubKey: string;
     signer: Signer;
+    assetType: AssetType;
     receiveAddress: string;
     feeRate: number;
 }
@@ -237,18 +251,18 @@ export interface InscribeTransfer {
     inscriptionId?: string;
 }
 export interface SwapBrcBid {
-    address: String;
-    auctionId: String;
-    bidPrice: Number;
+    address: string;
+    auctionId: string;
+    bidPrice: number;
     feerate: number;
-    pubKey: String;
+    pubKey: string;
     receiveAddress: string;
     signature?: string;
 }
 export interface SignedBid {
-    psbtBid: String;
-    auctionId: String;
-    bidId: String;
+    psbtBid: string;
+    auctionId: string;
+    bidId: string;
 }
 export declare const addressTypeToName: {
     readonly p2pkh: "legacy";
@@ -295,6 +309,7 @@ export interface NetworkOptions {
      * ProjectId is used as an API key for local test servers. Defaults to mainnet API key
      */
     projectId?: string;
+    apiUrl?: string;
     network: Network;
 }
 export interface SwapBrc {

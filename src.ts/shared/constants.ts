@@ -23,23 +23,27 @@ export const defaultNetworkOptions: Record<Network, NetworkOptions> = {
     version: 'v1',
     projectId: process.env.SANDSHREW_PROJECT_ID,
     network: 'mainnet',
+    apiUrl: "https://api.oyl.gg"
   },
   testnet: {
     baseUrl: 'https://testnet.sandshrew.io',
     version: 'v1',
     projectId: process.env.SANDSHREW_PROJECT_ID,
     network: 'testnet',
-  },
+    apiUrl: "https://api.oyl.gg"
+    },
   regtest: {
     baseUrl: 'http://localhost:3000',
     version: 'v1',
     projectId: 'regtest',
     network: 'regtest',
-  },
+    apiUrl: "https://api.oyl.gg"
+    },
   signet: {
     baseUrl: 'https://signet.sandshrew.io',
     version: 'v1',
     projectId: process.env.SANDSHREW_PROJECT_ID, 
-    network: 'testnet',
-  }
+    network: 'signet',
+    apiUrl: "https://api.oyl.gg"
+    },
 }

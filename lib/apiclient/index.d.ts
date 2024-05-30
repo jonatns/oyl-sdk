@@ -8,6 +8,7 @@ export declare class OylApiClient {
     private regtest;
     private apiKey;
     private authToken;
+    private network;
     /**
      * Create an instance of the OylApiClient.
      * @param options - Configuration object containing the API host.
@@ -15,6 +16,7 @@ export declare class OylApiClient {
     constructor(options?: {
         host: string;
         apiKey: string;
+        network: string;
         testnet?: boolean;
         regtest?: boolean;
     });
@@ -27,6 +29,7 @@ export declare class OylApiClient {
         host: string;
         testnet?: boolean;
         apiKey: string;
+        network: string;
     }): OylApiClient;
     setAuthToken(token: string): void;
     /**
@@ -114,6 +117,15 @@ export declare class OylApiClient {
         limit?: number;
     }): Promise<any>;
     /**
+    * Get Rune offers.
+    * @param ticker - The ticker to query.
+    * @param limit - The limit of offers to return (Default = 5).
+    */
+    getRuneOffers({ ticker, limit, }: {
+        ticker: string;
+        limit?: number;
+    }): Promise<any>;
+    /**
      * Get Okx ticker offers.
      * @param _ticker - The ticker to query.
      */
@@ -136,6 +148,10 @@ export declare class OylApiClient {
      * Get BTC price.
      */
     getBtcPrice(): Promise<any>;
+    /**
+    * Get Mintable Runes
+    */
+    getMintableRunes(): Promise<any>;
     /**
     * Get faucet TBTC.
     */
@@ -198,10 +214,20 @@ export declare class OylApiClient {
      */
     initSwapBid(params: SwapBrcBid): Promise<any>;
     /**
+    * Initialize a Rune swap bid.
+    * @param params - Parameters for the bid.
+    */
+    initRuneSwapBid(params: SwapBrcBid): Promise<any>;
+    /**
      * Submit a signed bid.
      * @param params - Parameters for the signed bid.
      */
     submitSignedBid(params: SignedBid): Promise<any>;
+    /**
+    * Submit a signed Rune bid.
+    * @param params - Parameters for the signed bid.
+    */
+    submitSignedRuneBid(params: SignedBid): Promise<any>;
     sendBtcEstimate({ feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, }: {
         feeRate?: number;
         amount: number;

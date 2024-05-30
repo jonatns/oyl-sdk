@@ -15,6 +15,7 @@ export class OylApiClient {
   private regtest: boolean
   private apiKey: string
   private authToken: string = ''
+  private network: string
 
   /**
    * Create an instance of the OylApiClient.
@@ -23,10 +24,12 @@ export class OylApiClient {
   constructor(options?: {
     host: string
     apiKey: string
+    network: string
     testnet?: boolean
     regtest?: boolean
   }) {
     this.host = options?.host || ''
+    this.network = options.network
     this.testnet = options.testnet == true
     this.regtest = options.regtest == true
     this.apiKey = options.apiKey
@@ -41,6 +44,7 @@ export class OylApiClient {
     host: string
     testnet?: boolean
     apiKey: string
+    network: string
   }): OylApiClient {
     return new this(data)
   }
@@ -68,6 +72,7 @@ export class OylApiClient {
         headers: {
           'Content-Type': 'application/json',
           Authorization: this.authToken ? `Bearer ${this.authToken}` : '',
+          'X-Bitcoin-Network': this.network
         },
         cache: 'no-cache',
       }
@@ -271,6 +276,27 @@ export class OylApiClient {
     return response
   }
 
+
+   /**
+   * Get Rune offers.
+   * @param ticker - The ticker to query.
+   * @param limit - The limit of offers to return (Default = 5).
+   */
+   async getRuneOffers({
+    ticker,
+    limit = 5,
+  }: {
+    ticker: string
+    limit?: number
+  }): Promise<any> {
+    const response = await this._call('/get-rune-offers', 'post', {
+      ticker,
+      limit,
+    })
+    if (response.error) throw Error(response.error)
+    return response
+  }
+
   /**
    * Get Okx ticker offers.
    * @param _ticker - The ticker to query.
@@ -310,6 +336,15 @@ export class OylApiClient {
     const response = await this._call('/get-bitcoin-price', 'post', {
       ticker: null,
     })
+    return response
+  }
+
+
+   /**
+   * Get Mintable Runes
+   */
+   async getMintableRunes() {
+    const response = await this._call('/get-mintable-runes', 'post', {})
     return response
   }
 
@@ -443,11 +478,28 @@ export class OylApiClient {
     return await this._call('/initiate-unisat-bid', 'post', params)
   }
 
+   /**
+   * Initialize a Rune swap bid.
+   * @param params - Parameters for the bid.
+   */
+   async initRuneSwapBid(params: SwapBrcBid): Promise<any> {
+    return await this._call('/initiate-unisat-rune-bid', 'post', params)
+  }
+
   /**
    * Submit a signed bid.
    * @param params - Parameters for the signed bid.
    */
   async submitSignedBid(params: SignedBid): Promise<any> {
+    return await this._call('/finalize-unisat-bid', 'post', params)
+  }
+
+
+   /**
+   * Submit a signed Rune bid.
+   * @param params - Parameters for the signed bid.
+   */
+   async submitSignedRuneBid(params: SignedBid): Promise<any> {
     return await this._call('/finalize-unisat-bid', 'post', params)
   }
 

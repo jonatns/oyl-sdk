@@ -35,6 +35,7 @@ export class Provider {
     this.esplora = new EsploraRpc(masterUrl)
     this.ord = new OrdRpc(masterUrl)
     this.api = new OylApiClient({
+      network: 'mainnet',
       host: 'https://api.oyl.gg',
       testnet: isTestnet ? true : null,
       regtest: isRegtest ? true : null,
@@ -43,3 +44,5 @@ export class Provider {
     this.network = network
   }
 }
+
+// make a switch for bitcoin js to oyl network names
