@@ -30,36 +30,6 @@ export interface FormattedUtxo {
 }
 
 
-export const accountSpendableUtxos = async ({
-  account,
-  provider,
-  spendAmount,
-}: {
-  account: Account
-  provider: Provider
-  spendAmount: number
-}) => {
-  let totalAmount: number = 0
-  let allUtxos: FormattedUtxo[] = []
-  for (let i = 0; i < account.spendStrategy.addressOrder.length; i++) {
-    const address = account[account.spendStrategy.addressOrder[i]].address
-
-    const { totalGathered, utxos: formattedUtxos } = await addressSpendableUtxos({
-      address,
-      provider,
-      spendAmount,
-      spendStrategy: account.spendStrategy
-    })
-    totalAmount += totalGathered
-    allUtxos = [...allUtxos, ...formattedUtxos]
-    if (totalAmount >= spendAmount) {
-      return allUtxos
-    }
-  }
-  throw Error('Insufficient balance')
-}
-
-
 export const addressSpendableUtxos = async ({
   address,
   provider,
@@ -71,7 +41,7 @@ export const addressSpendableUtxos = async ({
   spendAmount?: number
   spendStrategy?: SpendStrategy
 }) => {
-  let totalGathered: number = 0
+  let totalAmount: number = 0
   let sortedUtxos: EsploraUtxo[] = []
   const formattedUtxos: FormattedUtxo[] = []
 
@@ -96,8 +66,8 @@ export const addressSpendableUtxos = async ({
   });
 
   for (let i = 0; i < filteredUtxos.length; i++) {
-    if (spendAmount && totalGathered >= spendAmount) {
-      return { totalGathered, utxos: formattedUtxos }
+    if (spendAmount && totalAmount >= spendAmount) {
+      return { totalAmount, utxos: formattedUtxos }
     }
 
     const hasInscription = await provider.ord.getTxOutput(
@@ -130,12 +100,41 @@ export const addressSpendableUtxos = async ({
           address: address,
           inscriptions: [],
         })
-        totalGathered += utxos[i].value
+        totalAmount += utxos[i].value
       }
     }
   }
+  return { totalAmount, utxos: formattedUtxos }
+}
 
-  return { totalGathered, utxos: formattedUtxos }
+
+export const accountSpendableUtxos = async ({
+  account,
+  provider,
+  spendAmount,
+}: {
+  account: Account
+  provider: Provider
+  spendAmount?: number
+}) => {
+  let totalAmount: number = 0
+  let allUtxos: FormattedUtxo[] = []
+  for (let i = 0; i < account.spendStrategy.addressOrder.length; i++) {
+    const address = account[account.spendStrategy.addressOrder[i]].address
+
+    const { totalAmount: addressTotal, utxos: formattedUtxos } = await addressSpendableUtxos({
+      address,
+      provider,
+      spendAmount,
+      spendStrategy: account.spendStrategy
+    })
+    totalAmount += addressTotal
+    allUtxos = [...allUtxos, ...formattedUtxos]
+    if (spendAmount && totalAmount >= spendAmount) {
+      return {totalAmount, utxos: allUtxos}
+    }
+  }
+  return {totalAmount, utxos: allUtxos}
 }
 
 

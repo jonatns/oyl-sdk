@@ -20,18 +20,21 @@ export interface FormattedUtxo {
     inscriptions: any[];
     confirmations: number;
 }
-export declare const accountSpendableUtxos: ({ account, provider, spendAmount, }: {
-    account: Account;
-    provider: Provider;
-    spendAmount: number;
-}) => Promise<FormattedUtxo[]>;
 export declare const addressSpendableUtxos: ({ address, provider, spendAmount, spendStrategy }: {
     address: string;
     provider: Provider;
     spendAmount?: number;
     spendStrategy?: SpendStrategy;
 }) => Promise<{
-    totalGathered: number;
+    totalAmount: number;
+    utxos: FormattedUtxo[];
+}>;
+export declare const accountSpendableUtxos: ({ account, provider, spendAmount, }: {
+    account: Account;
+    provider: Provider;
+    spendAmount?: number;
+}) => Promise<{
+    totalAmount: number;
     utxos: FormattedUtxo[];
 }>;
 export declare function findUtxosToCoverAmount(utxos: FormattedUtxo[], amount: number): {
