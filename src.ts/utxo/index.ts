@@ -119,13 +119,14 @@ export const accountSpendableUtxos = async ({
 }) => {
   let totalAmount: number = 0
   let allUtxos: FormattedUtxo[] = []
+  let remainingSpendAmount = spendAmount
   for (let i = 0; i < account.spendStrategy.addressOrder.length; i++) {
     const address = account[account.spendStrategy.addressOrder[i]].address
 
     const { totalAmount: addressTotal, utxos: formattedUtxos } = await addressSpendableUtxos({
       address,
       provider,
-      spendAmount,
+      spendAmount: remainingSpendAmount,
       spendStrategy: account.spendStrategy
     })
     totalAmount += addressTotal
@@ -133,6 +134,7 @@ export const accountSpendableUtxos = async ({
     if (spendAmount && totalAmount >= spendAmount) {
       return {totalAmount, utxos: allUtxos}
     }
+    remainingSpendAmount -= addressTotal
   }
   return {totalAmount, utxos: allUtxos}
 }
