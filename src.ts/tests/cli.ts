@@ -27,7 +27,7 @@ import { Marketplace } from '../marketplace'
 import * as dotenv from 'dotenv'
 import { Provider } from '../provider/provider'
 import { MnemonicToAccountOptions, mnemonicToAccount } from '../account'
-import { oylSpendableUtxos } from '../utxo'
+import { accountSpendableUtxos } from '../utxo'
 dotenv.config()
 
 bitcoin.initEccLib(ecc2)
@@ -175,6 +175,7 @@ const provider = new Provider({
   url: 'https://mainnet.sandshrew.io',
   projectId: process.env.SANDSHREW_PROJECT_ID,
   network: bitcoin.networks.bitcoin,
+  networkType: 'mainnet'
 })
 
 const testWallet = new Oyl({
@@ -632,8 +633,8 @@ export async function runCLI() {
 
       const all = mnemonicToAccount(process.env.MAINNET_MNEMONIC.trim(), opts)
       return console.log(
-        await oylSpendableUtxos({
-          accounts: all,
+        await accountSpendableUtxos({
+          account: all,
           provider,
           spendAmount: 65000,
         })

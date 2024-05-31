@@ -5,6 +5,29 @@ import { Provider } from '../provider/provider'
 import { getAddressType } from '../transactions'
 import { Utxo } from '../txbuilder'
 import { Account } from '../account'
+import { UTXO_DUST } from '../shared/constants'
+
+export interface EsploraUtxo {
+  txid: string
+  vout: number
+  status: {
+    confirmed: boolean,
+    block_height: number,
+    block_hash: string,
+    block_time: number
+  },
+  value: number
+}
+
+export interface FormattedUtxo {
+  txId: string
+  outputIndex: number
+  satoshis: number
+  scriptPk: string
+  address: string
+  inscriptions: any[]
+  confirmations: number
+}
 
 export const spendableUtxos = async (
   address: string,
@@ -60,58 +83,70 @@ export const spendableUtxos = async (
   return sortedUtxos
 }
 
-export const oylSpendableUtxos = async ({
-  accounts,
+export const accountSpendableUtxos = async ({
+  account,
   provider,
   spendAmount,
 }: {
-  accounts: Account
+  account: Account
   provider: Provider
   spendAmount: number
 }) => {
   let totalGathered: number = 0
-  let allUtxos: Utxo[] = []
-  for (let i = 0; i < accounts.spendStrategy.addressOrder.length; i++) {
-    const address = accounts[accounts.spendStrategy.addressOrder[i]].address
-    const utxos = await provider.esplora.getAddressUtxo(address)
-    const gatheredUtxos = await gatherSpendAmountOfSatoshis({
+  let allUtxos: FormattedUtxo[] = []
+  for (let i = 0; i < account.spendStrategy.addressOrder.length; i++) {
+    const address = account[account.spendStrategy.addressOrder[i]].address
+    const utxoSortGreatestToLeast = account.spendStrategy.utxoSortGreatestToLeast ? account.spendStrategy.utxoSortGreatestToLeast : false
+    const gatheredUtxos = await addressSpendableUtxos({
+      address,
       provider,
-      address: address,
-      utxos,
       spendAmount,
+      utxoSortGreatestToLeast
     })
     totalGathered += gatheredUtxos.totalGathered
     allUtxos = [...allUtxos, ...gatheredUtxos.formattedUtxos]
     if (gatheredUtxos.totalGathered >= spendAmount) {
-      if (accounts.spendStrategy.utxoSortGreatestToLeast) {
-        allUtxos = allUtxos.sort((a, b) => b.satoshis - a.satoshis)
-      }
-      if (!accounts.spendStrategy.utxoSortGreatestToLeast) {
-        allUtxos = allUtxos.sort((a, b) => a.satoshis - b.satoshis)
-      }
       return allUtxos
     }
   }
-  throw Error('Insuffiecient balance')
+  throw Error('Insufficient balance')
 }
 
-const gatherSpendAmountOfSatoshis = async ({
-  spendAmount,
-  provider,
-  utxos,
+export const addressSpendableUtxos = async ({
   address,
+  provider,
+  spendAmount,
+  utxoSortGreatestToLeast
 }: {
-  spendAmount: number
-  provider: Provider
-  utxos: any[]
   address: string
+  provider: Provider
+  spendAmount: number
+  utxoSortGreatestToLeast: boolean
 }) => {
-  const formattedUtxos: Utxo[] = []
   let totalGathered: number = 0
-  for (let i = 0; i < utxos.length; i++) {
+  let sortedUtxos: EsploraUtxo[] = []
+  const formattedUtxos: FormattedUtxo[] = []
+
+  const utxos: EsploraUtxo[] = await provider.esplora.getAddressUtxo(address)
+
+  if (utxoSortGreatestToLeast) {
+    sortedUtxos = utxos.sort((a, b) => b.value - a.value)
+  } else {
+    sortedUtxos = utxos.sort((a, b) => a.value - b.value)
+  }
+
+  let filteredUtxos: EsploraUtxo[] = sortedUtxos.filter((utxo) => {
+    return (
+      utxo.value > UTXO_DUST && 
+      utxo.value != 546
+    )
+  });
+
+  for (let i = 0; i < filteredUtxos.length; i++) {
     if (totalGathered >= spendAmount) {
-      return { totalGathered: totalGathered, formattedUtxos: formattedUtxos }
+      return { totalGathered: totalGathered, utxos: formattedUtxos }
     }
+
     const hasInscription = await provider.ord.getTxOutput(
       utxos[i].txid + ':' + utxos[i].vout
     )
@@ -146,6 +181,7 @@ const gatherSpendAmountOfSatoshis = async ({
       }
     }
   }
+
   return { totalGathered: totalGathered, formattedUtxos: formattedUtxos }
 }
 
