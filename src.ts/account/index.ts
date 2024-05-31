@@ -7,6 +7,38 @@ bitcoin.initEccLib(ecc)
 import * as dotenv from 'dotenv'
 dotenv.config()
 
+export interface Account {
+  taproot: {
+    pubkey: string
+    pubKeyXOnly: string
+    privateKey: string
+    address: string
+  }
+  nativeSegwit: {
+    pubkey: string
+    privateKey: string
+    address: string
+  }
+  nestedSegwit: {
+    pubkey: string
+    privateKey: string
+    address: string
+  }
+  legacy: {
+    pubkey: string
+    privateKey: string
+    address: string
+  }
+  spendStrategy: SpendStrategy
+  network: bitcoin.Network
+}
+
+export type AddressType = 'nativeSegwit' | 'taproot' | 'nestedSegwit' | 'legacy'
+
+export interface SpendStrategy {
+  addressOrder: AddressType[]
+  utxoSortGreatestToLeast: boolean
+}
 export interface MnemonicToAccountOptions {
   network?: bitcoin.networks.Network
   index?: number
@@ -142,35 +174,3 @@ const generateWallet = ({
   }
 }
 
-export interface Account {
-  taproot: {
-    pubkey: string
-    pubKeyXOnly: string
-    privateKey: string
-    address: string
-  }
-  nativeSegwit: {
-    pubkey: string
-    privateKey: string
-    address: string
-  }
-  nestedSegwit: {
-    pubkey: string
-    privateKey: string
-    address: string
-  }
-  legacy: {
-    pubkey: string
-    privateKey: string
-    address: string
-  }
-  spendStrategy: SpendStrategy
-  network: bitcoin.Network
-}
-
-export type AddressType = 'nativeSegwit' | 'taproot' | 'nestedSegwit' | 'legacy'
-
-export interface SpendStrategy {
-  addressOrder: AddressType[]
-  utxoSortGreatestToLeast: boolean
-}

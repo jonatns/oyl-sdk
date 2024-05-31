@@ -1,10 +1,4 @@
 import * as bitcoin from 'bitcoinjs-lib';
-export interface MnemonicToAccountOptions {
-    network?: bitcoin.networks.Network;
-    index?: number;
-    spendStrategy?: SpendStrategy;
-}
-export declare const mnemonicToAccount: (mnemonic: string, opts?: MnemonicToAccountOptions) => Account;
 export interface Account {
     taproot: {
         pubkey: string;
@@ -35,3 +29,9 @@ export interface SpendStrategy {
     addressOrder: AddressType[];
     utxoSortGreatestToLeast: boolean;
 }
+export interface MnemonicToAccountOptions {
+    network?: bitcoin.networks.Network;
+    index?: number;
+    spendStrategy?: SpendStrategy;
+}
+export declare const mnemonicToAccount: (mnemonic: string, opts?: MnemonicToAccountOptions) => Account;
