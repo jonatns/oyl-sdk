@@ -35,11 +35,6 @@ export declare const addressSpendableUtxos: ({ address, provider, spendAmount, u
 }) => Promise<{
     totalGathered: number;
     utxos: FormattedUtxo[];
-    formattedUtxos?: undefined;
-} | {
-    totalGathered: number;
-    formattedUtxos: FormattedUtxo[];
-    utxos?: undefined;
 }>;
 export declare function findUtxosToCoverAmount(utxos: any[], amount: number): {
     selectedUtxos: any[];

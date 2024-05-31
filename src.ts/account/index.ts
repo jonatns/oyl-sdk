@@ -28,7 +28,7 @@ export const mnemonicToAccount = (
             'nestedSegwit',
             'legacy',
           ] as AddressType[]),
-      utxoSortGreatestToLeast: opts?.spendStrategy?.utxoSortGreatestToLeast
+      utxoSortGreatestToLeast: opts?.spendStrategy?.utxoSortGreatestToLeast !== undefined
         ? opts.spendStrategy.utxoSortGreatestToLeast
         : true,
     },
@@ -52,7 +52,7 @@ const generateWallet = ({
     pubKey.length === 32 ? pubKey : pubKey.slice(1, 33)
 
   if (!mnemonic) {
-    throw Error('mneominc not given')
+    throw Error('mnemonic not given')
   }
 
   let pathLegacy = `m/44'/0'/0'/0/${options.index}`

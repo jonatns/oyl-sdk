@@ -92,20 +92,20 @@ export const accountSpendableUtxos = async ({
   provider: Provider
   spendAmount: number
 }) => {
-  let totalGathered: number = 0
+  let totalAmount: number = 0
   let allUtxos: FormattedUtxo[] = []
   for (let i = 0; i < account.spendStrategy.addressOrder.length; i++) {
     const address = account[account.spendStrategy.addressOrder[i]].address
-    const utxoSortGreatestToLeast = account.spendStrategy.utxoSortGreatestToLeast ? account.spendStrategy.utxoSortGreatestToLeast : false
-    const gatheredUtxos = await addressSpendableUtxos({
+    const utxoSortGreatestToLeast = account.spendStrategy.utxoSortGreatestToLeast ? account.spendStrategy.utxoSortGreatestToLeast : true
+    const { totalGathered, utxos: formattedUtxos } = await addressSpendableUtxos({
       address,
       provider,
       spendAmount,
       utxoSortGreatestToLeast
     })
-    totalGathered += gatheredUtxos.totalGathered
-    allUtxos = [...allUtxos, ...gatheredUtxos.formattedUtxos]
-    if (gatheredUtxos.totalGathered >= spendAmount) {
+    totalAmount += totalGathered
+    allUtxos = [...allUtxos, ...formattedUtxos]
+    if (totalGathered >= spendAmount) {
       return allUtxos
     }
   }
@@ -138,13 +138,14 @@ export const addressSpendableUtxos = async ({
   let filteredUtxos: EsploraUtxo[] = sortedUtxos.filter((utxo) => {
     return (
       utxo.value > UTXO_DUST && 
-      utxo.value != 546
+      utxo.value != 546 &&
+      utxo.status.confirmed === true
     )
   });
 
   for (let i = 0; i < filteredUtxos.length; i++) {
     if (totalGathered >= spendAmount) {
-      return { totalGathered: totalGathered, utxos: formattedUtxos }
+      return { totalGathered, utxos: formattedUtxos }
     }
 
     const hasInscription = await provider.ord.getTxOutput(
@@ -182,7 +183,7 @@ export const addressSpendableUtxos = async ({
     }
   }
 
-  return { totalGathered: totalGathered, formattedUtxos: formattedUtxos }
+  return { totalGathered, utxos: formattedUtxos }
 }
 
 export function findUtxosToCoverAmount(utxos: any[], amount: number) {
