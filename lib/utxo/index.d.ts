@@ -20,7 +20,7 @@ export interface FormattedUtxo {
     inscriptions: any[];
     confirmations: number;
 }
-export declare const addressSpendableUtxos: ({ address, provider, spendAmount, spendStrategy }: {
+export declare const addressSpendableUtxos: ({ address, provider, spendAmount, spendStrategy, }: {
     address: string;
     provider: Provider;
     spendAmount?: number;

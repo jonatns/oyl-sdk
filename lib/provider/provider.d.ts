@@ -16,4 +16,15 @@ export declare class Provider {
         networkType: 'signet' | 'mainnet' | 'testnet';
         version?: string;
     });
+    pushPsbt({ psbtHex, psbtBase64, }: {
+        psbtHex?: string;
+        psbtBase64?: string;
+    }): Promise<{
+        txId: string;
+        rawTx: string;
+        size: any;
+        weight: any;
+        fee: number;
+        satsPerVByte: string;
+    }>;
 }

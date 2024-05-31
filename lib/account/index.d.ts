@@ -28,6 +28,7 @@ export type AddressType = 'nativeSegwit' | 'taproot' | 'nestedSegwit' | 'legacy'
 export interface SpendStrategy {
     addressOrder: AddressType[];
     utxoSortGreatestToLeast: boolean;
+    changeAddress: AddressType;
 }
 export interface MnemonicToAccountOptions {
     network?: bitcoin.networks.Network;

@@ -7,11 +7,11 @@ export interface EsploraUtxo {
   txid: string
   vout: number
   status: {
-    confirmed: boolean,
-    block_height: number,
-    block_hash: string,
+    confirmed: boolean
+    block_height: number
+    block_hash: string
     block_time: number
-  },
+  }
   value: number
 }
 
@@ -25,12 +25,11 @@ export interface FormattedUtxo {
   confirmations: number
 }
 
-
 export const addressSpendableUtxos = async ({
   address,
   provider,
   spendAmount,
-  spendStrategy
+  spendStrategy,
 }: {
   address: string
   provider: Provider
@@ -43,9 +42,10 @@ export const addressSpendableUtxos = async ({
 
   const utxos: EsploraUtxo[] = await provider.esplora.getAddressUtxo(address)
 
-  const utxoSortGreatestToLeast = spendStrategy?.utxoSortGreatestToLeast !== undefined
-  ? spendStrategy.utxoSortGreatestToLeast
-  : true
+  const utxoSortGreatestToLeast =
+    spendStrategy?.utxoSortGreatestToLeast !== undefined
+      ? spendStrategy.utxoSortGreatestToLeast
+      : true
 
   if (utxoSortGreatestToLeast) {
     sortedUtxos = utxos.sort((a, b) => b.value - a.value)
@@ -55,11 +55,11 @@ export const addressSpendableUtxos = async ({
 
   let filteredUtxos: EsploraUtxo[] = sortedUtxos.filter((utxo) => {
     return (
-      utxo.value > UTXO_DUST && 
+      utxo.value > UTXO_DUST &&
       utxo.value != 546 &&
       utxo.status.confirmed === true
     )
-  });
+  })
 
   for (let i = 0; i < filteredUtxos.length; i++) {
     if (spendAmount && totalAmount >= spendAmount) {
@@ -103,7 +103,6 @@ export const addressSpendableUtxos = async ({
   return { totalAmount, utxos: formattedUtxos }
 }
 
-
 export const accountSpendableUtxos = async ({
   account,
   provider,
@@ -119,22 +118,22 @@ export const accountSpendableUtxos = async ({
   for (let i = 0; i < account.spendStrategy.addressOrder.length; i++) {
     const address = account[account.spendStrategy.addressOrder[i]].address
 
-    const { totalAmount: addressTotal, utxos: formattedUtxos } = await addressSpendableUtxos({
-      address,
-      provider,
-      spendAmount: remainingSpendAmount,
-      spendStrategy: account.spendStrategy
-    })
+    const { totalAmount: addressTotal, utxos: formattedUtxos } =
+      await addressSpendableUtxos({
+        address,
+        provider,
+        spendAmount: remainingSpendAmount,
+        spendStrategy: account.spendStrategy,
+      })
     totalAmount += addressTotal
     allUtxos = [...allUtxos, ...formattedUtxos]
     if (spendAmount && totalAmount >= spendAmount) {
-      return {totalAmount, utxos: allUtxos}
+      return { totalAmount, utxos: allUtxos }
     }
     remainingSpendAmount -= addressTotal
   }
-  return {totalAmount, utxos: allUtxos}
+  return { totalAmount, utxos: allUtxos }
 }
-
 
 export function findUtxosToCoverAmount(utxos: FormattedUtxo[], amount: number) {
   if (!utxos || utxos?.length === 0) {

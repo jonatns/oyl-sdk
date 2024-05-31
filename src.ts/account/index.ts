@@ -38,6 +38,7 @@ export type AddressType = 'nativeSegwit' | 'taproot' | 'nestedSegwit' | 'legacy'
 export interface SpendStrategy {
   addressOrder: AddressType[]
   utxoSortGreatestToLeast: boolean
+  changeAddress: AddressType
 }
 export interface MnemonicToAccountOptions {
   network?: bitcoin.networks.Network
@@ -60,9 +61,13 @@ export const mnemonicToAccount = (
             'nestedSegwit',
             'legacy',
           ] as AddressType[]),
-      utxoSortGreatestToLeast: opts?.spendStrategy?.utxoSortGreatestToLeast !== undefined
-        ? opts.spendStrategy.utxoSortGreatestToLeast
-        : true,
+      utxoSortGreatestToLeast:
+        opts?.spendStrategy?.utxoSortGreatestToLeast !== undefined
+          ? opts.spendStrategy.utxoSortGreatestToLeast
+          : true,
+      changeAddress: opts?.spendStrategy?.changeAddress
+        ? opts?.spendStrategy?.changeAddress
+        : 'nativeSegwit',
     },
   }
 
@@ -173,4 +178,3 @@ const generateWallet = ({
     network: options.network,
   }
 }
-
