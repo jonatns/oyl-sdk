@@ -1,6 +1,5 @@
 import { Provider } from '../provider/provider';
-import { Utxo } from '../txbuilder';
-import { Account } from '../account';
+import { Account, SpendStrategy } from '../account';
 export interface EsploraUtxo {
     txid: string;
     vout: number;
@@ -21,22 +20,21 @@ export interface FormattedUtxo {
     inscriptions: any[];
     confirmations: number;
 }
-export declare const spendableUtxos: (address: string, provider: Provider, spendAmount: number) => Promise<Utxo[]>;
 export declare const accountSpendableUtxos: ({ account, provider, spendAmount, }: {
     account: Account;
     provider: Provider;
     spendAmount: number;
 }) => Promise<FormattedUtxo[]>;
-export declare const addressSpendableUtxos: ({ address, provider, spendAmount, utxoSortGreatestToLeast }: {
+export declare const addressSpendableUtxos: ({ address, provider, spendAmount, spendStrategy }: {
     address: string;
     provider: Provider;
-    spendAmount: number;
-    utxoSortGreatestToLeast: boolean;
+    spendAmount?: number;
+    spendStrategy?: SpendStrategy;
 }) => Promise<{
     totalGathered: number;
     utxos: FormattedUtxo[];
 }>;
-export declare function findUtxosToCoverAmount(utxos: any[], amount: number): {
+export declare function findUtxosToCoverAmount(utxos: FormattedUtxo[], amount: number): {
     selectedUtxos: any[];
     totalSatoshis: number;
     change: number;
