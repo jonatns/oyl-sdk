@@ -1,117 +1,71 @@
-//spend strategy and utxo strategy
-
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider/provider'
-import { getAddressType } from '../transactions'
-import { Utxo } from '../txbuilder'
-import { Account } from '../account'
+import { Account, SpendStrategy } from '../account'
+import { UTXO_DUST } from '../shared/constants'
 
-export const spendableUtxos = async (
-  address: string,
-  provider: Provider,
-  spendAmount: number
-) => {
-  const addressType = getAddressType(address)
-  const utxosResponse: any[] = await provider.esplora.getAddressUtxo(address)
-  if (!utxosResponse || utxosResponse?.length === 0) {
-    return []
-  }
-  const formattedUtxos: Utxo[] = []
-  let filtered = utxosResponse
-
-  for (const utxo of filtered) {
-    const hasInscription = await provider.ord.getTxOutput(
-      utxo.txid + ':' + utxo.vout
-    )
-    let hasRune: any = false
-    if (provider.network != bitcoin.networks.regtest) {
-      hasRune = await provider.api.getOutputRune({
-        output: utxo.txid + ':' + utxo.vout,
-      })
-    }
-    if (
-      hasInscription.inscriptions.length === 0 &&
-      hasInscription.runes.length === 0 &&
-      hasInscription.value !== 546 &&
-      !hasRune?.output
-    ) {
-      const transactionDetails = await provider.esplora.getTxInfo(utxo.txid)
-      const voutEntry = transactionDetails.vout.find(
-        (v) => v.scriptpubkey_address === address
-      )
-      if (utxo.status.confirmed) {
-        formattedUtxos.push({
-          txId: utxo.txid,
-          outputIndex: utxo.vout,
-          satoshis: utxo.value,
-          confirmations: utxo.status.confirmed ? 3 : 0,
-          scriptPk: voutEntry.scriptpubkey,
-          address: address,
-          inscriptions: [],
-        })
-      }
-    }
-  }
-  if (formattedUtxos.length === 0) {
-    return undefined
-  }
-  const sortedUtxos = formattedUtxos.sort((a, b) => b.satoshis - a.satoshis)
-
-  return sortedUtxos
+export interface EsploraUtxo {
+  txid: string
+  vout: number
+  status: {
+    confirmed: boolean,
+    block_height: number,
+    block_hash: string,
+    block_time: number
+  },
+  value: number
 }
 
-export const oylSpendableUtxos = async ({
-  accounts,
-  provider,
-  spendAmount,
-}: {
-  accounts: Account
-  provider: Provider
-  spendAmount: number
-}) => {
-  let totalGathered: number = 0
-  let allUtxos: Utxo[] = []
-  for (let i = 0; i < accounts.spendStrategy.addressOrder.length; i++) {
-    const address = accounts[accounts.spendStrategy.addressOrder[i]].address
-    const utxos = await provider.esplora.getAddressUtxo(address)
-    const gatheredUtxos = await gatherSpendAmountOfSatoshis({
-      provider,
-      address: address,
-      utxos,
-      spendAmount,
-    })
-    totalGathered += gatheredUtxos.totalGathered
-    allUtxos = [...allUtxos, ...gatheredUtxos.formattedUtxos]
-    if (gatheredUtxos.totalGathered >= spendAmount) {
-      if (accounts.spendStrategy.utxoSortGreatestToLeast) {
-        allUtxos = allUtxos.sort((a, b) => b.satoshis - a.satoshis)
-      }
-      if (!accounts.spendStrategy.utxoSortGreatestToLeast) {
-        allUtxos = allUtxos.sort((a, b) => a.satoshis - b.satoshis)
-      }
-      return allUtxos
-    }
-  }
-  throw Error('Insuffiecient balance')
-}
-
-const gatherSpendAmountOfSatoshis = async ({
-  spendAmount,
-  provider,
-  utxos,
-  address,
-}: {
-  spendAmount: number
-  provider: Provider
-  utxos: any[]
+export interface FormattedUtxo {
+  txId: string
+  outputIndex: number
+  satoshis: number
+  scriptPk: string
   address: string
+  inscriptions: any[]
+  confirmations: number
+}
+
+
+export const addressSpendableUtxos = async ({
+  address,
+  provider,
+  spendAmount,
+  spendStrategy
+}: {
+  address: string
+  provider: Provider
+  spendAmount?: number
+  spendStrategy?: SpendStrategy
 }) => {
-  const formattedUtxos: Utxo[] = []
-  let totalGathered: number = 0
-  for (let i = 0; i < utxos.length; i++) {
-    if (totalGathered >= spendAmount) {
-      return { totalGathered: totalGathered, formattedUtxos: formattedUtxos }
+  let totalAmount: number = 0
+  let sortedUtxos: EsploraUtxo[] = []
+  const formattedUtxos: FormattedUtxo[] = []
+
+  const utxos: EsploraUtxo[] = await provider.esplora.getAddressUtxo(address)
+
+  const utxoSortGreatestToLeast = spendStrategy?.utxoSortGreatestToLeast !== undefined
+  ? spendStrategy.utxoSortGreatestToLeast
+  : true
+
+  if (utxoSortGreatestToLeast) {
+    sortedUtxos = utxos.sort((a, b) => b.value - a.value)
+  } else {
+    sortedUtxos = utxos.sort((a, b) => a.value - b.value)
+  }
+
+  let filteredUtxos: EsploraUtxo[] = sortedUtxos.filter((utxo) => {
+    return (
+      utxo.value > UTXO_DUST && 
+      utxo.value != 546 &&
+      utxo.status.confirmed === true
+    )
+  });
+
+  for (let i = 0; i < filteredUtxos.length; i++) {
+    if (spendAmount && totalAmount >= spendAmount) {
+      return { totalAmount, utxos: formattedUtxos }
     }
+
     const hasInscription = await provider.ord.getTxOutput(
       utxos[i].txid + ':' + utxos[i].vout
     )
@@ -142,14 +96,47 @@ const gatherSpendAmountOfSatoshis = async ({
           address: address,
           inscriptions: [],
         })
-        totalGathered += utxos[i].value
+        totalAmount += utxos[i].value
       }
     }
   }
-  return { totalGathered: totalGathered, formattedUtxos: formattedUtxos }
+  return { totalAmount, utxos: formattedUtxos }
 }
 
-export function findUtxosToCoverAmount(utxos: any[], amount: number) {
+
+export const accountSpendableUtxos = async ({
+  account,
+  provider,
+  spendAmount,
+}: {
+  account: Account
+  provider: Provider
+  spendAmount?: number
+}) => {
+  let totalAmount: number = 0
+  let allUtxos: FormattedUtxo[] = []
+  let remainingSpendAmount = spendAmount
+  for (let i = 0; i < account.spendStrategy.addressOrder.length; i++) {
+    const address = account[account.spendStrategy.addressOrder[i]].address
+
+    const { totalAmount: addressTotal, utxos: formattedUtxos } = await addressSpendableUtxos({
+      address,
+      provider,
+      spendAmount: remainingSpendAmount,
+      spendStrategy: account.spendStrategy
+    })
+    totalAmount += addressTotal
+    allUtxos = [...allUtxos, ...formattedUtxos]
+    if (spendAmount && totalAmount >= spendAmount) {
+      return {totalAmount, utxos: allUtxos}
+    }
+    remainingSpendAmount -= addressTotal
+  }
+  return {totalAmount, utxos: allUtxos}
+}
+
+
+export function findUtxosToCoverAmount(utxos: FormattedUtxo[], amount: number) {
   if (!utxos || utxos?.length === 0) {
     return undefined
   }
