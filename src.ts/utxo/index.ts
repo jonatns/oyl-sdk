@@ -1,9 +1,5 @@
-//spend strategy and utxo strategy
-
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider/provider'
-import { getAddressType } from '../transactions'
-import { Utxo } from '../txbuilder'
 import { Account, SpendStrategy } from '../account'
 import { UTXO_DUST } from '../shared/constants'
 
