@@ -57,6 +57,11 @@ export declare class OylApiClient {
      */
     getBrc20TokenInfo(ticker: string): Promise<any>;
     /**
+   * Get Runes info by ticker.
+   * @param ticker - The ticker to query.
+   */
+    getRuneTokenInfo(ticker: string): Promise<any>;
+    /**
      * Get brc20 details by ticker.
      * @param ticker - The ticker to query.
      */
@@ -74,6 +79,7 @@ export declare class OylApiClient {
         count?: number;
         minting_status?: string;
     }): Promise<any>;
+    getRuneTickers(): Promise<any>;
     getAllInscriptionsByAddress(address: string): Promise<any>;
     getInscriptionsForTxn(txn_id: string): Promise<any>;
     getTaprootTxHistory(taprootAddress: any, totalTxs: any): Promise<any>;

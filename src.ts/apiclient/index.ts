@@ -113,6 +113,16 @@ export class OylApiClient {
     })
   }
 
+    /**
+   * Get Runes info by ticker.
+   * @param ticker - The ticker to query.
+   */
+    async getRuneTokenInfo(ticker: string) {
+      return await this._call('/get-rune-token-info', 'post', {
+        ticker: ticker,
+      })
+    }
+
   /**
    * Get brc20 details by ticker.
    * @param ticker - The ticker to query.
@@ -147,6 +157,10 @@ export class OylApiClient {
     minting_status?: string
   }) {
     return await this._call('/get-brc20-tickers', 'post', tickerParams)
+  }
+
+  async getRuneTickers() {
+    return await this._call('/get-rune-tickers', 'post')
   }
 
   async getAllInscriptionsByAddress(address: string): Promise<any> {
