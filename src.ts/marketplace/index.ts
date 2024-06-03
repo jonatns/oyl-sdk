@@ -275,10 +275,15 @@ export class Marketplace {
       receiveAddress: this.receiveAddress,
       feerate: this.feeRate,
     }
-    if (
+
+    console.log(this.selectSpendAddress);
+    console.log(this.receiveAddress);
+    console.log(this.addressesBound);
+    if (      
       this.selectedSpendAddress != this.receiveAddress &&
       !this.addressesBound
     ) {
+      console.log("getting new signature")
       const signature = await this.getSignatureForBind()
       payload['signature'] = signature
       this.addressesBound = true
