@@ -69,7 +69,7 @@ export const createTx = async ({
     outputCount: 2,
   })
   let calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
-  let initialFee = fee ? fee : calculatedFee
+  let finalFee = fee ? fee : calculatedFee
 
   const gatheredUtxos: {
     totalAmount: number
@@ -77,7 +77,7 @@ export const createTx = async ({
   } = await accountSpendableUtxos({
     account,
     provider,
-    spendAmount: initialFee + amount,
+    spendAmount: finalFee + amount,
   })
 
   // let utxosToSend: {
@@ -87,7 +87,6 @@ export const createTx = async ({
   // } = findUtxosToCoverAmount(gatheredUtxos.utxos, amount + finalFee)
 
   let utxosToSend = gatheredUtxos;
-  let finalFee = fee ? fee : initialFee;
 
   if (!fee && gatheredUtxos.utxos.length > 1) {
     const txSize = minimumFee({
