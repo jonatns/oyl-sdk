@@ -4,7 +4,6 @@ import * as bitcoin from 'bitcoinjs-lib'
 import {
   FormattedUtxo,
   accountSpendableUtxos,
-  findUtxosToCoverAmount,
 } from '../utxo'
 import { calculateTaprootTxSize, formatInputsToSign } from '../shared/utils'
 import { Account } from '../account'
@@ -80,12 +79,6 @@ export const createTx = async ({
     spendAmount: finalFee + amount,
   })
 
-  // let utxosToSend: {
-  //   selectedUtxos: any[]
-  //   totalSatoshis: number
-  //   change: number
-  // } = findUtxosToCoverAmount(gatheredUtxos.utxos, amount + finalFee)
-
   let utxosToSend = gatheredUtxos;
 
   if (!fee && gatheredUtxos.utxos.length > 1) {
@@ -96,14 +89,12 @@ export const createTx = async ({
     })
     finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
-    //utxosToSend = findUtxosToCoverAmount(gatheredUtxos.utxos, amount + finalFee)
     if (gatheredUtxos.totalAmount < amount + finalFee) {
       utxosToSend = await accountSpendableUtxos({
         account,
         provider,
         spendAmount: finalFee + amount,
       })
-      //return { estimatedFee: finalFee, satsFound: gatheredUtxos.totalAmount }
     }
   }
 
