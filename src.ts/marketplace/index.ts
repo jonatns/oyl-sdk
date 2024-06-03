@@ -261,6 +261,7 @@ export class Marketplace {
         return await this.wallet.apiClient.submitSignedBid(payload)
         break;
       case AssetType.RUNES:
+         console.log("payload to submit", payload)
          return await this.wallet.apiClient.submitSignedRuneBid(payload)
          break;
     }
@@ -289,6 +290,7 @@ export class Marketplace {
       this.addressesBound = true
     }
     const psbt = await this.getAssetPsbtPath(payload)
+    console.log("psbt from initiate swap", psbt)
 
     if (!psbt?.error) {
       const unsignedPsbt = psbt.psbtBid
