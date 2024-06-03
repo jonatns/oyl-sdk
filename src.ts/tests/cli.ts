@@ -28,6 +28,7 @@ import * as dotenv from 'dotenv'
 import { Provider } from '../provider/provider'
 import { MnemonicToAccountOptions, mnemonicToAccount } from '../account'
 import { accountSpendableUtxos } from '../utxo'
+import { createTx } from '../btc'
 dotenv.config()
 
 bitcoin.initEccLib(ecc2)
@@ -81,7 +82,6 @@ export async function testAggregator() {
   //   20,
   //   110000
   // )
-
   // const formatOffers = (offers) =>
   //   offers.map((offer) => ({
   //     amount: offer.amount,
@@ -89,7 +89,6 @@ export async function testAggregator() {
   //     nftId: offer.offerId,
   //     marketplace: offer.marketplace,
   //   }))
-
   // console.log('Aggregated Offers')
   // console.log('Best Price Offers:', formatOffers(aggregated.bestPrice.offers))
   // console.log(
@@ -175,7 +174,7 @@ const provider = new Provider({
   url: 'https://mainnet.sandshrew.io',
   projectId: process.env.SANDSHREW_PROJECT_ID,
   network: bitcoin.networks.bitcoin,
-  networkType: 'mainnet'
+  networkType: 'mainnet',
 })
 
 const testWallet = new Oyl({
@@ -632,13 +631,54 @@ export async function runCLI() {
       }
 
       const all = mnemonicToAccount(process.env.MAINNET_MNEMONIC.trim(), opts)
-      return console.log(
-        await accountSpendableUtxos({
-          account: all,
-          provider,
-          spendAmount: 65000,
-        })
-      )
+      const { psbt } = await createTx({
+        toAddress: networkConfig.taprootAddress,
+        amount: 100,
+        feeRate: 20,
+        network,
+        account: all,
+        provider,
+      })
+      const { signedPsbt: segwitSigned } = await signer.signAllSegwitInputs({
+        rawPsbt: psbt,
+        finalize: true,
+      })
+
+      const { raw } = await signer.signAllTaprootInputs({
+        rawPsbt: segwitSigned,
+        finalize: true,
+      })
+      const vsize = (
+        await provider.sandshrew.bitcoindRpc.decodeRawTransaction(
+          raw.extractTransaction().toHex()
+        )
+      ).vsize
+
+      console.log(vsize)
+
+      const correctFee = vsize * 20
+
+      const { psbt: finalPsbt, fee: finalFee } = await createTx({
+        toAddress: networkConfig.taprootAddress,
+        amount: 100,
+        feeRate: 20,
+        fee: correctFee,
+        network,
+        account: all,
+        provider,
+      })
+
+      const { signedPsbt: segwitSigned1 } = await signer.signAllSegwitInputs({
+        rawPsbt: finalPsbt,
+        finalize: true,
+      })
+
+      const { signedPsbt: signedTaproot } = await signer.signAllTaprootInputs({
+        rawPsbt: segwitSigned1,
+        finalize: true,
+      })
+
+      return console.log(signedTaproot, finalFee)
     case 'inscriptions':
       return console.log(
         await networkConfig.wallet.getInscriptions({

@@ -163,7 +163,7 @@ const generateWallet = ({
     network: options.network,
   })
   const taproot = {
-    pubkey: pubkeySegwitNested.toString('hex'),
+    pubkey: pubkeyTaproot.toString('hex'),
     pubKeyXOnly: pubkeyTaprootXOnly.toString('hex'),
     privateKey: privateKeyTaproot.toString('hex'),
     address: addressTaproot.address,

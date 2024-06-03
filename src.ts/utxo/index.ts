@@ -136,11 +136,16 @@ export const accountSpendableUtxos = async ({
 }
 
 export function findUtxosToCoverAmount(utxos: FormattedUtxo[], amount: number) {
-  if (!utxos || utxos?.length === 0) {
-    return undefined
-  }
   let totalSatoshis = 0
   const selectedUtxos: any[] = []
+
+  if (!utxos || utxos?.length === 0) {
+    return {
+      selectedUtxos,
+      totalSatoshis,
+      change: totalSatoshis - amount,
+    }
+  }
 
   for (const utxo of utxos) {
     if (totalSatoshis >= amount) break
@@ -149,13 +154,9 @@ export function findUtxosToCoverAmount(utxos: FormattedUtxo[], amount: number) {
     totalSatoshis += utxo.satoshis
   }
 
-  if (totalSatoshis >= amount) {
-    return {
-      selectedUtxos,
-      totalSatoshis,
-      change: totalSatoshis - amount,
-    }
-  } else {
-    return undefined
+  return {
+    selectedUtxos,
+    totalSatoshis,
+    change: totalSatoshis - amount,
   }
 }

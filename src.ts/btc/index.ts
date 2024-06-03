@@ -6,11 +6,7 @@ import {
   accountSpendableUtxos,
   findUtxosToCoverAmount,
 } from '../utxo'
-import {
-  calculateAmountGatheredUtxo,
-  calculateTaprootTxSize,
-  formatInputsToSign,
-} from '../shared/utils'
+import { calculateTaprootTxSize, formatInputsToSign } from '../shared/utils'
 import { Account } from '../account'
 
 export const constructPsbt = async ({
@@ -81,14 +77,14 @@ export const createTx = async ({
   } = await accountSpendableUtxos({
     account,
     provider,
-    spendAmount: finalFee,
+    spendAmount: finalFee + amount,
   })
 
   let utxosToSend: {
     selectedUtxos: any[]
     totalSatoshis: number
     change: number
-  }
+  } = findUtxosToCoverAmount(gatheredUtxos.utxos, amount + finalFee)
 
   if (gatheredUtxos.utxos.length > 1) {
     const txSize = minimumFee({
@@ -99,12 +95,10 @@ export const createTx = async ({
     fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
     utxosToSend = findUtxosToCoverAmount(gatheredUtxos.utxos, amount + finalFee)
-    if (!utxosToSend) {
-      return { estimatedFee: fee, satsFound: gatheredUtxos.totalAmount }
+    if (utxosToSend.totalSatoshis < amount + finalFee) {
+      return { estimatedFee: finalFee, satsFound: gatheredUtxos.totalAmount }
     }
   }
-
-  const amountGathered = calculateAmountGatheredUtxo(utxosToSend.selectedUtxos)
 
   for (let i = 0; i < utxosToSend.selectedUtxos.length; i++) {
     psbt.addInput({
@@ -122,7 +116,7 @@ export const createTx = async ({
     value: amount,
   })
 
-  const changeAmount = amountGathered - (finalFee + amount)
+  const changeAmount = utxosToSend.totalSatoshis - (finalFee + amount)
 
   psbt.addOutput({
     address: account[account.spendStrategy.changeAddress].address,
