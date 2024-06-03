@@ -7,7 +7,7 @@ bitcoin.initEccLib(ecc)
 import * as dotenv from 'dotenv'
 dotenv.config()
 
-export interface Account {
+export type Account = {
   taproot: {
     pubkey: string
     pubKeyXOnly: string
@@ -86,7 +86,7 @@ const generateWallet = ({
   options,
 }: {
   mnemonic?: string
-  options?: MnemonicToAccountOptions
+  options: MnemonicToAccountOptions
 }) => {
   const toXOnly = (pubKey: Buffer) =>
     pubKey.length === 32 ? pubKey : pubKey.slice(1, 33)
@@ -114,7 +114,7 @@ const generateWallet = ({
   // Legacy
   const childLegacy = root.derivePath(pathLegacy)
   const pubkeyLegacy = childLegacy.publicKey
-  const privateKeyLegacy = childLegacy.privateKey
+  const privateKeyLegacy = childLegacy.privateKey!
   const addressLegacy = bitcoin.payments.p2pkh({
     pubkey: pubkeyLegacy,
     network: options.network,
@@ -128,7 +128,7 @@ const generateWallet = ({
   // Nested Segwit
   const childSegwitNested = root.derivePath(pathSegwitNested)
   const pubkeySegwitNested = childSegwitNested.publicKey
-  const privateKey = childSegwitNested.privateKey
+  const privateKey = childSegwitNested.privateKey!
   const addressSegwitNested = bitcoin.payments.p2sh({
     redeem: bitcoin.payments.p2wpkh({
       pubkey: pubkeySegwitNested,
@@ -144,7 +144,7 @@ const generateWallet = ({
   // Native Segwit
   const childSegwit = root.derivePath(pathSegwit)
   const pubkeySegwit = childSegwit.publicKey
-  const privateKeySegwit = childSegwit.privateKey
+  const privateKeySegwit = childSegwit.privateKey!
   const addressSegwit = bitcoin.payments.p2wpkh({
     pubkey: pubkeySegwit,
     network: options.network,
@@ -158,7 +158,7 @@ const generateWallet = ({
   // Taproot
   const childTaproot = root.derivePath(pathTaproot)
   const pubkeyTaproot = childTaproot.publicKey
-  const privateKeyTaproot = childTaproot.privateKey
+  const privateKeyTaproot = childTaproot.privateKey!
   const pubkeyTaprootXOnly = toXOnly(pubkeyTaproot)
 
   const addressTaproot = bitcoin.payments.p2tr({

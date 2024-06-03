@@ -33,6 +33,11 @@ import {
 } from '../account'
 import { accountSpendableUtxos } from '../utxo'
 import { createTx } from '../btc'
+import {
+  regtestMnemonic,
+  regtestOpts,
+  regtestProvider,
+} from '../shared/constants'
 dotenv.config()
 
 bitcoin.initEccLib(ecc2)
@@ -62,7 +67,7 @@ export async function testMarketplaceBuy() {
     publicKey: process.env.TAPROOT_PUBKEY,
     mnemonic: process.env.TAPROOT_MNEMONIC,
     hdPath: process.env.HD_PATH,
-    feeRate: parseFloat(process.env.FEE_RATE),
+    feeRate: parseFloat(process.env.FEE_RATE!),
     wallet: wallet,
   }
 
@@ -103,14 +108,14 @@ export async function testAggregator() {
 
 export async function viewPsbt() {
   console.log(
-    bitcoin.Psbt.fromBase64(process.env.PSBT_BASE64, {
+    bitcoin.Psbt.fromBase64(process.env.PSBT_BASE64!, {
       network: bitcoin.networks.testnet,
     }).txOutputs
   )
 }
 
 export async function convertPsbt() {
-  const psbt = bitcoin.Psbt.fromHex(process.env.PSBT_HEX, {
+  const psbt = bitcoin.Psbt.fromHex(process.env.PSBT_HEX!, {
     network: bitcoin.networks.bitcoin,
   }).toBase64()
   console.log(psbt)
@@ -174,29 +179,14 @@ const tapWallet = new Oyl({
   projectId: process.env.SANDSHREW_PROJECT_ID,
 })
 
-const provider = new Provider({
+export const provider = new Provider({
   url: 'https://mainnet.sandshrew.io',
-  projectId: process.env.SANDSHREW_PROJECT_ID,
+  projectId: process.env.SANDSHREW_PROJECT_ID!,
   network: bitcoin.networks.bitcoin,
   networkType: 'mainnet',
 })
 
-const regtestProvider = new Provider({
-  url: 'http://localhost:3000',
-  projectId: 'regtest',
-  network: bitcoin.networks.regtest,
-  networkType: 'mainnet',
-})
-
-const regtestOpts: MnemonicToAccountOptions = {
-  network: bitcoin.networks.regtest,
-  index: 0,
-}
-
-const regtestAccount = mnemonicToAccount(
-  process.env.REGTEST1.trim(),
-  regtestOpts
-)
+const regtestAccount = mnemonicToAccount(regtestMnemonic, regtestOpts)
 
 const testWallet = new Oyl({
   network: 'testnet',
@@ -205,8 +195,8 @@ const testWallet = new Oyl({
   projectId: process.env.SANDSHREW_PROJECT_ID,
 })
 
-testWallet.apiClient.setAuthToken(process.env.API_TOKEN)
-tapWallet.apiClient.setAuthToken(process.env.API_TOKEN)
+testWallet.apiClient.setAuthToken(process.env.API_TOKEN!)
+tapWallet.apiClient.setAuthToken(process.env.API_TOKEN!)
 
 const XVERSE = 'xverse'
 const UNISAT = 'unisat'
@@ -486,13 +476,13 @@ const argv = yargs(hideBin(process.argv))
 
 export async function runCLI() {
   const [command] = argv._
-  const { _, network } = yargs.argv as YargsArguments
-  const options = Object.assign({}, yargs.argv) as YargsArguments
-  const networkConfig = config[network]
+  const { _, network } = argv as YargsArguments
+  const options = Object.assign({}, argv) as YargsArguments
+  const networkConfig = config[network!]
 
   let segwitSigner: bitcoin.Signer
   const taprootSigner = await tapWallet.createTaprootSigner({
-    mnemonic: networkConfig.mnemonic,
+    mnemonic: networkConfig.mnemonic!,
     taprootAddress: networkConfig.taprootAddress,
   })
 
@@ -563,7 +553,6 @@ export async function runCLI() {
       })
 
       console.log(sendRuneEstimate)
-      return sendCollectibleEstimateResponse
     case 'send-brc-20':
       const sendBrc20Response = await networkConfig.wallet.sendBRC20({
         token: ticker,
@@ -572,7 +561,7 @@ export async function runCLI() {
         feeRate: 11,
         fromAddress: networkConfig.taprootAddress,
         fromPubKey: networkConfig.taprootPubKey,
-        toAddress: to,
+        toAddress: to!,
         spendAddress: networkConfig.taprootAddress,
         spendPubKey: networkConfig.taprootPubKey,
         altSpendAddress: networkConfig.segwitAddress,
@@ -676,7 +665,7 @@ export async function runCLI() {
       })
 
       const { signedPsbt: segwitSigned } = await signer.signAllSegwitInputs({
-        rawPsbt: psbt,
+        rawPsbt: psbt!,
         finalize: true,
       })
 
@@ -686,7 +675,7 @@ export async function runCLI() {
       })
 
       const vsize = (
-        await regtestProvider.sandshrew.bitcoindRpc.decodePSBT(signedPsbt)
+        await regtestProvider.sandshrew.bitcoindRpc.decodePSBT!(signedPsbt)
       ).tx.vsize
 
       const correctFee = vsize * 20
@@ -702,7 +691,7 @@ export async function runCLI() {
       })
 
       const { signedPsbt: segwitSigned1 } = await signer.signAllSegwitInputs({
-        rawPsbt: finalPsbt,
+        rawPsbt: finalPsbt!,
         finalize: true,
       })
 

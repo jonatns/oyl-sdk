@@ -1,5 +1,5 @@
 import * as bitcoin from 'bitcoinjs-lib';
-export interface Account {
+export type Account = {
     taproot: {
         pubkey: string;
         pubKeyXOnly: string;
@@ -23,7 +23,7 @@ export interface Account {
     };
     spendStrategy: SpendStrategy;
     network: bitcoin.Network;
-}
+};
 export type AddressType = 'nativeSegwit' | 'taproot' | 'nestedSegwit' | 'legacy';
 export interface SpendStrategy {
     addressOrder: AddressType[];
