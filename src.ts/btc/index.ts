@@ -69,7 +69,7 @@ export const createTx = async ({
     outputCount: 2,
   })
   let calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
-  let finalFee = fee ? fee : calculatedFee
+  let initialFee = fee ? fee : calculatedFee
 
   const gatheredUtxos: {
     totalAmount: number
@@ -77,36 +77,44 @@ export const createTx = async ({
   } = await accountSpendableUtxos({
     account,
     provider,
-    spendAmount: finalFee + amount,
+    spendAmount: initialFee + amount,
   })
 
-  let utxosToSend: {
-    selectedUtxos: any[]
-    totalSatoshis: number
-    change: number
-  } = findUtxosToCoverAmount(gatheredUtxos.utxos, amount + finalFee)
+  // let utxosToSend: {
+  //   selectedUtxos: any[]
+  //   totalSatoshis: number
+  //   change: number
+  // } = findUtxosToCoverAmount(gatheredUtxos.utxos, amount + finalFee)
 
-  if (gatheredUtxos.utxos.length > 1) {
+  let utxosToSend = gatheredUtxos;
+  let finalFee = fee ? fee : initialFee;
+
+  if (!fee && gatheredUtxos.utxos.length > 1) {
     const txSize = minimumFee({
       taprootInputCount: gatheredUtxos.utxos.length,
       nonTaprootInputCount: 0,
       outputCount: 2,
     })
-    fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
+    finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
-    utxosToSend = findUtxosToCoverAmount(gatheredUtxos.utxos, amount + finalFee)
-    if (utxosToSend.totalSatoshis < amount + finalFee) {
-      return { estimatedFee: finalFee, satsFound: gatheredUtxos.totalAmount }
+    //utxosToSend = findUtxosToCoverAmount(gatheredUtxos.utxos, amount + finalFee)
+    if (gatheredUtxos.totalAmount < amount + finalFee) {
+      utxosToSend = await accountSpendableUtxos({
+        account,
+        provider,
+        spendAmount: finalFee + amount,
+      })
+      //return { estimatedFee: finalFee, satsFound: gatheredUtxos.totalAmount }
     }
   }
 
-  for (let i = 0; i < utxosToSend.selectedUtxos.length; i++) {
+  for (let i = 0; i < utxosToSend.utxos.length; i++) {
     psbt.addInput({
-      hash: utxosToSend.selectedUtxos[i].txId,
-      index: utxosToSend.selectedUtxos[i].outputIndex,
+      hash: utxosToSend.utxos[i].txId,
+      index: utxosToSend.utxos[i].outputIndex,
       witnessUtxo: {
-        value: utxosToSend.selectedUtxos[i].satoshis,
-        script: Buffer.from(utxosToSend.selectedUtxos[i].scriptPk, 'hex'),
+        value: utxosToSend.utxos[i].satoshis,
+        script: Buffer.from(utxosToSend.utxos[i].scriptPk, 'hex'),
       },
     })
   }
@@ -116,7 +124,7 @@ export const createTx = async ({
     value: amount,
   })
 
-  const changeAmount = utxosToSend.totalSatoshis - (finalFee + amount)
+  const changeAmount = utxosToSend.totalAmount - (finalFee + amount)
 
   psbt.addOutput({
     address: account[account.spendStrategy.changeAddress].address,
