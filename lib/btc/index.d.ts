@@ -18,8 +18,15 @@ export declare const createTx: ({ toAddress, amount, feeRate, network, account, 
     provider: Provider;
     fee?: number;
 }) => Promise<{
+    estimatedFee: number;
+    satsFound: number;
+    psbt?: undefined;
+    fee?: undefined;
+} | {
     psbt: string;
     fee: number;
+    estimatedFee?: undefined;
+    satsFound?: undefined;
 }>;
 export declare const minimumFee: ({ taprootInputCount, nonTaprootInputCount, outputCount, }: {
     taprootInputCount: number;

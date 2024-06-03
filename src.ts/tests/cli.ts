@@ -26,7 +26,11 @@ import * as transactions from '../transactions'
 import { Marketplace } from '../marketplace'
 import * as dotenv from 'dotenv'
 import { Provider } from '../provider/provider'
-import { MnemonicToAccountOptions, mnemonicToAccount } from '../account'
+import {
+  Account,
+  MnemonicToAccountOptions,
+  mnemonicToAccount,
+} from '../account'
 import { accountSpendableUtxos } from '../utxo'
 import { createTx } from '../btc'
 dotenv.config()
@@ -177,6 +181,23 @@ const provider = new Provider({
   networkType: 'mainnet',
 })
 
+const regtestProvider = new Provider({
+  url: 'http://localhost:3000',
+  projectId: 'regtest',
+  network: bitcoin.networks.regtest,
+  networkType: 'mainnet',
+})
+
+const regtestOpts: MnemonicToAccountOptions = {
+  network: bitcoin.networks.regtest,
+  index: 0,
+}
+
+const regtestAccount = mnemonicToAccount(
+  process.env.REGTEST1.trim(),
+  regtestOpts
+)
+
 const testWallet = new Oyl({
   network: 'testnet',
   baseUrl: 'https://testnet.sandshrew.io',
@@ -190,6 +211,7 @@ tapWallet.apiClient.setAuthToken(process.env.API_TOKEN)
 const XVERSE = 'xverse'
 const UNISAT = 'unisat'
 const MAINNET = 'mainnet'
+const REGTEST = 'regtest'
 const TESTNET = 'testnet'
 
 const config = {
@@ -227,6 +249,25 @@ const config = {
       'tb1pstyemhl9n2hydg079rgrh8jhj9s7zdxh2g5u8apwk0c8yc9ge4eqp59l22',
     feeRate: 1,
   },
+  [REGTEST]: {
+    mnemonic: process.env.REGTEST1,
+    account: regtestAccount as Account,
+    wallet: testWallet as Oyl,
+    segwitPrivateKey:
+      '4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3',
+    taprootPrivateKey:
+      '41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361',
+    taprootAddress:
+      'bcrt1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqvg32hk',
+    taprootPubKey:
+      '03cc8a4bc64d897bddc5fbc2f670f7a8ba0b386779106cf1223c6fc5d7cd6fc115',
+    segwitAddress: 'bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx',
+    segwitPubKey:
+      '0330d54fd0dd420a6e5f8d3624f5f3482cae350f79d5f0753bf5beef9c2d91af3c',
+    destinationTaprootAddress:
+      'bcrt1p4qhjn9zdvkux4e44uhx8tc55attvtyu358kutcqkudyccelu0waslcutpz',
+    feeRate: 2,
+  },
 }
 
 const argv = yargs(hideBin(process.argv))
@@ -234,7 +275,7 @@ const argv = yargs(hideBin(process.argv))
   .option('network', {
     alias: 'n',
     describe: 'Choose network type',
-    choices: ['mainnet', 'testnet'],
+    choices: ['mainnet', 'testnet', 'regtest'],
     default: 'mainnet',
   })
   .command('load', 'Load RPC command', {})
@@ -456,7 +497,7 @@ export async function runCLI() {
   })
 
   const { to, amount, feeRate, ticker, psbtBase64, price } = options
-  const signer: Signer = new Signer(bitcoin.networks.bitcoin, {
+  const signer: Signer = new Signer(bitcoin.networks.regtest, {
     segwitPrivateKey: networkConfig.segwitPrivateKey,
     taprootPrivateKey: networkConfig.taprootPrivateKey,
   })
@@ -486,7 +527,7 @@ export async function runCLI() {
         spendPubKey: networkConfig.taprootPubKey,
         altSpendAddress: networkConfig.segwitAddress,
         altSpendPubKey: networkConfig.segwitPubKey,
-        signer,
+        // signer,
         amount: 546,
       })
       console.log(sendEstimateResponse)
@@ -497,9 +538,9 @@ export async function runCLI() {
         await networkConfig.wallet.sendBrc20Estimate({
           feeRate,
           spendAddress: networkConfig.taprootAddress,
-          spendPubKey: networkConfig.taprootPubKey,
+          // spendPubKey: networkConfig.taprootPubKey,
           altSpendAddress: networkConfig.segwitAddress,
-          altSpendPubKey: networkConfig.segwitPubKey,
+          // altSpendPubKey: networkConfig.segwitPubKey,
         })
       console.log(sendBrc20EstimateResponse)
       return sendBrc20EstimateResponse
@@ -624,48 +665,40 @@ export async function runCLI() {
         })
       )
     case 'new-account':
-      const network = bitcoin.networks.bitcoin
-      const opts: MnemonicToAccountOptions = {
-        network: network,
-        index: 0,
-      }
-
-      const all = mnemonicToAccount(process.env.MAINNET_MNEMONIC.trim(), opts)
+      const network = regtestProvider.network
       const { psbt } = await createTx({
-        toAddress: networkConfig.taprootAddress,
+        toAddress: networkConfig.destinationTaprootAddress,
         amount: 100,
         feeRate: 20,
-        network,
-        account: all,
-        provider,
+        network: network,
+        account: regtestAccount,
+        provider: regtestProvider,
       })
+
       const { signedPsbt: segwitSigned } = await signer.signAllSegwitInputs({
         rawPsbt: psbt,
         finalize: true,
       })
 
-      const { raw } = await signer.signAllTaprootInputs({
+      const { signedPsbt } = await signer.signAllTaprootInputs({
         rawPsbt: segwitSigned,
         finalize: true,
       })
-      const vsize = (
-        await provider.sandshrew.bitcoindRpc.decodeRawTransaction(
-          raw.extractTransaction().toHex()
-        )
-      ).vsize
 
-      console.log(vsize)
+      const vsize = (
+        await regtestProvider.sandshrew.bitcoindRpc.decodePSBT(signedPsbt)
+      ).tx.vsize
 
       const correctFee = vsize * 20
 
-      const { psbt: finalPsbt, fee: finalFee } = await createTx({
-        toAddress: networkConfig.taprootAddress,
-        amount: 100,
+      const { psbt: finalPsbt } = await createTx({
+        toAddress: networkConfig.destinationTaprootAddress,
+        amount: 1000,
         feeRate: 20,
         fee: correctFee,
         network,
-        account: all,
-        provider,
+        account: regtestAccount,
+        provider: regtestProvider,
       })
 
       const { signedPsbt: segwitSigned1 } = await signer.signAllSegwitInputs({
@@ -678,7 +711,11 @@ export async function runCLI() {
         finalize: true,
       })
 
-      return console.log(signedTaproot, finalFee)
+      const result = await regtestProvider.pushPsbt({
+        psbtBase64: signedTaproot,
+      })
+
+      return console.log(result)
     case 'inscriptions':
       return console.log(
         await networkConfig.wallet.getInscriptions({
@@ -687,8 +724,10 @@ export async function runCLI() {
       )
     case 'bis-test':
       return console.log(
-        await await networkConfig.wallet.apiClient.getAllInscriptionsByAddress(
-          'tb1pstyemhl9n2hydg079rgrh8jhj9s7zdxh2g5u8apwk0c8yc9ge4eqp59l22'
+        (
+          await networkConfig.wallet.apiClient.getAllInscriptionsByAddress(
+            'tb1pstyemhl9n2hydg079rgrh8jhj9s7zdxh2g5u8apwk0c8yc9ge4eqp59l22'
+          )
         ).data
       )
 

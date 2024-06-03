@@ -35,4 +35,5 @@ export interface MnemonicToAccountOptions {
     index?: number;
     spendStrategy?: SpendStrategy;
 }
-export declare const mnemonicToAccount: (mnemonic: string, opts?: MnemonicToAccountOptions) => Account;
+export declare const generateMnemonic: () => string;
+export declare const mnemonicToAccount: (mnemonic?: string, opts?: MnemonicToAccountOptions) => Account;

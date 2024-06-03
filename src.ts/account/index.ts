@@ -45,8 +45,11 @@ export interface MnemonicToAccountOptions {
   index?: number
   spendStrategy?: SpendStrategy
 }
+export const generateMnemonic = () => {
+  return bip39.generateMnemonic()
+}
 export const mnemonicToAccount = (
-  mnemonic: string,
+  mnemonic: string = generateMnemonic(),
   opts?: MnemonicToAccountOptions
 ) => {
   const options = {
