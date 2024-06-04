@@ -514,7 +514,7 @@ export class OylApiClient {
    * @param params - Parameters for the signed bid.
    */
    async submitSignedRuneBid(params: SignedBid): Promise<any> {
-    return await this._call('/finalize-unisat-bid', 'post', params)
+    return await this._call('/finalize-unisat-rune-bid', 'post', params)
   }
 
   async sendBtcEstimate({
