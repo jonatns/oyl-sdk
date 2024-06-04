@@ -452,6 +452,7 @@ export class Marketplace {
     })
     console.log("external sign options", options)
     const psbtPayload = await this.signMarketplacePsbt(psbt.toBase64(), false)
+    console.log("psbt payload", psbtPayload)
     return psbtPayload.signedHexPsbt
   }
 
