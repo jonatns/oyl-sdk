@@ -297,8 +297,9 @@ export class Marketplace {
 
       const swapOptions = bid
       swapOptions['psbt'] = unsignedPsbt
-
+      console.log("swap-Options before signing", swapOptions) 
       const signedPsbt = await this.externalSign(swapOptions)
+      console.log("psbt after signing", signedPsbt)
       const data = await this.getSubmitAssetPsbtPath({
         psbtBid: signedPsbt,
         auctionId: bid.auctionId,
