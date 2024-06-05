@@ -2,6 +2,8 @@ import { MnemonicToAccountOptions } from '../account'
 import { Provider } from '../provider/provider'
 import { Network, NetworkOptions } from './interface'
 import * as bitcoin from 'bitcoinjs-lib'
+import * as dotenv from 'dotenv'
+dotenv.config()
 
 export const UTXO_DUST = 546
 
@@ -21,7 +23,13 @@ export const regtestOpts: MnemonicToAccountOptions = {
   index: 0,
 }
 
+export const Opts: MnemonicToAccountOptions = {
+  network: bitcoin.networks.bitcoin,
+  index: 0,
+}
+
 export const regtestMnemonic: string = process.env.REGTEST1!.trim()
+export const mainnetMnemonic: string = process.env.MAINNET_MNEMONIC!.trim()
 
 export const getBrc20Data = ({
   amount,

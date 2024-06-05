@@ -34,6 +34,8 @@ import {
 import { accountSpendableUtxos } from '../utxo'
 import { createTx } from '../btc'
 import {
+  Opts,
+  mainnetMnemonic,
   regtestMnemonic,
   regtestOpts,
   regtestProvider,
@@ -187,6 +189,7 @@ export const provider = new Provider({
 })
 
 const regtestAccount = mnemonicToAccount(regtestMnemonic, regtestOpts)
+const account: Account = mnemonicToAccount(mainnetMnemonic, Opts)
 
 const testWallet = new Oyl({
   network: 'testnet',
@@ -487,7 +490,7 @@ export async function runCLI() {
   })
 
   const { to, amount, feeRate, ticker, psbtBase64, price } = options
-  const signer: Signer = new Signer(bitcoin.networks.regtest, {
+  const signer: Signer = new Signer(bitcoin.networks.bitcoin, {
     segwitPrivateKey: networkConfig.segwitPrivateKey,
     taprootPrivateKey: networkConfig.taprootPrivateKey,
   })
@@ -654,14 +657,14 @@ export async function runCLI() {
         })
       )
     case 'new-account':
-      const network = regtestProvider.network
+      const network = provider.network
       const { psbt } = await createTx({
         toAddress: networkConfig.destinationTaprootAddress,
         amount: 100,
         feeRate: 20,
         network: network,
-        account: regtestAccount,
-        provider: regtestProvider,
+        account: account,
+        provider: provider,
       })
 
       const { signedPsbt: segwitSigned } = await signer.signAllSegwitInputs({
@@ -675,7 +678,7 @@ export async function runCLI() {
       })
 
       const vsize = (
-        await regtestProvider.sandshrew.bitcoindRpc.decodePSBT!(signedPsbt)
+        await provider.sandshrew.bitcoindRpc.decodePSBT!(signedPsbt)
       ).tx.vsize
 
       const correctFee = vsize * 20
@@ -686,8 +689,8 @@ export async function runCLI() {
         feeRate: 20,
         fee: correctFee,
         network,
-        account: regtestAccount,
-        provider: regtestProvider,
+        account: account,
+        provider: provider,
       })
 
       const { signedPsbt: segwitSigned1 } = await signer.signAllSegwitInputs({
