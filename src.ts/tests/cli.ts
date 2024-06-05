@@ -40,6 +40,7 @@ import {
   regtestOpts,
   regtestProvider,
 } from '../shared/constants'
+import { sendCollectible } from '../collectibles'
 dotenv.config()
 
 bitcoin.initEccLib(ecc2)
@@ -592,6 +593,64 @@ export async function runCLI() {
 
       console.log(sendInscriptionResponse)
       return sendInscriptionResponse
+    case 'new-send-collectible':
+      const { rawPsbt: collectibleSend } = await sendCollectible({
+        toAddress: networkConfig.destinationTaprootAddress,
+        inscriptionId:
+          'c00dc846a680884c35aac3b51f21d0b79cc2154e478da5561f6ad3ce0833c629i294',
+        feeRate: 20,
+        account: account,
+        provider: provider,
+      })
+
+      const { signedPsbt: collectibleSegwitSigned } =
+        await signer.signAllSegwitInputs({
+          rawPsbt: collectibleSend!,
+          finalize: true,
+        })
+
+      const { signedPsbt: collectibleTaprootSigned } =
+        await signer.signAllTaprootInputs({
+          rawPsbt: collectibleSegwitSigned,
+          finalize: true,
+        })
+
+      const collectibleVsize = (
+        await provider.sandshrew.bitcoindRpc.decodePSBT!(
+          collectibleTaprootSigned
+        )
+      ).tx.vsize
+
+      const correctCollectibleFee = collectibleVsize * 20
+
+      const { rawPsbt: collectibleSend1 } = await sendCollectible({
+        toAddress: networkConfig.destinationTaprootAddress,
+        inscriptionId:
+          'c00dc846a680884c35aac3b51f21d0b79cc2154e478da5561f6ad3ce0833c629i294',
+        feeRate: 20,
+        account: account,
+        provider: provider,
+        fee: correctCollectibleFee,
+      })
+      const { signedPsbt: collectibleSegwitSigned1 } =
+        await signer.signAllSegwitInputs({
+          rawPsbt: collectibleSend1!,
+          finalize: true,
+        })
+
+      const { signedPsbt: collectibleTaprootSigned1 } =
+        await signer.signAllTaprootInputs({
+          rawPsbt: collectibleSegwitSigned1,
+          finalize: true,
+        })
+
+      return console.log(collectibleTaprootSigned1)
+
+    // const collectibleResult = await provider.pushPsbt({
+    //   psbtBase64: collectibleTaprootSigned1,
+    // })
+
+    // return console.log(collectibleResult)
     case 'send-rune':
       const sendRuneResponse = await networkConfig.wallet.sendRune({
         runeId: '840000:3',

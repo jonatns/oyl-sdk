@@ -135,7 +135,10 @@ export const accountSpendableUtxos = async ({
   return { totalAmount, utxos: allUtxos }
 }
 
-export function findUtxosToCoverAmount(utxos: FormattedUtxo[], amount: number) {
+export const findUtxosToCoverAmount = (
+  utxos: FormattedUtxo[],
+  amount: number
+) => {
   let totalSatoshis = 0
   const selectedUtxos: any[] = []
 
@@ -158,5 +161,41 @@ export function findUtxosToCoverAmount(utxos: FormattedUtxo[], amount: number) {
     selectedUtxos,
     totalSatoshis,
     change: totalSatoshis - amount,
+  }
+}
+
+export const findCollectible = async ({
+  account,
+  provider,
+  inscriptionId,
+}: {
+  account: Account
+  provider: Provider
+  inscriptionId: string
+}) => {
+  const collectibleData = await provider.getCollectibleById(inscriptionId)
+
+  if (collectibleData.address !== account.taproot.address) {
+    throw new Error('Inscription does not belong to fromAddress')
+  }
+
+  const inscriptionTxId = collectibleData.satpoint.split(':')[0]
+  const inscriptionTxVOutIndex = collectibleData.satpoint.split(':')[1]
+  const inscriptionUtxoDetails = await provider.esplora.getTxInfo(
+    inscriptionTxId
+  )
+  const inscriptionUtxoData =
+    inscriptionUtxoDetails.vout[inscriptionTxVOutIndex]
+
+  const isSpentArray = await provider.esplora.getTxOutspends(inscriptionTxId)
+  const isSpent = isSpentArray[inscriptionTxVOutIndex]
+
+  if (isSpent.spent) {
+    throw new Error('Inscription is missing')
+  }
+  return {
+    txId: inscriptionTxId,
+    voutIndex: inscriptionTxVOutIndex,
+    data: inscriptionUtxoData,
   }
 }

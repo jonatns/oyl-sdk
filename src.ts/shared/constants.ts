@@ -28,8 +28,8 @@ export const Opts: MnemonicToAccountOptions = {
   index: 0,
 }
 
-export const regtestMnemonic: string = process.env.REGTEST1!.trim()
-export const mainnetMnemonic: string = process.env.MAINNET_MNEMONIC!.trim()
+export const regtestMnemonic: string = process.env.REGTEST1
+export const mainnetMnemonic: string = process.env.MAINNET_MNEMONIC
 
 export const getBrc20Data = ({
   amount,
