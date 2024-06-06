@@ -37,17 +37,3 @@ export declare const accountSpendableUtxos: ({ account, provider, spendAmount, }
     totalAmount: number;
     utxos: FormattedUtxo[];
 }>;
-export declare const findUtxosToCoverAmount: (utxos: FormattedUtxo[], amount: number) => {
-    selectedUtxos: any[];
-    totalSatoshis: number;
-    change: number;
-};
-export declare const findCollectible: ({ account, provider, inscriptionId, }: {
-    account: Account;
-    provider: Provider;
-    inscriptionId: string;
-}) => Promise<{
-    txId: string;
-    voutIndex: string;
-    data: any;
-}>;

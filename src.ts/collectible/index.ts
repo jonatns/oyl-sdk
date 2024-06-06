@@ -1,12 +1,7 @@
 import { minimumFee } from '../btc'
 import { Provider } from '../provider/provider'
 import * as bitcoin from 'bitcoinjs-lib'
-import {
-  FormattedUtxo,
-  accountSpendableUtxos,
-  findCollectible,
-  findUtxosToCoverAmount,
-} from '../utxo'
+import { FormattedUtxo, accountSpendableUtxos } from '../utxo'
 import { Account } from '../account'
 import { formatInputsToSign } from '../shared/utils'
 import { OylTransactionError } from '../errors'
@@ -65,22 +60,26 @@ export const sendTx = async ({
       value: data.value,
     })
 
-    let utxosToSend = findUtxosToCoverAmount(gatheredUtxos.utxos, finalFee)
+    let utxosToSend = gatheredUtxos
 
-    if (utxosToSend?.selectedUtxos.length > 1) {
-      const newTxSize = minimumFee({
-        taprootInputCount: utxosToSend.selectedUtxos.length,
+    if (!fee && gatheredUtxos.utxos.length > 1) {
+      const txSize = minimumFee({
+        taprootInputCount: gatheredUtxos.utxos.length,
         nonTaprootInputCount: 0,
         outputCount: 2,
       })
-      fee = newTxSize * feeRate < 250 ? 250 : newTxSize * feeRate
-      utxosToSend = findUtxosToCoverAmount(gatheredUtxos.utxos, finalFee)
-      if (utxosToSend.totalSatoshis < finalFee) {
-        return { estimatedFee: finalFee, satsFound: gatheredUtxos.totalAmount }
+      finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
+
+      if (gatheredUtxos.totalAmount < finalFee) {
+        utxosToSend = await accountSpendableUtxos({
+          account,
+          provider,
+          spendAmount: finalFee,
+        })
       }
     }
 
-    for await (const utxo of utxosToSend.selectedUtxos) {
+    for await (const utxo of utxosToSend.utxos) {
       psbt.addInput({
         hash: utxo.txId,
         index: utxo.outputIndex,
@@ -91,9 +90,7 @@ export const sendTx = async ({
       })
     }
 
-    const changeAmount = fee
-      ? utxosToSend.totalSatoshis - fee
-      : utxosToSend.totalSatoshis - finalFee
+    const changeAmount = utxosToSend.totalAmount - finalFee
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
@@ -110,4 +107,60 @@ export const sendTx = async ({
   } catch (error) {
     throw new OylTransactionError(error)
   }
+}
+
+export const findCollectible = async ({
+  account,
+  provider,
+  inscriptionId,
+}: {
+  account: Account
+  provider: Provider
+  inscriptionId: string
+}) => {
+  const collectibleData: OrdCollectibleData =
+    await provider.ord.getInscriptionById(inscriptionId)
+
+  if (collectibleData.address !== account.taproot.address) {
+    throw new Error('Inscription does not belong to fromAddress')
+  }
+
+  const inscriptionTxId = collectibleData.satpoint.split(':')[0]
+  const inscriptionTxVOutIndex = collectibleData.satpoint.split(':')[1]
+  const inscriptionUtxoDetails = await provider.esplora.getTxInfo(
+    inscriptionTxId
+  )
+  const inscriptionUtxoData =
+    inscriptionUtxoDetails.vout[inscriptionTxVOutIndex]
+
+  const isSpentArray = await provider.esplora.getTxOutspends(inscriptionTxId)
+  const isSpent = isSpentArray[inscriptionTxVOutIndex]
+
+  if (isSpent.spent) {
+    throw new Error('Inscription is missing')
+  }
+  return {
+    txId: inscriptionTxId,
+    voutIndex: inscriptionTxVOutIndex,
+    data: inscriptionUtxoData,
+  }
+}
+
+type OrdCollectibleData = {
+  address: string
+  children: any[]
+  content_length: number
+  content_type: string
+  genesis_fee: number
+  genesis_height: number
+  inscription_id: string
+  inscription_number: number
+  next: string
+  output_value: number
+  parent: any
+  previous: string
+  rune: any
+  sat: number
+  satpoint: string
+  timestamp: number
 }

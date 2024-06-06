@@ -74,11 +74,11 @@ export const mnemonicToAccount = (
     },
   }
 
-  const accounts = generateWallet({
+  const account = generateWallet({
     mnemonic,
     options,
   })
-  return accounts as Account
+  return account as Account
 }
 
 const generateWallet = ({

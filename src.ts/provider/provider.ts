@@ -101,28 +101,4 @@ export class Provider {
       satsPerVByte: (fee / (txInMemPool.weight / 4)).toFixed(2),
     }
   }
-
-  async getCollectibleById(inscriptionId: string) {
-    const data = await this.ord.getInscriptionById(inscriptionId)
-    return data as {
-      address: string
-      children: any[]
-      content_length: number
-      content_type: string
-      genesis_fee: number
-      genesis_height: number
-      inscription_id: string
-      inscription_number: number
-      next: string
-      output_value: number
-      parent: any
-      previous: string
-      rune: any
-      sat: number
-      satpoint: string
-      timestamp: number
-    }
-  }
 }
-
-// make a switch for bitcoin js to oyl network names

@@ -1,11 +1,7 @@
 import { OylTransactionError } from '../errors'
 import { Provider } from '../provider/provider'
 import * as bitcoin from 'bitcoinjs-lib'
-import {
-  FormattedUtxo,
-  accountSpendableUtxos,
-  findUtxosToCoverAmount,
-} from '../utxo'
+import { FormattedUtxo, accountSpendableUtxos } from '../utxo'
 import { calculateTaprootTxSize, formatInputsToSign } from '../shared/utils'
 import { Account } from '../account'
 
@@ -56,13 +52,14 @@ export const sendTx = async ({
         nonTaprootInputCount: 0,
         outputCount: 2,
       })
-      fee = txSize * feeRate < 250 ? 250 : txSize * feeRate
-      const utxosToSend = findUtxosToCoverAmount(
-        gatheredUtxos.utxos,
-        amount + finalFee
-      )
-      if (utxosToSend.totalSatoshis < amount + finalFee) {
-        return { estimatedFee: finalFee, satsFound: gatheredUtxos.totalAmount }
+      finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
+
+      if (gatheredUtxos.totalAmount < amount + finalFee) {
+        utxosToSend = await accountSpendableUtxos({
+          account,
+          provider,
+          spendAmount: finalFee + amount,
+        })
       }
     }
 

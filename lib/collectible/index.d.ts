@@ -8,11 +8,14 @@ export declare const sendTx: ({ account, inscriptionId, provider, toAddress, fee
     feeRate?: number;
     fee?: number;
 }) => Promise<{
-    estimatedFee: number;
-    satsFound: number;
-    psbt?: undefined;
-} | {
     psbt: string;
-    estimatedFee?: undefined;
-    satsFound?: undefined;
+}>;
+export declare const findCollectible: ({ account, provider, inscriptionId, }: {
+    account: Account;
+    provider: Provider;
+    inscriptionId: string;
+}) => Promise<{
+    txId: string;
+    voutIndex: string;
+    data: any;
 }>;
