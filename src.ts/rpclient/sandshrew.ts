@@ -32,7 +32,7 @@ export class SandshrewBitcoinClient {
 
       if (responseData.error) {
         console.error('JSON-RPC Error:', responseData.error)
-        throw new Error (responseData.error)
+        throw new Error(responseData.error)
       }
 
       return responseData.result
@@ -236,6 +236,3 @@ export class SandshrewBitcoinClient {
     }
   }
 }
-
-// Example usage:
-//   const bitcoinClient = new SandshrewBitcoinClient('http://localhost:8332');

@@ -64,7 +64,7 @@ export class Oyl {
   public sandshrewBtcClient: SandshrewBitcoinClient
   public esploraRpc: EsploraRpc
   public ordRpc: OrdRpc
-  public provider: Providers
+  public provider: Provider
   public apiClient: OylApiClient
   public derivPath: String
   public currentNetwork: 'testnet' | 'main' | 'regtest' | 'signet'
@@ -88,11 +88,11 @@ export class Oyl {
       apiKey: apiKey,
     })
     const rpcUrl = `${options.baseUrl}/${options.version}/${options.projectId}`
-    const provider = new Provider(rpcUrl)
+    this.provider = new Provider(rpcUrl)
     this.network = getNetwork(options.network)
-    this.sandshrewBtcClient = provider.sandshrew
-    this.esploraRpc = provider.esplora
-    this.ordRpc = provider.ord
+    this.sandshrewBtcClient = this.provider.sandshrew
+    this.esploraRpc = this.provider.esplora
+    this.ordRpc = this.provider.ord
     this.currentNetwork =
       options.network === 'mainnet' ? 'main' : options.network
   }
@@ -613,7 +613,6 @@ export class Oyl {
             confirmations: utxo.status.confirmed ? 3 : 0,
             scriptPk: voutEntry.scriptpubkey,
             address: address,
-            addressType: addressType,
             inscriptions: [],
           })
         }

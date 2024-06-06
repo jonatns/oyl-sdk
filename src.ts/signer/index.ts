@@ -83,7 +83,6 @@ export class Signer {
     if (!matchingPubKey) {
       throw new Error('Input does not match signer type')
     }
-
     unSignedPsbt.signTaprootInput(inputNumber, tweakedSigner)
 
     if (finalize) {

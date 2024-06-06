@@ -270,10 +270,16 @@ export declare const addressTypeToName: {
     readonly p2sh: "nested-segwit";
     readonly p2wpkh: "segwit";
 };
+export declare const internalAddressTypeToName: {
+    readonly 0: "legacy";
+    readonly 1: "taproot";
+    readonly 2: "nested-segwit";
+    readonly 3: "segwit";
+};
 export declare const addressNameToType: {
     readonly legacy: "p2pkh";
     readonly taproot: "p2tr";
-    readonly 'nested-segwit': "p2sh";
+    readonly 'nested-segwit': "p2sh-p2wpkh";
     readonly segwit: "p2wpkh";
 };
 export type RuneUtxo = {

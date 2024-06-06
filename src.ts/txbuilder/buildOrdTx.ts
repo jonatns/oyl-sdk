@@ -7,7 +7,6 @@ export type Utxo = {
   outputIndex: number
   satoshis: number
   scriptPk: string
-  addressType: number
   address: string
   inscriptions: any[]
   confirmations: number
