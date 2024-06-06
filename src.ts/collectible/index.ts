@@ -30,7 +30,7 @@ export const sendTx = async ({
     const calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
     let finalFee = fee ? fee : calculatedFee
 
-    const gatheredUtxos: {
+    let gatheredUtxos: {
       totalAmount: number
       utxos: FormattedUtxo[]
     } = await accountSpendableUtxos({
@@ -60,8 +60,6 @@ export const sendTx = async ({
       value: data.value,
     })
 
-    let utxosToSend = gatheredUtxos
-
     if (!fee && gatheredUtxos.utxos.length > 1) {
       const txSize = minimumFee({
         taprootInputCount: gatheredUtxos.utxos.length,
@@ -71,7 +69,7 @@ export const sendTx = async ({
       finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
       if (gatheredUtxos.totalAmount < finalFee) {
-        utxosToSend = await accountSpendableUtxos({
+        gatheredUtxos = await accountSpendableUtxos({
           account,
           provider,
           spendAmount: finalFee,
@@ -79,7 +77,7 @@ export const sendTx = async ({
       }
     }
 
-    for await (const utxo of utxosToSend.utxos) {
+    for await (const utxo of gatheredUtxos.utxos) {
       psbt.addInput({
         hash: utxo.txId,
         index: utxo.outputIndex,
@@ -90,7 +88,7 @@ export const sendTx = async ({
       })
     }
 
-    const changeAmount = utxosToSend.totalAmount - finalFee
+    const changeAmount = gatheredUtxos.totalAmount - finalFee
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
