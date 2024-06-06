@@ -1,6 +1,6 @@
 import { Provider } from '../provider/provider';
 import { Account } from '../account';
-export declare const sendCollectible: ({ account, inscriptionId, provider, toAddress, feeRate, fee, }: {
+export declare const sendTx: ({ account, inscriptionId, provider, toAddress, feeRate, fee, }: {
     account: Account;
     inscriptionId: string;
     provider: Provider;
@@ -10,9 +10,9 @@ export declare const sendCollectible: ({ account, inscriptionId, provider, toAdd
 }) => Promise<{
     estimatedFee: number;
     satsFound: number;
-    rawPsbt?: undefined;
+    psbt?: undefined;
 } | {
-    rawPsbt: string;
+    psbt: string;
     estimatedFee?: undefined;
     satsFound?: undefined;
 }>;

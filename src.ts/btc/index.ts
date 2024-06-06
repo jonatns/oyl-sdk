@@ -9,7 +9,7 @@ import {
 import { calculateTaprootTxSize, formatInputsToSign } from '../shared/utils'
 import { Account } from '../account'
 
-export const createTx = async ({
+export const sendTx = async ({
   toAddress,
   amount,
   feeRate,

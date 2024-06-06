@@ -32,7 +32,7 @@ import {
   mnemonicToAccount,
 } from '../account'
 import { accountSpendableUtxos } from '../utxo'
-import { createTx } from '../btc'
+import * as btc from '../btc'
 import {
   Opts,
   mainnetMnemonic,
@@ -40,7 +40,7 @@ import {
   regtestOpts,
   regtestProvider,
 } from '../shared/constants'
-import { sendCollectible } from '../collectibles'
+import * as collectible from '../collectible'
 dotenv.config()
 
 bitcoin.initEccLib(ecc2)
@@ -594,7 +594,7 @@ export async function runCLI() {
       console.log(sendInscriptionResponse)
       return sendInscriptionResponse
     case 'new-send-collectible':
-      const { rawPsbt: collectibleSend } = await sendCollectible({
+      const { psbt: collectibleSend } = await collectible.sendTx({
         toAddress: networkConfig.destinationTaprootAddress,
         inscriptionId:
           'c00dc846a680884c35aac3b51f21d0b79cc2154e478da5561f6ad3ce0833c629i294',
@@ -623,7 +623,7 @@ export async function runCLI() {
 
       const correctCollectibleFee = collectibleVsize * 20
 
-      const { rawPsbt: collectibleSend1 } = await sendCollectible({
+      const { psbt: collectibleSend1 } = await collectible.sendTx({
         toAddress: networkConfig.destinationTaprootAddress,
         inscriptionId:
           'c00dc846a680884c35aac3b51f21d0b79cc2154e478da5561f6ad3ce0833c629i294',
@@ -717,7 +717,7 @@ export async function runCLI() {
       )
     case 'new-account':
       const network = provider.network
-      const { psbt } = await createTx({
+      const { psbt } = await btc.sendTx({
         toAddress: networkConfig.destinationTaprootAddress,
         amount: 100,
         feeRate: 20,
@@ -742,7 +742,7 @@ export async function runCLI() {
 
       const correctFee = vsize * 20
 
-      const { psbt: finalPsbt } = await createTx({
+      const { psbt: finalPsbt } = await btc.sendTx({
         toAddress: networkConfig.destinationTaprootAddress,
         amount: 1000,
         feeRate: 20,

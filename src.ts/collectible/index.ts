@@ -10,7 +10,7 @@ import {
 import { Account } from '../account'
 import { formatInputsToSign } from '../shared/utils'
 
-export const sendCollectible = async ({
+export const sendTx = async ({
   account,
   inscriptionId,
   provider,
@@ -104,5 +104,5 @@ export const sendCollectible = async ({
     network: provider.network,
   })
 
-  return { rawPsbt: formattedPsbtTx.toBase64() }
+  return { psbt: formattedPsbtTx.toBase64() }
 }

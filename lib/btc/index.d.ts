@@ -1,7 +1,7 @@
 import { Provider } from '../provider/provider';
 import * as bitcoin from 'bitcoinjs-lib';
 import { Account } from '../account';
-export declare const createTx: ({ toAddress, amount, feeRate, network, account, provider, fee, }: {
+export declare const sendTx: ({ toAddress, amount, feeRate, network, account, provider, fee, }: {
     toAddress: string;
     feeRate: number;
     amount: number;
