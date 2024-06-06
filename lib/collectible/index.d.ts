@@ -10,8 +10,8 @@ export declare const sendTx: ({ account, inscriptionId, provider, toAddress, fee
 }) => Promise<{
     psbt: string;
 }>;
-export declare const findCollectible: ({ account, provider, inscriptionId, }: {
-    account: Account;
+export declare const findCollectible: ({ address, provider, inscriptionId, }: {
+    address: string;
     provider: Provider;
     inscriptionId: string;
 }) => Promise<{

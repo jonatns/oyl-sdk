@@ -41,7 +41,7 @@ export const sendTx = async ({
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
     const { txId, voutIndex, data } = await findCollectible({
-      account,
+      address: account.taproot.address,
       provider,
       inscriptionId,
     })
@@ -110,18 +110,18 @@ export const sendTx = async ({
 }
 
 export const findCollectible = async ({
-  account,
+  address,
   provider,
   inscriptionId,
 }: {
-  account: Account
+  address: string
   provider: Provider
   inscriptionId: string
 }) => {
   const collectibleData: OrdCollectibleData =
     await provider.ord.getInscriptionById(inscriptionId)
 
-  if (collectibleData.address !== account.taproot.address) {
+  if (collectibleData.address !== address) {
     throw new Error('Inscription does not belong to fromAddress')
   }
 
