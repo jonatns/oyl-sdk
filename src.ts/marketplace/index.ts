@@ -264,6 +264,7 @@ export class Marketplace {
         return await this.wallet.apiClient.submitSignedBid(payload)
         break;
       case AssetType.RUNES:
+         console.log("payload to submit", payload)
          return await this.wallet.apiClient.submitSignedRuneBid(payload)
          break;
       case AssetType.COLLECTIBLE:
@@ -281,23 +282,30 @@ export class Marketplace {
       receiveAddress: this.receiveAddress,
       feerate: this.feeRate,
     }
-    if (
+
+    console.log(this.selectSpendAddress);
+    console.log(this.receiveAddress);
+    console.log(this.addressesBound);
+    if (      
       this.selectedSpendAddress != this.receiveAddress &&
       !this.addressesBound
     ) {
+      console.log("getting new signature")
       const signature = await this.getSignatureForBind()
       payload['signature'] = signature
       this.addressesBound = true
     }
     const psbt = await this.getAssetPsbtPath(payload)
+    console.log("psbt from initiate swap", psbt)
 
     if (!psbt?.error) {
       const unsignedPsbt = psbt.psbtBid
 
       const swapOptions = bid
       swapOptions['psbt'] = unsignedPsbt
-
+      console.log("swap-Options before signing", swapOptions) 
       const signedPsbt = await this.externalSign(swapOptions)
+      console.log("psbt after signing", signedPsbt)
       const data = await this.getSubmitAssetPsbtPath({
         psbtBid: signedPsbt,
         auctionId: bid.auctionId,
@@ -448,7 +456,9 @@ export class Marketplace {
     const psbt = bitcoin.Psbt.fromHex(options.psbt, {
       network: this.wallet.network,
     })
+    console.log("external sign options", options)
     const psbtPayload = await this.signMarketplacePsbt(psbt.toBase64(), false)
+    console.log("psbt payload", psbtPayload)
     return psbtPayload.signedHexPsbt
   }
 

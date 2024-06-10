@@ -2,9 +2,10 @@
 import { Utxo } from './txbuilder';
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
-import { AddressType, IBlockchainInfoUTXO, Providers, RecoverAccountOptions, TickerDetails } from './shared/interface';
+import { AddressType, IBlockchainInfoUTXO, RecoverAccountOptions, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
 import * as bitcoin from 'bitcoinjs-lib';
+import { Provider } from './rpclient/provider';
 import { OrdRpc } from './rpclient/ord';
 import { HdKeyring } from './wallet/hdKeyring';
 import { Signer } from './signer';
@@ -17,7 +18,7 @@ export declare class Oyl {
     sandshrewBtcClient: SandshrewBitcoinClient;
     esploraRpc: EsploraRpc;
     ordRpc: OrdRpc;
-    provider: Providers;
+    provider: Provider;
     apiClient: OylApiClient;
     derivPath: String;
     currentNetwork: 'testnet' | 'main' | 'regtest' | 'signet';

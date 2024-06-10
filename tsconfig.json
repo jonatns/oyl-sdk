@@ -9,7 +9,7 @@
     "sourceMap": true,
     "outDir": "./lib",
     "declaration": true,
-    "types": ["node"]
+    "types": ["node", "jest"]
   },
   "include": ["./src.ts/**/*.ts"]
 }
