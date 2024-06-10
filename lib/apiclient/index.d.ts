@@ -62,6 +62,11 @@ export declare class OylApiClient {
    */
     getRuneTokenInfo(ticker: string): Promise<any>;
     /**
+ * Get Collection info by id.
+ * @param collectionId - The collectionId to query.
+ */
+    getCollectionInfo(collectionId: string): Promise<any>;
+    /**
      * Get brc20 details by ticker.
      * @param ticker - The ticker to query.
      */
@@ -80,6 +85,7 @@ export declare class OylApiClient {
         minting_status?: string;
     }): Promise<any>;
     getRuneTickers(): Promise<any>;
+    getMarketplaceCollections(): Promise<any>;
     getAllInscriptionsByAddress(address: string): Promise<any>;
     getInscriptionsForTxn(txn_id: string): Promise<any>;
     getTaprootTxHistory(taprootAddress: any, totalTxs: any): Promise<any>;
@@ -129,6 +135,15 @@ export declare class OylApiClient {
     */
     getRuneOffers({ ticker, limit, }: {
         ticker: string;
+        limit?: number;
+    }): Promise<any>;
+    /**
+    * Get Collection offers.
+    * @param collectionId - The collectionId to query.
+    * @param limit - The limit of offers to return (Default = 5).
+    */
+    getCollectionOffers({ collectionId, limit, }: {
+        collectionId: string;
         limit?: number;
     }): Promise<any>;
     /**
@@ -225,14 +240,24 @@ export declare class OylApiClient {
     */
     initRuneSwapBid(params: SwapBrcBid): Promise<any>;
     /**
+    * Initialize a collection swap bid.
+    * @param params - Parameters for the bid.
+    */
+    initCollectionSwapBid(params: SwapBrcBid): Promise<any>;
+    /**
      * Submit a signed bid.
      * @param params - Parameters for the signed bid.
      */
     submitSignedBid(params: SignedBid): Promise<any>;
     /**
-    * Submit a signed Rune bid.
+    * Submit a signed Collection bid.
     * @param params - Parameters for the signed bid.
     */
+    submitSignedCollectionBid(params: SignedBid): Promise<any>;
+    /**
+   * Submit a signed Collection bid.
+   * @param params - Parameters for the signed bid.
+   */
     submitSignedRuneBid(params: SignedBid): Promise<any>;
     sendBtcEstimate({ feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, }: {
         feeRate?: number;
