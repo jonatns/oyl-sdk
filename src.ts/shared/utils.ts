@@ -23,6 +23,7 @@ import {
 import { isTaprootInput, toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew'
 import { EsploraRpc } from '../rpclient/esplora'
+import { Provider } from '../provider/provider'
 
 bitcoin.initEccLib(ecc)
 
@@ -100,6 +101,22 @@ export function checkPaymentType(
       return false
     }
   }
+}
+
+export async function getFee({
+  provider,
+  psbt,
+  feeRate,
+}: {
+  provider: Provider
+  psbt: string
+  feeRate: number
+}) {
+  const vsize = (await provider.sandshrew.bitcoindRpc.decodePSBT!(psbt)).tx
+    .vsize
+
+  const accurateFee = vsize * feeRate
+  return accurateFee
 }
 
 export function tweakSigner(

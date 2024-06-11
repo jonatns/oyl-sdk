@@ -15,18 +15,17 @@ import { minimumFee } from '../btc'
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { ECPairInterface } from 'ecpair'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
+import { getAddressType } from '../transactions'
 
-export const finalSendEstimateTx = async ({
+export const transferEstimate = async ({
   toAddress,
   feeRate,
-  network,
   account,
   provider,
   fee,
 }: {
   toAddress: string
   feeRate: number
-  network: bitcoin.Network
   account: Account
   provider: Provider
   fee?: number
@@ -35,7 +34,7 @@ export const finalSendEstimateTx = async ({
     if (!feeRate) {
       feeRate = (await provider.esplora.getFeeEstimates())['1']
     }
-    const psbt: bitcoin.Psbt = new bitcoin.Psbt({ network: network })
+    const psbt: bitcoin.Psbt = new bitcoin.Psbt({ network: provider.network })
     const minFee = minimumFee({
       taprootInputCount: 2,
       nonTaprootInputCount: 0,
@@ -98,7 +97,7 @@ export const finalSendEstimateTx = async ({
     const updatedPsbt = await formatInputsToSign({
       _psbt: psbt,
       senderPublicKey: account.taproot.pubkey,
-      network,
+      network: provider.network,
     })
 
     return { psbt: updatedPsbt.toBase64(), fee: finalFee }
@@ -107,7 +106,7 @@ export const finalSendEstimateTx = async ({
   }
 }
 
-export const commitTx = async ({
+export const commit = async ({
   ticker,
   amount,
   feeRate,
@@ -156,6 +155,7 @@ export const commitTx = async ({
       provider,
       spendAmount: finalFee,
     })
+
     const taprootKeyPair: ECPairInterface = ECPair.fromPrivateKey(
       Buffer.from(account.taproot.privateKey, 'hex')
     )
@@ -195,14 +195,52 @@ export const commitTx = async ({
     }
 
     for (let i = 0; i < gatheredUtxos.utxos.length; i++) {
-      psbt.addInput({
-        hash: gatheredUtxos.utxos[i].txId,
-        index: gatheredUtxos.utxos[i].outputIndex,
-        witnessUtxo: {
-          value: gatheredUtxos.utxos[i].satoshis,
-          script: Buffer.from(gatheredUtxos.utxos[i].scriptPk, 'hex'),
-        },
-      })
+      // if (getAddressType(gatheredUtxos.utxos[i].address) === 0) {
+      //   const previousTxHex: string =
+      //     await provider.sandshrew.bitcoindRpc.getTransaction(
+      //       gatheredUtxos.utxos[i].txId
+      //     )
+      //   psbt.addInput({
+      //     hash: gatheredUtxos.utxos[i].txId,
+      //     index: gatheredUtxos.utxos[i].outputIndex,
+      //     nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
+      //   })
+      // }
+      if (getAddressType(gatheredUtxos.utxos[i].address) === 2) {
+        const redeemScript = bitcoin.script.compile([
+          bitcoin.opcodes.OP_0,
+          bitcoin.crypto.hash160(
+            Buffer.from(account.nestedSegwit.pubkey, 'hex')
+          ),
+        ])
+
+        psbt.addInput({
+          hash: gatheredUtxos.utxos[i].txId,
+          index: gatheredUtxos.utxos[i].outputIndex,
+          redeemScript: redeemScript,
+          witnessUtxo: {
+            value: gatheredUtxos.utxos[i].satoshis,
+            script: bitcoin.script.compile([
+              bitcoin.opcodes.OP_HASH160,
+              bitcoin.crypto.hash160(redeemScript),
+              bitcoin.opcodes.OP_EQUAL,
+            ]),
+          },
+        })
+      }
+      if (
+        getAddressType(gatheredUtxos.utxos[i].address) === 1 ||
+        getAddressType(gatheredUtxos.utxos[i].address) === 3
+      ) {
+        psbt.addInput({
+          hash: gatheredUtxos.utxos[i].txId,
+          index: gatheredUtxos.utxos[i].outputIndex,
+          witnessUtxo: {
+            value: gatheredUtxos.utxos[i].satoshis,
+            script: Buffer.from(gatheredUtxos.utxos[i].scriptPk, 'hex'),
+          },
+        })
+      }
     }
 
     const changeAmount = gatheredUtxos.totalAmount - finalFee
@@ -224,7 +262,7 @@ export const commitTx = async ({
   }
 }
 
-export const revealTx = async ({
+export const reveal = async ({
   receiverAddress,
   script,
   feeRate,
@@ -318,7 +356,7 @@ export const revealTx = async ({
   }
 }
 
-export const sendTx = async ({
+export const transfer = async ({
   commitChangeUtxoId,
   revealTxId,
   toAddress,
@@ -381,7 +419,7 @@ export const sendTx = async ({
       network: provider.network,
     })
 
-    return { sentPsbt: formattedPsbt.toBase64() }
+    return { psbt: formattedPsbt.toBase64() }
   } catch (error) {
     throw new OylTransactionError(error)
   }

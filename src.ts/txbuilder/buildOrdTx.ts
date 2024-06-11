@@ -110,7 +110,6 @@ const addSegwitFeeUtxo = async ({
       redeem: p2wpkh,
       network: network,
     })
-
     redeemScript = p2sh.redeem.output
   }
   if (utxosToSend) {

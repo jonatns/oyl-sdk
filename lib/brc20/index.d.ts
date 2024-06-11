@@ -1,11 +1,9 @@
+/// <reference types="node" />
 import { Provider } from '../provider/provider';
-import * as bitcoin from 'bitcoinjs-lib';
 import { Account } from '../account';
-export declare const sendTx: ({ toAddress, amount, feeRate, network, account, provider, fee, }: {
+export declare const transferEstimate: ({ toAddress, feeRate, account, provider, fee, }: {
     toAddress: string;
     feeRate: number;
-    amount: number;
-    network: bitcoin.Network;
     account: Account;
     provider: Provider;
     fee?: number;
@@ -13,8 +11,39 @@ export declare const sendTx: ({ toAddress, amount, feeRate, network, account, pr
     psbt: string;
     fee: number;
 }>;
-export declare const minimumFee: ({ taprootInputCount, nonTaprootInputCount, outputCount, }: {
-    taprootInputCount: number;
-    nonTaprootInputCount: number;
-    outputCount: number;
-}) => number;
+export declare const commit: ({ ticker, amount, feeRate, account, provider, fee, finalSendFee, }: {
+    ticker: string;
+    amount: number;
+    feeRate: number;
+    account: Account;
+    provider: Provider;
+    fee?: number;
+    finalSendFee?: number;
+}) => Promise<{
+    psbt: string;
+    fee: number;
+    script: Buffer;
+}>;
+export declare const reveal: ({ receiverAddress, script, feeRate, account, provider, fee, commitTxId, }: {
+    receiverAddress: string;
+    script: Buffer;
+    feeRate: number;
+    account: Account;
+    provider: Provider;
+    fee?: number;
+    commitTxId: string;
+}) => Promise<{
+    psbt: string;
+    fee: number;
+}>;
+export declare const transfer: ({ commitChangeUtxoId, revealTxId, toAddress, feeRate, account, provider, fee, }: {
+    commitChangeUtxoId: string;
+    revealTxId: string;
+    toAddress: string;
+    feeRate: number;
+    account: Account;
+    provider: Provider;
+    fee?: number;
+}) => Promise<{
+    psbt: string;
+}>;

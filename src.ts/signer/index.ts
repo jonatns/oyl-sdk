@@ -1,33 +1,49 @@
 import * as bitcoin from 'bitcoinjs-lib'
 import { ECPair, assertHex, tweakSigner } from '../shared/utils'
 import { ECPairInterface } from 'ecpair'
-import { toXOnly } from '@sadoprotocol/ordit-sdk'
-
 type walletInit = {
   segwitPrivateKey?: string
   taprootPrivateKey?: string
+  legacyPrivateKey?: string
+  nestedSegwitPrivateKey?: string
 }
 
 export class Signer {
   network: bitcoin.Network
   segwitKeyPair: ECPairInterface
   taprootKeyPair: ECPairInterface
+  legacyKeyPair: ECPairInterface
+  nestedSegwitKeyPair: ECPairInterface
   addresses: walletInit
   constructor(network: bitcoin.Network, keys: walletInit) {
     if (keys.segwitPrivateKey) {
-      this.segwitKeyPair = ECPair.fromPrivateKey(
+      const keyPair = ECPair.fromPrivateKey(
         Buffer.from(keys.segwitPrivateKey, 'hex')
       )
+      this.segwitKeyPair = keyPair
     }
     if (keys.taprootPrivateKey) {
-      this.taprootKeyPair = ECPair.fromPrivateKey(
+      const keyPair = ECPair.fromPrivateKey(
         Buffer.from(keys.taprootPrivateKey, 'hex')
       )
+      this.taprootKeyPair = keyPair
+    }
+    if (keys.legacyPrivateKey) {
+      const keyPair = ECPair.fromPrivateKey(
+        Buffer.from(keys.legacyPrivateKey, 'hex')
+      )
+      this.legacyKeyPair = keyPair
+    }
+    if (keys.nestedSegwitPrivateKey) {
+      const keyPair = ECPair.fromPrivateKey(
+        Buffer.from(keys.nestedSegwitPrivateKey, 'hex')
+      )
+      this.nestedSegwitKeyPair = keyPair
     }
     this.network = network
   }
 
-  async signSegwitInput({
+  async signInput({
     rawPsbt,
     inputNumber,
     finalize,
@@ -43,15 +59,13 @@ export class Signer {
 
     const matchingPubKey = unSignedPsbt.inputHasPubkey(
       inputNumber,
-      Buffer.from(this.segwitKeyPair.publicKey)
+      this.segwitKeyPair.publicKey
     )
-    if (!matchingPubKey) {
-      throw new Error('Input does not match signer type')
-    }
-
-    unSignedPsbt.signInput(inputNumber, this.segwitKeyPair)
-    if (finalize) {
-      unSignedPsbt.finalizeInput(inputNumber)
+    if (matchingPubKey) {
+      unSignedPsbt.signInput(inputNumber, this.segwitKeyPair)
+      if (finalize) {
+        unSignedPsbt.finalizeInput(inputNumber)
+      }
     }
 
     const signedPsbt = unSignedPsbt.toBase64()
@@ -124,7 +138,90 @@ export class Signer {
 
     const signedPsbt = unSignedPsbt.toBase64()
     const signedHexPsbt = unSignedPsbt.toHex()
-    return { signedPsbt: signedPsbt, raw: unSignedPsbt, signedHexPsbt: signedHexPsbt }
+    return {
+      signedPsbt: signedPsbt,
+      raw: unSignedPsbt,
+      signedHexPsbt: signedHexPsbt,
+    }
+  }
+
+  async signAllInputs({ rawPsbt, finalize }) {
+    let unSignedPsbt = bitcoin.Psbt.fromBase64(rawPsbt, {
+      network: this.network,
+    })
+
+    for (let i = 0; i < unSignedPsbt.inputCount; i++) {
+      let tweakedSigner: bitcoin.Signer
+      let matchingLegacy: boolean
+      let matchingNative: boolean
+      let matchingTaprootPubKey: boolean
+      let matchingNestedSegwit: boolean
+
+      if (this.taprootKeyPair) {
+        tweakedSigner = tweakSigner(this.taprootKeyPair, {
+          network: this.network,
+        })
+
+        matchingTaprootPubKey = unSignedPsbt.inputHasPubkey(
+          i,
+          tweakedSigner.publicKey
+        )
+      }
+      if (this.legacyKeyPair) {
+        matchingLegacy = unSignedPsbt.inputHasPubkey(
+          i,
+          this.legacyKeyPair.publicKey
+        )
+      }
+      if (this.segwitKeyPair) {
+        matchingNative = unSignedPsbt.inputHasPubkey(
+          i,
+          this.segwitKeyPair.publicKey
+        )
+      }
+      if (this.nestedSegwitKeyPair) {
+        matchingNestedSegwit = unSignedPsbt.inputHasPubkey(
+          i,
+          this.nestedSegwitKeyPair.publicKey
+        )
+      }
+
+      switch (true) {
+        case matchingTaprootPubKey:
+          unSignedPsbt.signTaprootInput(i, tweakedSigner)
+          if (finalize) {
+            unSignedPsbt.finalizeInput(i)
+          }
+          break
+        case matchingLegacy:
+          unSignedPsbt.signInput(i, this.legacyKeyPair)
+          if (finalize) {
+            unSignedPsbt.finalizeInput(i)
+          }
+          break
+
+        case matchingNative:
+          unSignedPsbt.signInput(i, this.segwitKeyPair)
+          if (finalize) {
+            unSignedPsbt.finalizeInput(i)
+          }
+          break
+        case matchingNestedSegwit:
+          unSignedPsbt.signInput(i, this.nestedSegwitKeyPair)
+          if (finalize) {
+            unSignedPsbt.finalizeInput(i)
+          }
+          break
+
+        default:
+          throw new Error('Input was not signed')
+      }
+    }
+
+    const signedPsbt = unSignedPsbt.toBase64()
+    const signedHexPsbt = unSignedPsbt.toHex()
+
+    return { signedPsbt, signedHexPsbt }
   }
 
   async signAllSegwitInputs({

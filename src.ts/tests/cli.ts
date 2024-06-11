@@ -17,6 +17,7 @@ import {
   callBTCRPCEndpoint,
   delay,
   formatOptionsToSignInputs,
+  getFee,
   getNetwork,
   signInputs,
   waitForTransaction,
@@ -41,6 +42,7 @@ import {
   regtestProvider,
 } from '../shared/constants'
 import * as collectible from '../collectible'
+import { commit, reveal, transfer, transferEstimate } from '../brc20'
 dotenv.config()
 
 bitcoin.initEccLib(ecc2)
@@ -214,6 +216,7 @@ const config = {
     wallet: tapWallet as Oyl,
     segwitPrivateKey: process.env.MAINNET_SEGWIT_PRIVATEKEY,
     taprootPrivateKey: process.env.MAINNET_TAPROOT_PRIVATEKEY,
+    nestedSegwitPrivateKey: process.env.MAINNET_NESTED_SEGWIT_PRIVATEKEY,
     taprootAddress:
       'bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm',
     taprootPubKey:
@@ -484,16 +487,12 @@ export async function runCLI() {
   const options = Object.assign({}, argv) as YargsArguments
   const networkConfig = config[network!]
 
-  let segwitSigner: bitcoin.Signer
-  const taprootSigner = await tapWallet.createTaprootSigner({
-    mnemonic: networkConfig.mnemonic!,
-    taprootAddress: networkConfig.taprootAddress,
-  })
-
   const { to, amount, feeRate, ticker, psbtBase64, price } = options
+
   const signer: Signer = new Signer(bitcoin.networks.bitcoin, {
     segwitPrivateKey: networkConfig.segwitPrivateKey,
     taprootPrivateKey: networkConfig.taprootPrivateKey,
+    nestedSegwitPrivateKey: config[MAINNET].nestedSegwitPrivateKey,
   })
   switch (command) {
     case 'load':
@@ -716,23 +715,15 @@ export async function runCLI() {
         })
       )
     case 'new-account':
-      const network = provider.network
-      const { psbt } = await btc.sendTx({
+      const { psbt } = await btc.createPsbt({
         toAddress: networkConfig.destinationTaprootAddress,
         amount: 100,
         feeRate: 20,
-        network: network,
         account: account,
         provider: provider,
       })
-
-      const { signedPsbt: segwitSigned } = await signer.signAllSegwitInputs({
-        rawPsbt: psbt!,
-        finalize: true,
-      })
-
-      const { signedPsbt } = await signer.signAllTaprootInputs({
-        rawPsbt: segwitSigned,
+      const { signedPsbt } = await signer.signAllInputs({
+        rawPsbt: psbt,
         finalize: true,
       })
 
@@ -742,27 +733,21 @@ export async function runCLI() {
 
       const correctFee = vsize * 20
 
-      const { psbt: finalPsbt } = await btc.sendTx({
+      const { psbt: finalPsbt } = await btc.createPsbt({
         toAddress: networkConfig.destinationTaprootAddress,
         amount: 1000,
         feeRate: 20,
         fee: correctFee,
-        network,
         account: account,
         provider: provider,
       })
 
-      const { signedPsbt: segwitSigned1 } = await signer.signAllSegwitInputs({
-        rawPsbt: finalPsbt!,
+      const { signedPsbt: signedTaproot } = await signer.signAllInputs({
+        rawPsbt: finalPsbt,
         finalize: true,
       })
 
-      const { signedPsbt: signedTaproot } = await signer.signAllTaprootInputs({
-        rawPsbt: segwitSigned1,
-        finalize: true,
-      })
-
-      const result = await regtestProvider.pushPsbt({
+      const result = await provider.pushPsbt({
         psbtBase64: signedTaproot,
       })
 
@@ -795,6 +780,151 @@ export async function runCLI() {
           taprootAddress: networkConfig.taprootAddress,
         })
       )
+    case 'new-brc-20-send':
+      let successTxIds: string[] = []
+      const estimate = await transferEstimate({
+        toAddress: networkConfig.destinationTaprootAddress,
+        feeRate: 45,
+        account: account,
+        provider: provider,
+      })
+
+      const { psbt: dryCommitPsbt } = await commit({
+        ticker: 'rats',
+        amount: 100,
+        feeRate: 45,
+        account: account,
+        provider: provider,
+        finalSendFee: estimate.fee,
+      })
+
+      const { signedPsbt: commitSigned } = await signer.signAllInputs({
+        rawPsbt: dryCommitPsbt!,
+        finalize: true,
+      })
+
+      const commitFee = await getFee({
+        provider,
+        psbt: commitSigned,
+        feeRate: 45,
+      })
+
+      const { psbt: finalCommitPsbt, script } = await commit({
+        ticker: 'rats',
+        amount: 100,
+        feeRate: 45,
+        account: account,
+        provider: provider,
+        finalSendFee: estimate.fee,
+        fee: commitFee,
+      })
+
+      const { signedPsbt: finalCommitSigned } = await signer.signAllInputs({
+        rawPsbt: finalCommitPsbt!,
+        finalize: true,
+      })
+
+      const { txId: commitTxId } = await provider.pushPsbt({
+        psbtBase64: finalCommitSigned,
+      })
+
+      successTxIds.push(commitTxId)
+      const { psbt: revealPsbt } = await reveal({
+        feeRate: 45,
+        account: account,
+        provider: provider,
+        script: script,
+        commitTxId: commitTxId,
+        receiverAddress: account.taproot.address,
+      })
+
+      const { signedPsbt: revealSigned } = await signer.signAllInputs({
+        rawPsbt: revealPsbt!,
+        finalize: true,
+      })
+
+      const revealFee = await getFee({
+        provider,
+        psbt: revealSigned,
+        feeRate: 45,
+      })
+
+      const { psbt: finalRevealPsbt } = await reveal({
+        feeRate: 45,
+        account: account,
+        provider: provider,
+        script: script,
+        commitTxId: commitTxId,
+        receiverAddress: account.taproot.address,
+        fee: revealFee,
+      })
+
+      const { signedPsbt: finalRevealSigned } = await signer.signAllInputs({
+        rawPsbt: finalRevealPsbt!,
+        finalize: true,
+      })
+
+      const { txId: revealTxId } = await provider.pushPsbt({
+        psbtBase64: finalRevealSigned,
+      })
+
+      if (!revealTxId) {
+        throw new Error('Unable to reveal inscription.')
+      }
+
+      successTxIds.push(revealTxId)
+
+      await waitForTransaction({
+        txId: revealTxId,
+        sandshrewBtcClient: this.sandshrewBtcClient,
+      })
+
+      await delay(5000)
+
+      const { psbt: transferPsbt } = await transfer({
+        feeRate: 45,
+        account: account,
+        provider: provider,
+        revealTxId: revealTxId,
+        commitChangeUtxoId: commitTxId,
+        toAddress: networkConfig.destinationTaprootAddress,
+      })
+
+      const { signedPsbt: transferSigned } = await signer.signAllInputs({
+        rawPsbt: transferPsbt!,
+        finalize: true,
+      })
+
+      const transferFee = await getFee({
+        provider,
+        psbt: transferSigned,
+        feeRate: 45,
+      })
+
+      const { psbt: finalTransferPsbt } = await transfer({
+        feeRate: 45,
+        account: account,
+        provider: provider,
+        revealTxId: revealTxId,
+        commitChangeUtxoId: commitTxId,
+        toAddress:
+          'bc1pv36jv053lqqxkr3y605mh0x78vren6fh0d2l2w5wn4l77kyxfk7q85d04u',
+        fee: transferFee,
+      })
+
+      const { signedPsbt: finalTransferSigned } = await signer.signAllInputs({
+        rawPsbt: finalTransferPsbt!,
+        finalize: true,
+      })
+
+      const { txId: transferTxId } = await provider.pushPsbt({
+        psbtBase64: finalTransferSigned,
+      })
+      return console.log({
+        txId: transferTxId,
+        rawTxn: finalTransferSigned,
+        sendBrc20Txids: [...successTxIds, transferTxId],
+      })
     default:
       return await callAPI(argv._[0], options)
   }
