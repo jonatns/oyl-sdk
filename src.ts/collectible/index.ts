@@ -6,7 +6,7 @@ import { Account } from '../account'
 import { formatInputsToSign } from '../shared/utils'
 import { OylTransactionError } from '../errors'
 
-export const sendTx = async ({
+export const send = async ({
   account,
   inscriptionId,
   provider,

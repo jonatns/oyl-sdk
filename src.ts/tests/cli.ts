@@ -593,7 +593,7 @@ export async function runCLI() {
       console.log(sendInscriptionResponse)
       return sendInscriptionResponse
     case 'new-send-collectible':
-      const { psbt: collectibleSend } = await collectible.sendTx({
+      const { psbt: collectibleSend } = await collectible.send({
         toAddress: networkConfig.destinationTaprootAddress,
         inscriptionId:
           'c00dc846a680884c35aac3b51f21d0b79cc2154e478da5561f6ad3ce0833c629i294',
@@ -622,7 +622,7 @@ export async function runCLI() {
 
       const correctCollectibleFee = collectibleVsize * 20
 
-      const { psbt: collectibleSend1 } = await collectible.sendTx({
+      const { psbt: collectibleSend1 } = await collectible.send({
         toAddress: networkConfig.destinationTaprootAddress,
         inscriptionId:
           'c00dc846a680884c35aac3b51f21d0b79cc2154e478da5561f6ad3ce0833c629i294',

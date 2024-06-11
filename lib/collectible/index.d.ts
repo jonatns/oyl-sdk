@@ -1,6 +1,6 @@
 import { Provider } from '../provider/provider';
 import { Account } from '../account';
-export declare const sendTx: ({ account, inscriptionId, provider, toAddress, feeRate, fee, }: {
+export declare const send: ({ account, inscriptionId, provider, toAddress, feeRate, fee, }: {
     account: Account;
     inscriptionId: string;
     provider: Provider;
