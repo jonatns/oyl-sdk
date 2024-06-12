@@ -32,6 +32,7 @@ import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import {
   AddressType,
   IBlockchainInfoUTXO,
+  Network,
   Providers,
   RecoverAccountOptions,
   RuneUtxo,
@@ -67,7 +68,7 @@ export class Oyl {
   public provider: Provider
   public apiClient: OylApiClient
   public derivPath: String
-  public currentNetwork: 'testnet' | 'main' | 'regtest' | 'signet'
+  public readonly currentNetwork: Network
 
   /**
    * Initializes a new instance of the Wallet class.
@@ -93,8 +94,7 @@ export class Oyl {
     this.sandshrewBtcClient = this.provider.sandshrew
     this.esploraRpc = this.provider.esplora
     this.ordRpc = this.provider.ord
-    this.currentNetwork =
-      options.network === 'mainnet' ? 'main' : options.network
+    this.currentNetwork = options.network
   }
 
   /**
