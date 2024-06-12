@@ -26,6 +26,11 @@ export const regtestOpts: MnemonicToAccountOptions = {
 export const Opts: MnemonicToAccountOptions = {
   network: bitcoin.networks.bitcoin,
   index: 0,
+  spendStrategy: {
+    changeAddress: 'taproot',
+    addressOrder: ['nativeSegwit', 'nestedSegwit', 'taproot', 'legacy'],
+    utxoSortGreatestToLeast: true,
+  },
 }
 
 export const regtestMnemonic: string = process.env.REGTEST1

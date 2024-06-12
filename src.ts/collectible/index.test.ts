@@ -74,7 +74,7 @@ describe('collectible sendTx', () => {
       spendAmount: 1540,
     })
     expect(findCollectible).toHaveBeenCalledWith({
-      account: account,
+      address: account.taproot.address,
       provider: provider,
       inscriptionId: 'testInscriptionId:0',
     })

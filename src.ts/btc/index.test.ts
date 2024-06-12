@@ -53,6 +53,7 @@ describe('btc sendTx', () => {
     })
 
     expect(result.psbt).toBeDefined()
+
     expect(accountSpendableUtxos).toHaveBeenCalledWith({
       account: account,
       provider: provider,

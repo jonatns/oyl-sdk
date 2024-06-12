@@ -5,6 +5,7 @@ import { FormattedUtxo, accountSpendableUtxos } from '../utxo'
 import { calculateTaprootTxSize, formatInputsToSign } from '../shared/utils'
 import { Account } from '../account'
 import { Signer } from '../signer'
+import { getAddressType } from '../transactions'
 
 export const createPsbt = async ({
   toAddress,
@@ -61,14 +62,52 @@ export const createPsbt = async ({
     }
 
     for (let i = 0; i < gatheredUtxos.utxos.length; i++) {
-      psbt.addInput({
-        hash: gatheredUtxos.utxos[i].txId,
-        index: gatheredUtxos.utxos[i].outputIndex,
-        witnessUtxo: {
-          value: gatheredUtxos.utxos[i].satoshis,
-          script: Buffer.from(gatheredUtxos.utxos[i].scriptPk, 'hex'),
-        },
-      })
+      // if (getAddressType(gatheredUtxos.utxos[i].address) === 0) {
+      //   const previousTxHex: string =
+      //     await provider.sandshrew.bitcoindRpc.getTransaction(
+      //       gatheredUtxos.utxos[i].txId
+      //     )
+      //   psbt.addInput({
+      //     hash: gatheredUtxos.utxos[i].txId,
+      //     index: gatheredUtxos.utxos[i].outputIndex,
+      //     nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
+      //   })
+      // }
+      if (getAddressType(gatheredUtxos.utxos[i].address) === 2) {
+        const redeemScript = bitcoin.script.compile([
+          bitcoin.opcodes.OP_0,
+          bitcoin.crypto.hash160(
+            Buffer.from(account.nestedSegwit.pubkey, 'hex')
+          ),
+        ])
+
+        psbt.addInput({
+          hash: gatheredUtxos.utxos[i].txId,
+          index: gatheredUtxos.utxos[i].outputIndex,
+          redeemScript: redeemScript,
+          witnessUtxo: {
+            value: gatheredUtxos.utxos[i].satoshis,
+            script: bitcoin.script.compile([
+              bitcoin.opcodes.OP_HASH160,
+              bitcoin.crypto.hash160(redeemScript),
+              bitcoin.opcodes.OP_EQUAL,
+            ]),
+          },
+        })
+      }
+      if (
+        getAddressType(gatheredUtxos.utxos[i].address) === 1 ||
+        getAddressType(gatheredUtxos.utxos[i].address) === 3
+      ) {
+        psbt.addInput({
+          hash: gatheredUtxos.utxos[i].txId,
+          index: gatheredUtxos.utxos[i].outputIndex,
+          witnessUtxo: {
+            value: gatheredUtxos.utxos[i].satoshis,
+            script: Buffer.from(gatheredUtxos.utxos[i].scriptPk, 'hex'),
+          },
+        })
+      }
     }
 
     psbt.addOutput({
