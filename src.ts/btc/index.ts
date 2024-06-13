@@ -60,7 +60,6 @@ export const createPsbt = async ({
         })
       }
     }
-    console.log(gatheredUtxos.utxos)
     for (let i = 0; i < gatheredUtxos.utxos.length; i++) {
       if (getAddressType(gatheredUtxos.utxos[i].address) === 0) {
         const previousTxHex: string = await provider.esplora.getTxHex(
@@ -113,6 +112,10 @@ export const createPsbt = async ({
       address: toAddress,
       value: amount,
     })
+
+    if (gatheredUtxos.totalAmount < finalFee + amount) {
+      throw new OylTransactionError(Error('Insufficient Balance'))
+    }
 
     const changeAmount = gatheredUtxos.totalAmount - (finalFee + amount)
 

@@ -1,5 +1,5 @@
 import * as bitcoin from 'bitcoinjs-lib'
-import { send, findCollectible } from '.'
+import { createPsbt, findCollectible } from '.'
 import { accountSpendableUtxos } from '../utxo'
 import { Account, mnemonicToAccount } from '../account'
 import { Opts, mainnetMnemonic } from '../shared/constants'
@@ -59,7 +59,7 @@ jest.spyOn(require('.'), 'findCollectible').mockResolvedValue({
 
 describe('collectible sendTx', () => {
   it('creates a transaction successfully', async () => {
-    const result = await send({
+    const result = await createPsbt({
       toAddress: address,
       inscriptionId: 'testInscriptionId:0',
       feeRate: 10,

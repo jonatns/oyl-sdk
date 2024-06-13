@@ -5,8 +5,10 @@ import { FormattedUtxo, accountSpendableUtxos } from '../utxo'
 import { Account } from '../account'
 import { formatInputsToSign } from '../shared/utils'
 import { OylTransactionError } from '../errors'
+import { getAddressType } from '../transactions'
+import { Signer } from '../signer'
 
-export const send = async ({
+export const createPsbt = async ({
   account,
   inscriptionId,
   provider,
@@ -77,15 +79,56 @@ export const send = async ({
       }
     }
 
-    for await (const utxo of gatheredUtxos.utxos) {
-      psbt.addInput({
-        hash: utxo.txId,
-        index: utxo.outputIndex,
-        witnessUtxo: {
-          script: Buffer.from(utxo.scriptPk, 'hex'),
-          value: utxo.satoshis,
-        },
-      })
+    for (let i = 0; i < gatheredUtxos.utxos.length; i++) {
+      if (getAddressType(gatheredUtxos.utxos[i].address) === 0) {
+        const previousTxHex: string = await provider.esplora.getTxHex(
+          gatheredUtxos.utxos[i].txId
+        )
+        psbt.addInput({
+          hash: gatheredUtxos.utxos[i].txId,
+          index: gatheredUtxos.utxos[i].outputIndex,
+          nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
+        })
+      }
+      if (getAddressType(gatheredUtxos.utxos[i].address) === 2) {
+        const redeemScript = bitcoin.script.compile([
+          bitcoin.opcodes.OP_0,
+          bitcoin.crypto.hash160(
+            Buffer.from(account.nestedSegwit.pubkey, 'hex')
+          ),
+        ])
+
+        psbt.addInput({
+          hash: gatheredUtxos.utxos[i].txId,
+          index: gatheredUtxos.utxos[i].outputIndex,
+          redeemScript: redeemScript,
+          witnessUtxo: {
+            value: gatheredUtxos.utxos[i].satoshis,
+            script: bitcoin.script.compile([
+              bitcoin.opcodes.OP_HASH160,
+              bitcoin.crypto.hash160(redeemScript),
+              bitcoin.opcodes.OP_EQUAL,
+            ]),
+          },
+        })
+      }
+      if (
+        getAddressType(gatheredUtxos.utxos[i].address) === 1 ||
+        getAddressType(gatheredUtxos.utxos[i].address) === 3
+      ) {
+        psbt.addInput({
+          hash: gatheredUtxos.utxos[i].txId,
+          index: gatheredUtxos.utxos[i].outputIndex,
+          witnessUtxo: {
+            value: gatheredUtxos.utxos[i].satoshis,
+            script: Buffer.from(gatheredUtxos.utxos[i].scriptPk, 'hex'),
+          },
+        })
+      }
+    }
+
+    if (gatheredUtxos.totalAmount < finalFee) {
+      throw new OylTransactionError(Error('Insufficient Balance'))
     }
 
     const changeAmount = gatheredUtxos.totalAmount - finalFee
@@ -142,6 +185,114 @@ export const findCollectible = async ({
     voutIndex: inscriptionTxVOutIndex,
     data: inscriptionUtxoData,
   }
+}
+
+export const send = async ({
+  account,
+  inscriptionId,
+  provider,
+  toAddress,
+  feeRate,
+  signer,
+}: {
+  account: Account
+  inscriptionId: string
+  provider: Provider
+  toAddress: string
+  feeRate?: number
+  signer: Signer
+}) => {
+  const { psbt } = await createPsbt({
+    account,
+    inscriptionId,
+    provider,
+    toAddress,
+    feeRate,
+  })
+  const { signedPsbt } = await signer.signAllInputs({
+    rawPsbt: psbt,
+    finalize: true,
+  })
+
+  const vsize = (await provider.sandshrew.bitcoindRpc.decodePSBT!(signedPsbt))
+    .tx.vsize
+
+  const correctFee = vsize * feeRate
+
+  const { psbt: finalPsbt } = await createPsbt({
+    account,
+    inscriptionId,
+    provider,
+    toAddress,
+    feeRate,
+    fee: correctFee,
+  })
+
+  const { signedPsbt: signedAll } = await signer.signAllInputs({
+    rawPsbt: finalPsbt,
+    finalize: true,
+  })
+
+  const result = await provider.pushPsbt({
+    psbtBase64: signedAll,
+  })
+
+  return result
+}
+
+export const actualFee = async ({
+  account,
+  inscriptionId,
+  provider,
+  toAddress,
+  feeRate,
+  signer,
+}: {
+  account: Account
+  inscriptionId: string
+  provider: Provider
+  toAddress: string
+  feeRate?: number
+  signer: Signer
+}) => {
+  const { psbt } = await createPsbt({
+    account,
+    inscriptionId,
+    provider,
+    toAddress,
+    feeRate,
+  })
+  const { signedPsbt } = await signer.signAllInputs({
+    rawPsbt: psbt,
+    finalize: true,
+  })
+
+  const vsize = (await provider.sandshrew.bitcoindRpc.decodePSBT!(signedPsbt))
+    .tx.vsize
+
+  const correctFee = vsize * feeRate
+
+  const { psbt: finalPsbt } = await createPsbt({
+    account,
+    inscriptionId,
+    provider,
+    toAddress,
+    feeRate,
+    fee: correctFee,
+  })
+
+  const { signedPsbt: signedAll } = await signer.signAllInputs({
+    rawPsbt: finalPsbt,
+    finalize: true,
+  })
+
+  const finalVsize = (
+    await provider.sandshrew.bitcoindRpc.decodePSBT!(signedAll)
+  ).tx.vsize
+
+  const finalFee = finalVsize * feeRate
+
+  return { fee: finalFee }
 }
 
 type OrdCollectibleData = {

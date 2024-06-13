@@ -6,9 +6,12 @@ import {
   ECPair,
   calculateTaprootTxSize,
   createInscriptionScript,
+  delay,
   formatInputsToSign,
+  getFee,
   getOutputValueByVOutIndex,
   tweakSigner,
+  waitForTransaction,
 } from '../shared/utils'
 import { Account } from '../account'
 import { minimumFee } from '../btc'
@@ -16,6 +19,7 @@ import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { ECPairInterface } from 'ecpair'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import { getAddressType } from '../transactions'
+import { Signer } from '../signer'
 
 export const transferEstimate = async ({
   toAddress,
@@ -195,17 +199,16 @@ export const commit = async ({
     }
 
     for (let i = 0; i < gatheredUtxos.utxos.length; i++) {
-      // if (getAddressType(gatheredUtxos.utxos[i].address) === 0) {
-      //   const previousTxHex: string =
-      //     await provider.sandshrew.bitcoindRpc.getTransaction(
-      //       gatheredUtxos.utxos[i].txId
-      //     )
-      //   psbt.addInput({
-      //     hash: gatheredUtxos.utxos[i].txId,
-      //     index: gatheredUtxos.utxos[i].outputIndex,
-      //     nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
-      //   })
-      // }
+      if (getAddressType(gatheredUtxos.utxos[i].address) === 0) {
+        const previousTxHex: string = await provider.esplora.getTxHex(
+          gatheredUtxos.utxos[i].txId
+        )
+        psbt.addInput({
+          hash: gatheredUtxos.utxos[i].txId,
+          index: gatheredUtxos.utxos[i].outputIndex,
+          nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
+        })
+      }
       if (getAddressType(gatheredUtxos.utxos[i].address) === 2) {
         const redeemScript = bitcoin.script.compile([
           bitcoin.opcodes.OP_0,
@@ -241,6 +244,10 @@ export const commit = async ({
           },
         })
       }
+    }
+
+    if (gatheredUtxos.totalAmount < finalFee) {
+      throw new OylTransactionError(Error('Insufficient Balance'))
     }
 
     const changeAmount = gatheredUtxos.totalAmount - finalFee
@@ -427,4 +434,156 @@ export const transfer = async ({
   } catch (error) {
     throw new OylTransactionError(error)
   }
+}
+
+export const send = async ({
+  ticker,
+  amount,
+  toAddress,
+  account,
+  provider,
+  feeRate,
+  signer,
+}: {
+  ticker: string
+  amount: number
+  toAddress: string
+  feeRate: number
+  account: Account
+  provider: Provider
+  signer: Signer
+}) => {
+  let successTxIds: string[] = []
+  const estimate = await transferEstimate({
+    toAddress: toAddress,
+    feeRate: feeRate,
+    account: account,
+    provider: provider,
+  })
+
+  const { psbt: dryCommitPsbt } = await commit({
+    ticker: ticker,
+    amount: amount,
+    feeRate: feeRate,
+    account: account,
+    provider: provider,
+    finalSendFee: estimate.fee,
+  })
+
+  const { signedPsbt: commitSigned } = await signer.signAllInputs({
+    rawPsbt: dryCommitPsbt!,
+    finalize: true,
+  })
+
+  const commitFee = await getFee({
+    provider,
+    psbt: commitSigned,
+    feeRate: feeRate,
+  })
+
+  const { psbt: finalCommitPsbt, script } = await commit({
+    ticker: ticker,
+    amount: amount,
+    feeRate: feeRate,
+    account: account,
+    provider: provider,
+    finalSendFee: estimate.fee,
+    fee: commitFee,
+  })
+
+  const { signedPsbt: finalCommitSigned } = await signer.signAllInputs({
+    rawPsbt: finalCommitPsbt!,
+    finalize: true,
+  })
+
+  const { txId: commitTxId } = await provider.pushPsbt({
+    psbtBase64: finalCommitSigned,
+  })
+
+  successTxIds.push(commitTxId)
+  const { psbt: revealPsbt } = await reveal({
+    feeRate: feeRate,
+    account: account,
+    provider: provider,
+    script: script,
+    commitTxId: commitTxId,
+    receiverAddress: account.taproot.address,
+  })
+
+  const revealFee = await getFee({
+    provider,
+    psbt: revealPsbt,
+    feeRate: feeRate,
+  })
+
+  const { psbt: finalRevealPsbt } = await reveal({
+    feeRate: feeRate,
+    account: account,
+    provider: provider,
+    script: script,
+    commitTxId: commitTxId,
+    receiverAddress: account.taproot.address,
+    fee: revealFee,
+  })
+
+  const { txId: revealTxId } = await provider.pushPsbt({
+    psbtBase64: finalRevealPsbt,
+  })
+
+  if (!revealTxId) {
+    throw new Error('Unable to reveal inscription.')
+  }
+
+  successTxIds.push(revealTxId)
+
+  await waitForTransaction({
+    txId: revealTxId,
+    sandshrewBtcClient: provider.sandshrew,
+  })
+
+  await delay(5000)
+
+  const { psbt: transferPsbt } = await transfer({
+    feeRate: feeRate,
+    account: account,
+    provider: provider,
+    revealTxId: revealTxId,
+    commitChangeUtxoId: commitTxId,
+    toAddress: toAddress,
+  })
+
+  const { signedPsbt: transferSigned } = await signer.signAllInputs({
+    rawPsbt: transferPsbt!,
+    finalize: true,
+  })
+
+  const transferFee = await getFee({
+    provider,
+    psbt: transferSigned,
+    feeRate: feeRate,
+  })
+
+  const { psbt: finalTransferPsbt } = await transfer({
+    feeRate: feeRate,
+    account: account,
+    provider: provider,
+    revealTxId: revealTxId,
+    commitChangeUtxoId: commitTxId,
+    toAddress: toAddress,
+    fee: transferFee,
+  })
+
+  const { signedPsbt: finalTransferSigned } = await signer.signAllInputs({
+    rawPsbt: finalTransferPsbt!,
+    finalize: true,
+  })
+
+  const { txId: transferTxId } = await provider.pushPsbt({
+    psbtBase64: finalTransferSigned,
+  })
+  return console.log({
+    txId: transferTxId,
+    rawTxn: finalTransferSigned,
+    sendBrc20Txids: [...successTxIds, transferTxId],
+  })
 }

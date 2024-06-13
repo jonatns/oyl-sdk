@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import { Provider } from '../provider/provider';
 import { Account } from '../account';
+import { Signer } from '../signer';
 export declare const transferEstimate: ({ toAddress, feeRate, account, provider, fee, }: {
     toAddress: string;
     feeRate: number;
@@ -47,3 +48,12 @@ export declare const transfer: ({ commitChangeUtxoId, revealTxId, toAddress, fee
 }) => Promise<{
     psbt: string;
 }>;
+export declare const send: ({ ticker, amount, toAddress, account, provider, feeRate, signer, }: {
+    ticker: string;
+    amount: number;
+    toAddress: string;
+    feeRate: number;
+    account: Account;
+    provider: Provider;
+    signer: Signer;
+}) => Promise<void>;

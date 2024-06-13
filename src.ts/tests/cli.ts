@@ -594,7 +594,7 @@ export async function runCLI() {
       console.log(sendInscriptionResponse)
       return sendInscriptionResponse
     case 'new-send-collectible':
-      const { psbt: collectibleSend } = await collectible.send({
+      const { psbt: collectibleSend } = await collectible.createPsbt({
         toAddress: networkConfig.destinationTaprootAddress,
         inscriptionId:
           'c00dc846a680884c35aac3b51f21d0b79cc2154e478da5561f6ad3ce0833c629i294',
@@ -623,7 +623,7 @@ export async function runCLI() {
 
       const correctCollectibleFee = collectibleVsize * 20
 
-      const { psbt: collectibleSend1 } = await collectible.send({
+      const { psbt: collectibleSend1 } = await collectible.createPsbt({
         toAddress: networkConfig.destinationTaprootAddress,
         inscriptionId:
           'c00dc846a680884c35aac3b51f21d0b79cc2154e478da5561f6ad3ce0833c629i294',
@@ -644,13 +644,11 @@ export async function runCLI() {
           finalize: true,
         })
 
-      return console.log(collectibleTaprootSigned1)
+      const collectibleResult = await provider.pushPsbt({
+        psbtBase64: collectibleTaprootSigned1,
+      })
 
-    // const collectibleResult = await provider.pushPsbt({
-    //   psbtBase64: collectibleTaprootSigned1,
-    // })
-
-    // return console.log(collectibleResult)
+      return console.log(collectibleResult)
     case 'send-rune':
       const sendRuneResponse = await networkConfig.wallet.sendRune({
         runeId: '840000:3',
@@ -725,8 +723,8 @@ export async function runCLI() {
       )
     case 'new-btc-send':
       const { psbt } = await btc.createPsbt({
-        toAddress: regtestAccount.nativeSegwit.address,
-        amount: 546,
+        toAddress: regtestAccount.nestedSegwit.address,
+        amount: 1000000000,
         feeRate: 2,
         account: regtestAccount,
         provider: regtestProvider,
@@ -743,21 +741,21 @@ export async function runCLI() {
       const correctFee = vsize * 2
 
       const { psbt: finalPsbt } = await btc.createPsbt({
-        toAddress: regtestAccount.nativeSegwit.address,
-        amount: 546,
+        toAddress: regtestAccount.nestedSegwit.address,
+        amount: 1000000000,
         feeRate: 2,
         fee: correctFee,
         account: regtestAccount,
         provider: regtestProvider,
       })
 
-      const { signedPsbt: signedTaproot } = await signer.signAllInputs({
+      const { signedHexPsbt: signedTaproot } = await signer.signAllInputs({
         rawPsbt: finalPsbt,
         finalize: true,
       })
 
       const result = await regtestProvider.pushPsbt({
-        psbtBase64: signedTaproot,
+        psbtHex: signedTaproot,
       })
 
       return console.log(result)
