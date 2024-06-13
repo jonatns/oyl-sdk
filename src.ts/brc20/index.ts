@@ -307,14 +307,18 @@ export const reveal = async ({
     const taprootKeyPair: ECPairInterface = ECPair.fromPrivateKey(
       Buffer.from(account.taproot.privateKey, 'hex')
     )
-    const tweakedTaprootKeyPair: Buffer = toXOnly(
-      tweakSigner(taprootKeyPair).publicKey
+
+    const tweakedTaprootKeyPair = tweakSigner(taprootKeyPair, {
+      network: provider.network,
+    })
+    const tweakedPubKey: Buffer = toXOnly(
+      tweakSigner(taprootKeyPair, { network: provider.network }).publicKey
     )
 
     const p2pk_redeem = { output: script }
 
     const { output, witness } = bitcoin.payments.p2tr({
-      internalPubkey: tweakedTaprootKeyPair,
+      internalPubkey: tweakedPubKey,
       scriptTree: p2pk_redeem,
       redeem: p2pk_redeem,
       network: provider.network,
@@ -347,7 +351,7 @@ export const reveal = async ({
       })
     }
 
-    psbt.signInput(0, taprootKeyPair)
+    psbt.signInput(0, tweakedTaprootKeyPair)
     psbt.finalizeInput(0)
 
     return { psbt: psbt.toBase64(), fee: revealTxChange }

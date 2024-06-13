@@ -62,11 +62,15 @@ export class Provider {
     }
     let psbt: bitcoin.Psbt
     if (psbtHex) {
-      psbt = bitcoin.Psbt.fromHex(psbtHex, { network: this.network })
+      psbt = bitcoin.Psbt.fromHex(psbtHex, {
+        network: this.network,
+      })
     }
 
     if (psbtBase64) {
-      psbt = bitcoin.Psbt.fromBase64(psbtBase64, { network: this.network })
+      psbt = bitcoin.Psbt.fromBase64(psbtBase64, {
+        network: this.network,
+      })
     }
     let extractedTx: bitcoin.Transaction
     try {

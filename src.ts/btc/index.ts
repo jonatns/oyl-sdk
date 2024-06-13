@@ -60,19 +60,18 @@ export const createPsbt = async ({
         })
       }
     }
-
+    console.log(gatheredUtxos.utxos)
     for (let i = 0; i < gatheredUtxos.utxos.length; i++) {
-      // if (getAddressType(gatheredUtxos.utxos[i].address) === 0) {
-      //   const previousTxHex: string =
-      //     await provider.sandshrew.bitcoindRpc.getTransaction(
-      //       gatheredUtxos.utxos[i].txId
-      //     )
-      //   psbt.addInput({
-      //     hash: gatheredUtxos.utxos[i].txId,
-      //     index: gatheredUtxos.utxos[i].outputIndex,
-      //     nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
-      //   })
-      // }
+      if (getAddressType(gatheredUtxos.utxos[i].address) === 0) {
+        const previousTxHex: string = await provider.esplora.getTxHex(
+          gatheredUtxos.utxos[i].txId
+        )
+        psbt.addInput({
+          hash: gatheredUtxos.utxos[i].txId,
+          index: gatheredUtxos.utxos[i].outputIndex,
+          nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
+        })
+      }
       if (getAddressType(gatheredUtxos.utxos[i].address) === 2) {
         const redeemScript = bitcoin.script.compile([
           bitcoin.opcodes.OP_0,
