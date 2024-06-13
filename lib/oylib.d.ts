@@ -2,7 +2,7 @@
 import { Utxo } from './txbuilder';
 import { SandshrewBitcoinClient } from './rpclient/sandshrew';
 import { EsploraRpc } from './rpclient/esplora';
-import { AddressType, IBlockchainInfoUTXO, RecoverAccountOptions, TickerDetails } from './shared/interface';
+import { AddressType, IBlockchainInfoUTXO, Network, RecoverAccountOptions, TickerDetails } from './shared/interface';
 import { OylApiClient } from './apiclient';
 import * as bitcoin from 'bitcoinjs-lib';
 import { Provider } from './rpclient/provider';
@@ -21,7 +21,7 @@ export declare class Oyl {
     provider: Provider;
     apiClient: OylApiClient;
     derivPath: String;
-    currentNetwork: 'testnet' | 'main' | 'regtest' | 'signet';
+    readonly currentNetwork: Network;
     /**
      * Initializes a new instance of the Wallet class.
      */
