@@ -41,7 +41,7 @@ export declare const actualFee: ({ account, inscriptionId, provider, inscription
     account: Account;
     inscriptionId: string;
     provider: Provider;
-    inscriptionAddress: string;
+    inscriptionAddress?: string;
     toAddress: string;
     feeRate?: number;
     signer: Signer;

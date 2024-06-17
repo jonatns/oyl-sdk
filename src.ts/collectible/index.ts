@@ -165,7 +165,7 @@ export const findCollectible = async ({
     await provider.ord.getInscriptionById(inscriptionId)
 
   if (collectibleData.address !== address) {
-    throw new Error('Inscription does not belong to fromAddress')
+    throw new Error('Inscription does not belong to the address given')
   }
 
   const inscriptionTxId = collectibleData.satpoint.split(':')[0]
@@ -242,7 +242,7 @@ export const actualFee = async ({
   account,
   inscriptionId,
   provider,
-  inscriptionAddress,
+  inscriptionAddress = account.taproot.address,
   toAddress,
   feeRate,
   signer,
@@ -250,7 +250,7 @@ export const actualFee = async ({
   account: Account
   inscriptionId: string
   provider: Provider
-  inscriptionAddress: string
+  inscriptionAddress?: string
   toAddress: string
   feeRate?: number
   signer: Signer
