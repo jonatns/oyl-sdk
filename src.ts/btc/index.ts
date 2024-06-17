@@ -151,39 +151,31 @@ export const send = async ({
   provider: Provider
   signer: Signer
 }) => {
-  const { psbt } = await createPsbt({
-    toAddress: toAddress,
-    amount: amount,
-    feeRate: feeRate,
-    account: account,
-    provider: provider,
+  const { fee } = await actualFee({
+    toAddress,
+    amount,
+    feeRate,
+    account,
+    provider,
+    signer,
   })
-  const { signedPsbt } = await signer.signAllInputs({
-    rawPsbt: psbt,
-    finalize: true,
-  })
-
-  const vsize = (await provider.sandshrew.bitcoindRpc.decodePSBT!(signedPsbt))
-    .tx.vsize
-
-  const correctFee = vsize * feeRate
 
   const { psbt: finalPsbt } = await createPsbt({
-    toAddress: toAddress,
-    amount: amount,
-    feeRate: feeRate,
-    fee: correctFee,
-    account: account,
-    provider: provider,
+    toAddress,
+    amount,
+    feeRate,
+    fee,
+    account,
+    provider,
   })
 
-  const { signedPsbt: signedTaproot } = await signer.signAllInputs({
+  const { signedPsbt } = await signer.signAllInputs({
     rawPsbt: finalPsbt,
     finalize: true,
   })
 
   const result = await provider.pushPsbt({
-    psbtBase64: signedTaproot,
+    psbtBase64: signedPsbt,
   })
 
   return result

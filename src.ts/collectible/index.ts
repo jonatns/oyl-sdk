@@ -12,6 +12,7 @@ export const createPsbt = async ({
   account,
   inscriptionId,
   provider,
+  fromAddress,
   toAddress,
   feeRate,
   fee,
@@ -19,6 +20,7 @@ export const createPsbt = async ({
   account: Account
   inscriptionId: string
   provider: Provider
+  fromAddress: string
   toAddress: string
   feeRate?: number
   fee?: number
@@ -43,7 +45,7 @@ export const createPsbt = async ({
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
     const { txId, voutIndex, data } = await findCollectible({
-      address: account.taproot.address,
+      address: fromAddress,
       provider,
       inscriptionId,
     })
@@ -191,6 +193,7 @@ export const send = async ({
   account,
   inscriptionId,
   provider,
+  fromAddress = account.taproot.address,
   toAddress,
   feeRate,
   signer,
@@ -198,43 +201,38 @@ export const send = async ({
   account: Account
   inscriptionId: string
   provider: Provider
+  fromAddress?: string
   toAddress: string
   feeRate?: number
   signer: Signer
 }) => {
-  const { psbt } = await createPsbt({
+  const { fee } = await actualFee({
     account,
     inscriptionId,
     provider,
+    fromAddress,
     toAddress,
     feeRate,
+    signer,
   })
-  const { signedPsbt } = await signer.signAllInputs({
-    rawPsbt: psbt,
-    finalize: true,
-  })
-
-  const vsize = (await provider.sandshrew.bitcoindRpc.decodePSBT!(signedPsbt))
-    .tx.vsize
-
-  const correctFee = vsize * feeRate
 
   const { psbt: finalPsbt } = await createPsbt({
     account,
     inscriptionId,
     provider,
     toAddress,
+    fromAddress: fromAddress,
     feeRate,
-    fee: correctFee,
+    fee: fee,
   })
 
-  const { signedPsbt: signedAll } = await signer.signAllInputs({
+  const { signedPsbt } = await signer.signAllInputs({
     rawPsbt: finalPsbt,
     finalize: true,
   })
 
   const result = await provider.pushPsbt({
-    psbtBase64: signedAll,
+    psbtBase64: signedPsbt,
   })
 
   return result
@@ -244,6 +242,7 @@ export const actualFee = async ({
   account,
   inscriptionId,
   provider,
+  fromAddress,
   toAddress,
   feeRate,
   signer,
@@ -251,6 +250,7 @@ export const actualFee = async ({
   account: Account
   inscriptionId: string
   provider: Provider
+  fromAddress: string
   toAddress: string
   feeRate?: number
   signer: Signer
@@ -259,6 +259,7 @@ export const actualFee = async ({
     account,
     inscriptionId,
     provider,
+    fromAddress,
     toAddress,
     feeRate,
   })
@@ -276,6 +277,7 @@ export const actualFee = async ({
     account,
     inscriptionId,
     provider,
+    fromAddress,
     toAddress,
     feeRate,
     fee: correctFee,
