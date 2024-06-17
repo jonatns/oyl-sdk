@@ -595,7 +595,7 @@ export async function runCLI() {
       return sendInscriptionResponse
     case 'new-send-collectible':
       const { psbt: collectibleSend } = await collectible.createPsbt({
-        fromAddress: account.taproot.address,
+        inscriptionAddress: account.taproot.address,
         toAddress: networkConfig.destinationTaprootAddress,
         inscriptionId:
           'c00dc846a680884c35aac3b51f21d0b79cc2154e478da5561f6ad3ce0833c629i294',
@@ -626,7 +626,7 @@ export async function runCLI() {
 
       const { psbt: collectibleSend1 } = await collectible.createPsbt({
         toAddress: networkConfig.destinationTaprootAddress,
-        fromAddress: account.taproot.address,
+        inscriptionAddress: account.taproot.address,
         inscriptionId:
           'c00dc846a680884c35aac3b51f21d0b79cc2154e478da5561f6ad3ce0833c629i294',
         feeRate: 20,

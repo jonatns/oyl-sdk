@@ -61,7 +61,7 @@ describe('collectible sendTx', () => {
   it('creates a transaction successfully', async () => {
     const result = await createPsbt({
       toAddress: address,
-      fromAddress: account.taproot.address,
+      inscriptionAddress: account.taproot.address,
       inscriptionId: 'testInscriptionId:0',
       feeRate: 10,
       account: account,

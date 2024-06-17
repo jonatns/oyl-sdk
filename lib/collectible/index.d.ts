@@ -1,10 +1,11 @@
 import { Provider } from '../provider/provider';
 import { Account } from '../account';
 import { Signer } from '../signer';
-export declare const createPsbt: ({ account, inscriptionId, provider, toAddress, feeRate, fee, }: {
+export declare const createPsbt: ({ account, inscriptionId, provider, inscriptionAddress, toAddress, feeRate, fee, }: {
     account: Account;
     inscriptionId: string;
     provider: Provider;
+    inscriptionAddress: string;
     toAddress: string;
     feeRate?: number;
     fee?: number;
@@ -20,10 +21,11 @@ export declare const findCollectible: ({ address, provider, inscriptionId, }: {
     voutIndex: string;
     data: any;
 }>;
-export declare const send: ({ account, inscriptionId, provider, toAddress, feeRate, signer, }: {
+export declare const send: ({ account, inscriptionId, provider, inscriptionAddress, toAddress, feeRate, signer, }: {
     account: Account;
     inscriptionId: string;
     provider: Provider;
+    inscriptionAddress?: string;
     toAddress: string;
     feeRate?: number;
     signer: Signer;
@@ -35,10 +37,11 @@ export declare const send: ({ account, inscriptionId, provider, toAddress, feeRa
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const actualFee: ({ account, inscriptionId, provider, toAddress, feeRate, signer, }: {
+export declare const actualFee: ({ account, inscriptionId, provider, inscriptionAddress, toAddress, feeRate, signer, }: {
     account: Account;
     inscriptionId: string;
     provider: Provider;
+    inscriptionAddress: string;
     toAddress: string;
     feeRate?: number;
     signer: Signer;

@@ -12,7 +12,7 @@ export const createPsbt = async ({
   account,
   inscriptionId,
   provider,
-  fromAddress,
+  inscriptionAddress,
   toAddress,
   feeRate,
   fee,
@@ -20,7 +20,7 @@ export const createPsbt = async ({
   account: Account
   inscriptionId: string
   provider: Provider
-  fromAddress: string
+  inscriptionAddress: string
   toAddress: string
   feeRate?: number
   fee?: number
@@ -45,7 +45,7 @@ export const createPsbt = async ({
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
     const { txId, voutIndex, data } = await findCollectible({
-      address: fromAddress,
+      address: inscriptionAddress,
       provider,
       inscriptionId,
     })
@@ -193,7 +193,7 @@ export const send = async ({
   account,
   inscriptionId,
   provider,
-  fromAddress = account.taproot.address,
+  inscriptionAddress = account.taproot.address,
   toAddress,
   feeRate,
   signer,
@@ -201,7 +201,7 @@ export const send = async ({
   account: Account
   inscriptionId: string
   provider: Provider
-  fromAddress?: string
+  inscriptionAddress?: string
   toAddress: string
   feeRate?: number
   signer: Signer
@@ -210,7 +210,7 @@ export const send = async ({
     account,
     inscriptionId,
     provider,
-    fromAddress,
+    inscriptionAddress,
     toAddress,
     feeRate,
     signer,
@@ -221,7 +221,7 @@ export const send = async ({
     inscriptionId,
     provider,
     toAddress,
-    fromAddress: fromAddress,
+    inscriptionAddress: inscriptionAddress,
     feeRate,
     fee: fee,
   })
@@ -242,7 +242,7 @@ export const actualFee = async ({
   account,
   inscriptionId,
   provider,
-  fromAddress,
+  inscriptionAddress,
   toAddress,
   feeRate,
   signer,
@@ -250,7 +250,7 @@ export const actualFee = async ({
   account: Account
   inscriptionId: string
   provider: Provider
-  fromAddress: string
+  inscriptionAddress: string
   toAddress: string
   feeRate?: number
   signer: Signer
@@ -259,7 +259,7 @@ export const actualFee = async ({
     account,
     inscriptionId,
     provider,
-    fromAddress,
+    inscriptionAddress,
     toAddress,
     feeRate,
   })
@@ -277,7 +277,7 @@ export const actualFee = async ({
     account,
     inscriptionId,
     provider,
-    fromAddress,
+    inscriptionAddress,
     toAddress,
     feeRate,
     fee: correctFee,
