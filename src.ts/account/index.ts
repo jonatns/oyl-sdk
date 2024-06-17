@@ -60,9 +60,9 @@ export const mnemonicToAccount = (
         ? opts.spendStrategy.addressOrder
         : ([
             'nativeSegwit',
-            'taproot',
             'nestedSegwit',
             'legacy',
+            'taproot',
           ] as AddressType[]),
       utxoSortGreatestToLeast:
         opts?.spendStrategy?.utxoSortGreatestToLeast !== undefined

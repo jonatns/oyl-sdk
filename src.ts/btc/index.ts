@@ -4,12 +4,13 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { FormattedUtxo, accountSpendableUtxos } from '../utxo'
 import { calculateTaprootTxSize, formatInputsToSign } from '../shared/utils'
 import { Account } from '../account'
+import { Signer } from '../signer'
+import { getAddressType } from '../transactions'
 
-export const sendTx = async ({
+export const createPsbt = async ({
   toAddress,
   amount,
   feeRate,
-  network,
   account,
   provider,
   fee,
@@ -17,7 +18,6 @@ export const sendTx = async ({
   toAddress: string
   feeRate: number
   amount: number
-  network: bitcoin.Network
   account: Account
   provider: Provider
   fee?: number
@@ -26,7 +26,7 @@ export const sendTx = async ({
     if (!feeRate) {
       feeRate = (await provider.esplora.getFeeEstimates())['1']
     }
-    const psbt: bitcoin.Psbt = new bitcoin.Psbt({ network: network })
+    const psbt: bitcoin.Psbt = new bitcoin.Psbt({ network: provider.network })
     const minFee = minimumFee({
       taprootInputCount: 1,
       nonTaprootInputCount: 0,
@@ -60,22 +60,62 @@ export const sendTx = async ({
         })
       }
     }
-
     for (let i = 0; i < gatheredUtxos.utxos.length; i++) {
-      psbt.addInput({
-        hash: gatheredUtxos.utxos[i].txId,
-        index: gatheredUtxos.utxos[i].outputIndex,
-        witnessUtxo: {
-          value: gatheredUtxos.utxos[i].satoshis,
-          script: Buffer.from(gatheredUtxos.utxos[i].scriptPk, 'hex'),
-        },
-      })
+      if (getAddressType(gatheredUtxos.utxos[i].address) === 0) {
+        const previousTxHex: string = await provider.esplora.getTxHex(
+          gatheredUtxos.utxos[i].txId
+        )
+        psbt.addInput({
+          hash: gatheredUtxos.utxos[i].txId,
+          index: gatheredUtxos.utxos[i].outputIndex,
+          nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
+        })
+      }
+      if (getAddressType(gatheredUtxos.utxos[i].address) === 2) {
+        const redeemScript = bitcoin.script.compile([
+          bitcoin.opcodes.OP_0,
+          bitcoin.crypto.hash160(
+            Buffer.from(account.nestedSegwit.pubkey, 'hex')
+          ),
+        ])
+
+        psbt.addInput({
+          hash: gatheredUtxos.utxos[i].txId,
+          index: gatheredUtxos.utxos[i].outputIndex,
+          redeemScript: redeemScript,
+          witnessUtxo: {
+            value: gatheredUtxos.utxos[i].satoshis,
+            script: bitcoin.script.compile([
+              bitcoin.opcodes.OP_HASH160,
+              bitcoin.crypto.hash160(redeemScript),
+              bitcoin.opcodes.OP_EQUAL,
+            ]),
+          },
+        })
+      }
+      if (
+        getAddressType(gatheredUtxos.utxos[i].address) === 1 ||
+        getAddressType(gatheredUtxos.utxos[i].address) === 3
+      ) {
+        psbt.addInput({
+          hash: gatheredUtxos.utxos[i].txId,
+          index: gatheredUtxos.utxos[i].outputIndex,
+          witnessUtxo: {
+            value: gatheredUtxos.utxos[i].satoshis,
+            script: Buffer.from(gatheredUtxos.utxos[i].scriptPk, 'hex'),
+          },
+        })
+      }
     }
 
     psbt.addOutput({
       address: toAddress,
       value: amount,
     })
+
+    if (gatheredUtxos.totalAmount < finalFee + amount) {
+      throw new OylTransactionError(Error('Insufficient Balance'))
+    }
 
     const changeAmount = gatheredUtxos.totalAmount - (finalFee + amount)
 
@@ -87,13 +127,113 @@ export const sendTx = async ({
     const updatedPsbt = await formatInputsToSign({
       _psbt: psbt,
       senderPublicKey: account.taproot.pubkey,
-      network,
+      network: provider.network,
     })
 
     return { psbt: updatedPsbt.toBase64(), fee: finalFee }
   } catch (error) {
     throw new OylTransactionError(error)
   }
+}
+
+export const send = async ({
+  toAddress,
+  amount,
+  feeRate,
+  account,
+  provider,
+  signer,
+}: {
+  toAddress: string
+  feeRate: number
+  amount: number
+  account: Account
+  provider: Provider
+  signer: Signer
+}) => {
+  const { fee } = await actualFee({
+    toAddress,
+    amount,
+    feeRate,
+    account,
+    provider,
+    signer,
+  })
+
+  const { psbt: finalPsbt } = await createPsbt({
+    toAddress,
+    amount,
+    feeRate,
+    fee,
+    account,
+    provider,
+  })
+
+  const { signedPsbt } = await signer.signAllInputs({
+    rawPsbt: finalPsbt,
+    finalize: true,
+  })
+
+  const result = await provider.pushPsbt({
+    psbtBase64: signedPsbt,
+  })
+
+  return result
+}
+
+export const actualFee = async ({
+  toAddress,
+  amount,
+  feeRate,
+  account,
+  provider,
+  signer,
+}: {
+  toAddress: string
+  feeRate: number
+  amount: number
+  account: Account
+  provider: Provider
+  signer: Signer
+}) => {
+  const { psbt } = await createPsbt({
+    toAddress: toAddress,
+    amount: amount,
+    feeRate: feeRate,
+    account: account,
+    provider: provider,
+  })
+  const { signedPsbt } = await signer.signAllInputs({
+    rawPsbt: psbt,
+    finalize: true,
+  })
+
+  const vsize = (await provider.sandshrew.bitcoindRpc.decodePSBT!(signedPsbt))
+    .tx.vsize
+
+  const correctFee = vsize * feeRate
+
+  const { psbt: finalPsbt } = await createPsbt({
+    toAddress: toAddress,
+    amount: amount,
+    feeRate: feeRate,
+    fee: correctFee,
+    account: account,
+    provider: provider,
+  })
+
+  const { signedPsbt: signedAll } = await signer.signAllInputs({
+    rawPsbt: finalPsbt,
+    finalize: true,
+  })
+
+  const finalVsize = (
+    await provider.sandshrew.bitcoindRpc.decodePSBT!(signedAll)
+  ).tx.vsize
+
+  const finalFee = finalVsize * feeRate
+
+  return { fee: finalFee }
 }
 
 export const minimumFee = ({

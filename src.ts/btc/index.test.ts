@@ -1,5 +1,5 @@
 import * as bitcoin from 'bitcoinjs-lib'
-import { sendTx } from '.'
+import { createPsbt, send } from '.'
 import { accountSpendableUtxos } from '../utxo'
 import { Account, mnemonicToAccount } from '../account'
 import { Opts, mainnetMnemonic } from '../shared/constants'
@@ -44,16 +44,16 @@ jest.spyOn(require('../utxo'), 'accountSpendableUtxos').mockResolvedValue({
 
 describe('btc sendTx', () => {
   it('creates a transaction successfully', async () => {
-    const result = await sendTx({
+    const result = await createPsbt({
       toAddress: address,
       amount: 3000,
       feeRate: 10,
-      network: bitcoin.networks.bitcoin,
       account: account,
       provider: provider,
     })
 
     expect(result.psbt).toBeDefined()
+
     expect(accountSpendableUtxos).toHaveBeenCalledWith({
       account: account,
       provider: provider,

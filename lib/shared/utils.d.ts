@@ -4,6 +4,7 @@ import { BitcoinPaymentType, IBlockchainInfoUTXO, Network, RuneUtxo, ToSignInput
 import { Utxo } from '../txbuilder/buildOrdTx';
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew';
 import { EsploraRpc } from '../rpclient/esplora';
+import { Provider } from '../provider/provider';
 export interface IBISWalletIx {
     validity: any;
     isBrc: boolean;
@@ -47,6 +48,11 @@ export declare const ECPair: import("ecpair").ECPairAPI;
 export declare const assertHex: (pubKey: Buffer) => Buffer;
 export declare function getNetwork(value: Network | 'main' | 'mainnet' | 'regtest' | 'testnet' | 'signet'): bitcoin.networks.Network;
 export declare function checkPaymentType(payment: bitcoin.PaymentCreator, network: Network): (script: Buffer) => false | bitcoin.payments.Payment;
+export declare function getFee({ provider, psbt, feeRate, }: {
+    provider: Provider;
+    psbt: string;
+    feeRate: number;
+}): Promise<number>;
 export declare function tweakSigner(signer: bitcoin.Signer, opts?: any): bitcoin.Signer;
 export declare function satoshisToAmount(val: number): string;
 export declare function delay(ms: number): Promise<unknown>;
