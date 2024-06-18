@@ -143,9 +143,9 @@ export interface MarketplaceOffer {
 }
 
 export enum AssetType {
- BRC20,
- COLLECTIBLE,
- RUNES
+  BRC20,
+  COLLECTIBLE,
+  RUNES,
 }
 
 export interface ExternalSwap {
@@ -154,11 +154,11 @@ export interface ExternalSwap {
 }
 
 export interface SwapPayload {
-  address: string;
-  auctionId: string;
-  bidPrice: number;
-  pubKey: string;
-  receiveAddress: string;
+  address: string
+  auctionId: string
+  bidPrice: number
+  pubKey: string
+  receiveAddress: string
   feerate: number
 }
 
@@ -323,6 +323,14 @@ export type RuneUtxo = {
   satoshis: number
 }
 
+export type RuneUTXO = {
+  txId: string
+  txIndex: string
+  amount: number
+  script: string
+  satoshis: number
+}
+
 export type AddressTypes = keyof typeof addressTypeToName
 
 export type AddressFormats = (typeof addressTypeToName)[AddressTypes]
@@ -350,7 +358,7 @@ export interface NetworkOptions {
    */
   projectId?: string
 
-  apiUrl? : string
+  apiUrl?: string
 
   network: Network
 }
