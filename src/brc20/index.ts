@@ -152,6 +152,7 @@ export const commit = async ({
   amount,
   feeRate,
   account,
+  taprootPrivateKey,
   provider,
   fee,
   finalSendFee,
@@ -160,6 +161,7 @@ export const commit = async ({
   amount: number
   feeRate: number
   account: Account
+  taprootPrivateKey: string
   provider: Provider
   fee?: number
   finalSendFee?: number
@@ -198,8 +200,9 @@ export const commit = async ({
     })
 
     const taprootKeyPair: ECPairInterface = ECPair.fromPrivateKey(
-      Buffer.from(account.taproot.privateKey, 'hex')
+      Buffer.from(taprootPrivateKey, 'hex')
     )
+
     const tweakedTaprootKeyPair: Buffer = toXOnly(
       tweakSigner(taprootKeyPair).publicKey
     )
@@ -310,6 +313,7 @@ export const reveal = async ({
   receiverAddress,
   script,
   feeRate,
+  taprootPrivateKey,
   account,
   provider,
   fee = 0,
@@ -318,6 +322,7 @@ export const reveal = async ({
   receiverAddress: string
   script: Buffer
   feeRate: number
+  taprootPrivateKey: string
   account: Account
   provider: Provider
   fee?: number
@@ -349,7 +354,7 @@ export const reveal = async ({
     }
 
     const taprootKeyPair: ECPairInterface = ECPair.fromPrivateKey(
-      Buffer.from(account.taproot.privateKey, 'hex')
+      Buffer.from(taprootPrivateKey, 'hex')
     )
 
     const tweakedTaprootKeyPair = tweakSigner(taprootKeyPair, {
@@ -502,6 +507,7 @@ export const send = async ({
     ticker: ticker,
     amount: amount,
     feeRate: feeRate,
+    taprootPrivateKey: signer.taprootKeyPair.privateKey.toString('hex'),
     account: account,
     provider: provider,
     finalSendFee: estimate.fee,
@@ -522,6 +528,8 @@ export const send = async ({
     ticker: ticker,
     amount: amount,
     feeRate: feeRate,
+    taprootPrivateKey: signer.taprootKeyPair.privateKey.toString('hex'),
+
     account: account,
     provider: provider,
     finalSendFee: estimate.fee,
@@ -540,6 +548,8 @@ export const send = async ({
   successTxIds.push(commitTxId)
   const { psbt: revealPsbt } = await reveal({
     feeRate: feeRate,
+    taprootPrivateKey: signer.taprootKeyPair.privateKey.toString('hex'),
+
     account: account,
     provider: provider,
     script: script,
@@ -555,6 +565,7 @@ export const send = async ({
 
   const { psbt: finalRevealPsbt } = await reveal({
     feeRate: feeRate,
+    taprootPrivateKey: signer.taprootKeyPair.privateKey.toString('hex'),
     account: account,
     provider: provider,
     script: script,

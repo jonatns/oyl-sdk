@@ -1,10 +1,27 @@
 import { Command } from 'commander'
+import { accountSpendableUtxos } from '../utxo/index'
 import {
   generateMnemonic,
   getWalletPrivateKeys,
   mnemonicToAccount,
 } from '../account/index'
 import * as bitcoin from 'bitcoinjs-lib'
+import { Provider } from '../provider/provider'
+
+const defaultProvider = {
+  bitcoin: new Provider({
+    url: 'https://mainnet.sandshrew.io',
+    projectId: process.env.SANDSHREW_PROJECT_ID!,
+    network: bitcoin.networks.bitcoin,
+    networkType: 'mainnet',
+  }),
+  regtest: new Provider({
+    url: 'http://localhost:3000',
+    projectId: 'regtest',
+    network: bitcoin.networks.regtest,
+    networkType: 'mainnet',
+  }),
+}
 
 const program = new Command()
 
@@ -64,10 +81,26 @@ const generateMnemonicCommand = new Command('generateMnemonic')
     console.log(mnemonic)
   })
 
-const testing = new Command('testing')
-  .description('Returns a new mnemonic phrase')
-  .action(() => {
-    console.log('Working')
+const utxosToSpend = new Command('spendableUtxos')
+  .description('Returns available utxos to spend')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+  .requiredOption(
+    '-m, --mnemonic <mnemonic>',
+    'mnemonic you want to get private keys from'
+  )
+  .action(async (options) => {
+    const account = mnemonicToAccount({ mnemonic: options.mnemonic })
+    const provider = defaultProvider[options.provider]
+    console.log(
+      await accountSpendableUtxos({
+        account,
+        provider,
+        spendAmount: 100000,
+      })
+    )
   })
 const accountCommand = new Command('account')
   .description('Manage accounts')
@@ -77,7 +110,7 @@ const accountCommand = new Command('account')
 
 const utxosCommand = new Command('utxos')
   .description('Examine utxos')
-  .addCommand(testing)
+  .addCommand(utxosToSpend)
 
 program.addCommand(utxosCommand)
 program.addCommand(accountCommand)

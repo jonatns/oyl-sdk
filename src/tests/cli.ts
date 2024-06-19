@@ -499,8 +499,8 @@ export async function runCLI() {
   const signer: Signer = new Signer(bitcoin.networks.regtest, {
     segwitPrivateKey: networkConfig.segwitPrivateKey,
     taprootPrivateKey: networkConfig.taprootPrivateKey,
-    nestedSegwitPrivateKey: regtestAccount.nestedSegwit.privateKey,
-    legacyPrivateKey: regtestAccount.legacy.privateKey,
+    // nestedSegwitPrivateKey: regtestAccount.nestedSegwit,
+    //legacyPrivateKey: regtestAccount.legacy.privateKey,
   })
   switch (command) {
     case 'load':
@@ -809,141 +809,141 @@ export async function runCLI() {
           taprootAddress: networkConfig.taprootAddress,
         })
       )
-    case 'new-brc-20-send':
-      let successTxIds: string[] = []
-      const estimate = await transferEstimate({
-        toAddress: networkConfig.destinationTaprootAddress,
-        feeRate: 2,
-        account: regtestAccount,
-        provider: regtestProvider,
-      })
+    //     case 'new-brc-20-send':
+    //       let successTxIds: string[] = []
+    //       const estimate = await transferEstimate({
+    //         toAddress: networkConfig.destinationTaprootAddress,
+    //         feeRate: 2,
+    //         account: regtestAccount,
+    //         provider: regtestProvider,
+    //       })
 
-      const { psbt: dryCommitPsbt } = await commit({
-        ticker: 'toyl',
-        amount: 100,
-        feeRate: 2,
-        account: regtestAccount,
-        provider: regtestProvider,
-        finalSendFee: estimate.fee,
-      })
+    //       const { psbt: dryCommitPsbt } = await commit({
+    //         ticker: 'toyl',
+    //         amount: 100,
+    //         feeRate: 2,
+    //         account: regtestAccount,
+    //         provider: regtestProvider,
+    //         finalSendFee: estimate.fee,
+    //       })
 
-      const { signedPsbt: commitSigned } = await signer.signAllInputs({
-        rawPsbt: dryCommitPsbt!,
-        finalize: true,
-      })
+    //       const { signedPsbt: commitSigned } = await signer.signAllInputs({
+    //         rawPsbt: dryCommitPsbt!,
+    //         finalize: true,
+    //       })
 
-      const commitFee = await getFee({
-        provider,
-        psbt: commitSigned,
-        feeRate: 2,
-      })
+    //       const commitFee = await getFee({
+    //         provider,
+    //         psbt: commitSigned,
+    //         feeRate: 2,
+    //       })
 
-      const { psbt: finalCommitPsbt, script } = await commit({
-        ticker: 'toyl',
-        amount: 100,
-        feeRate: 2,
-        account: regtestAccount,
-        provider: regtestProvider,
-        finalSendFee: estimate.fee,
-        fee: commitFee,
-      })
+    //       const { psbt: finalCommitPsbt, script } = await commit({
+    //         ticker: 'toyl',
+    //         amount: 100,
+    //         feeRate: 2,
+    //         account: regtestAccount,
+    //         provider: regtestProvider,
+    //         finalSendFee: estimate.fee,
+    //         fee: commitFee,
+    //       })
 
-      const { signedPsbt: finalCommitSigned } = await signer.signAllInputs({
-        rawPsbt: finalCommitPsbt!,
-        finalize: true,
-      })
+    //       const { signedPsbt: finalCommitSigned } = await signer.signAllInputs({
+    //         rawPsbt: finalCommitPsbt!,
+    //         finalize: true,
+    //       })
 
-      const { txId: commitTxId } = await regtestProvider.pushPsbt({
-        psbtBase64: finalCommitSigned,
-      })
+    //       const { txId: commitTxId } = await regtestProvider.pushPsbt({
+    //         psbtBase64: finalCommitSigned,
+    //       })
 
-      successTxIds.push(commitTxId)
-      const { psbt: revealPsbt } = await reveal({
-        feeRate: 2,
-        account: regtestAccount,
-        provider: regtestProvider,
-        script: script,
-        commitTxId: commitTxId,
-        receiverAddress: regtestAccount.taproot.address,
-      })
+    //       successTxIds.push(commitTxId)
+    //       const { psbt: revealPsbt } = await reveal({
+    //         feeRate: 2,
+    //         account: regtestAccount,
+    //         provider: regtestProvider,
+    //         script: script,
+    //         commitTxId: commitTxId,
+    //         receiverAddress: regtestAccount.taproot.address,
+    //       })
 
-      const revealFee = await getFee({
-        provider,
-        psbt: revealPsbt,
-        feeRate: 2,
-      })
+    //       const revealFee = await getFee({
+    //         provider,
+    //         psbt: revealPsbt,
+    //         feeRate: 2,
+    //       })
 
-      const { psbt: finalRevealPsbt } = await reveal({
-        feeRate: 2,
-        account: regtestAccount,
-        provider: regtestProvider,
-        script: script,
-        commitTxId: commitTxId,
-        receiverAddress: regtestAccount.taproot.address,
-        fee: revealFee,
-      })
+    //       const { psbt: finalRevealPsbt } = await reveal({
+    //         feeRate: 2,
+    //         account: regtestAccount,
+    //         provider: regtestProvider,
+    //         script: script,
+    //         commitTxId: commitTxId,
+    //         receiverAddress: regtestAccount.taproot.address,
+    //         fee: revealFee,
+    //       })
 
-      const { txId: revealTxId } = await regtestProvider.pushPsbt({
-        psbtBase64: finalRevealPsbt,
-      })
+    //       const { txId: revealTxId } = await regtestProvider.pushPsbt({
+    //         psbtBase64: finalRevealPsbt,
+    //       })
 
-      if (!revealTxId) {
-        throw new Error('Unable to reveal inscription.')
-      }
+    //       if (!revealTxId) {
+    //         throw new Error('Unable to reveal inscription.')
+    //       }
 
-      successTxIds.push(revealTxId)
+    //       successTxIds.push(revealTxId)
 
-      await waitForTransaction({
-        txId: revealTxId,
-        sandshrewBtcClient: regtestProvider.sandshrew,
-      })
+    //       await waitForTransaction({
+    //         txId: revealTxId,
+    //         sandshrewBtcClient: regtestProvider.sandshrew,
+    //       })
 
-      await delay(5000)
+    //       await delay(5000)
 
-      const { psbt: transferPsbt } = await transfer({
-        feeRate: 2,
-        account: regtestAccount,
-        provider: regtestProvider,
-        revealTxId: revealTxId,
-        commitChangeUtxoId: commitTxId,
-        toAddress: networkConfig.destinationTaprootAddress,
-      })
+    //       const { psbt: transferPsbt } = await transfer({
+    //         feeRate: 2,
+    //         account: regtestAccount,
+    //         provider: regtestProvider,
+    //         revealTxId: revealTxId,
+    //         commitChangeUtxoId: commitTxId,
+    //         toAddress: networkConfig.destinationTaprootAddress,
+    //       })
 
-      const { signedPsbt: transferSigned } = await signer.signAllInputs({
-        rawPsbt: transferPsbt!,
-        finalize: true,
-      })
+    //       const { signedPsbt: transferSigned } = await signer.signAllInputs({
+    //         rawPsbt: transferPsbt!,
+    //         finalize: true,
+    //       })
 
-      const transferFee = await getFee({
-        provider,
-        psbt: transferSigned,
-        feeRate: 2,
-      })
+    //       const transferFee = await getFee({
+    //         provider,
+    //         psbt: transferSigned,
+    //         feeRate: 2,
+    //       })
 
-      const { psbt: finalTransferPsbt } = await transfer({
-        feeRate: 2,
-        account: regtestAccount,
-        provider: regtestProvider,
-        revealTxId: revealTxId,
-        commitChangeUtxoId: commitTxId,
-        toAddress: networkConfig.destinationTaprootAddress,
-        fee: transferFee,
-      })
+    //       const { psbt: finalTransferPsbt } = await transfer({
+    //         feeRate: 2,
+    //         account: regtestAccount,
+    //         provider: regtestProvider,
+    //         revealTxId: revealTxId,
+    //         commitChangeUtxoId: commitTxId,
+    //         toAddress: networkConfig.destinationTaprootAddress,
+    //         fee: transferFee,
+    //       })
 
-      const { signedPsbt: finalTransferSigned } = await signer.signAllInputs({
-        rawPsbt: finalTransferPsbt!,
-        finalize: true,
-      })
+    //       const { signedPsbt: finalTransferSigned } = await signer.signAllInputs({
+    //         rawPsbt: finalTransferPsbt!,
+    //         finalize: true,
+    //       })
 
-      const { txId: transferTxId } = await regtestProvider.pushPsbt({
-        psbtBase64: finalTransferSigned,
-      })
-      return console.log({
-        txId: transferTxId,
-        rawTxn: finalTransferSigned,
-        sendBrc20Txids: [...successTxIds, transferTxId],
-      })
-    default:
-      return await callAPI(argv._[0], options)
+    //       const { txId: transferTxId } = await regtestProvider.pushPsbt({
+    //         psbtBase64: finalTransferSigned,
+    //       })
+    //       return console.log({
+    //         txId: transferTxId,
+    //         rawTxn: finalTransferSigned,
+    //         sendBrc20Txids: [...successTxIds, transferTxId],
+    //       })
+    //     default:
+    //       return await callAPI(argv._[0], options)
   }
 }

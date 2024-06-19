@@ -12,11 +12,12 @@ export declare const transferEstimate: ({ toAddress, feeRate, account, provider,
     psbt: string;
     fee: number;
 }>;
-export declare const commit: ({ ticker, amount, feeRate, account, provider, fee, finalSendFee, }: {
+export declare const commit: ({ ticker, amount, feeRate, account, taprootPrivateKey, provider, fee, finalSendFee, }: {
     ticker: string;
     amount: number;
     feeRate: number;
     account: Account;
+    taprootPrivateKey: string;
     provider: Provider;
     fee?: number;
     finalSendFee?: number;
@@ -25,10 +26,11 @@ export declare const commit: ({ ticker, amount, feeRate, account, provider, fee,
     fee: number;
     script: Buffer;
 }>;
-export declare const reveal: ({ receiverAddress, script, feeRate, account, provider, fee, commitTxId, }: {
+export declare const reveal: ({ receiverAddress, script, feeRate, taprootPrivateKey, account, provider, fee, commitTxId, }: {
     receiverAddress: string;
     script: Buffer;
     feeRate: number;
+    taprootPrivateKey: string;
     account: Account;
     provider: Provider;
     fee?: number;
