@@ -33,7 +33,7 @@ export const createPsbt = async ({
       outputCount: 2,
     })
     let calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
-    let finalFee = fee ? fee : calculatedFee
+    let finalFee: number = fee ? fee : calculatedFee
 
     let gatheredUtxos: {
       totalAmount: number
@@ -41,7 +41,7 @@ export const createPsbt = async ({
     } = await accountSpendableUtxos({
       account,
       provider,
-      spendAmount: finalFee + amount,
+      spendAmount: finalFee + Number(amount),
     })
 
     if (!fee && gatheredUtxos.utxos.length > 1) {
@@ -56,7 +56,7 @@ export const createPsbt = async ({
         gatheredUtxos = await accountSpendableUtxos({
           account,
           provider,
-          spendAmount: finalFee + amount,
+          spendAmount: finalFee + Number(amount),
         })
       }
     }
@@ -108,16 +108,17 @@ export const createPsbt = async ({
       }
     }
 
-    psbt.addOutput({
-      address: toAddress,
-      value: amount,
-    })
-
-    if (gatheredUtxos.totalAmount < finalFee + amount) {
+    if (gatheredUtxos.totalAmount < Number(finalFee) + Number(amount)) {
       throw new OylTransactionError(Error('Insufficient Balance'))
     }
 
-    const changeAmount = gatheredUtxos.totalAmount - (finalFee + amount)
+    psbt.addOutput({
+      address: toAddress,
+      value: Number(amount),
+    })
+
+    const changeAmount: number =
+      gatheredUtxos.totalAmount - (finalFee + Number(amount))
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,

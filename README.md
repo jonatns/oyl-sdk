@@ -1,74 +1,276 @@
-# OYL-SDK
+[![npm version](https://badge.fury.io/js/angular2-expandable-list.svg)](https://badge.fury.io/js/angular2-expandable-list)
+[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
 
-Utilities for core bitcoin wallet with client-side ordinal handling
+# Oyl Sdk
+
+> A comphrenesive sdk that features easy to use bitcoin functions to build, and brodcast btc transactions.
+
+## Prerequisites
+
+This project requires NodeJS (version 8 or later) and NPM.
+[Node](http://nodejs.org/) and [NPM](https://npmjs.org/) are really easy to install.
+To make sure you have them available on your machine,
+try running the following command.
+
+```sh
+$ npm -v && node -v
+6.4.1
+v8.16.0
+```
+
+## Table of contents
+
+- [Oyl SDK](#project-name)
+  - [Prerequisites](#prerequisites)
+  - [Table of contents](#table-of-contents)
+  - [Getting Started](#getting-started)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Serving the app](#serving-the-app)
+    - [Running the tests](#running-the-tests)
+    - [Building a distribution version](#building-a-distribution-version)
+    - [Serving the distribution version](#serving-the-distribution-version)
+  - [API](#api)
+    - [useBasicFetch](#usebasicfetch)
+      - [Options](#options)
+    - [fetchData](#fetchdata)
+  - [Contributing](#contributing)
+  - [Credits](#credits)
+  - [Built With](#built-with)
+  - [Versioning](#versioning)
+  - [Authors](#authors)
+  - [License](#license)
 
 ## Getting Started
 
-Clone from repository
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
 
-Run `yarn`.
+## Installation
 
-To build typescript files to js , just run `yarn build` or `tsc`. They do pretty much the same thing rn
+**BEFORE YOU INSTALL:** please read the [prerequisites](#prerequisites)
 
-## CLI Client (oyl-cli)
-To use the command line client, you can install the package globally. In root dir of this repo, just run:
+Start with cloning this repo on your local machine:
 
-```
- npm i -g
-```
-
-The cli client is simply a layer over the oylib instance. commands can be found in cli.ts.
-
-
-```
-oyl-cli load
+```sh
+$ git clone https://github.com/ORG/PROJECT.git
+$ cd PROJECT
 ```
 
-returns
+To install and set up the library, run:
 
+```sh
+$ npm install -S myLib
 ```
-{
-  network: 'main',
-  port: 8332,
-  host: '198.199.72.193',
-  apiKey: 'bikeshed'
+
+Or if you prefer using Yarn:
+
+```sh
+$ yarn add --dev myLib
+```
+
+## Usage
+
+### Serving the app
+
+```sh
+$ npm start
+```
+
+### Running the tests
+
+```sh
+$ npm test
+```
+
+### Building a distribution version
+
+```sh
+$ npm run build
+```
+
+This task will create a distribution version of the project
+inside your local `dist/` folder
+
+### Serving the distribution version
+
+```sh
+$ npm run serve:dist
+```
+
+This will use `lite-server` for servign your already
+generated distribution version of the project.
+
+_Note_ this requires
+[Building a distribution version](#building-a-distribution-version) first.
+
+## API
+
+### useBasicFetch
+
+```js
+useBasicFetch(((url: string) = ''), ((delay: number) = 0))
+```
+
+Supported options and result fields for the `useBasicFetch` hook are listed below.
+
+#### Options
+
+`url`
+
+| Type   | Default value |
+| ------ | ------------- |
+| string | ''            |
+
+If present, the request will be performed as soon as the component is mounted
+
+Example:
+
+```tsx
+const MyComponent: React.FC = () => {
+  const { data, error, loading } = useBasicFetch(
+    'https://api.icndb.com/jokes/random'
+  )
+
+  if (error) {
+    return <p>Error</p>
+  }
+
+  if (loading) {
+    return <p>Loading...</p>
+  }
+
+  return (
+    <div className="App">
+      <h2>Chuck Norris Joke of the day</h2>
+      {data && data.value && <p>{data.value.joke}</p>}
+    </div>
+  )
 }
 ```
 
-It also accepts custom parameters:
+`delay`
 
-```
-oyl-cli load --port 8334
-```
-For more details see Wallet#fromProvider
+| Type   | Default value | Description          |
+| ------ | ------------- | -------------------- |
+| number | 0             | Time in milliseconds |
 
+If present, the request will be delayed by the given amount of time
 
-To call methods on the object, pass in the method name in `snake-case` and add the parameter as a flag option also in `snake-case` :
+Example:
 
-```
-oyl-cli get-address-summary --address bc1p527kv6mrq2sn5l7ukapq4q4a4puqfd9jsm7fv6r06c5726kyk57qnfvs4e
-```
-
-returns
-
-```
-[
-  {
-    "utxo": [
-      {
-        "tx_hash_big_endian": "96ea0ce6c073ff27d7c598c2b4929712e5ff6f68fdf7c1520253f8921d04a083",
-        "tx_hash": "83a0041d92f8530252c1f7fd686fffe5129792b4c298c5d727ff73c0e60cea96",
-        "tx_output_n": 0,
-        "script": "5120a2bd666b6302a13a7fdcb7420a82bda87804b4b286fc96686fd629e56ac4b53c",
-        "value": 10000,
-        "value_hex": "2710",
-        "confirmations": 10988,
-        "tx_index": 4631145185697546
-      }
-    ],
-    "balance": 0.0001
+```tsx
+type Joke = {
+  value: {
+    id: number
+    joke: string
   }
-]
+}
+
+const MyComponent: React.FC = () => {
+  const { data, error, loading } = useBasicFetch<Joke>(
+    'https://api.icndb.com/jokes/random',
+    2000
+  )
+
+  if (error) {
+    return <p>Error</p>
+  }
+
+  if (loading) {
+    return <p>Loading...</p>
+  }
+
+  return (
+    <div className="App">
+      <h2>Chuck Norris Joke of the day</h2>
+      {data && data.value && <p>{data.value.joke}</p>}
+    </div>
+  )
+}
 ```
 
-Contributions, issues, PRs are all welcome.
+### fetchData
+
+```js
+fetchData(url: string)
+```
+
+Perform an asynchronous http request against a given url
+
+```tsx
+type Joke = {
+  value: {
+    id: number
+    joke: string
+  }
+}
+
+const ChuckNorrisJokes: React.FC = () => {
+  const { data, fetchData, error, loading } = useBasicFetch<Joke>()
+  const [jokeId, setJokeId] = useState(1)
+
+  useEffect(() => {
+    fetchData(`https://api.icndb.com/jokes/${jokeId}`)
+  }, [jokeId, fetchData])
+
+  const handleNext = () => setJokeId(jokeId + 1)
+
+  if (error) {
+    return <p>Error</p>
+  }
+
+  const jokeData = data && data.value
+
+  return (
+    <div className="Comments">
+      {loading && <p>Loading...</p>}
+      {!loading && jokeData && (
+        <div>
+          <p>Joke ID: {jokeData.id}</p>
+          <p>{jokeData.joke}</p>
+        </div>
+      )}
+      {!loading && jokeData && !jokeData.joke && <p>{jokeData}</p>}
+      <button disabled={loading} onClick={handleNext}>
+        Next Joke
+      </button>
+    </div>
+  )
+}
+```
+
+## Contributing
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+
+1.  Fork it!
+2.  Create your feature branch: `git checkout -b my-new-feature`
+3.  Add your changes: `git add .`
+4.  Commit your changes: `git commit -am 'Add some feature'`
+5.  Push to the branch: `git push origin my-new-feature`
+6.  Submit a pull request :sunglasses:
+
+## Credits
+
+TODO: Write credits
+
+## Built With
+
+- Dropwizard - Bla bla bla
+- Maven - Maybe
+- Atom - ergaerga
+- Love
+
+## Versioning
+
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags).
+
+## Authors
+
+- **John Doe** - _Initial work_ - [JohnDoe](https://github.com/JohnDoe)
+
+See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+
+## License
+
+[MIT License](https://andreasonny.mit-license.org/2019) © Andrea SonnY
