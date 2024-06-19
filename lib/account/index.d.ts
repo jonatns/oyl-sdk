@@ -36,4 +36,24 @@ export interface MnemonicToAccountOptions {
     spendStrategy?: SpendStrategy;
 }
 export declare const generateMnemonic: () => string;
-export declare const mnemonicToAccount: (mnemonic?: string, opts?: MnemonicToAccountOptions) => Account;
+export declare const mnemonicToAccount: ({ mnemonic, opts, }: {
+    mnemonic?: string;
+    opts?: MnemonicToAccountOptions;
+}) => Account;
+export declare const getWalletPrivateKeys: ({ mnemonic, opts, }: {
+    mnemonic: string;
+    opts?: MnemonicToAccountOptions;
+}) => {
+    taproot: {
+        privateKey: string;
+    };
+    nativeSegwit: {
+        privateKey: string;
+    };
+    nestedSegwit: {
+        privateKey: string;
+    };
+    legacy: {
+        privateKey: string;
+    };
+};

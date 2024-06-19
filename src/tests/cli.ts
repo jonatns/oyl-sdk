@@ -192,8 +192,14 @@ export const provider = new Provider({
   networkType: 'mainnet',
 })
 
-const regtestAccount = mnemonicToAccount(regtestMnemonic, regtestOpts)
-const account: Account = mnemonicToAccount(mainnetMnemonic, Opts)
+const regtestAccount = mnemonicToAccount({
+  mnemonic: regtestMnemonic,
+  opts: regtestOpts,
+})
+const account: Account = mnemonicToAccount({
+  mnemonic: mainnetMnemonic,
+  opts: Opts,
+})
 
 const testWallet = new Oyl({
   network: 'testnet',

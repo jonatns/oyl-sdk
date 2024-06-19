@@ -15,7 +15,10 @@ const provider = new Provider({
   networkType: 'mainnet',
 })
 
-const account: Account = mnemonicToAccount(mainnetMnemonic, Opts)
+const account: Account = mnemonicToAccount({
+  mnemonic: mainnetMnemonic,
+  opts: Opts,
+})
 const { address } = bitcoin.payments.p2tr({
   pubkey: Buffer.from(account.taproot.pubKeyXOnly, 'hex'),
 })

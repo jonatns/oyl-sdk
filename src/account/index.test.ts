@@ -39,7 +39,7 @@ function isAccount(obj: any): obj is Account {
 
 describe('Account Tests', () => {
   it('Generate accurate Account object', () => {
-    expect(isAccount(mnemonicToAccount())).toBe(true)
+    expect(isAccount(mnemonicToAccount({}))).toBe(true)
   })
 
   it('Generate 12 word mnemonic', () => {

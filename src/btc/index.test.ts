@@ -15,7 +15,10 @@ const provider = new Provider({
   networkType: 'mainnet',
 })
 
-const account: Account = mnemonicToAccount(mainnetMnemonic, Opts)
+const account: Account = mnemonicToAccount({
+  mnemonic: mainnetMnemonic,
+  opts: Opts,
+})
 const { address } = bitcoin.payments.p2wpkh({
   pubkey: Buffer.from(account.nativeSegwit.pubkey, 'hex'),
 })
