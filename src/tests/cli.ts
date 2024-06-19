@@ -943,7 +943,7 @@ export async function runCLI() {
     //         rawTxn: finalTransferSigned,
     //         sendBrc20Txids: [...successTxIds, transferTxId],
     //       })
-    //     default:
-    //       return await callAPI(argv._[0], options)
+    default:
+      return await callAPI(argv._[0], options)
   }
 }

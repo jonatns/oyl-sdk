@@ -8,13 +8,4 @@ export declare function callAPI(command: any, data: any, options?: {}): Promise<
 export declare const MEMPOOL_SPACE_API_V1_URL = "https://mempool.space/api/v1";
 export declare const createInscriptionScript: (pubKey: any, content: any) => any[];
 export declare const provider: Provider;
-export declare function runCLI(): Promise<void | {
-    fee: number;
-} | {
-    commitAndRevealTxFee: number;
-    sendTxFee: number;
-    total: number;
-} | {
-    txId: string;
-    rawTxn: string;
-}>;
+export declare function runCLI(): Promise<any>;
