@@ -10,7 +10,7 @@ import {
   ToSignInput,
   TxInput,
   UnspentOutput,
-} from '../shared/interface'
+} from './interface'
 import BigNumber from 'bignumber.js'
 import { maximumScriptBytes } from './constants'
 import axios from 'axios'

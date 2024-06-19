@@ -56,4 +56,8 @@ export declare const send: ({ ticker, amount, toAddress, account, provider, feeR
     account: Account;
     provider: Provider;
     signer: Signer;
-}) => Promise<void>;
+}) => Promise<{
+    txId: string;
+    rawTxn: string;
+    sendBrc20Txids: string[];
+}>;

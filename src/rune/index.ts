@@ -143,7 +143,7 @@ export const createSendPsbt = async ({
 
     psbt.addOutput({
       value: inscriptionSats,
-      address: account[account.spendStrategy.changeAddress].address,
+      address: account.taproot.address,
     })
 
     psbt.addOutput({
@@ -286,7 +286,7 @@ export const createMintPsbt = async ({
 
     psbt.addOutput({
       value: inscriptionSats,
-      address: account[account.spendStrategy.changeAddress].address,
+      address: account.taproot.address,
     })
 
     psbt.addOutput({
@@ -297,7 +297,7 @@ export const createMintPsbt = async ({
     const script = createRuneMintScript({
       runeId,
       amountToMint: amount,
-      mintOutPutIndex: 1,
+      mintOutPutIndex: 0,
       pointer: 0,
     })
     const output = { script: script, value: 0 }

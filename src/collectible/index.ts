@@ -50,14 +50,47 @@ export const createPsbt = async ({
       inscriptionId,
     })
 
-    psbt.addInput({
-      hash: txId,
-      index: parseInt(voutIndex),
-      witnessUtxo: {
-        script: Buffer.from(data.scriptpubkey, 'hex'),
-        value: data.value,
-      },
-    })
+    if (getAddressType(inscriptionAddress) === 0) {
+      const previousTxHex: string = await provider.esplora.getTxHex(txId)
+      psbt.addInput({
+        hash: txId,
+        index: parseInt(voutIndex),
+        nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
+      })
+    }
+    if (getAddressType(inscriptionAddress) === 2) {
+      const redeemScript = bitcoin.script.compile([
+        bitcoin.opcodes.OP_0,
+        bitcoin.crypto.hash160(Buffer.from(account.nestedSegwit.pubkey, 'hex')),
+      ])
+
+      psbt.addInput({
+        hash: txId,
+        index: parseInt(voutIndex),
+        redeemScript: redeemScript,
+        witnessUtxo: {
+          value: data.value,
+          script: bitcoin.script.compile([
+            bitcoin.opcodes.OP_HASH160,
+            bitcoin.crypto.hash160(redeemScript),
+            bitcoin.opcodes.OP_EQUAL,
+          ]),
+        },
+      })
+    }
+    if (
+      getAddressType(inscriptionAddress) === 1 ||
+      getAddressType(inscriptionAddress) === 3
+    ) {
+      psbt.addInput({
+        hash: txId,
+        index: parseInt(voutIndex),
+        witnessUtxo: {
+          script: Buffer.from(data.scriptpubkey, 'hex'),
+          value: data.value,
+        },
+      })
+    }
 
     psbt.addOutput({
       address: toAddress,

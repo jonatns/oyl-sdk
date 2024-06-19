@@ -9,7 +9,18 @@
     "sourceMap": true,
     "outDir": "./lib",
     "declaration": true,
-    "types": ["node", "jest"]
+    "importHelpers": true,
+    "types": ["node", "jest"],
+    "baseUrl": "./src",
+    "paths": {
+      "@collectible/*": ["collectible/*"],
+      "@account/*": ["account/*"],
+      "@btc/*": ["btc/*"],
+      "@brc20/*": ["brc20/*"],
+      "@rune/*": ["rune/*"],
+      "@signer/*": ["signer/*"],
+      "@utxo/*": ["utxo/*"]
+    }
   },
-  "include": ["./src.ts/**/*.ts"]
+  "include": ["src/**/*.ts"]
 }

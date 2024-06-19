@@ -34,6 +34,7 @@ import {
 } from '../account'
 import { accountSpendableUtxos } from '../utxo'
 import * as btc from '../btc'
+import * as rune from '../rune'
 import {
   Opts,
   mainnetMnemonic,
@@ -761,6 +762,19 @@ export async function runCLI() {
       })
 
       return console.log(result)
+    case 'new-rune-send':
+      const runeSend = await rune.send({
+        account: regtestAccount,
+        runeId: '',
+        provider: regtestProvider,
+        inscriptionAddress: '',
+        toAddress: networkConfig.destinationTaprootAddress,
+        amount: 100,
+        feeRate: 2,
+        signer,
+      })
+
+      return console.log(runeSend)
     case 'inscriptions':
       return console.log(
         await networkConfig.wallet.getInscriptions({

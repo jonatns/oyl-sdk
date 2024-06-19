@@ -75,15 +75,52 @@ export const transferEstimate = async ({
       }
     }
 
-    for (let i = 0; i < utxosToSend.utxos.length; i++) {
-      psbt.addInput({
-        hash: utxosToSend.utxos[i].txId,
-        index: utxosToSend.utxos[i].outputIndex,
-        witnessUtxo: {
-          value: utxosToSend.utxos[i].satoshis,
-          script: Buffer.from(utxosToSend.utxos[i].scriptPk, 'hex'),
-        },
-      })
+    for (let i = 0; i < gatheredUtxos.utxos.length; i++) {
+      if (getAddressType(gatheredUtxos.utxos[i].address) === 0) {
+        const previousTxHex: string = await provider.esplora.getTxHex(
+          gatheredUtxos.utxos[i].txId
+        )
+        psbt.addInput({
+          hash: gatheredUtxos.utxos[i].txId,
+          index: gatheredUtxos.utxos[i].outputIndex,
+          nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
+        })
+      }
+      if (getAddressType(gatheredUtxos.utxos[i].address) === 2) {
+        const redeemScript = bitcoin.script.compile([
+          bitcoin.opcodes.OP_0,
+          bitcoin.crypto.hash160(
+            Buffer.from(account.nestedSegwit.pubkey, 'hex')
+          ),
+        ])
+
+        psbt.addInput({
+          hash: gatheredUtxos.utxos[i].txId,
+          index: gatheredUtxos.utxos[i].outputIndex,
+          redeemScript: redeemScript,
+          witnessUtxo: {
+            value: gatheredUtxos.utxos[i].satoshis,
+            script: bitcoin.script.compile([
+              bitcoin.opcodes.OP_HASH160,
+              bitcoin.crypto.hash160(redeemScript),
+              bitcoin.opcodes.OP_EQUAL,
+            ]),
+          },
+        })
+      }
+      if (
+        getAddressType(gatheredUtxos.utxos[i].address) === 1 ||
+        getAddressType(gatheredUtxos.utxos[i].address) === 3
+      ) {
+        psbt.addInput({
+          hash: gatheredUtxos.utxos[i].txId,
+          index: gatheredUtxos.utxos[i].outputIndex,
+          witnessUtxo: {
+            value: gatheredUtxos.utxos[i].satoshis,
+            script: Buffer.from(gatheredUtxos.utxos[i].scriptPk, 'hex'),
+          },
+        })
+      }
     }
 
     psbt.addOutput({
@@ -581,9 +618,9 @@ export const send = async ({
   const { txId: transferTxId } = await provider.pushPsbt({
     psbtBase64: finalTransferSigned,
   })
-  return console.log({
+  return {
     txId: transferTxId,
     rawTxn: finalTransferSigned,
     sendBrc20Txids: [...successTxIds, transferTxId],
-  })
+  }
 }
