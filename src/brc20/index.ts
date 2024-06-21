@@ -314,7 +314,6 @@ export const reveal = async ({
   script,
   feeRate,
   taprootPrivateKey,
-  account,
   provider,
   fee = 0,
   commitTxId,
@@ -323,7 +322,6 @@ export const reveal = async ({
   script: Buffer
   feeRate: number
   taprootPrivateKey: string
-  account: Account
   provider: Provider
   fee?: number
   commitTxId: string
@@ -444,16 +442,53 @@ export const transfer = async ({
       },
     })
 
-    for (let i = 1; i <= utxoInfo.vout.length - 1; i++) {
+    for (let i = 1; i < utxoInfo.vout.length; i++) {
+      if (getAddressType(utxoInfo.vout[i].scriptpubkey_address) === 0) {
+        const previousTxHex: string = await provider.esplora.getTxHex(
+          commitChangeUtxoId
+        )
+        psbt.addInput({
+          hash: commitChangeUtxoId,
+          index: i,
+          nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
+        })
+      }
+      if (getAddressType(utxoInfo.vout[i].scriptpubkey_address) === 2) {
+        const redeemScript = bitcoin.script.compile([
+          bitcoin.opcodes.OP_0,
+          bitcoin.crypto.hash160(
+            Buffer.from(account.nestedSegwit.pubkey, 'hex')
+          ),
+        ])
+
+        psbt.addInput({
+          hash: commitChangeUtxoId,
+          index: i,
+          redeemScript: redeemScript,
+          witnessUtxo: {
+            value: utxoInfo.vout[i].value,
+            script: bitcoin.script.compile([
+              bitcoin.opcodes.OP_HASH160,
+              bitcoin.crypto.hash160(redeemScript),
+              bitcoin.opcodes.OP_EQUAL,
+            ]),
+          },
+        })
+      }
+      if (
+        getAddressType(utxoInfo.vout[i].scriptpubkey_address) === 1 ||
+        getAddressType(utxoInfo.vout[i].scriptpubkey_address) === 3
+      ) {
+        psbt.addInput({
+          hash: commitChangeUtxoId,
+          index: i,
+          witnessUtxo: {
+            value: utxoInfo.vout[i].value,
+            script: Buffer.from(utxoInfo.vout[i].scriptpubkey, 'hex'),
+          },
+        })
+      }
       totalValue += utxoInfo.vout[i].value
-      psbt.addInput({
-        hash: commitChangeUtxoId,
-        index: i,
-        witnessUtxo: {
-          script: Buffer.from(utxoInfo.vout[i].scriptpubkey, 'hex'),
-          value: utxoInfo.vout[i].value,
-        },
-      })
     }
 
     psbt.addOutput({
@@ -549,8 +584,6 @@ export const send = async ({
   const { psbt: revealPsbt } = await reveal({
     feeRate: feeRate,
     taprootPrivateKey: signer.taprootKeyPair.privateKey.toString('hex'),
-
-    account: account,
     provider: provider,
     script: script,
     commitTxId: commitTxId,
@@ -566,7 +599,6 @@ export const send = async ({
   const { psbt: finalRevealPsbt } = await reveal({
     feeRate: feeRate,
     taprootPrivateKey: signer.taprootKeyPair.privateKey.toString('hex'),
-    account: account,
     provider: provider,
     script: script,
     commitTxId: commitTxId,

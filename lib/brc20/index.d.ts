@@ -26,12 +26,11 @@ export declare const commit: ({ ticker, amount, feeRate, account, taprootPrivate
     fee: number;
     script: Buffer;
 }>;
-export declare const reveal: ({ receiverAddress, script, feeRate, taprootPrivateKey, account, provider, fee, commitTxId, }: {
+export declare const reveal: ({ receiverAddress, script, feeRate, taprootPrivateKey, provider, fee, commitTxId, }: {
     receiverAddress: string;
     script: Buffer;
     feeRate: number;
     taprootPrivateKey: string;
-    account: Account;
     provider: Provider;
     fee?: number;
     commitTxId: string;

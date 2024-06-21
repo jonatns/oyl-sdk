@@ -1,6 +1,7 @@
 import { Command } from 'commander'
 import { accountSpendableUtxos, addressSpendableUtxos } from '../utxo/index'
 import * as btc from '../btc/index'
+import * as brc20 from '../brc20/index'
 
 import {
   generateMnemonic,
@@ -97,6 +98,9 @@ const accountUtxosToSpend = new Command('accountSpendableUtxos')
     '-m, --mnemonic <mnemonic>',
     'mnemonic you want to get private keys from'
   )
+  /* @dev example call
+    oyl utxos addressSpendableUtxos -a bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx -p regtest
+  */
   .action(async (options) => {
     const account = mnemonicToAccount({ mnemonic: options.mnemonic })
     const provider = defaultProvider[options.provider]
@@ -189,6 +193,68 @@ const btcSend = new Command('send')
     )
   })
 
+const brc20Send = new Command('send')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+  .requiredOption(
+    '-m, --mnemonic <mnemonic>',
+    'mnemonic you want to get private keys from'
+  )
+  .requiredOption('-amt, --amount <amount>', 'amount you want to send')
+  .requiredOption('-t, --to <to>', 'address you want to send to')
+  .requiredOption('-tick', '--ticker <ticker>', 'brc20 ticker to send')
+  .option('-legacy, --legacy <legacy>', 'legacy private key')
+  .option('-taproot, --taproot <taproot>', 'taproot private key')
+  .option(
+    '-nested, --nested-segwit <nestedSegwit>',
+    'nested segwit private key'
+  )
+  .option(
+    '-native, --native-segwit <nativeSegwit>',
+    'native segwit private key'
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+
+  /* @dev example call 
+  oyl brc20 send 
+  -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' 
+  -native '4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3' 
+  -p regtest 
+  -t bcrt1qzr9vhs60g6qlmk7x3dd7g3ja30wyts48sxuemv 
+  -tick toyl
+  -amt 1000
+  -feeRate 2
+*/
+
+  .action(async (options) => {
+    const provider = defaultProvider[options.provider]
+    const signer = new Signer(provider.network, {
+      segwitPrivateKey: options.nativeSegwit,
+      taprootPrivateKey: options.taproot,
+      nestedSegwitPrivateKey: options.nestedSegwit,
+      legacyPrivateKey: options.legacy,
+    })
+    const account = mnemonicToAccount({
+      mnemonic: options.mnemonic,
+      opts: {
+        network: provider.network,
+      },
+    })
+    console.log(
+      await brc20.send({
+        ticker: options.ticker,
+        toAddress: options.to,
+        feeRate: options.feeRate,
+        account,
+        signer,
+        provider,
+        amount: options.amount,
+      })
+    )
+  })
+
 const accountCommand = new Command('account')
   .description('Manage accounts')
   .addCommand(generateCommand)
@@ -204,8 +270,13 @@ const btcCommand = new Command('btc')
   .description('Functions for sending bitcoin')
   .addCommand(btcSend)
 
+const brc20Command = new Command('brc20')
+  .description('Functions for brc20')
+  .addCommand(brc20Send)
+
 program.addCommand(utxosCommand)
 program.addCommand(accountCommand)
 program.addCommand(btcCommand)
+program.addCommand(brc20Command)
 
 program.parse(process.argv)
