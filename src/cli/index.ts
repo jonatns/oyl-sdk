@@ -2,6 +2,7 @@ import { Command } from 'commander'
 import { accountSpendableUtxos, addressSpendableUtxos } from '../utxo/index'
 import * as btc from '../btc/index'
 import * as brc20 from '../brc20/index'
+import * as collectible from '../collectible/index'
 
 import {
   generateMnemonic,
@@ -160,7 +161,7 @@ const btcSend = new Command('send')
   /* @dev example call 
   oyl btc send 
   -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' 
-  -native '4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3' 
+  -native '4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3'
   -p regtest 
   -t bcrt1qzr9vhs60g6qlmk7x3dd7g3ja30wyts48sxuemv 
   -amt 1000
@@ -220,7 +221,8 @@ const brc20Send = new Command('send')
   /* @dev example call 
   oyl brc20 send 
   -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' 
-  -native '4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3' 
+  -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3
+  -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361
   -p regtest 
   -t bcrt1qzr9vhs60g6qlmk7x3dd7g3ja30wyts48sxuemv 
   -tick toyl
@@ -255,6 +257,75 @@ const brc20Send = new Command('send')
     )
   })
 
+const collectibleSend = new Command('send')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+  .requiredOption(
+    '-m, --mnemonic <mnemonic>',
+    'mnemonic you want to get private keys from'
+  )
+  .requiredOption('-t, --to <to>', 'address you want to send to')
+  .requiredOption(
+    '-inscId, --inscriptionId <inscriptionId>',
+    'inscription to send'
+  )
+  .requiredOption(
+    '-inscAdd, --inscriptionAddress <inscriptionAddress>',
+    'current holder of inscription to send'
+  )
+  .option('-legacy, --legacy <legacy>', 'legacy private key')
+  .option('-taproot, --taproot <taproot>', 'taproot private key')
+  .option(
+    '-nested, --nested-segwit <nestedSegwit>',
+    'nested segwit private key'
+  )
+  .option(
+    '-native, --native-segwit <nativeSegwit>',
+    'native segwit private key'
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+
+  /* @dev example call 
+  oyl collectible send 
+  -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' 
+  -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3
+  -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361
+  -p regtest 
+  -t bcrt1qzr9vhs60g6qlmk7x3dd7g3ja30wyts48sxuemv 
+  -inscId d0c21b35f27ba6361acd5172fcfafe8f4f96d424c80c00b5793290387bcbcf44i0
+  -inscAdd bcrt1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqvg32hk
+  -feeRate 2
+*/
+
+  .action(async (options) => {
+    const provider = defaultProvider[options.provider]
+    const signer = new Signer(provider.network, {
+      segwitPrivateKey: options.nativeSegwit,
+      taprootPrivateKey: options.taproot,
+      nestedSegwitPrivateKey: options.nestedSegwit,
+      legacyPrivateKey: options.legacy,
+    })
+    const account = mnemonicToAccount({
+      mnemonic: options.mnemonic,
+      opts: {
+        network: provider.network,
+      },
+    })
+    console.log(
+      await collectible.send({
+        inscriptionId: options.inscriptionId,
+        inscriptionAddress: options.inscriptionAddress,
+        toAddress: options.to,
+        feeRate: options.feeRate,
+        account,
+        signer,
+        provider,
+      })
+    )
+  })
+
 const accountCommand = new Command('account')
   .description('Manage accounts')
   .addCommand(generateCommand)
@@ -273,10 +344,14 @@ const btcCommand = new Command('btc')
 const brc20Command = new Command('brc20')
   .description('Functions for brc20')
   .addCommand(brc20Send)
+const collectibleCommand = new Command('collectible')
+  .description('Functions for collectibles')
+  .addCommand(collectibleSend)
 
 program.addCommand(utxosCommand)
 program.addCommand(accountCommand)
 program.addCommand(btcCommand)
 program.addCommand(brc20Command)
+program.addCommand(collectibleCommand)
 
 program.parse(process.argv)
