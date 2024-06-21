@@ -127,7 +127,9 @@ export const transferEstimate = async ({
       address: toAddress,
       value: 546,
     })
-
+    if (gatheredUtxos.totalAmount < finalFee + 546) {
+      throw new OylTransactionError(Error('Insufficient Balance'))
+    }
     const changeAmount = utxosToSend.totalAmount - (finalFee + 546)
 
     psbt.addOutput({
