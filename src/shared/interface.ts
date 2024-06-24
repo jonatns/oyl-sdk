@@ -326,7 +326,8 @@ export type RuneUtxo = {
 export type RuneUTXO = {
   txId: string
   txIndex: string
-  amount: number
+  amountOfRunes: number
+  address: string
   script: string
   satoshis: number
 }

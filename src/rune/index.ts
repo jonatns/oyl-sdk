@@ -56,17 +56,57 @@ export const createSendPsbt = async ({
       address: inscriptionAddress,
       provider,
       runeId,
+      targetNumberOfRunes: amount,
     })
-
     for await (const utxo of runeUtxos) {
-      psbt.addInput({
-        hash: utxo.txId,
-        index: parseInt(utxo.txIndex),
-        witnessUtxo: {
-          script: Buffer.from(utxo.script, 'hex'),
-          value: utxo.satoshis,
-        },
-      })
+      if (getAddressType(utxo.address) === 0) {
+        const previousTxHex: string = await provider.esplora.getTxHex(utxo.txId)
+        psbt.addInput({
+          hash: utxo.txId,
+          index: parseInt(utxo.txIndex),
+          nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
+        })
+      }
+      if (getAddressType(utxo.address) === 2) {
+        const redeemScript = bitcoin.script.compile([
+          bitcoin.opcodes.OP_0,
+          bitcoin.crypto.hash160(
+            Buffer.from(account.nestedSegwit.pubkey, 'hex')
+          ),
+        ])
+
+        psbt.addInput({
+          hash: utxo.txId,
+          index: parseInt(utxo.txIndex),
+          redeemScript: redeemScript,
+          witnessUtxo: {
+            value: utxo.satoshis,
+            script: bitcoin.script.compile([
+              bitcoin.opcodes.OP_HASH160,
+              bitcoin.crypto.hash160(redeemScript),
+              bitcoin.opcodes.OP_EQUAL,
+            ]),
+          },
+        })
+      }
+      if (
+        getAddressType(utxo.address) === 1 ||
+        getAddressType(utxo.address) === 3
+      ) {
+        const previousTxInfo = await provider.esplora.getTxInfo(utxo.txId)
+
+        psbt.addInput({
+          hash: utxo.txId,
+          index: parseInt(utxo.txIndex),
+          witnessUtxo: {
+            value: utxo.satoshis,
+            script: Buffer.from(
+              previousTxInfo.vout[utxo.txIndex].scriptpubkey,
+              'hex'
+            ),
+          },
+        })
+      }
     }
 
     if (!fee && gatheredUtxos.utxos.length > 1) {
@@ -319,37 +359,47 @@ export const findRuneUtxos = async ({
   address,
   provider,
   runeId,
+  targetNumberOfRunes,
 }: {
   address: string
   provider: Provider
   runeId: string
+  targetNumberOfRunes: number
 }) => {
   const runeUtxos: RuneUTXO[] = []
   const runeUtxoOutpoints: any[] = await provider.api.getRuneOutpoints({
     address: address,
   })
   let runeTotalSatoshis: number = 0
+  let runeTotalAmount: number = 0
 
   for (const rune of runeUtxoOutpoints) {
-    const index = rune.rune_ids.indexOf(runeId)
-    if (index !== -1) {
-      const txSplit = rune.output.split(':')
-      const txHash = txSplit[0]
-      const txIndex = txSplit[1]
-      const txDetails = await provider.esplora.getTxInfo(txHash)
-      if (!txDetails?.vout || txDetails.vout.length < 1) {
-        throw new Error('Unable to find rune utxo')
-      }
-      const satoshis = txDetails.vout[txIndex].value
+    if (runeTotalAmount < targetNumberOfRunes) {
+      const index = rune.rune_ids.indexOf(runeId)
+      if (index !== -1) {
+        const txSplit = rune.output.split(':')
+        const txHash = txSplit[0]
+        const txIndex = txSplit[1]
+        const txDetails = await provider.esplora.getTxInfo(txHash)
+        if (!txDetails?.vout || txDetails.vout.length < 1) {
+          throw new Error('Unable to find rune utxo')
+        }
+        const satoshis = txDetails.vout[txIndex].value
+        const holderAddress = rune.wallet_addr
 
-      runeUtxos.push({
-        txId: txHash,
-        txIndex: txIndex,
-        script: rune.pkscript,
-        amount: rune.balances[index],
-        satoshis: satoshis,
-      })
-      runeTotalSatoshis += satoshis
+        runeUtxos.push({
+          txId: txHash,
+          txIndex: txIndex,
+          script: rune.pkscript,
+          address: holderAddress,
+          amountOfRunes: rune.balances[index],
+          satoshis: satoshis,
+        })
+        runeTotalSatoshis += satoshis
+        runeTotalAmount += rune.balances[index]
+      }
+    } else {
+      break
     }
   }
   return { runeUtxos, runeTotalSatoshis }

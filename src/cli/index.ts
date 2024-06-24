@@ -3,8 +3,10 @@ import { accountSpendableUtxos, addressSpendableUtxos } from '../utxo/index'
 import * as btc from '../btc/index'
 import * as brc20 from '../brc20/index'
 import * as collectible from '../collectible/index'
+import * as rune from '../rune/index'
 
 import {
+  Account,
   generateMnemonic,
   getWalletPrivateKeys,
   mnemonicToAccount,
@@ -326,6 +328,150 @@ const collectibleSend = new Command('send')
     )
   })
 
+const runeSend = new Command('send')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+  .requiredOption(
+    '-m, --mnemonic <mnemonic>',
+    'mnemonic you want to get private keys from'
+  )
+  .requiredOption('-t, --to <to>', 'address you want to send to')
+  .requiredOption('-runeId, --runeId <runeId>', 'runeId to send')
+  .requiredOption(
+    '-inscAdd, --inscriptionAddress <inscriptionAddress>',
+    'current holder of inscription to send'
+  )
+  .requiredOption('-amt, --amount <amount>', 'amount of runes you want to send')
+  .option('-legacy, --legacy <legacy>', 'legacy private key')
+  .option('-taproot, --taproot <taproot>', 'taproot private key')
+  .option(
+    '-nested, --nested-segwit <nestedSegwit>',
+    'nested segwit private key'
+  )
+  .option(
+    '-native, --native-segwit <nativeSegwit>',
+    'native segwit private key'
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+
+  /* @dev example call 
+  oyl rune send 
+  -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' 
+  -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3
+  -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361
+  -p regtest 
+  -t bcrt1qzr9vhs60g6qlmk7x3dd7g3ja30wyts48sxuemv 
+  -amt 100
+  -runeId 279:1
+  -inscAdd bcrt1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqvg32hk
+  -feeRate 2
+*/
+
+  .action(async (options) => {
+    const provider = defaultProvider[options.provider]
+    const signer = new Signer(provider.network, {
+      segwitPrivateKey: options.nativeSegwit,
+      taprootPrivateKey: options.taproot,
+      nestedSegwitPrivateKey: options.nestedSegwit,
+      legacyPrivateKey: options.legacy,
+    })
+    const account = mnemonicToAccount({
+      mnemonic: options.mnemonic,
+      opts: {
+        network: provider.network,
+      },
+    })
+    console.log(
+      await rune.send({
+        runeId: options.runeId,
+        amount: options.amount,
+        inscriptionAddress: options.inscriptionAddress,
+        toAddress: options.to,
+        feeRate: options.feeRate,
+        account,
+        signer,
+        provider,
+      })
+    )
+  })
+
+const runeMint = new Command('mint')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+  .requiredOption(
+    '-m, --mnemonic <mnemonic>',
+    'mnemonic you want to get private keys from'
+  )
+  .requiredOption('-runeId, --runeId <runeId>', 'runeId to send')
+  .requiredOption('-amt, --amount <amount>', 'amount of runes you want to send')
+  .option('-legacy, --legacy <legacy>', 'legacy private key')
+  .option('-taproot, --taproot <taproot>', 'taproot private key')
+  .option(
+    '-nested, --nested-segwit <nestedSegwit>',
+    'nested segwit private key'
+  )
+  .option(
+    '-native, --native-segwit <nativeSegwit>',
+    'native segwit private key'
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+
+  /* @dev example call 
+  oyl rune mint 
+  -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' 
+  -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3
+  -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361
+  -p regtest 
+  -amt 1000
+  -runeId 279:1
+  -feeRate 2
+*/
+
+  .action(async (options) => {
+    const provider = defaultProvider[options.provider]
+    const signer = new Signer(provider.network, {
+      segwitPrivateKey: options.nativeSegwit,
+      taprootPrivateKey: options.taproot,
+      nestedSegwitPrivateKey: options.nestedSegwit,
+      legacyPrivateKey: options.legacy,
+    })
+    const account = mnemonicToAccount({
+      mnemonic: options.mnemonic,
+      opts: {
+        network: provider.network,
+      },
+    })
+    console.log(
+      await rune.mint({
+        runeId: options.runeId,
+        amount: options.amount,
+        feeRate: options.feeRate,
+        account,
+        signer,
+        provider,
+      })
+    )
+  })
+
+const getRuneByName = new Command('getRuneByName')
+  .description('Returns rune details based on name provided')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+  .requiredOption('-name, --name <name>', 'name of the rune you want to fetch')
+  /* @dev example call
+    oyl rune getRuneByName -name ETCHSGSXCUMYO -p regtest
+  */
+  .action(async (options) => {
+    const provider: Provider = defaultProvider[options.provider]
+    console.log(await provider.ord.getRuneByName(options.name))
+  })
+
 const accountCommand = new Command('account')
   .description('Manage accounts')
   .addCommand(generateCommand)
@@ -347,11 +493,17 @@ const brc20Command = new Command('brc20')
 const collectibleCommand = new Command('collectible')
   .description('Functions for collectibles')
   .addCommand(collectibleSend)
+const runeCommand = new Command('rune')
+  .description('Functions for runes')
+  .addCommand(runeSend)
+  .addCommand(runeMint)
+  .addCommand(getRuneByName)
 
 program.addCommand(utxosCommand)
 program.addCommand(accountCommand)
 program.addCommand(btcCommand)
 program.addCommand(brc20Command)
 program.addCommand(collectibleCommand)
+program.addCommand(runeCommand)
 
 program.parse(process.argv)

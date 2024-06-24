@@ -24,10 +24,11 @@ export declare const createMintPsbt: ({ account, runeId, provider, amount, feeRa
 }) => Promise<{
     psbt: string;
 }>;
-export declare const findRuneUtxos: ({ address, provider, runeId, }: {
+export declare const findRuneUtxos: ({ address, provider, runeId, targetNumberOfRunes, }: {
     address: string;
     provider: Provider;
     runeId: string;
+    targetNumberOfRunes: number;
 }) => Promise<{
     runeUtxos: RuneUTXO[];
     runeTotalSatoshis: number;
