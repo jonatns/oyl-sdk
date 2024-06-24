@@ -8,7 +8,8 @@
     "build": "tsc",
     "dev": "tsc -w",
     "prettier": "prettier --write ./src.ts/**/*.ts",
-    "test": "jest"
+    "test": "jest",
+    "oyl": "oyl"
   },
   "bin": {
     "oyl-cli": "./bin/cli.js",
