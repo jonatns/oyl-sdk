@@ -49,6 +49,12 @@ Run this command:
 $ yarn global add oyl
 ```
 
+You can also link the package so it updates as you make local changes:
+
+```sh
+$ yarn link
+```
+
 If you want the program to be isolated to only this enviornment use the local script provided to you like this:
 
 ```sh
