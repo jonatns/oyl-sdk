@@ -54,10 +54,12 @@ export const createSendPsbt = async ({
     let psbt = new bitcoin.Psbt({ network: provider.network })
     const { runeUtxos, runeTotalSatoshis } = await findRuneUtxos({
       address: inscriptionAddress,
+      greatestToLeast: account.spendStrategy.utxoSortGreatestToLeast,
       provider,
       runeId,
       targetNumberOfRunes: amount,
     })
+
     for await (const utxo of runeUtxos) {
       if (getAddressType(utxo.address) === 0) {
         const previousTxHex: string = await provider.esplora.getTxHex(utxo.txId)
@@ -357,11 +359,13 @@ export const createMintPsbt = async ({
 
 export const findRuneUtxos = async ({
   address,
+  greatestToLeast,
   provider,
   runeId,
   targetNumberOfRunes,
 }: {
   address: string
+  greatestToLeast: boolean
   provider: Provider
   runeId: string
   targetNumberOfRunes: number
@@ -370,6 +374,11 @@ export const findRuneUtxos = async ({
   const runeUtxoOutpoints: any[] = await provider.api.getRuneOutpoints({
     address: address,
   })
+  if (greatestToLeast) {
+    runeUtxoOutpoints.sort((a, b) => b.satoshis - a.satoshis)
+  } else {
+    runeUtxoOutpoints.sort((a, b) => a.satoshis - b.satoshis)
+  }
   let runeTotalSatoshis: number = 0
   let runeTotalAmount: number = 0
 
