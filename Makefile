@@ -16,48 +16,10 @@ help:
 clean:
 	$(Q)rm -rf lib
 	$(Q)echo "--- Deleted UI build artifacts"
-
 install:
 	$(Q)yarn
 	$(Q)echo "--- Dependencies installed"
-
-rebuild:
-	$(Q)npm run build
-	$(Q)npm install -g .
-	$(Q)echo "--- CLI reinstalled"
-
 reset:
 	$(Q)rm -rf lib
 	$(Q)yarn run build
 	$(Q)echo "--- reset"
-sendBtc: reset
-	$(Q)oyl-cli send
-	$(Q)echo "--- test complete"
-sendBRC20: reset
-	$(Q)oyl-cli sendBRC20
-	$(Q)echo "--- test complete"
-sendCollectible: reset
-	$(Q)oyl-cli send-collectible
-ordTest: reset
-	$(Q)oyl-cli ord-test
-	$(Q)echo "--- test complete"
-txnHistory: reset
-	$(Q)oyl-cli taproot-txn-history
-	$(Q)echo "--- test complete"
-accountSummary: reset
-	$(Q)oyl-cli account-summary
-	$(Q)echo "--- test complete"
-testnetSend: reset
-	$(Q)oyl-cli testnet-send
-	$(Q)echo "--- test complete"
-testnetSendBRC20: reset
-	$(Q)oyl-cli testnet-sendBRC20
-	$(Q)echo "--- test complete"
-testnetSendCollectible: reset
-	$(Q)oyl-cli testnet-send-collectible
-	$(Q)echo "--- test complete"
-generateWallet: reset
-	$(Q)oyl-cli gen-testnet-wallet
-	$(Q)echo "--- test complete"
-testAll: sendBRC20 sendCollectible sendBtc
-	$(Q)echo "--- test all complete"
