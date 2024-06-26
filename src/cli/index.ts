@@ -548,10 +548,15 @@ const marketPlaceBuy = new Command('buy')
     'mnemonic you want to get private keys from'
   )
   .requiredOption(
-    '-type, --assetType <assetType>',
+    '-type, --asset-type <assetType>',
     'pass BRC20, COLLECTIBLE or RUNE'
   )
   .requiredOption('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .requiredOption(
+    '-tick',
+    '--ticker <ticker>',
+    'Asset ticker to fetch quotes for.'
+  )
   .option('-legacy, --legacy <legacy>', 'legacy private key')
   .option('-taproot, --taproot <taproot>', 'taproot private key')
   .option(
@@ -562,15 +567,13 @@ const marketPlaceBuy = new Command('buy')
     '-native, --native-segwit <nativeSegwit>',
     'native segwit private key'
   )
-
-  .requiredOption(
-    '-tick',
-    '--ticker <ticker>',
-    'Asset ticker to fetch quotes for.'
+  .option(
+    '-receive, --receive-address <receiveAddress>',
+    'address to receieve the assets.'
   )
 
   /* @dev example call
-    oyl marketplace buy -assetType BRC20 -tick ordi -feeRate 30 -p bitcoin
+    oyl marketplace buy -type BRC20 -tick ordi -feeRate 30 -p bitcoin
 
     please note the json format if you need to pass an object.
   */
@@ -591,7 +594,10 @@ const marketPlaceBuy = new Command('buy')
 
     const marketplace: NewMarketplace = new NewMarketplace({
       provider: provider,
-      receiveAddress: account.taproot.address,
+      receiveAddress:
+        options.receiveAddress === undefined
+          ? account.taproot.address
+          : options.receiveAddress,
       account: account,
       assetType: options.assetType,
       signer,
