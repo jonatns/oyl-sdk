@@ -2,6 +2,7 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider/provider'
 import { Account, SpendStrategy } from '../account'
 import { UTXO_DUST } from '../shared/constants'
+import { OylTransactionError } from 'errors'
 
 export interface EsploraUtxo {
   txid: string
@@ -25,6 +26,27 @@ export interface FormattedUtxo {
   confirmations: number
 }
 
+export const availableBalance = async ({
+  account,
+  provider,
+}: {
+  account: Account
+  provider: Provider
+}) => {
+  let totalAmount: number = 0
+  for (let i = 0; i < account.spendStrategy.addressOrder.length; i++) {
+    const address = account[account.spendStrategy.addressOrder[i]].address
+
+    const { totalAmount: addressTotal } = await addressSpendableUtxos({
+      address,
+      provider,
+      spendStrategy: account.spendStrategy,
+    })
+    totalAmount += addressTotal
+  }
+  return { balance: totalAmount }
+}
+
 export const addressSpendableUtxos = async ({
   address,
   provider,
@@ -37,23 +59,19 @@ export const addressSpendableUtxos = async ({
   spendStrategy?: SpendStrategy
 }) => {
   let totalAmount: number = 0
-  let sortedUtxos: EsploraUtxo[] = []
   const formattedUtxos: FormattedUtxo[] = []
-
   const utxos: EsploraUtxo[] = await provider.esplora.getAddressUtxo(address)
-
   const utxoSortGreatestToLeast =
     spendStrategy?.utxoSortGreatestToLeast !== undefined
       ? spendStrategy.utxoSortGreatestToLeast
       : true
-
   if (utxoSortGreatestToLeast) {
-    sortedUtxos = utxos.sort((a, b) => b.value - a.value)
+    utxos.sort((a, b) => b.value - a.value)
   } else {
-    sortedUtxos = utxos.sort((a, b) => a.value - b.value)
+    utxos.sort((a, b) => a.value - b.value)
   }
 
-  let filteredUtxos: EsploraUtxo[] = sortedUtxos.filter((utxo) => {
+  utxos.filter((utxo) => {
     return (
       utxo.value > UTXO_DUST &&
       utxo.value != 546 &&
@@ -61,7 +79,7 @@ export const addressSpendableUtxos = async ({
     )
   })
 
-  for (let i = 0; i < filteredUtxos.length; i++) {
+  for (let i = 0; i < utxos.length; i++) {
     if (spendAmount && totalAmount >= spendAmount) {
       return { totalAmount, utxos: formattedUtxos }
     }
@@ -86,18 +104,16 @@ export const addressSpendableUtxos = async ({
       const voutEntry = transactionDetails.vout.find(
         (v) => v.scriptpubkey_address === address
       )
-      if (utxos[i].status.confirmed) {
-        formattedUtxos.push({
-          txId: utxos[i].txid,
-          outputIndex: utxos[i].vout,
-          satoshis: utxos[i].value,
-          confirmations: utxos[i].status.confirmed ? 3 : 0,
-          scriptPk: voutEntry.scriptpubkey,
-          address: address,
-          inscriptions: [],
-        })
-        totalAmount += utxos[i].value
-      }
+      formattedUtxos.push({
+        txId: utxos[i].txid,
+        outputIndex: utxos[i].vout,
+        satoshis: utxos[i].value,
+        confirmations: utxos[i].status.confirmed ? 3 : 0,
+        scriptPk: voutEntry.scriptpubkey,
+        address: address,
+        inscriptions: [],
+      })
+      totalAmount += utxos[i].value
     }
   }
   return { totalAmount, utxos: formattedUtxos }

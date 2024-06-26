@@ -1,12 +1,15 @@
 import { Command } from 'commander'
-import { accountSpendableUtxos, addressSpendableUtxos } from '../utxo/index'
+import {
+  accountSpendableUtxos,
+  addressSpendableUtxos,
+  availableBalance,
+} from '../utxo/index'
 import * as btc from '../btc/index'
 import * as brc20 from '../brc20/index'
 import * as collectible from '../collectible/index'
 import * as rune from '../rune/index'
 
 import {
-  Account,
   generateMnemonic,
   getWalletPrivateKeys,
   mnemonicToAccount,
@@ -102,16 +105,45 @@ const accountUtxosToSpend = new Command('accountSpendableUtxos')
     'mnemonic you want to get private keys from'
   )
   /* @dev example call
-    oyl utxos addressSpendableUtxos -a bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx -p regtest
+    oyl utxo addressSpendableUtxos -a bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx -p regtest
   */
   .action(async (options) => {
-    const account = mnemonicToAccount({ mnemonic: options.mnemonic })
-    const provider = defaultProvider[options.provider]
+    const provider: Provider = defaultProvider[options.provider]
+    const account = mnemonicToAccount({
+      mnemonic: options.mnemonic,
+      opts: { network: provider.network },
+    })
     console.log(
       await accountSpendableUtxos({
         account,
         provider,
-        spendAmount: 100000,
+      })
+    )
+  })
+
+const accountAvailableBalance = new Command('availableBalance')
+  .description('Returns available utxos to spend')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+  .requiredOption(
+    '-m, --mnemonic <mnemonic>',
+    'mnemonic you want to get private keys from'
+  )
+  /* @dev example call
+    oyl utxo availableBalance -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'  -p regtest
+  */
+  .action(async (options) => {
+    const provider: Provider = defaultProvider[options.provider]
+    const account = mnemonicToAccount({
+      mnemonic: options.mnemonic,
+      opts: { network: provider.network },
+    })
+    console.log(
+      await availableBalance({
+        account,
+        provider,
       })
     )
   })
@@ -478,11 +510,11 @@ const accountCommand = new Command('account')
   .addCommand(privateKeysCommand)
   .addCommand(generateMnemonicCommand)
 
-const utxosCommand = new Command('utxos')
+const utxosCommand = new Command('utxo')
   .description('Examine utxos')
   .addCommand(accountUtxosToSpend)
   .addCommand(addressUtxosToSpend)
-
+  .addCommand(accountAvailableBalance)
 const btcCommand = new Command('btc')
   .description('Functions for sending bitcoin')
   .addCommand(btcSend)
