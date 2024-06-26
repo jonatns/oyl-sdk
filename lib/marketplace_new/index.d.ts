@@ -1,14 +1,11 @@
 import { BuildMarketplaceTransaction } from './buildMarketplaceTx';
 import { AssetType, ExternalSwap, MarketplaceAccount, MarketplaceOffer, SignedBid, SwapPayload } from '../shared/interface';
-export declare class Marketplace {
-    private wallet;
+export declare class NewMarketplace {
+    private provider;
     private receiveAddress;
     private selectedSpendAddress;
     private selectedSpendPubkey;
-    private spendAddress;
-    private spendPubKey;
-    private altSpendAddress;
-    private altSpendPubKey;
+    private account;
     private signer;
     assetType: AssetType;
     feeRate: number;

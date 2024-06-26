@@ -65,6 +65,9 @@ The available namespaces list will grow as new protocols are implemented.
   - send
   - mint
   - getRuneByName
+- provider
+  - api
+  - ord
 
 Recommended usage of this CLI is as follows:
 

@@ -44,6 +44,7 @@ export class Provider {
       regtest: isRegtest ? true : null,
       apiKey: projectId,
     })
+    this.api.setAuthToken(process.env.API_TOKEN)
     this.network = network
   }
 

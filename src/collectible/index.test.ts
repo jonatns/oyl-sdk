@@ -22,6 +22,7 @@ const account: Account = mnemonicToAccount({
 const { address } = bitcoin.payments.p2tr({
   pubkey: Buffer.from(account.taproot.pubKeyXOnly, 'hex'),
 })
+
 const { output } = bitcoin.payments.p2tr({ address })
 const scriptPk = output.toString('hex')
 

@@ -17,6 +17,8 @@ import {
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider/provider'
 import { Signer } from '../signer/index'
+import { Marketplace } from 'marketplace'
+import { NewMarketplace } from 'marketplace_new'
 
 const defaultProvider = {
   bitcoin: new Provider({
@@ -504,6 +506,106 @@ const getRuneByName = new Command('getRuneByName')
     console.log(await provider.ord.getRuneByName(options.name))
   })
 
+const apiProviderCall = new Command('api')
+  .description('Returns rune details based on name provided')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use to access the network.'
+  )
+  .requiredOption(
+    '-method, --method <method>',
+    'name of the method you want to call for the api.'
+  )
+  .option(
+    '-params, --parameters <parameters>',
+    'parameters for the api method you are calling.'
+  )
+  /* @dev example call
+    oyl provider api -method getUnisatTickerOffers -params '{"ticker":"ordi"}' -p bitcoin
+
+    please note the json format if you need to pass an object.
+  */
+  .action(async (options) => {
+    const provider: Provider = defaultProvider[options.provider]
+    let isJson: object
+    try {
+      isJson = JSON.parse(options.parameters)
+      console.log(await provider.api[options.method](isJson))
+    } catch (error) {
+      console.log(await provider.api[options.method](options.parameters))
+    }
+  })
+
+const marketPlaceBuy = new Command('buy')
+
+  .description('Returns rune details based on name provided')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use to access the network.'
+  )
+  .requiredOption(
+    '-m, --mnemonic <mnemonic>',
+    'mnemonic you want to get private keys from'
+  )
+  .requiredOption(
+    '-type, --assetType <assetType>',
+    'pass BRC20, COLLECTIBLE or RUNE'
+  )
+  .requiredOption('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .option('-legacy, --legacy <legacy>', 'legacy private key')
+  .option('-taproot, --taproot <taproot>', 'taproot private key')
+  .option(
+    '-nested, --nested-segwit <nestedSegwit>',
+    'nested segwit private key'
+  )
+  .option(
+    '-native, --native-segwit <nativeSegwit>',
+    'native segwit private key'
+  )
+
+  .requiredOption(
+    '-tick',
+    '--ticker <ticker>',
+    'Asset ticker to fetch quotes for.'
+  )
+
+  /* @dev example call
+    oyl marketplace buy -assetType BRC20 -tick ordi -feeRate 30 -p bitcoin
+
+    please note the json format if you need to pass an object.
+  */
+  .action(async (options) => {
+    const provider: Provider = defaultProvider[options.provider]
+    const signer = new Signer(provider.network, {
+      segwitPrivateKey: options.nativeSegwit,
+      taprootPrivateKey: options.taproot,
+      nestedSegwitPrivateKey: options.nestedSegwit,
+      legacyPrivateKey: options.legacy,
+    })
+    const account = mnemonicToAccount({
+      mnemonic: options.mnemonic,
+      opts: {
+        network: provider.network,
+      },
+    })
+
+    const marketplace: NewMarketplace = new NewMarketplace({
+      provider: provider,
+      receiveAddress: account.taproot.address,
+      account: account,
+      assetType: options.assetType,
+      signer,
+      feeRate: options.feeRate,
+    })
+    const quotes = await provider.api.getBrc20Offers({
+      ticker: options.ticker,
+    })
+    const offersToBuy = await marketplace.processAllOffers(quotes)
+    const signedTxs = await marketplace.buyMarketPlaceOffers(offersToBuy)
+
+    console.log(signedTxs)
+  })
+
 const accountCommand = new Command('account')
   .description('Manage accounts')
   .addCommand(generateCommand)
@@ -531,11 +633,21 @@ const runeCommand = new Command('rune')
   .addCommand(runeMint)
   .addCommand(getRuneByName)
 
+const providerCommand = new Command('provider')
+  .description('Functions avaialble for all provider services')
+  .addCommand(apiProviderCall)
+
+const marketPlaceCommand = new Command('marketplace')
+  .description('Functions for marketplace')
+  .addCommand(marketPlaceBuy)
+
 program.addCommand(utxosCommand)
 program.addCommand(accountCommand)
 program.addCommand(btcCommand)
 program.addCommand(brc20Command)
 program.addCommand(collectibleCommand)
 program.addCommand(runeCommand)
+program.addCommand(providerCommand)
+program.addCommand(marketPlaceCommand)
 
 program.parse(process.argv)

@@ -1,9 +1,9 @@
 import fetch from 'node-fetch'
 import { SwapBrcBid, SignedBid, OkxBid } from '../shared/interface'
-import { 
+import {
   getAllInscriptionsByAddressRegtest,
   getRuneOutpointsRegtest,
-  getRuneBalanceRegtest
+  getRuneBalanceRegtest,
 } from '../tests/regtestApi'
 
 /**
@@ -72,7 +72,7 @@ export class OylApiClient {
         headers: {
           'Content-Type': 'application/json',
           Authorization: this.authToken ? `Bearer ${this.authToken}` : '',
-          'X-Bitcoin-Network': this.network
+          'X-Bitcoin-Network': this.network,
         },
         cache: 'no-cache',
       }
@@ -113,21 +113,22 @@ export class OylApiClient {
     })
   }
 
-    /**
+  /**
    * Get Runes info by ticker.
    * @param ticker - The ticker to query.
    */
-    async getRuneTokenInfo(ticker: string) {
-      return await this._call('/get-rune-token-info', 'post', {
-        ticker: ticker,
-      })
-    }
+  async getRuneTokenInfo(ticker: string) {
+    return await this._call('/get-rune-token-info', 'post', {
+      ticker: ticker,
+    })
+  }
 
   /**
    * Get brc20 details by ticker.
    * @param ticker - The ticker to query.
    */
   async getBrc20TokenDetails(ticker: string) {
+    console.log(ticker)
     return await this._call('/get-brc20-token-details', 'post', {
       ticker: ticker,
     })
@@ -290,13 +291,12 @@ export class OylApiClient {
     return response
   }
 
-
-   /**
+  /**
    * Get Rune offers.
    * @param ticker - The ticker to query.
    * @param limit - The limit of offers to return (Default = 5).
    */
-   async getRuneOffers({
+  async getRuneOffers({
     ticker,
     limit = 5,
   }: {
@@ -353,22 +353,21 @@ export class OylApiClient {
     return response
   }
 
-
-   /**
+  /**
    * Get Mintable Runes
    */
-   async getMintableRunes() {
+  async getMintableRunes() {
     const response = await this._call('/get-mintable-runes', 'post', {})
     return response
   }
 
-   /**
+  /**
    * Get faucet TBTC.
    */
-   async requestFaucet(userId: string, address: string) {
+  async requestFaucet(userId: string, address: string) {
     const response = await this._call('/request-faucet-btc', 'post', {
       userId,
-      address
+      address,
     })
     return response
   }
@@ -492,11 +491,11 @@ export class OylApiClient {
     return await this._call('/initiate-unisat-bid', 'post', params)
   }
 
-   /**
+  /**
    * Initialize a Rune swap bid.
    * @param params - Parameters for the bid.
    */
-   async initRuneSwapBid(params: SwapBrcBid): Promise<any> {
+  async initRuneSwapBid(params: SwapBrcBid): Promise<any> {
     return await this._call('/initiate-unisat-rune-bid', 'post', params)
   }
 
@@ -508,12 +507,11 @@ export class OylApiClient {
     return await this._call('/finalize-unisat-bid', 'post', params)
   }
 
-
-   /**
+  /**
    * Submit a signed Rune bid.
    * @param params - Parameters for the signed bid.
    */
-   async submitSignedRuneBid(params: SignedBid): Promise<any> {
+  async submitSignedRuneBid(params: SignedBid): Promise<any> {
     return await this._call('/finalize-unisat-rune-bid', 'post', params)
   }
 
