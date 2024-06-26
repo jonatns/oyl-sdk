@@ -71,4 +71,4 @@ Recommended usage of this CLI is as follows:
 1. Generate an account
 2. Fund the account by sending BTC or Ordinals to the address you desire
 3. Use "utxo" namespace to check balances
-4. Use your desired protocol
+4. Use btc 2.0!
