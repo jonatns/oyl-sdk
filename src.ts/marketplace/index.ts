@@ -252,6 +252,9 @@ export class Marketplace {
       case AssetType.RUNES:
          return await this.wallet.apiClient.initRuneSwapBid(payload)
          break;
+      case AssetType.COLLECTIBLE:
+        return await this.wallet.apiClient.initCollectionSwapBid(payload)
+        break;
     }
   }
 
@@ -264,6 +267,9 @@ export class Marketplace {
          console.log("payload to submit", payload)
          return await this.wallet.apiClient.submitSignedRuneBid(payload)
          break;
+      case AssetType.COLLECTIBLE:
+        return await this.wallet.apiClient.submitSignedCollectionBid(payload)
+        break;
     }
   }
 
