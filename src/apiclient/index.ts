@@ -124,6 +124,16 @@ export class OylApiClient {
   }
 
   /**
+   * Get Collection info by id.
+   * @param collectionId - The collectionId to query.
+   */
+  async getCollectionInfo(collectionId: string) {
+    return await this._call('/get-collection-info', 'post', {
+      collectionId: collectionId,
+    })
+  }
+
+  /**
    * Get brc20 details by ticker.
    * @param ticker - The ticker to query.
    */
@@ -162,6 +172,10 @@ export class OylApiClient {
 
   async getRuneTickers() {
     return await this._call('/get-rune-tickers', 'post')
+  }
+
+  async getMarketplaceCollections() {
+    return await this._call('/get-marketplace-collections', 'post')
   }
 
   async getAllInscriptionsByAddress(address: string): Promise<any> {
@@ -305,6 +319,26 @@ export class OylApiClient {
   }): Promise<any> {
     const response = await this._call('/get-rune-offers', 'post', {
       ticker,
+      limit,
+    })
+    if (response.error) throw Error(response.error)
+    return response
+  }
+
+  /**
+   * Get Collection offers.
+   * @param collectionId - The collectionId to query.
+   * @param limit - The limit of offers to return (Default = 5).
+   */
+  async getCollectionOffers({
+    collectionId,
+    limit = 5,
+  }: {
+    collectionId: string
+    limit?: number
+  }): Promise<any> {
+    const response = await this._call('/get-collection-offers', 'post', {
+      collectionId,
       limit,
     })
     if (response.error) throw Error(response.error)
@@ -500,6 +534,14 @@ export class OylApiClient {
   }
 
   /**
+   * Initialize a collection swap bid.
+   * @param params - Parameters for the bid.
+   */
+  async initCollectionSwapBid(params: SwapBrcBid): Promise<any> {
+    return await this._call('/initiate_unisat_collection_bid', 'post', params)
+  }
+
+  /**
    * Submit a signed bid.
    * @param params - Parameters for the signed bid.
    */
@@ -508,7 +550,15 @@ export class OylApiClient {
   }
 
   /**
-   * Submit a signed Rune bid.
+   * Submit a signed Collection bid.
+   * @param params - Parameters for the signed bid.
+   */
+  async submitSignedCollectionBid(params: SignedBid): Promise<any> {
+    return await this._call('/finalize_unisat_collection_bid', 'post', params)
+  }
+
+  /**
+   * Submit a signed Collection bid.
    * @param params - Parameters for the signed bid.
    */
   async submitSignedRuneBid(params: SignedBid): Promise<any> {

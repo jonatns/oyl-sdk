@@ -41,6 +41,8 @@ $ oyl utxo --help
 - collectible
 - brc20
 - rune
+- provider
+- marketplace
 
 The available namespaces list will grow as new protocols are implemented.
 
@@ -67,7 +69,8 @@ The available namespaces list will grow as new protocols are implemented.
   - getRuneByName
 - provider
   - api
-  - ord
+- marketplace
+  - buy
 
 Recommended usage of this CLI is as follows:
 
