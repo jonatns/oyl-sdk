@@ -57,14 +57,14 @@ export declare class OylApiClient {
      */
     getBrc20TokenInfo(ticker: string): Promise<any>;
     /**
-   * Get Runes info by ticker.
-   * @param ticker - The ticker to query.
-   */
+     * Get Runes info by ticker.
+     * @param ticker - The ticker to query.
+     */
     getRuneTokenInfo(ticker: string): Promise<any>;
     /**
- * Get Collection info by id.
- * @param collectionId - The collectionId to query.
- */
+     * Get Collection info by id.
+     * @param collectionId - The collectionId to query.
+     */
     getCollectionInfo(collectionId: string): Promise<any>;
     /**
      * Get brc20 details by ticker.
@@ -129,19 +129,19 @@ export declare class OylApiClient {
         limit?: number;
     }): Promise<any>;
     /**
-    * Get Rune offers.
-    * @param ticker - The ticker to query.
-    * @param limit - The limit of offers to return (Default = 5).
-    */
+     * Get Rune offers.
+     * @param ticker - The ticker to query.
+     * @param limit - The limit of offers to return (Default = 5).
+     */
     getRuneOffers({ ticker, limit, }: {
         ticker: string;
         limit?: number;
     }): Promise<any>;
     /**
-    * Get Collection offers.
-    * @param collectionId - The collectionId to query.
-    * @param limit - The limit of offers to return (Default = 5).
-    */
+     * Get Collection offers.
+     * @param collectionId - The collectionId to query.
+     * @param limit - The limit of offers to return (Default = 5).
+     */
     getCollectionOffers({ collectionId, limit, }: {
         collectionId: string;
         limit?: number;
@@ -170,12 +170,12 @@ export declare class OylApiClient {
      */
     getBtcPrice(): Promise<any>;
     /**
-    * Get Mintable Runes
-    */
+     * Get Mintable Runes
+     */
     getMintableRunes(): Promise<any>;
     /**
-    * Get faucet TBTC.
-    */
+     * Get faucet TBTC.
+     */
     requestFaucet(userId: string, address: string): Promise<any>;
     /**
      * Get BTC market chart.
@@ -235,14 +235,14 @@ export declare class OylApiClient {
      */
     initSwapBid(params: SwapBrcBid): Promise<any>;
     /**
-    * Initialize a Rune swap bid.
-    * @param params - Parameters for the bid.
-    */
+     * Initialize a Rune swap bid.
+     * @param params - Parameters for the bid.
+     */
     initRuneSwapBid(params: SwapBrcBid): Promise<any>;
     /**
-    * Initialize a collection swap bid.
-    * @param params - Parameters for the bid.
-    */
+     * Initialize a collection swap bid.
+     * @param params - Parameters for the bid.
+     */
     initCollectionSwapBid(params: SwapBrcBid): Promise<any>;
     /**
      * Submit a signed bid.
@@ -250,14 +250,14 @@ export declare class OylApiClient {
      */
     submitSignedBid(params: SignedBid): Promise<any>;
     /**
-    * Submit a signed Collection bid.
-    * @param params - Parameters for the signed bid.
-    */
+     * Submit a signed Collection bid.
+     * @param params - Parameters for the signed bid.
+     */
     submitSignedCollectionBid(params: SignedBid): Promise<any>;
     /**
-   * Submit a signed Collection bid.
-   * @param params - Parameters for the signed bid.
-   */
+     * Submit a signed Collection bid.
+     * @param params - Parameters for the signed bid.
+     */
     submitSignedRuneBid(params: SignedBid): Promise<any>;
     sendBtcEstimate({ feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, }: {
         feeRate?: number;

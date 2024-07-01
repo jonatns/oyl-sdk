@@ -1,9 +1,9 @@
 import fetch from 'node-fetch'
 import { SwapBrcBid, SignedBid, OkxBid } from '../shared/interface'
-import { 
+import {
   getAllInscriptionsByAddressRegtest,
   getRuneOutpointsRegtest,
-  getRuneBalanceRegtest
+  getRuneBalanceRegtest,
 } from '../tests/regtestApi'
 
 /**
@@ -72,7 +72,7 @@ export class OylApiClient {
         headers: {
           'Content-Type': 'application/json',
           Authorization: this.authToken ? `Bearer ${this.authToken}` : '',
-          'X-Bitcoin-Network': this.network
+          'X-Bitcoin-Network': this.network,
         },
         cache: 'no-cache',
       }
@@ -113,26 +113,25 @@ export class OylApiClient {
     })
   }
 
-    /**
+  /**
    * Get Runes info by ticker.
    * @param ticker - The ticker to query.
    */
-    async getRuneTokenInfo(ticker: string) {
-      return await this._call('/get-rune-token-info', 'post', {
-        ticker: ticker,
-      })
-    }
+  async getRuneTokenInfo(ticker: string) {
+    return await this._call('/get-rune-token-info', 'post', {
+      ticker: ticker,
+    })
+  }
 
-
-      /**
+  /**
    * Get Collection info by id.
    * @param collectionId - The collectionId to query.
    */
-      async getCollectionInfo(collectionId: string) {
-        return await this._call('/get-collection-info', 'post', {
-          collectionId: collectionId
-        })
-      }
+  async getCollectionInfo(collectionId: string) {
+    return await this._call('/get-collection-info', 'post', {
+      collectionId: collectionId,
+    })
+  }
 
   /**
    * Get brc20 details by ticker.
@@ -305,13 +304,12 @@ export class OylApiClient {
     return response
   }
 
-
-   /**
+  /**
    * Get Rune offers.
    * @param ticker - The ticker to query.
    * @param limit - The limit of offers to return (Default = 5).
    */
-   async getRuneOffers({
+  async getRuneOffers({
     ticker,
     limit = 5,
   }: {
@@ -324,14 +322,14 @@ export class OylApiClient {
     })
     if (response.error) throw Error(response.error)
     return response
-  } 
+  }
 
-   /**
+  /**
    * Get Collection offers.
    * @param collectionId - The collectionId to query.
    * @param limit - The limit of offers to return (Default = 5).
    */
-   async getCollectionOffers({
+  async getCollectionOffers({
     collectionId,
     limit = 5,
   }: {
@@ -345,7 +343,6 @@ export class OylApiClient {
     if (response.error) throw Error(response.error)
     return response
   }
-
 
   /**
    * Get Okx ticker offers.
@@ -389,22 +386,21 @@ export class OylApiClient {
     return response
   }
 
-
-   /**
+  /**
    * Get Mintable Runes
    */
-   async getMintableRunes() {
+  async getMintableRunes() {
     const response = await this._call('/get-mintable-runes', 'post', {})
     return response
   }
 
-   /**
+  /**
    * Get faucet TBTC.
    */
-   async requestFaucet(userId: string, address: string) {
+  async requestFaucet(userId: string, address: string) {
     const response = await this._call('/request-faucet-btc', 'post', {
       userId,
-      address
+      address,
     })
     return response
   }
@@ -528,21 +524,20 @@ export class OylApiClient {
     return await this._call('/initiate-unisat-bid', 'post', params)
   }
 
-   /**
+  /**
    * Initialize a Rune swap bid.
    * @param params - Parameters for the bid.
    */
-   async initRuneSwapBid(params: SwapBrcBid): Promise<any> {
+  async initRuneSwapBid(params: SwapBrcBid): Promise<any> {
     return await this._call('/initiate-unisat-rune-bid', 'post', params)
   }
 
-
-   /**
+  /**
    * Initialize a collection swap bid.
    * @param params - Parameters for the bid.
    */
-   async initCollectionSwapBid(params: SwapBrcBid): Promise<any> {
-    return await this._call('/initiate_unisat_collection_bid', 'post', params)
+  async initCollectionSwapBid(params: SwapBrcBid): Promise<any> {
+    return await this._call('/initiate-unisat-collection-bid', 'post', params)
   }
 
   /**
@@ -553,23 +548,21 @@ export class OylApiClient {
     return await this._call('/finalize-unisat-bid', 'post', params)
   }
 
-
-   /**
+  /**
    * Submit a signed Collection bid.
    * @param params - Parameters for the signed bid.
    */
-   async submitSignedCollectionBid(params: SignedBid): Promise<any> {
-    return await this._call('/finalize_unisat_collection_bid', 'post', params)
+  async submitSignedCollectionBid(params: SignedBid): Promise<any> {
+    return await this._call('/finalize-unisat-collection-bid', 'post', params)
   }
 
-
-    /**
+  /**
    * Submit a signed Collection bid.
    * @param params - Parameters for the signed bid.
    */
-    async submitSignedRuneBid(params: SignedBid): Promise<any> {
-       return await this._call('/finalize-unisat-rune-bid', 'post', params)
-    }
+  async submitSignedRuneBid(params: SignedBid): Promise<any> {
+    return await this._call('/finalize-unisat-rune-bid', 'post', params)
+  }
 
   async sendBtcEstimate({
     feeRate,
