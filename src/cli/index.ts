@@ -17,8 +17,7 @@ import {
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider/provider'
 import { Signer } from '../signer/index'
-import { Marketplace } from 'marketplace'
-import { NewMarketplace } from 'marketplace_new'
+import { NewMarketplace } from '../marketplace_new'
 
 const defaultProvider = {
   bitcoin: new Provider({
@@ -507,7 +506,7 @@ const getRuneByName = new Command('getRuneByName')
   })
 
 const apiProviderCall = new Command('api')
-  .description('Returns rune details based on name provided')
+  .description('Returns data based on api method invoked')
   .requiredOption(
     '-p, --provider <provider>',
     'provider to use to access the network.'
@@ -533,6 +532,36 @@ const apiProviderCall = new Command('api')
       console.log(await provider.api[options.method](isJson))
     } catch (error) {
       console.log(await provider.api[options.method](options.parameters))
+    }
+  })
+
+const ordProviderCall = new Command('ord')
+  .description('Returns data based on ord method invoked')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use to access the network.'
+  )
+  .requiredOption(
+    '-method, --method <method>',
+    'name of the method you want to call for the api.'
+  )
+  .option(
+    '-params, --parameters <parameters>',
+    'parameters for the ord method you are calling.'
+  )
+  /* @dev example call
+    oyl provider ord -method getTxOutput -params '{"ticker":"ordi"}' -p bitcoin
+
+    please note the json format if you need to pass an object.
+  */
+  .action(async (options) => {
+    const provider: Provider = defaultProvider[options.provider]
+    let isJson: object
+    try {
+      isJson = JSON.parse(options.parameters)
+      console.log(await provider.ord[options.method](isJson))
+    } catch (error) {
+      console.log(await provider.ord[options.method](options.parameters))
     }
   })
 
@@ -642,6 +671,7 @@ const runeCommand = new Command('rune')
 const providerCommand = new Command('provider')
   .description('Functions avaialble for all provider services')
   .addCommand(apiProviderCall)
+  .addCommand(ordProviderCall)
 
 const marketPlaceCommand = new Command('marketplace')
   .description('Functions for marketplace')
