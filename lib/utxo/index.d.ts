@@ -20,6 +20,12 @@ export interface FormattedUtxo {
     inscriptions: any[];
     confirmations: number;
 }
+export declare const availableBalance: ({ account, provider, }: {
+    account: Account;
+    provider: Provider;
+}) => Promise<{
+    balance: number;
+}>;
 export declare const addressSpendableUtxos: ({ address, provider, spendAmount, spendStrategy, }: {
     address: string;
     provider: Provider;

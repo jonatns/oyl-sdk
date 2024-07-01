@@ -21,7 +21,10 @@ export declare class Marketplace {
     getOffersCostEstimate(offers: MarketplaceOffer[]): Promise<number>;
     selectSpendAddress(offers: MarketplaceOffer[]): Promise<void>;
     processMultipleBuys(orders: any, previousOrderTxId: string, remainingSats: number, index: number, psbtBase64s: string[], psbtHexs: any[], txIds: string[]): any;
-    signMarketplacePsbt(psbt: string, finalize?: boolean): Promise<any>;
+    signMarketplacePsbt(psbt: string, finalize?: boolean): Promise<{
+        signedPsbt: string;
+        signedHexPsbt: string;
+    }>;
     processAllOffers(offers: MarketplaceOffer[]): Promise<{
         processed: boolean;
         processedOffers: any[];
@@ -34,7 +37,7 @@ export declare class Marketplace {
     }>;
     prepareAddress(marketPlaceBuy: BuildMarketplaceTransaction): Promise<Boolean>;
     canAddressAffordOffers(address: string, estimatedCost: number): Promise<boolean>;
-    externalSign(options: any): Promise<any>;
+    externalSign(options: any): Promise<string>;
     getUnspentsForAddress(address: string): Promise<any>;
     getUnspentsForAddressInOrderByValue(address: string): Promise<any>;
     getUTXOsToCoverAmount(address: string, amountNeeded: number, excludedUtxos?: any[], inscriptionLocs?: string[]): Promise<any>;

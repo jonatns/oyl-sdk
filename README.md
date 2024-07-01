@@ -1,74 +1,87 @@
-# OYL-SDK
+[![npm version](https://badge.fury.io/js/angular2-expandable-list.svg)](https://badge.fury.io/js/angular2-expandable-list)
 
-Utilities for core bitcoin wallet with client-side ordinal handling
+# Oyl Sdk
 
-## Getting Started
+> A comphrenesive sdk that features easy to use bitcoin functions to build and brodcast btc transactions.
 
-Clone from repository
+## Table of contents
 
-Run `yarn`.
+- [Oyl SDK](#oyl-sdk)
+  - [Table of contents](#table-of-contents)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Running the tests](#running-the-tests)
+    - [Using the cli](#using-the-cli-version)
+  - [Contributing](#contributing)
+  - [Versioning](#versioning)
+  - [Authors](#authors)
+  - [License](#license)
 
-To build typescript files to js , just run `yarn build` or `tsc`. They do pretty much the same thing rn
+## Installation
 
-## CLI Client (oyl-cli)
-To use the command line client, you can install the package globally. In root dir of this repo, just run:
+To install and set up the library, run:
 
-```
- npm i -g
-```
-
-The cli client is simply a layer over the oylib instance. commands can be found in cli.ts.
-
-
-```
-oyl-cli load
-```
-
-returns
-
-```
-{
-  network: 'main',
-  port: 8332,
-  host: '198.199.72.193',
-  apiKey: 'bikeshed'
-}
+```sh
+$ yarn install
 ```
 
-It also accepts custom parameters:
+## Usage
 
-```
-oyl-cli load --port 8334
-```
-For more details see Wallet#fromProvider
+### Running the tests
 
-
-To call methods on the object, pass in the method name in `snake-case` and add the parameter as a flag option also in `snake-case` :
-
-```
-oyl-cli get-address-summary --address bc1p527kv6mrq2sn5l7ukapq4q4a4puqfd9jsm7fv6r06c5726kyk57qnfvs4e
+```sh
+$ yarn test
 ```
 
-returns
+### Using the CLI version
 
-```
-[
-  {
-    "utxo": [
-      {
-        "tx_hash_big_endian": "96ea0ce6c073ff27d7c598c2b4929712e5ff6f68fdf7c1520253f8921d04a083",
-        "tx_hash": "83a0041d92f8530252c1f7fd686fffe5129792b4c298c5d727ff73c0e60cea96",
-        "tx_output_n": 0,
-        "script": "5120a2bd666b6302a13a7fdcb7420a82bda87804b4b286fc96686fd629e56ac4b53c",
-        "value": 10000,
-        "value_hex": "2710",
-        "confirmations": 10988,
-        "tx_index": 4631145185697546
-      }
-    ],
-    "balance": 0.0001
-  }
-]
+```sh
+$ make reset
 ```
 
-Contributions, issues, PRs are all welcome.
+This does a fresh build of the lib directory which the cli uses after all the .ts files are compiled.
+
+The name of the bin for the cli is called "oyl". If you want to invoke it without having the yarn prefix you need to add it globally.
+Run this command:
+
+```sh
+$ yarn global add oyl
+```
+
+You can also link the package so it updates as you make local changes:
+
+```sh
+$ yarn link
+```
+
+If you want the program to be isolated to only this enviornment use the local script provided to you like this:
+
+```sh
+$ yarn oyl --help
+```
+
+e.g. `oyl utxos addressSpendableUtxos -a bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx -p regtest`.
+For more detailed instructions on how to use the cli, refer to the README.md found in the cli directory.
+
+## Contributing
+
+1.  Fork it!
+2.  Create your feature branch: `git checkout -b my-new-feature`
+3.  Add your changes: `git add .`
+4.  Commit your changes: `git commit -m 'Add some feature'`
+5.  Push to the branch: `git push origin my-new-feature`
+6.  Submit a pull request :sunglasses:
+
+## Versioning
+
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags).
+
+## Authors
+
+- **Oyl Dynamics**
+
+See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+
+## License
+
+[MIT License]

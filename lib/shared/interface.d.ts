@@ -3,6 +3,8 @@ import { payments, Psbt } from 'bitcoinjs-lib';
 import * as bitcoin from 'bitcoinjs-lib';
 import { Oyl } from '../oylib';
 import { Signer } from '../signer';
+import { Provider } from 'provider/provider';
+import { Account } from '@account/index';
 export interface InscriptionResponse {
     address: string;
     inscriptions?: string;
@@ -155,11 +157,13 @@ export interface OkxBid {
     orderId: number;
 }
 export interface MarketplaceAccount {
-    wallet: Oyl;
-    spendAddress: string;
-    spendPubKey: string;
-    altSpendAddress: string;
-    altSpendPubKey: string;
+    wallet?: Oyl;
+    provider?: Provider;
+    spendAddress?: string;
+    spendPubKey?: string;
+    altSpendAddress?: string;
+    altSpendPubKey?: string;
+    account?: Account;
     signer: Signer;
     assetType: AssetType;
     receiveAddress: string;
@@ -213,7 +217,8 @@ export interface MarketplaceBuy {
     pubKey: string;
     psbtBase64: string;
     price: number;
-    wallet: Oyl;
+    wallet?: Oyl;
+    provider?: Provider;
     receiveAddress: string;
     dryRun?: boolean;
 }
@@ -285,6 +290,14 @@ export declare const addressNameToType: {
 export type RuneUtxo = {
     outpointId: string;
     amount: number;
+    script: string;
+    satoshis: number;
+};
+export type RuneUTXO = {
+    txId: string;
+    txIndex: string;
+    amountOfRunes: number;
+    address: string;
     script: string;
     satoshis: number;
 };
