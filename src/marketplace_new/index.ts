@@ -4,9 +4,6 @@ import {
   getNetwork,
   timeout,
   getSatpointFromUtxo,
-  tweakSigner,
-  assertHex,
-  OylTransactionError,
 } from '..'
 import { BuildMarketplaceTransaction } from './buildMarketplaceTx'
 import * as bitcoin from 'bitcoinjs-lib'
@@ -26,6 +23,7 @@ import {
   BuyingData,
 } from '@okxweb3/coin-bitcoin'
 import { signBip322Message } from './BIP322'
+import { OylTransactionError } from '../errors'
 import { Provider } from 'provider/provider'
 import { Account } from '@account/index'
 
@@ -68,19 +66,19 @@ export class NewMarketplace {
   async selectSpendAddress(offers: MarketplaceOffer[]) {
     const estimatedCost = await this.getOffersCostEstimate(offers)
     for (let i = 0; i < this.account.spendStrategy.addressOrder.length; i++) {
-      const address =
-        this.account[this.account.spendStrategy.addressOrder[i]].address
-      let pubkey: string =
-        this.account[this.account.spendStrategy.addressOrder[i]].pubkey
-      if (getAddressType(address) === AddressType.P2TR) {
-        pubkey = tweakSigner(this.signer.taprootKeyPair, {
-          network: this.provider.network,
-        }).publicKey.toString('hex')
-      }
-      if (await this.canAddressAffordOffers(address, estimatedCost)) {
-        this.selectedSpendAddress = address
-        this.selectedSpendPubkey = pubkey
-        break
+      if (
+        this.account.spendStrategy.addressOrder[i] === 'taproot' ||
+        this.account.spendStrategy.addressOrder[i] === 'nativeSegwit'
+      ) {
+        const address =
+          this.account[this.account.spendStrategy.addressOrder[i]].address
+        let pubkey: string =
+          this.account[this.account.spendStrategy.addressOrder[i]].pubkey
+        if (await this.canAddressAffordOffers(address, estimatedCost)) {
+          this.selectedSpendAddress = address
+          this.selectedSpendPubkey = pubkey
+          break
+        }
       }
       if (i === this.account.spendStrategy.addressOrder.length - 1) {
         throw new OylTransactionError(
@@ -198,7 +196,6 @@ export class NewMarketplace {
         const offerPsbt = await this.provider.api.getOkxOfferPsbt({
           offerId: offer.offerId,
         })
-        console.log(offerPsbt)
         const signedPsbt = await this.createOkxSignedPsbt(
           offerPsbt.data.sellerPsbt,
           offer.totalPrice
@@ -381,8 +378,6 @@ export class NewMarketplace {
       const prepared = await marketPlaceBuy.isWalletPrepared()
       if (!prepared) {
         const { psbtBase64 } = await marketPlaceBuy.prepareWallet()
-
-        console.log('prepared base64', psbtBase64)
         const psbtPayload = await this.signMarketplacePsbt(psbtBase64, true)
         const result = await this.provider.sandshrew.bitcoindRpc.finalizePSBT(
           psbtPayload.signedPsbt

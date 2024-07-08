@@ -157,8 +157,6 @@ export class Signer {
       network: this.network,
     })
 
-    console.log(unSignedPsbt.data.inputs)
-
     for (let i = 0; i < unSignedPsbt.inputCount; i++) {
       let tweakedSigner: bitcoin.Signer
       let matchingLegacy: boolean
@@ -170,7 +168,6 @@ export class Signer {
         tweakedSigner = tweakSigner(this.taprootKeyPair, {
           network: this.network,
         })
-        console.log('tweaked', tweakedSigner.publicKey.toString())
         matchingTaprootPubKey = unSignedPsbt.inputHasPubkey(
           i,
           tweakedSigner.publicKey
@@ -197,7 +194,6 @@ export class Signer {
 
       switch (true) {
         case matchingTaprootPubKey:
-          console.log('pubkey')
           unSignedPsbt.signTaprootInput(i, tweakedSigner)
           if (finalize) {
             unSignedPsbt.finalizeInput(i)

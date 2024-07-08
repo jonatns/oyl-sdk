@@ -317,6 +317,7 @@ export class OylApiClient {
     ticker: string
     limit?: number
   }): Promise<any> {
+    console.log(ticker)
     const response = await this._call('/get-rune-offers', 'post', {
       ticker,
       limit,

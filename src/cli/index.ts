@@ -18,8 +18,8 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider/provider'
 import { Signer } from '../signer/index'
 import { NewMarketplace } from '../marketplace_new'
-import { AssetType } from '../shared/interface'
-import { OylTransactionError } from 'errors'
+import { AssetType, MarketplaceOffers } from '../shared/interface'
+import { OylTransactionError } from '../errors'
 
 const defaultProvider = {
   bitcoin: new Provider({
@@ -603,7 +603,7 @@ const marketPlaceBuy = new Command('buy')
   )
 
   /* @dev example call
-    oyl marketplace buy -type BRC20 -tick ordi -feeRate 30 -p bitcoin
+    oyl marketplace buy -type BRC20 -tick ordi -feeRate 30 -native <nativePrivateKey> -p bitcoin
 
     please note the json format if you need to pass an object.
   */
@@ -620,18 +620,26 @@ const marketPlaceBuy = new Command('buy')
       opts: {
         network: provider.network,
         spendStrategy: {
-          addressOrder: ['taproot', 'nativeSegwit', 'nestedSegwit', 'legacy'],
+          addressOrder: ['nativeSegwit', 'taproot'],
           utxoSortGreatestToLeast: true,
-          changeAddress: 'taproot',
+          changeAddress: 'nativeSegwit',
         },
       },
     })
+    let quotes: MarketplaceOffers[]
     switch (options.assetType) {
       case 'BRC20':
         options.assetType = AssetType.BRC20
+        quotes = await provider.api.getBrc20Offers({
+          ticker: options.ticker,
+        })
+
         break
       case 'RUNES':
         options.assetType = AssetType.RUNES
+        quotes = await provider.api.getRuneOffers({
+          ticker: options.ticker,
+        })
         break
       case 'COLLECTIBLE':
         options.assetType = AssetType.COLLECTIBLE
@@ -651,25 +659,7 @@ const marketPlaceBuy = new Command('buy')
       feeRate: Number(options.feeRate),
     })
 
-    // const quotes = await provider.api.getBrc20Offers({
-    //   ticker: options.ticker,
-    // })
-    // console.log(quotes)
-
-    const offersToBuy = await marketplace.processAllOffers([
-      {
-        ticker: 'pday',
-        offerId: 4893013378,
-        amount: '5000',
-        address:
-          'bc1pr2tgv6urhrlg2462qeuhkzln4qftu24nxkusqahcdauupw8y9znqs69gf5',
-        marketplace: 'okx',
-        inscriptionId:
-          'bad303f05308aa68616c5e2066b6cc67a3e970905ab6459c013f882a54b9d4bbi0',
-        unitPrice: 7,
-        totalPrice: 35000,
-      },
-    ])
+    const offersToBuy = await marketplace.processAllOffers(quotes)
     const signedTxs = await marketplace.buyMarketPlaceOffers(offersToBuy)
 
     console.log(signedTxs)

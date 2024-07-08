@@ -39,7 +39,6 @@ export class BuildMarketplaceTransaction {
     switch (this.addressType) {
       case AddressType.P2TR: {
         const tapInternalKey = assertHex(Buffer.from(this.pubKey, 'hex'))
-        console.log('tkey', tapInternalKey)
         const p2tr = bitcoin.payments.p2tr({
           internalPubkey: tapInternalKey,
           network: this.network,
@@ -144,6 +143,7 @@ export class BuildMarketplaceTransaction {
       })
       prepareTx.addInput(input)
     })
+
     const amountRetrieved = this.calculateAmountGathered(retrievedUtxos)
     const remainder = amountRetrieved - 30000 - 1200
     prepareTx.addOutput({
