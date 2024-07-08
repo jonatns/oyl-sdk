@@ -4,6 +4,9 @@ import {
   getNetwork,
   timeout,
   getSatpointFromUtxo,
+  tweakSigner,
+  assertHex,
+  OylTransactionError,
 } from '..'
 import { BuildMarketplaceTransaction } from './buildMarketplaceTx'
 import * as bitcoin from 'bitcoinjs-lib'
@@ -23,7 +26,6 @@ import {
   BuyingData,
 } from '@okxweb3/coin-bitcoin'
 import { signBip322Message } from './BIP322'
-import { OylTransactionError } from '../errors'
 import { Provider } from 'provider/provider'
 import { Account } from '@account/index'
 
@@ -68,9 +70,13 @@ export class NewMarketplace {
     for (let i = 0; i < this.account.spendStrategy.addressOrder.length; i++) {
       const address =
         this.account[this.account.spendStrategy.addressOrder[i]].address
-      const pubkey =
+      let pubkey: string =
         this.account[this.account.spendStrategy.addressOrder[i]].pubkey
-
+      if (getAddressType(address) === AddressType.P2TR) {
+        pubkey = tweakSigner(this.signer.taprootKeyPair, {
+          network: this.provider.network,
+        }).publicKey.toString('hex')
+      }
       if (await this.canAddressAffordOffers(address, estimatedCost)) {
         this.selectedSpendAddress = address
         this.selectedSpendPubkey = pubkey
@@ -155,14 +161,16 @@ export class NewMarketplace {
   }
 
   async signMarketplacePsbt(psbt: string, finalize: boolean = false) {
-    const payload = await this.signer.signAllInputs({ rawPsbt: psbt, finalize })
+    const payload = await this.signer.signAllInputs({
+      rawPsbt: psbt,
+      finalize,
+    })
     return payload
   }
 
   async processAllOffers(offers: MarketplaceOffer[]) {
     const processedOffers = []
     this.txIds = []
-
     await this.selectSpendAddress(offers)
     let externalSwap = false
     const testnet = this.provider.network == getNetwork('testnet')
@@ -190,6 +198,7 @@ export class NewMarketplace {
         const offerPsbt = await this.provider.api.getOkxOfferPsbt({
           offerId: offer.offerId,
         })
+        console.log(offerPsbt)
         const signedPsbt = await this.createOkxSignedPsbt(
           offerPsbt.data.sellerPsbt,
           offer.totalPrice
@@ -229,10 +238,9 @@ export class NewMarketplace {
     switch (this.assetType) {
       case AssetType.BRC20:
         return await this.provider.api.initSwapBid(payload)
-        break
+
       case AssetType.RUNES:
         return await this.provider.api.initRuneSwapBid(payload)
-        break
     }
   }
 
@@ -240,11 +248,10 @@ export class NewMarketplace {
     switch (this.assetType) {
       case AssetType.BRC20:
         return await this.provider.api.submitSignedBid(payload)
-        break
+
       case AssetType.RUNES:
         console.log('payload to submit', payload)
         return await this.provider.api.submitSignedRuneBid(payload)
-        break
     }
   }
 
@@ -257,8 +264,7 @@ export class NewMarketplace {
       receiveAddress: this.receiveAddress,
       feerate: this.feeRate,
     }
-
-    console.log(this.selectSpendAddress)
+    console.log(payload)
     console.log(this.receiveAddress)
     console.log(this.addressesBound)
     if (
@@ -375,6 +381,8 @@ export class NewMarketplace {
       const prepared = await marketPlaceBuy.isWalletPrepared()
       if (!prepared) {
         const { psbtBase64 } = await marketPlaceBuy.prepareWallet()
+
+        console.log('prepared base64', psbtBase64)
         const psbtPayload = await this.signMarketplacePsbt(psbtBase64, true)
         const result = await this.provider.sandshrew.bitcoindRpc.finalizePSBT(
           psbtPayload.signedPsbt

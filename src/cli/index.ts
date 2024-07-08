@@ -18,6 +18,8 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider/provider'
 import { Signer } from '../signer/index'
 import { NewMarketplace } from '../marketplace_new'
+import { AssetType } from '../shared/interface'
+import { OylTransactionError } from 'errors'
 
 const defaultProvider = {
   bitcoin: new Provider({
@@ -582,8 +584,7 @@ const marketPlaceBuy = new Command('buy')
   )
   .requiredOption('-feeRate, --feeRate <feeRate>', 'fee rate')
   .requiredOption(
-    '-tick',
-    '--ticker <ticker>',
+    '-tick --ticker <ticker>',
     'Asset ticker to fetch quotes for.'
   )
   .option('-legacy, --legacy <legacy>', 'legacy private key')
@@ -618,9 +619,26 @@ const marketPlaceBuy = new Command('buy')
       mnemonic: options.mnemonic,
       opts: {
         network: provider.network,
+        spendStrategy: {
+          addressOrder: ['taproot', 'nativeSegwit', 'nestedSegwit', 'legacy'],
+          utxoSortGreatestToLeast: true,
+          changeAddress: 'taproot',
+        },
       },
     })
-
+    switch (options.assetType) {
+      case 'BRC20':
+        options.assetType = AssetType.BRC20
+        break
+      case 'RUNES':
+        options.assetType = AssetType.RUNES
+        break
+      case 'COLLECTIBLE':
+        options.assetType = AssetType.COLLECTIBLE
+        break
+      default:
+        throw new OylTransactionError(Error('Incorrect asset type'))
+    }
     const marketplace: NewMarketplace = new NewMarketplace({
       provider: provider,
       receiveAddress:
@@ -630,12 +648,28 @@ const marketPlaceBuy = new Command('buy')
       account: account,
       assetType: options.assetType,
       signer,
-      feeRate: options.feeRate,
+      feeRate: Number(options.feeRate),
     })
-    const quotes = await provider.api.getBrc20Offers({
-      ticker: options.ticker,
-    })
-    const offersToBuy = await marketplace.processAllOffers(quotes)
+
+    // const quotes = await provider.api.getBrc20Offers({
+    //   ticker: options.ticker,
+    // })
+    // console.log(quotes)
+
+    const offersToBuy = await marketplace.processAllOffers([
+      {
+        ticker: 'pday',
+        offerId: 4893013378,
+        amount: '5000',
+        address:
+          'bc1pr2tgv6urhrlg2462qeuhkzln4qftu24nxkusqahcdauupw8y9znqs69gf5',
+        marketplace: 'okx',
+        inscriptionId:
+          'bad303f05308aa68616c5e2066b6cc67a3e970905ab6459c013f882a54b9d4bbi0',
+        unitPrice: 7,
+        totalPrice: 35000,
+      },
+    ])
     const signedTxs = await marketplace.buyMarketPlaceOffers(offersToBuy)
 
     console.log(signedTxs)

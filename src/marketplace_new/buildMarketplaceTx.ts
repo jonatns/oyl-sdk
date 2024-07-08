@@ -35,9 +35,11 @@ export class BuildMarketplaceTransaction {
     this.orderPrice = price
     this.network = provider.network
     this.addressType = getAddressType(this.walletAddress)
+
     switch (this.addressType) {
       case AddressType.P2TR: {
         const tapInternalKey = assertHex(Buffer.from(this.pubKey, 'hex'))
+        console.log('tkey', tapInternalKey)
         const p2tr = bitcoin.payments.p2tr({
           internalPubkey: tapInternalKey,
           network: this.network,
