@@ -5,6 +5,14 @@ import { OylApiClient } from '../apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
 import { waitForTransaction } from '../shared/utils'
 
+export type ProviderConstructorArgs = {
+  url: string
+  projectId: string
+  network: bitcoin.networks.Network
+  networkType: 'signet' | 'mainnet' | 'testnet'
+  version?: string
+}
+
 export class Provider {
   public sandshrew: SandshrewBitcoinClient
   public esplora: EsploraRpc
@@ -18,13 +26,7 @@ export class Provider {
     network,
     networkType,
     version = 'v1',
-  }: {
-    url: string
-    projectId: string
-    network: bitcoin.networks.Network
-    networkType: 'signet' | 'mainnet' | 'testnet'
-    version?: string
-  }) {
+  }: ProviderConstructorArgs) {
     let isTestnet: boolean
     let isRegtest: boolean
     switch (network) {
@@ -39,7 +41,7 @@ export class Provider {
     this.ord = new OrdRpc(masterUrl)
     this.api = new OylApiClient({
       network: networkType,
-      host: 'https://api.oyl.gg',
+      host: url,
       testnet: isTestnet ? true : null,
       regtest: isRegtest ? true : null,
       apiKey: projectId,
