@@ -424,6 +424,7 @@ export class NewMarketplace {
     const psbt = bitcoin.Psbt.fromHex(options.psbt, {
       network: this.provider.network,
     })
+    console.log(psbt.toBase64())
     console.log('external sign options', options)
     const psbtPayload = await this.signMarketplacePsbt(psbt.toBase64(), false)
     console.log('psbt payload', psbtPayload)

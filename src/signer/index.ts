@@ -205,7 +205,6 @@ export class Signer {
             unSignedPsbt.finalizeInput(i)
           }
           break
-
         case matchingNative:
           unSignedPsbt.signInput(i, this.segwitKeyPair)
           if (finalize) {
@@ -218,9 +217,7 @@ export class Signer {
             unSignedPsbt.finalizeInput(i)
           }
           break
-
         default:
-          throw new Error('Input was not signed')
       }
     }
 

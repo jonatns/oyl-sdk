@@ -27,12 +27,14 @@ const defaultProvider = {
     projectId: process.env.SANDSHREW_PROJECT_ID!,
     network: bitcoin.networks.bitcoin,
     networkType: 'mainnet',
+    apiUrl: 'https://staging-api.oyl.gg',
   }),
   regtest: new Provider({
     url: 'http://localhost:3000',
     projectId: 'regtest',
     network: bitcoin.networks.regtest,
     networkType: 'mainnet',
+    apiUrl: 'https://staging-api.oyl.gg',
   }),
 }
 
@@ -658,8 +660,19 @@ const marketPlaceBuy = new Command('buy')
       signer,
       feeRate: Number(options.feeRate),
     })
-
-    const offersToBuy = await marketplace.processAllOffers(quotes)
+    //console.log(quotes)
+    const offersToBuy = await marketplace.processAllOffers([
+      {
+        ticker: 'LFG•ROCKET•RUNE',
+        offerId: 'xo9whevsxmvbbzk3r2tf2ygbfp7c98sz',
+        amount: '1000',
+        address:
+          'bc1p2l9ppckqsje04vd2r4ey4jmr0r2rlpywq6jsr65jd2jykuccuhksrdqnyu',
+        marketplace: 'unisat',
+        unitPrice: 9,
+        totalPrice: 9000,
+      },
+    ])
     const signedTxs = await marketplace.buyMarketPlaceOffers(offersToBuy)
 
     console.log(signedTxs)
