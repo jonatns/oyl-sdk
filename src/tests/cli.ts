@@ -31,10 +31,10 @@ import {
   Account,
   MnemonicToAccountOptions,
   mnemonicToAccount,
-} from '../account'
-import { accountSpendableUtxos } from '../utxo'
-import * as btc from '../btc'
-import * as rune from '../rune'
+} from '../account/account'
+import { accountSpendableUtxos } from '../utxo/utxo'
+import * as btc from '../btc/btc'
+import * as rune from '../rune/rune'
 import {
   Opts,
   mainnetMnemonic,
@@ -42,8 +42,8 @@ import {
   regtestOpts,
   regtestProviderConstructorArgs,
 } from '../shared/constants'
-import * as collectible from '../collectible'
-import { commit, reveal, transfer, transferEstimate } from '../brc20'
+import * as collectible from '../collectible/collectible'
+import { commit, reveal, transfer, transferEstimate } from '../brc20/brc20'
 dotenv.config()
 
 bitcoin.initEccLib(ecc2)

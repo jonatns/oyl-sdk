@@ -3,21 +3,23 @@ import {
   accountSpendableUtxos,
   addressSpendableUtxos,
   availableBalance,
-} from '../utxo/index'
-import * as btc from '../btc/index'
-import * as brc20 from '../brc20/index'
-import * as collectible from '../collectible/index'
-import * as rune from '../rune/index'
+} from '../utxo/utxo'
+import * as btc from '../btc/btc'
+import * as brc20 from '../brc20/brc20'
+import * as collectible from '../collectible/collectible'
+import * as rune from '../rune/rune'
 
 import {
   generateMnemonic,
   getWalletPrivateKeys,
   mnemonicToAccount,
-} from '../account/index'
+} from '../account/account'
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider/provider'
 import { Signer } from '../signer/index'
-import { NewMarketplace } from '../marketplace_new'
+import { Trade } from '../trade'
+import { AssetType, MarketplaceOffers } from '../shared/interface'
+import { OylTransactionError } from '../errors'
 
 const defaultProvider = {
   bitcoin: new Provider({
@@ -25,12 +27,14 @@ const defaultProvider = {
     projectId: process.env.SANDSHREW_PROJECT_ID!,
     network: bitcoin.networks.bitcoin,
     networkType: 'mainnet',
+    apiUrl: 'https://staging-api.oyl.gg',
   }),
   regtest: new Provider({
     url: 'http://localhost:3000',
     projectId: 'regtest',
     network: bitcoin.networks.regtest,
     networkType: 'mainnet',
+    apiUrl: 'https://staging-api.oyl.gg',
   }),
 }
 
@@ -582,8 +586,7 @@ const marketPlaceBuy = new Command('buy')
   )
   .requiredOption('-feeRate, --feeRate <feeRate>', 'fee rate')
   .requiredOption(
-    '-tick',
-    '--ticker <ticker>',
+    '-tick --ticker <ticker>',
     'Asset ticker to fetch quotes for.'
   )
   .option('-legacy, --legacy <legacy>', 'legacy private key')
@@ -602,7 +605,7 @@ const marketPlaceBuy = new Command('buy')
   )
 
   /* @dev example call
-    oyl marketplace buy -type BRC20 -tick ordi -feeRate 30 -p bitcoin
+    oyl marketplace buy -type BRC20 -tick ordi -feeRate 30 -native <nativePrivateKey> -p bitcoin
 
     please note the json format if you need to pass an object.
   */
@@ -618,10 +621,35 @@ const marketPlaceBuy = new Command('buy')
       mnemonic: options.mnemonic,
       opts: {
         network: provider.network,
+        spendStrategy: {
+          addressOrder: ['taproot', 'nativeSegwit'],
+          utxoSortGreatestToLeast: true,
+          changeAddress: 'taproot',
+        },
       },
     })
+    let quotes: MarketplaceOffers[]
+    switch (options.assetType) {
+      case 'BRC20':
+        options.assetType = AssetType.BRC20
+        quotes = await provider.api.getBrc20Offers({
+          ticker: options.ticker,
+        })
 
-    const marketplace: NewMarketplace = new NewMarketplace({
+        break
+      case 'RUNES':
+        options.assetType = AssetType.RUNES
+        quotes = await provider.api.getRuneOffers({
+          ticker: options.ticker,
+        })
+        break
+      case 'COLLECTIBLE':
+        options.assetType = AssetType.COLLECTIBLE
+        break
+      default:
+        throw new OylTransactionError(Error('Incorrect asset type'))
+    }
+    const marketplace: Trade = new Trade({
       provider: provider,
       receiveAddress:
         options.receiveAddress === undefined
@@ -630,14 +658,10 @@ const marketPlaceBuy = new Command('buy')
       account: account,
       assetType: options.assetType,
       signer,
-      feeRate: options.feeRate,
-    })
-    const quotes = await provider.api.getBrc20Offers({
-      ticker: options.ticker,
+      feeRate: Number(options.feeRate),
     })
     const offersToBuy = await marketplace.processAllOffers(quotes)
     const signedTxs = await marketplace.buyMarketPlaceOffers(offersToBuy)
-
     console.log(signedTxs)
   })
 

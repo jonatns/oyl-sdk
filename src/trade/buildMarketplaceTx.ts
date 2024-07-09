@@ -35,6 +35,7 @@ export class BuildMarketplaceTransaction {
     this.orderPrice = price
     this.network = provider.network
     this.addressType = getAddressType(this.walletAddress)
+
     switch (this.addressType) {
       case AddressType.P2TR: {
         const tapInternalKey = assertHex(Buffer.from(this.pubKey, 'hex'))
@@ -142,6 +143,7 @@ export class BuildMarketplaceTransaction {
       })
       prepareTx.addInput(input)
     })
+
     const amountRetrieved = this.calculateAmountGathered(retrievedUtxos)
     const remainder = amountRetrieved - 30000 - 1200
     prepareTx.addOutput({

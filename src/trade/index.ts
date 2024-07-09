@@ -25,9 +25,9 @@ import {
 import { signBip322Message } from './BIP322'
 import { OylTransactionError } from '../errors'
 import { Provider } from 'provider/provider'
-import { Account } from '@account/index'
+import { Account } from '@account/account'
 
-export class NewMarketplace {
+export class Trade {
   private provider: Provider
   private receiveAddress: string
   private selectedSpendAddress: string | null
@@ -66,15 +66,19 @@ export class NewMarketplace {
   async selectSpendAddress(offers: MarketplaceOffer[]) {
     const estimatedCost = await this.getOffersCostEstimate(offers)
     for (let i = 0; i < this.account.spendStrategy.addressOrder.length; i++) {
-      const address =
-        this.account[this.account.spendStrategy.addressOrder[i]].address
-      const pubkey =
-        this.account[this.account.spendStrategy.addressOrder[i]].pubkey
-
-      if (await this.canAddressAffordOffers(address, estimatedCost)) {
-        this.selectedSpendAddress = address
-        this.selectedSpendPubkey = pubkey
-        break
+      if (
+        this.account.spendStrategy.addressOrder[i] === 'taproot' ||
+        this.account.spendStrategy.addressOrder[i] === 'nativeSegwit'
+      ) {
+        const address =
+          this.account[this.account.spendStrategy.addressOrder[i]].address
+        let pubkey: string =
+          this.account[this.account.spendStrategy.addressOrder[i]].pubkey
+        if (await this.canAddressAffordOffers(address, estimatedCost)) {
+          this.selectedSpendAddress = address
+          this.selectedSpendPubkey = pubkey
+          break
+        }
       }
       if (i === this.account.spendStrategy.addressOrder.length - 1) {
         throw new OylTransactionError(
@@ -155,14 +159,16 @@ export class NewMarketplace {
   }
 
   async signMarketplacePsbt(psbt: string, finalize: boolean = false) {
-    const payload = await this.signer.signAllInputs({ rawPsbt: psbt, finalize })
+    const payload = await this.signer.signAllInputs({
+      rawPsbt: psbt,
+      finalize,
+    })
     return payload
   }
 
   async processAllOffers(offers: MarketplaceOffer[]) {
     const processedOffers = []
     this.txIds = []
-
     await this.selectSpendAddress(offers)
     let externalSwap = false
     const testnet = this.provider.network == getNetwork('testnet')
@@ -229,10 +235,9 @@ export class NewMarketplace {
     switch (this.assetType) {
       case AssetType.BRC20:
         return await this.provider.api.initSwapBid(payload)
-        break
+
       case AssetType.RUNES:
         return await this.provider.api.initRuneSwapBid(payload)
-        break
     }
   }
 
@@ -240,11 +245,10 @@ export class NewMarketplace {
     switch (this.assetType) {
       case AssetType.BRC20:
         return await this.provider.api.submitSignedBid(payload)
-        break
+
       case AssetType.RUNES:
         console.log('payload to submit', payload)
         return await this.provider.api.submitSignedRuneBid(payload)
-        break
     }
   }
 
@@ -257,8 +261,7 @@ export class NewMarketplace {
       receiveAddress: this.receiveAddress,
       feerate: this.feeRate,
     }
-
-    console.log(this.selectSpendAddress)
+    console.log(payload)
     console.log(this.receiveAddress)
     console.log(this.addressesBound)
     if (
@@ -421,6 +424,7 @@ export class NewMarketplace {
     const psbt = bitcoin.Psbt.fromHex(options.psbt, {
       network: this.provider.network,
     })
+    console.log(psbt.toBase64())
     console.log('external sign options', options)
     const psbtPayload = await this.signMarketplacePsbt(psbt.toBase64(), false)
     console.log('psbt payload', psbtPayload)

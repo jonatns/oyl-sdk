@@ -1,4 +1,4 @@
-import { MnemonicToAccountOptions } from '../account'
+import { MnemonicToAccountOptions } from '../account/account'
 import { Provider, ProviderConstructorArgs } from '../provider'
 import { Network, NetworkOptions } from './interface'
 import * as bitcoin from 'bitcoinjs-lib'
