@@ -16,6 +16,7 @@ export const regtestProviderConstructorArgs: ProviderConstructorArgs = {
   projectId: 'regtest',
   network: bitcoin.networks.regtest,
   networkType: 'mainnet',
+  apiUrl: 'https://mainnet-api.oyl.gg'
 }
 
 export const regtestOpts: MnemonicToAccountOptions = {
@@ -60,7 +61,7 @@ export const defaultNetworkOptions: Record<Network, NetworkOptions> = {
     version: 'v1',
     projectId: process.env.SANDSHREW_PROJECT_ID,
     network: 'testnet',
-    apiUrl: 'https://api.oyl.gg',
+    apiUrl: 'https://testnet-api.oyl.gg',
   },
   regtest: {
     baseUrl: 'http://localhost:3000',
@@ -74,6 +75,6 @@ export const defaultNetworkOptions: Record<Network, NetworkOptions> = {
     version: 'v1',
     projectId: process.env.SANDSHREW_PROJECT_ID,
     network: 'signet',
-    apiUrl: 'https://api.oyl.gg',
+    apiUrl: 'https://signet-api.oyl.gg',
   },
 }
