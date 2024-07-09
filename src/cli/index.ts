@@ -17,7 +17,7 @@ import {
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider/provider'
 import { Signer } from '../signer/index'
-import { NewMarketplace } from '../marketplace_new'
+import { NewMarketplace } from '../trade'
 import { AssetType, MarketplaceOffers } from '../shared/interface'
 import { OylTransactionError } from '../errors'
 
