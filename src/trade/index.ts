@@ -27,7 +27,7 @@ import { OylTransactionError } from '../errors'
 import { Provider } from 'provider/provider'
 import { Account } from '@account/account'
 
-export class NewMarketplace {
+export class Trade {
   private provider: Provider
   private receiveAddress: string
   private selectedSpendAddress: string | null

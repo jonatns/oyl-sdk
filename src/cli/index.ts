@@ -17,7 +17,7 @@ import {
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider/provider'
 import { Signer } from '../signer/index'
-import { NewMarketplace } from '../trade'
+import { Trade } from '../trade'
 import { AssetType, MarketplaceOffers } from '../shared/interface'
 import { OylTransactionError } from '../errors'
 
@@ -649,7 +649,7 @@ const marketPlaceBuy = new Command('buy')
       default:
         throw new OylTransactionError(Error('Incorrect asset type'))
     }
-    const marketplace: NewMarketplace = new NewMarketplace({
+    const marketplace: Trade = new Trade({
       provider: provider,
       receiveAddress:
         options.receiveAddress === undefined
