@@ -622,9 +622,9 @@ const marketPlaceBuy = new Command('buy')
       opts: {
         network: provider.network,
         spendStrategy: {
-          addressOrder: ['nativeSegwit', 'taproot'],
+          addressOrder: ['taproot', 'nativeSegwit'],
           utxoSortGreatestToLeast: true,
-          changeAddress: 'nativeSegwit',
+          changeAddress: 'taproot',
         },
       },
     })
@@ -660,21 +660,8 @@ const marketPlaceBuy = new Command('buy')
       signer,
       feeRate: Number(options.feeRate),
     })
-    //console.log(quotes)
-    const offersToBuy = await marketplace.processAllOffers([
-      {
-        ticker: 'LFG•ROCKET•RUNE',
-        offerId: 'xo9whevsxmvbbzk3r2tf2ygbfp7c98sz',
-        amount: '1000',
-        address:
-          'bc1p2l9ppckqsje04vd2r4ey4jmr0r2rlpywq6jsr65jd2jykuccuhksrdqnyu',
-        marketplace: 'unisat',
-        unitPrice: 9,
-        totalPrice: 9000,
-      },
-    ])
+    const offersToBuy = await marketplace.processAllOffers(quotes)
     const signedTxs = await marketplace.buyMarketPlaceOffers(offersToBuy)
-
     console.log(signedTxs)
   })
 
