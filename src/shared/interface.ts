@@ -3,7 +3,7 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { Oyl } from '../oylib'
 import { Signer } from '../signer'
 import { Provider } from 'provider/provider'
-import { Account } from '@account/index'
+import { Account } from '@account/account'
 
 export interface InscriptionResponse {
   address: string

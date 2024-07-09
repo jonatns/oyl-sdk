@@ -3,17 +3,17 @@ import {
   accountSpendableUtxos,
   addressSpendableUtxos,
   availableBalance,
-} from '../utxo/index'
-import * as btc from '../btc/index'
-import * as brc20 from '../brc20/index'
-import * as collectible from '../collectible/index'
-import * as rune from '../rune/index'
+} from '../utxo/utxo'
+import * as btc from '../btc/btc'
+import * as brc20 from '../brc20/brc20'
+import * as collectible from '../collectible/collectible'
+import * as rune from '../rune/rune'
 
 import {
   generateMnemonic,
   getWalletPrivateKeys,
   mnemonicToAccount,
-} from '../account/index'
+} from '../account/account'
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider/provider'
 import { Signer } from '../signer/index'

@@ -1,8 +1,8 @@
 import { Provider } from '../provider/provider'
 import * as dotenv from 'dotenv'
 import * as bitcoin from 'bitcoinjs-lib'
-import { Account, mnemonicToAccount } from '../account'
-import { EsploraUtxo, FormattedUtxo, addressSpendableUtxos } from '.'
+import { Account, mnemonicToAccount } from '../account/account'
+import { EsploraUtxo, FormattedUtxo, addressSpendableUtxos } from './utxo'
 
 dotenv.config()
 

@@ -1,4 +1,4 @@
-import { MnemonicToAccountOptions } from '../account';
+import { MnemonicToAccountOptions } from '../account/account';
 import { ProviderConstructorArgs } from '../provider';
 import { Network, NetworkOptions } from './interface';
 export declare const UTXO_DUST = 546;

@@ -25,7 +25,7 @@ import {
 import { signBip322Message } from './BIP322'
 import { OylTransactionError } from '../errors'
 import { Provider } from 'provider/provider'
-import { Account } from '@account/index'
+import { Account } from '@account/account'
 
 export class NewMarketplace {
   private provider: Provider

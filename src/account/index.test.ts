@@ -1,4 +1,4 @@
-import { mnemonicToAccount, Account, generateMnemonic } from '.'
+import { mnemonicToAccount, Account, generateMnemonic } from './account'
 
 function isAccount(obj: any): obj is Account {
   return (
