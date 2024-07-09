@@ -4,13 +4,15 @@ import { OrdRpc } from '../rpclient/ord'
 import { OylApiClient } from '../apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
 import { waitForTransaction } from '../shared/utils'
+import { defaultNetworkOptions } from '../shared/constants'
 
 export type ProviderConstructorArgs = {
   url: string
   projectId: string
   network: bitcoin.networks.Network
-  networkType: 'signet' | 'mainnet' | 'testnet'
+  networkType: 'signet' | 'mainnet' | 'testnet' | 'regtest'
   version?: string
+  apiUrl?: string
 }
 
 export class Provider {
@@ -26,6 +28,7 @@ export class Provider {
     network,
     networkType,
     version = 'v1',
+    apiUrl
   }: ProviderConstructorArgs) {
     let isTestnet: boolean
     let isRegtest: boolean
@@ -41,7 +44,7 @@ export class Provider {
     this.ord = new OrdRpc(masterUrl)
     this.api = new OylApiClient({
       network: networkType,
-      host: url,
+      host: apiUrl ? apiUrl : defaultNetworkOptions[networkType].apiUrl,
       testnet: isTestnet ? true : null,
       regtest: isRegtest ? true : null,
       apiKey: projectId,
