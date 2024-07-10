@@ -1,6 +1,7 @@
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew'
 import { EsploraRpc } from '../rpclient/esplora'
 import { OrdRpc } from '../rpclient/ord'
+import { OpiRpc } from '../rpclient/opi'
 import { OylApiClient } from '../apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
 import { waitForTransaction } from '../shared/utils'
@@ -19,6 +20,7 @@ export class Provider {
   public sandshrew: SandshrewBitcoinClient
   public esplora: EsploraRpc
   public ord: OrdRpc
+  public opi: OpiRpc
   public api: OylApiClient
   public network: bitcoin.networks.Network
 
@@ -28,7 +30,7 @@ export class Provider {
     network,
     networkType,
     version = 'v1',
-    apiUrl
+    apiUrl,
   }: ProviderConstructorArgs) {
     let isTestnet: boolean
     let isRegtest: boolean
@@ -42,6 +44,7 @@ export class Provider {
     this.sandshrew = new SandshrewBitcoinClient(masterUrl)
     this.esplora = new EsploraRpc(masterUrl)
     this.ord = new OrdRpc(masterUrl)
+    this.opi = new OpiRpc(isTestnet)
     this.api = new OylApiClient({
       network: networkType,
       host: apiUrl ? apiUrl : defaultNetworkOptions[networkType].apiUrl,

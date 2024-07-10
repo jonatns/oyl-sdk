@@ -1,5 +1,4 @@
 import fetch from 'node-fetch'
-import { IBlockchainInfoUTXO } from '../shared/interface'
 
 export class EsploraRpc {
   public esploraUrl: string
@@ -31,7 +30,7 @@ export class EsploraRpc {
 
       if (responseData.error) {
         console.error('Esplora JSON-RPC Error:', responseData.error)
-        throw new Error (responseData.error)
+        throw new Error(responseData.error)
       }
 
       return responseData.result
