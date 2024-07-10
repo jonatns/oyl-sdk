@@ -2,7 +2,7 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider/provider'
 import { Account, SpendStrategy } from '../account/account'
 import { UTXO_DUST } from '../shared/constants'
-import { OylTransactionError } from 'errors'
+import { OrdCollectibleData } from 'shared/interface'
 
 export interface EsploraUtxo {
   txid: string
@@ -151,4 +151,66 @@ export const accountSpendableUtxos = async ({
     remainingSpendAmount -= addressTotal
   }
   return { totalAmount, utxos: allUtxos }
+}
+
+export const addressBRC20Utxos = async ({
+  address,
+  provider,
+}: {
+  address: string
+  provider: Provider
+}) => {
+  let totalAmount: number = 0
+  const formattedUtxos: FormattedUtxo[] = []
+  const utxos: EsploraUtxo[] = await provider.esplora.getAddressUtxo(address)
+
+  if (utxos?.length === 0) {
+    return { totalAmount, utxos: formattedUtxos }
+  }
+
+  utxos.filter((utxo) => {
+    return (
+      utxo.value > UTXO_DUST &&
+      utxo.value != 546 &&
+      utxo.status.confirmed === true
+    )
+  })
+  const currentBlock: number =
+    await provider.sandshrew.bitcoindRpc.getBlockCount()
+  for (let i = 0; i < utxos.length; i++) {
+    const hasInscription = await provider.ord.getTxOutput(
+      utxos[i].txid + ':' + utxos[i].vout
+    )
+    console.log(hasInscription)
+    let hasRune: any = false
+    if (provider.network != bitcoin.networks.regtest) {
+      hasRune = await provider.api.getOutputRune({
+        output: utxos[i].txid + ':' + utxos[i].vout,
+      })
+    }
+    if (
+      hasInscription.inscriptions.length > 0 &&
+      hasInscription.runes.length === 0 &&
+      hasInscription.value === 546 &&
+      !hasRune?.output
+    ) {
+      const transactionDetails = await provider.esplora.getTxInfo(utxos[i].txid)
+      const voutEntry = transactionDetails.vout.find(
+        (v) => v.scriptpubkey_address === address
+      )
+      formattedUtxos.push({
+        txId: utxos[i].txid,
+        outputIndex: utxos[i].vout,
+        satoshis: utxos[i].value,
+        confirmations: utxos[i].status.confirmed
+          ? currentBlock - utxos[i].status.block_height
+          : 0,
+        scriptPk: voutEntry.scriptpubkey,
+        address: address,
+        inscriptions: [],
+      })
+      totalAmount += utxos[i].value
+    }
+  }
+  return { totalAmount, utxos: formattedUtxos }
 }

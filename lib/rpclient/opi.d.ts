@@ -1,6 +1,6 @@
-export declare class OpiRpc {
+export declare class Opi {
     opiUrl: string;
-    constructor(isTestnet: boolean);
+    constructor(opiUrl: string);
     _call(url: any): Promise<any>;
     getBrc20Balance({ address, ticker, }: {
         address: string;

@@ -1,14 +1,10 @@
 import fetch from 'node-fetch'
 
-export class OpiRpc {
+export class Opi {
   public opiUrl: string
 
-  constructor(isTestnet: boolean) {
-    if (isTestnet) {
-      this.opiUrl = 'https://testnet-opi.sandshrew.io/v1'
-    } else {
-      this.opiUrl = 'https://mainnet-opi.sandshrew.io/v1'
-    }
+  constructor(opiUrl: string) {
+    this.opiUrl = opiUrl
   }
 
   async _call(url) {

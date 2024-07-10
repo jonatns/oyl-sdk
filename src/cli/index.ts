@@ -3,6 +3,7 @@ import {
   accountSpendableUtxos,
   addressSpendableUtxos,
   availableBalance,
+  addressBRC20Utxos,
 } from '../utxo/utxo'
 import * as btc from '../btc/btc'
 import * as brc20 from '../brc20/brc20'
@@ -148,6 +149,27 @@ const accountAvailableBalance = new Command('availableBalance')
     console.log(
       await availableBalance({
         account,
+        provider,
+      })
+    )
+  })
+
+const addressBRC20UtxosAvailable = new Command('addressBRC20Utxos')
+  .description('Returns all BRC20 utxos')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+  .requiredOption(
+    '-a, --address <address>',
+    'address you want to get utxos for'
+  )
+
+  .action(async (options) => {
+    const provider = defaultProvider[options.provider]
+    console.log(
+      await addressBRC20Utxos({
+        address: options.address,
         provider,
       })
     )
@@ -706,6 +728,7 @@ const utxosCommand = new Command('utxo')
   .addCommand(accountUtxosToSpend)
   .addCommand(addressUtxosToSpend)
   .addCommand(accountAvailableBalance)
+  .addCommand(addressBRC20UtxosAvailable)
 const btcCommand = new Command('btc')
   .description('Functions for sending bitcoin')
   .addCommand(btcSend)

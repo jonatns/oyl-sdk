@@ -1,7 +1,7 @@
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew';
 import { EsploraRpc } from '../rpclient/esplora';
 import { OrdRpc } from '../rpclient/ord';
-import { OpiRpc } from '../rpclient/opi';
+import { Opi } from '../rpclient/opi';
 import { OylApiClient } from '../apiclient';
 import * as bitcoin from 'bitcoinjs-lib';
 export type ProviderConstructorArgs = {
@@ -11,15 +11,16 @@ export type ProviderConstructorArgs = {
     networkType: 'signet' | 'mainnet' | 'testnet' | 'regtest';
     version?: string;
     apiUrl?: string;
+    opiUrl?: string;
 };
 export declare class Provider {
     sandshrew: SandshrewBitcoinClient;
     esplora: EsploraRpc;
     ord: OrdRpc;
-    opi: OpiRpc;
+    opi: Opi;
     api: OylApiClient;
     network: bitcoin.networks.Network;
-    constructor({ url, projectId, network, networkType, version, apiUrl, }: ProviderConstructorArgs);
+    constructor({ url, projectId, network, networkType, version, apiUrl, opiUrl, }: ProviderConstructorArgs);
     pushPsbt({ psbtHex, psbtBase64, }: {
         psbtHex?: string;
         psbtBase64?: string;

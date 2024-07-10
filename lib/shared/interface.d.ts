@@ -139,6 +139,24 @@ export interface ExternalSwap {
     auctionId: string;
     bidPrice: number;
 }
+export type OrdCollectibleData = {
+    address: string;
+    children: any[];
+    content_length: number;
+    content_type: string;
+    genesis_fee: number;
+    genesis_height: number;
+    inscription_id: string;
+    inscription_number: number;
+    next: string;
+    output_value: number;
+    parent: any;
+    previous: string;
+    rune: any;
+    sat: number;
+    satpoint: string;
+    timestamp: number;
+};
 export interface SwapPayload {
     address: string;
     auctionId: string;
@@ -323,6 +341,7 @@ export interface NetworkOptions {
      */
     projectId?: string;
     apiUrl?: string;
+    opiUrl?: string;
     network: Network;
 }
 export interface SwapBrc {

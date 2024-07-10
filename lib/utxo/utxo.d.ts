@@ -43,3 +43,10 @@ export declare const accountSpendableUtxos: ({ account, provider, spendAmount, }
     totalAmount: number;
     utxos: FormattedUtxo[];
 }>;
+export declare const addressBRC20Utxos: ({ address, provider, }: {
+    address: string;
+    provider: Provider;
+}) => Promise<{
+    totalAmount: number;
+    utxos: FormattedUtxo[];
+}>;
