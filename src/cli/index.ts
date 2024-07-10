@@ -153,8 +153,8 @@ const accountAvailableBalance = new Command('availableBalance')
     )
   })
 
-const addressBRC20UtxosAvailable = new Command('addressBRC20Utxos')
-  .description('Returns all BRC20 utxos')
+const addressBRC20Balance = new Command('addressBRC20Balance')
+  .description('Returns all BRC20 balances')
   .requiredOption(
     '-p, --provider <provider>',
     'provider to use when querying the network for utxos'
@@ -165,13 +165,8 @@ const addressBRC20UtxosAvailable = new Command('addressBRC20Utxos')
   )
 
   .action(async (options) => {
-    const provider = defaultProvider[options.provider]
-    console.log(
-      await brc20.addressBRC20Utxos({
-        address: options.address,
-        provider,
-      })
-    )
+    const provider: Provider = defaultProvider[options.provider]
+    console.log(await provider.api.getBrc20sByAddress(options.address))
   })
 
 const addressUtxosToSpend = new Command('addressSpendableUtxos')
@@ -734,7 +729,7 @@ const btcCommand = new Command('btc')
 const brc20Command = new Command('brc20')
   .description('Functions for brc20')
   .addCommand(brc20Send)
-  .addCommand(addressBRC20UtxosAvailable)
+  .addCommand(addressBRC20Balance)
 const collectibleCommand = new Command('collectible')
   .description('Functions for collectibles')
   .addCommand(collectibleSend)

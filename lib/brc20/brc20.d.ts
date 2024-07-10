@@ -1,6 +1,5 @@
 /// <reference types="node" />
 import { Provider } from '../provider/provider';
-import { FormattedUtxo } from '../utxo/utxo';
 import { Account } from '../account/account';
 import { Signer } from '../signer';
 export declare const transferEstimate: ({ toAddress, feeRate, account, provider, fee, }: {
@@ -62,11 +61,4 @@ export declare const send: ({ ticker, amount, toAddress, account, provider, feeR
     txId: string;
     rawTxn: string;
     sendBrc20Txids: string[];
-}>;
-export declare const addressBRC20Utxos: ({ address, provider, }: {
-    address: string;
-    provider: Provider;
-}) => Promise<{
-    totalAmount: number;
-    utxos: FormattedUtxo[];
 }>;
