@@ -3,7 +3,6 @@ import {
   accountSpendableUtxos,
   addressSpendableUtxos,
   availableBalance,
-  addressBRC20Utxos,
 } from '../utxo/utxo'
 import * as btc from '../btc/btc'
 import * as brc20 from '../brc20/brc20'
@@ -168,7 +167,7 @@ const addressBRC20UtxosAvailable = new Command('addressBRC20Utxos')
   .action(async (options) => {
     const provider = defaultProvider[options.provider]
     console.log(
-      await addressBRC20Utxos({
+      await brc20.addressBRC20Utxos({
         address: options.address,
         provider,
       })
@@ -728,7 +727,6 @@ const utxosCommand = new Command('utxo')
   .addCommand(accountUtxosToSpend)
   .addCommand(addressUtxosToSpend)
   .addCommand(accountAvailableBalance)
-  .addCommand(addressBRC20UtxosAvailable)
 const btcCommand = new Command('btc')
   .description('Functions for sending bitcoin')
   .addCommand(btcSend)
@@ -736,6 +734,7 @@ const btcCommand = new Command('btc')
 const brc20Command = new Command('brc20')
   .description('Functions for brc20')
   .addCommand(brc20Send)
+  .addCommand(addressBRC20UtxosAvailable)
 const collectibleCommand = new Command('collectible')
   .description('Functions for collectibles')
   .addCommand(collectibleSend)

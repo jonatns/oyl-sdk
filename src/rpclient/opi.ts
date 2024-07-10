@@ -66,4 +66,9 @@ export class Opi {
       `${this.opiUrl}/brc20/event?inscription_id=${inscId}`
     )
   }
+  async getUnspentRuneByAddress({ address }: { address: string }) {
+    return await this._call(
+      `${this.opiUrl}/runes/get_unspent_rune_outpoints_of_wallet?address=${address}`
+    )
+  }
 }

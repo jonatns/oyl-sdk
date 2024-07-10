@@ -18,4 +18,7 @@ export declare class Opi {
     getBRC20EventsByInscriptionId({ inscId }: {
         inscId: string;
     }): Promise<any>;
+    getUnspentRuneByAddress({ address }: {
+        address: string;
+    }): Promise<any>;
 }

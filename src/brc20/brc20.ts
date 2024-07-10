@@ -1,7 +1,7 @@
 import { OylTransactionError } from '../errors'
 import { Provider } from '../provider/provider'
 import * as bitcoin from 'bitcoinjs-lib'
-import { FormattedUtxo, accountSpendableUtxos } from '../utxo/utxo'
+import { EsploraUtxo, FormattedUtxo, accountSpendableUtxos } from '../utxo/utxo'
 import {
   ECPair,
   calculateTaprootTxSize,
@@ -20,6 +20,7 @@ import { ECPairInterface } from 'ecpair'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import { getAddressType } from '../transactions'
 import { Signer } from '../signer'
+import { UTXO_DUST } from '../shared/constants'
 
 export const transferEstimate = async ({
   toAddress,
@@ -668,4 +669,65 @@ export const send = async ({
     rawTxn: finalTransferSigned,
     sendBrc20Txids: [...successTxIds, transferTxId],
   }
+}
+
+export const addressBRC20Utxos = async ({
+  address,
+  provider,
+}: {
+  address: string
+  provider: Provider
+}) => {
+  let totalAmount: number = 0
+  const formattedUtxos: FormattedUtxo[] = []
+  const utxos: EsploraUtxo[] = await provider.esplora.getAddressUtxo(address)
+
+  if (utxos?.length === 0) {
+    return { totalAmount, utxos: formattedUtxos }
+  }
+
+  utxos.filter((utxo) => {
+    return (
+      utxo.value > UTXO_DUST &&
+      utxo.value != 546 &&
+      utxo.status.confirmed === true
+    )
+  })
+  const currentBlock: number =
+    await provider.sandshrew.bitcoindRpc.getBlockCount()
+  for (let i = 0; i < utxos.length; i++) {
+    const hasInscription = await provider.ord.getTxOutput(
+      utxos[i].txid + ':' + utxos[i].vout
+    )
+    let hasRune: any = false
+    if (provider.network != bitcoin.networks.regtest) {
+      hasRune = await provider.api.getOutputRune({
+        output: utxos[i].txid + ':' + utxos[i].vout,
+      })
+    }
+    if (
+      hasInscription.inscriptions.length > 0 &&
+      hasInscription.runes.length === 0 &&
+      hasInscription.value === 546 &&
+      !hasRune?.output
+    ) {
+      const transactionDetails = await provider.esplora.getTxInfo(utxos[i].txid)
+      const voutEntry = transactionDetails.vout.find(
+        (v) => v.scriptpubkey_address === address
+      )
+      formattedUtxos.push({
+        txId: utxos[i].txid,
+        outputIndex: utxos[i].vout,
+        satoshis: utxos[i].value,
+        confirmations: utxos[i].status.confirmed
+          ? currentBlock - utxos[i].status.block_height
+          : 0,
+        scriptPk: voutEntry.scriptpubkey,
+        address: address,
+        inscriptions: hasInscription.inscriptions,
+      })
+      totalAmount += utxos[i].value
+    }
+  }
+  return { totalAmount, utxos: formattedUtxos }
 }
