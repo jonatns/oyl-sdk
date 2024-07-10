@@ -1,7 +1,7 @@
 import { OylTransactionError } from '../errors'
 import { Provider } from '../provider/provider'
 import * as bitcoin from 'bitcoinjs-lib'
-import { FormattedUtxo, accountSpendableUtxos } from '../utxo/utxo'
+import { EsploraUtxo, FormattedUtxo, accountSpendableUtxos } from '../utxo/utxo'
 import {
   ECPair,
   calculateTaprootTxSize,
@@ -20,6 +20,7 @@ import { ECPairInterface } from 'ecpair'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import { getAddressType } from '../transactions'
 import { Signer } from '../signer'
+import { UTXO_DUST } from '../shared/constants'
 
 export const transferEstimate = async ({
   toAddress,

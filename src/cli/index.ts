@@ -153,6 +153,22 @@ const accountAvailableBalance = new Command('availableBalance')
     )
   })
 
+const addressBRC20Balance = new Command('addressBRC20Balance')
+  .description('Returns all BRC20 balances')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+  .requiredOption(
+    '-a, --address <address>',
+    'address you want to get utxos for'
+  )
+
+  .action(async (options) => {
+    const provider: Provider = defaultProvider[options.provider]
+    console.log((await provider.api.getBrc20sByAddress(options.address)).data)
+  })
+
 const addressUtxosToSpend = new Command('addressSpendableUtxos')
   .description('Returns available utxos to spend')
   .requiredOption(
@@ -569,6 +585,36 @@ const ordProviderCall = new Command('ord')
     }
   })
 
+const opiProviderCall = new Command('opi')
+  .description('Returns data based on opi query')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use to access the network.'
+  )
+  .requiredOption(
+    '-method, --method <method>',
+    'name of the method you want to call for the api.'
+  )
+  .option(
+    '-params, --parameters <parameters>',
+    'parameters for the ord method you are calling.'
+  )
+  /* @dev example call
+    oyl provider opi -method getBrc20Balance -params '{"address":"bcrt1qzr9vhs60g6qlmk7x3dd7g3ja30wyts48sxuemv","ticker":"ordi"}' -p bitcoin
+
+    please note the json format if you need to pass an object.
+  */
+  .action(async (options) => {
+    const provider: Provider = defaultProvider[options.provider]
+    let isJson: object
+    try {
+      isJson = JSON.parse(options.parameters)
+      console.log(await provider.opi[options.method](isJson))
+    } catch (error) {
+      console.log(await provider.opi[options.method](options.parameters))
+    }
+  })
+
 const marketPlaceBuy = new Command('buy')
 
   .description('Returns rune details based on name provided')
@@ -683,6 +729,7 @@ const btcCommand = new Command('btc')
 const brc20Command = new Command('brc20')
   .description('Functions for brc20')
   .addCommand(brc20Send)
+  .addCommand(addressBRC20Balance)
 const collectibleCommand = new Command('collectible')
   .description('Functions for collectibles')
   .addCommand(collectibleSend)
@@ -696,6 +743,7 @@ const providerCommand = new Command('provider')
   .description('Functions avaialble for all provider services')
   .addCommand(apiProviderCall)
   .addCommand(ordProviderCall)
+  .addCommand(opiProviderCall)
 
 const marketPlaceCommand = new Command('marketplace')
   .description('Functions for marketplace')

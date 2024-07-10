@@ -16,7 +16,7 @@ export const regtestProviderConstructorArgs: ProviderConstructorArgs = {
   projectId: 'regtest',
   network: bitcoin.networks.regtest,
   networkType: 'mainnet',
-  apiUrl: 'https://mainnet-api.oyl.gg'
+  apiUrl: 'https://mainnet-api.oyl.gg',
 }
 
 export const regtestOpts: MnemonicToAccountOptions = {
@@ -55,6 +55,7 @@ export const defaultNetworkOptions: Record<Network, NetworkOptions> = {
     projectId: process.env.SANDSHREW_PROJECT_ID,
     network: 'mainnet',
     apiUrl: 'https://mainnet-api.oyl.gg',
+    opiUrl: 'https://mainnet-opi.sandshrew.io/v1',
   },
   testnet: {
     baseUrl: 'https://testnet.sandshrew.io',
@@ -62,6 +63,7 @@ export const defaultNetworkOptions: Record<Network, NetworkOptions> = {
     projectId: process.env.SANDSHREW_PROJECT_ID,
     network: 'testnet',
     apiUrl: 'https://testnet-api.oyl.gg',
+    opiUrl: 'https://testnet-opi.sandshrew.io/v1',
   },
   regtest: {
     baseUrl: 'http://localhost:3000',

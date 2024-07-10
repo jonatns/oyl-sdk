@@ -7,6 +7,7 @@ import { formatInputsToSign } from '../shared/utils'
 import { OylTransactionError } from '../errors'
 import { getAddressType } from '../transactions'
 import { Signer } from '../signer'
+import { OrdCollectibleData } from 'shared/interface'
 
 export const createPsbt = async ({
   account,
@@ -328,23 +329,4 @@ export const actualFee = async ({
   const finalFee = finalVsize * feeRate
 
   return { fee: finalFee }
-}
-
-type OrdCollectibleData = {
-  address: string
-  children: any[]
-  content_length: number
-  content_type: string
-  genesis_fee: number
-  genesis_height: number
-  inscription_id: string
-  inscription_number: number
-  next: string
-  output_value: number
-  parent: any
-  previous: string
-  rune: any
-  sat: number
-  satpoint: string
-  timestamp: number
 }
