@@ -65,6 +65,9 @@ export const addressSpendableUtxos = async ({
     spendStrategy?.utxoSortGreatestToLeast !== undefined
       ? spendStrategy.utxoSortGreatestToLeast
       : true
+  if (utxos?.length === 0) {
+    return { totalAmount, utxos: formattedUtxos }
+  }
   if (utxoSortGreatestToLeast) {
     utxos.sort((a, b) => b.value - a.value)
   } else {
