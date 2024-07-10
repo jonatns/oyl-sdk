@@ -85,7 +85,7 @@ export class OylApiClient {
       }
 
       const response: Response = await fetch(`${this.host}${path}`, options)
-      return (await response.json()).data
+      return await response.json()
     } catch (err) {
       throw err
     }

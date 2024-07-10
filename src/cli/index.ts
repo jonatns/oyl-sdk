@@ -166,7 +166,7 @@ const addressBRC20Balance = new Command('addressBRC20Balance')
 
   .action(async (options) => {
     const provider: Provider = defaultProvider[options.provider]
-    console.log(await provider.api.getBrc20sByAddress(options.address))
+    console.log((await provider.api.getBrc20sByAddress(options.address)).data)
   })
 
 const addressUtxosToSpend = new Command('addressSpendableUtxos')
