@@ -1,8 +1,7 @@
 import * as bitcoin from 'bitcoinjs-lib'
-import { Provider } from '../provider/provider'
-import { Account, SpendStrategy } from '../account/account'
+import { Provider } from '../provider'
+import { Account, SpendStrategy } from '../account'
 import { UTXO_DUST } from '../shared/constants'
-import { OrdCollectibleData } from 'shared/interface'
 
 export interface EsploraUtxo {
   txid: string

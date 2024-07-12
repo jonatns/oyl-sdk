@@ -1,4 +1,4 @@
-import { Provider } from '../provider/provider';
+import { Provider } from '../provider';
 import { Account } from '../account/account';
 import { Signer } from '../signer';
 export declare const createPsbt: ({ account, inscriptionId, provider, inscriptionAddress, toAddress, feeRate, fee, }: {

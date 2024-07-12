@@ -1,5 +1,5 @@
-import { Provider } from '../provider/provider';
-import { Account, SpendStrategy } from '../account/account';
+import { Provider } from '../provider';
+import { Account, SpendStrategy } from '../account';
 export interface EsploraUtxo {
     txid: string;
     vout: number;
