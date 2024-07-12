@@ -2,8 +2,8 @@ import { payments, Psbt } from 'bitcoinjs-lib'
 import * as bitcoin from 'bitcoinjs-lib'
 import { Oyl } from '../oylib'
 import { Signer } from '../signer'
-import { Provider } from 'provider/provider'
-import { Account } from '@account/account'
+import { Provider } from '../provider'
+import { Account } from '../account'
 
 export interface InscriptionResponse {
   address: string

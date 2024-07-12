@@ -1,5 +1,5 @@
 import { minimumFee } from '../btc/btc'
-import { Provider } from '../provider/provider'
+import { Provider } from '../provider'
 import * as bitcoin from 'bitcoinjs-lib'
 import { FormattedUtxo, accountSpendableUtxos } from '../utxo/utxo'
 import { Account } from '../account/account'
@@ -7,7 +7,7 @@ import { formatInputsToSign } from '../shared/utils'
 import { OylTransactionError } from '../errors'
 import { getAddressType } from '../transactions'
 import { Signer } from '../signer'
-import { OrdCollectibleData } from 'shared/interface'
+import { OrdCollectibleData } from '../shared/interface'
 
 export const createPsbt = async ({
   account,
