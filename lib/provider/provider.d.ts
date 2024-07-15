@@ -20,6 +20,7 @@ export declare class Provider {
     opi: Opi;
     api: OylApiClient;
     network: bitcoin.networks.Network;
+    networkType: string;
     constructor({ url, projectId, network, networkType, version, apiUrl, opiUrl, }: ProviderConstructorArgs);
     pushPsbt({ psbtHex, psbtBase64, }: {
         psbtHex?: string;
