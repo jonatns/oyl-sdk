@@ -184,13 +184,15 @@ export interface SwapPayload {
 }
 
 export interface OkxBid {
-  ticker: string
-  amount: number
-  fromAddress: string
-  toAddress: string
-  inscriptionId: string
-  buyerPsbt: string
-  orderId: number
+  ticker?: string;
+  amount?: number;
+  price?: number
+  fromAddress: string;
+  toAddress: string;
+  inscriptionId: string;
+  buyerPsbt: string;
+  orderId: number;
+  brc20: boolean;
 }
 
 export interface MarketplaceAccount {

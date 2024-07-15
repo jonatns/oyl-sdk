@@ -198,12 +198,14 @@ export class Marketplace {
         )
         const payload: OkxBid = {
           ticker: offer.ticker,
+          price: offer.totalPrice,
           amount: parseInt(offer.amount),
           fromAddress: this.selectedSpendAddress,
           toAddress: offer.address,
           inscriptionId: offer.inscriptionId,
           buyerPsbt: signedPsbt,
           orderId: offer.offerId,
+          brc20: this.assetType == AssetType.BRC20 ? true : false
         }
         const tx = await this.wallet.apiClient.submitOkxBid(payload)
         let txId = tx?.data

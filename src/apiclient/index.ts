@@ -178,6 +178,10 @@ export class OylApiClient {
     return await this._call('/get-marketplace-collections', 'post')
   }
 
+  async getAggrMarketplaceCollections() {
+    return await this._call('/get-aggr-marketplace-collections', 'post')
+  }
+
   async getAllInscriptionsByAddress(address: string): Promise<any> {
     if (this.regtest) {
       return await getAllInscriptionsByAddressRegtest(address)
