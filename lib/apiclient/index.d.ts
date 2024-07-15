@@ -86,7 +86,7 @@ export declare class OylApiClient {
     }): Promise<any>;
     getRuneTickers(): Promise<any>;
     getMarketplaceCollections(): Promise<any>;
-    getAggrMarketplaceCollections(): Promise<any>;
+    getAggrMarketplaceCollections(onlyOffers?: boolean): Promise<any>;
     getAllInscriptionsByAddress(address: string): Promise<any>;
     getInscriptionsForTxn(txn_id: string): Promise<any>;
     getTaprootTxHistory(taprootAddress: any, totalTxs: any): Promise<any>;
