@@ -52,6 +52,22 @@ export declare class OylApiClient {
         userId: string;
     }): Promise<any>;
     /**
+     * Get whitelist leaderboard.
+     * @param address - the address requesting the leaderboard.
+     */
+    getWhitelistLeaderboard({ address }: {
+        address: string;
+    }): Promise<any>;
+    /**
+     * Get an address's xp for the whitelist.
+     * @param taprootAddress - taprootAddress.
+     * @param segwitAddress - .segwitAddress
+     */
+    getWhitelistXp({ taprootAddress, segwitAddress, }: {
+        taprootAddress: string;
+        segwitAddress?: string;
+    }): Promise<any>;
+    /**
      * Get brc20 info by ticker.
      * @param ticker - The ticker to query.
      */
