@@ -104,6 +104,33 @@ export class OylApiClient {
   }
 
   /**
+   * Get whitelist leaderboard.
+   * @param address - the address requesting the leaderboard.
+   */
+  async getWhitelistLeaderboard({ address }: { address: string }) {
+    return await this._call('/get-whitelist-leaderboard', 'post', {
+      address,
+    })
+  }
+  /**
+   * Get an address's xp for the whitelist.
+   * @param taprootAddress - taprootAddress.
+   * @param segwitAddress - .segwitAddress
+   */
+  async getWhitelistXp({
+    taprootAddress,
+    segwitAddress,
+  }: {
+    taprootAddress: string
+    segwitAddress?: string
+  }) {
+    return await this._call('/get-whitelist-xp', 'post', {
+      taprootAddress,
+      segwitAddress,
+    })
+  }
+
+  /**
    * Get brc20 info by ticker.
    * @param ticker - The ticker to query.
    */
@@ -178,9 +205,9 @@ export class OylApiClient {
     return await this._call('/get-marketplace-collections', 'post')
   }
 
-  async getAggrMarketplaceCollections(onlyOffers? : boolean) {
+  async getAggrMarketplaceCollections(onlyOffers?: boolean) {
     return await this._call('/get-aggr-marketplace-collections', 'post', {
-       onlyOffers
+      onlyOffers,
     })
   }
 
