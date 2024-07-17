@@ -1,7 +1,6 @@
 import * as bitcoin from 'bitcoinjs-lib'
-import { ECPair, assertHex, tweakSigner } from '../shared/utils'
+import { ECPair, tweakSigner } from '../shared/utils'
 import { ECPairInterface } from 'ecpair'
-import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 type walletInit = {
   segwitPrivateKey?: string
   taprootPrivateKey?: string
@@ -148,14 +147,25 @@ export class Signer {
 
   async signAllInputs({
     rawPsbt,
+    rawPsbtHex,
     finalize,
   }: {
-    rawPsbt: string
+    rawPsbt?: string
+    rawPsbtHex?: string
     finalize: boolean
   }) {
-    let unSignedPsbt: bitcoin.Psbt = bitcoin.Psbt.fromBase64(rawPsbt, {
-      network: this.network,
-    })
+    let unSignedPsbt: bitcoin.Psbt
+    if (rawPsbt) {
+      unSignedPsbt = bitcoin.Psbt.fromBase64(rawPsbt, {
+        network: this.network,
+      })
+    }
+
+    if (rawPsbtHex) {
+      unSignedPsbt = bitcoin.Psbt.fromHex(rawPsbtHex, {
+        network: this.network,
+      })
+    }
 
     for (let i = 0; i < unSignedPsbt.inputCount; i++) {
       let tweakedSigner: bitcoin.Signer

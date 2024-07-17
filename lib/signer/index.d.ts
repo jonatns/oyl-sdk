@@ -37,8 +37,9 @@ export declare class Signer {
         raw: bitcoin.Psbt;
         signedHexPsbt: string;
     }>;
-    signAllInputs({ rawPsbt, finalize, }: {
-        rawPsbt: string;
+    signAllInputs({ rawPsbt, rawPsbtHex, finalize, }: {
+        rawPsbt?: string;
+        rawPsbtHex?: string;
         finalize: boolean;
     }): Promise<{
         signedPsbt: string;
