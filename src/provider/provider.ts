@@ -24,6 +24,7 @@ export class Provider {
   public opi: Opi
   public api: OylApiClient
   public network: bitcoin.networks.Network
+  public networkType: string
 
   constructor({
     url,
@@ -59,6 +60,7 @@ export class Provider {
     })
     this.api.setAuthToken(process.env.API_TOKEN)
     this.network = network
+    this.networkType = networkType
   }
 
   async pushPsbt({

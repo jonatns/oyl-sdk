@@ -3,6 +3,7 @@
   "version": "1.2.2",
   "description": "Oyl SDK",
   "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "repository": "https://github.com/oyl-wallet/oyl-sdk",
   "scripts": {
     "build": "tsc",

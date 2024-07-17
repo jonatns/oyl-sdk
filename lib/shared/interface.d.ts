@@ -166,13 +166,15 @@ export interface SwapPayload {
     feerate: number;
 }
 export interface OkxBid {
-    ticker: string;
-    amount: number;
+    ticker?: string;
+    amount?: number;
+    price?: number;
     fromAddress: string;
     toAddress: string;
     inscriptionId: string;
     buyerPsbt: string;
     orderId: number;
+    brc20: boolean;
 }
 export interface MarketplaceAccount {
     wallet?: Oyl;

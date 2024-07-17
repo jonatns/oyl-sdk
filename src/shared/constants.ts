@@ -54,7 +54,7 @@ export const defaultNetworkOptions: Record<Network, NetworkOptions> = {
     version: 'v1',
     projectId: process.env.SANDSHREW_PROJECT_ID,
     network: 'mainnet',
-    apiUrl: 'https://mainnet-api.oyl.gg',
+    apiUrl: 'https://api.oyl.gg',
     opiUrl: 'https://mainnet-opi.sandshrew.io/v1',
   },
   testnet: {
@@ -71,6 +71,7 @@ export const defaultNetworkOptions: Record<Network, NetworkOptions> = {
     projectId: 'regtest',
     network: 'regtest',
     apiUrl: 'https://mainnet-api.oyl.gg',
+    opiUrl: 'http://localhost:3000',
   },
   signet: {
     baseUrl: 'https://signet.sandshrew.io',
@@ -78,5 +79,6 @@ export const defaultNetworkOptions: Record<Network, NetworkOptions> = {
     projectId: process.env.SANDSHREW_PROJECT_ID,
     network: 'signet',
     apiUrl: 'https://signet-api.oyl.gg',
+    opiUrl: 'https://testnet-opi.sandshrew.io/v1',
   },
 }
