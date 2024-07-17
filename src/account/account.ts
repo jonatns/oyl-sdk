@@ -29,7 +29,7 @@ export type Account = {
   network: bitcoin.Network
 }
 
-export type AddressType = 'nativeSegwit' | 'taproot' | 'nestedSegwit' | 'legacy'
+type AddressType = 'nativeSegwit' | 'taproot' | 'nestedSegwit' | 'legacy'
 
 export interface SpendStrategy {
   addressOrder: AddressType[]
