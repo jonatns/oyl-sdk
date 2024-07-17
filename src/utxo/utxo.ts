@@ -95,11 +95,16 @@ export const addressSpendableUtxos = async ({
         output: utxos[i].txid + ':' + utxos[i].vout,
       })
     }
+    const mempoolTxs: string[] =
+      await provider.sandshrew.bitcoindRpc.getRawMemPool(false)
+    const inMempool: boolean = mempoolTxs.includes(utxos[i].txid)
+
     if (
       hasInscription.inscriptions.length === 0 &&
       hasInscription.runes.length === 0 &&
       hasInscription.indexed &&
       hasInscription.value !== 546 &&
+      !inMempool &&
       !hasRune?.output
     ) {
       const transactionDetails = await provider.esplora.getTxInfo(utxos[i].txid)
