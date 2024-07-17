@@ -12,4 +12,6 @@ export * as brc20 from './brc20';
 export * as utxo from './utxo';
 export * as collectible from './collectible';
 export * as networks from './network';
+export { Trade } from './trade';
+export { Signer } from './signer';
 export { Provider } from './provider';
