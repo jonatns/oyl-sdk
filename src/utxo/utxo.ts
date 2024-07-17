@@ -98,6 +98,7 @@ export const addressSpendableUtxos = async ({
     if (
       hasInscription.inscriptions.length === 0 &&
       hasInscription.runes.length === 0 &&
+      hasInscription.indexed &&
       hasInscription.value !== 546 &&
       !hasRune?.output
     ) {
