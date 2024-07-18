@@ -16,6 +16,7 @@ export class BuildMarketplaceTransaction {
   public network: bitcoin.Network
   public addressType: AddressType
   public receiveAddress: string
+  public feeRate: number
 
   constructor({
     address,
@@ -24,6 +25,7 @@ export class BuildMarketplaceTransaction {
     psbtBase64,
     price,
     provider,
+    feeRate
   }: MarketplaceBuy) {
     this.walletAddress = address
     this.pubKey = pubKey
@@ -35,6 +37,7 @@ export class BuildMarketplaceTransaction {
     this.orderPrice = price
     this.network = provider.network
     this.addressType = getAddressType(this.walletAddress)
+    this.feeRate = feeRate
 
     switch (this.addressType) {
       case AddressType.P2TR: {
@@ -145,7 +148,7 @@ export class BuildMarketplaceTransaction {
     })
 
     const amountRetrieved = this.calculateAmountGathered(retrievedUtxos)
-    const remainder = amountRetrieved - 30000 - 1200
+    const remainder = amountRetrieved  - 1200 - (320 * this.feeRate)
     prepareTx.addOutput({
       address: this.walletAddress,
       value: 600,

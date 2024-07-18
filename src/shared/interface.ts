@@ -266,6 +266,7 @@ export interface MarketplaceBuy {
   wallet?: Oyl
   provider?: Provider
   receiveAddress: string
+  feeRate: number
   dryRun?: boolean
 }
 

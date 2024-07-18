@@ -110,6 +110,7 @@ export class Marketplace {
         receiveAddress: this.receiveAddress,
         psbtBase64: order.psbtBase64,
         price: order.price,
+        feeRate: this.feeRate,
         wallet: this.wallet,
       })
       const {
@@ -315,6 +316,7 @@ export class Marketplace {
       receiveAddress: this.receiveAddress,
       psbtBase64: offers[0].psbtBase64,
       price: offers[0].price,
+      feeRate: this.feeRate,
       wallet: this.wallet,
     })
 
@@ -587,6 +589,7 @@ export class Marketplace {
       receiveAddress: this.receiveAddress,
       psbtBase64: '',
       price: 0,
+      feeRate: this.feeRate,
       wallet: this.wallet,
     })
     const preparedWallet = await this.prepareAddress(marketPlaceBuy)
