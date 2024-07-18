@@ -240,6 +240,9 @@ export class Trade {
 
       case AssetType.RUNES:
         return await this.provider.api.initRuneSwapBid(payload)
+
+      case AssetType.COLLECTIBLE:
+        return await this.provider.api.initCollectionSwapBid(payload)
     }
   }
 
@@ -249,8 +252,11 @@ export class Trade {
         return await this.provider.api.submitSignedBid(payload)
 
       case AssetType.RUNES:
-        console.log('payload to submit', payload)
         return await this.provider.api.submitSignedRuneBid(payload)
+
+      case AssetType.COLLECTIBLE:
+        return await this.provider.api.submitSignedCollectionBid(payload)
+        
     }
   }
 
