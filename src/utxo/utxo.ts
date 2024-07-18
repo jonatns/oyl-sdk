@@ -1,7 +1,8 @@
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider'
-import { Account, SpendStrategy } from '../account'
+import { Account, SpendStrategy, mnemonicToAccount } from '../account'
 import { UTXO_DUST } from '../shared/constants'
+import { EsploraTx } from 'rpclient/esplora'
 
 export interface EsploraUtxo {
   txid: string
@@ -59,7 +60,7 @@ export const addressSpendableUtxos = async ({
 }) => {
   let totalAmount: number = 0
   const formattedUtxos: FormattedUtxo[] = []
-  const utxos: EsploraUtxo[] = await provider.esplora.getAddressUtxo(address)
+  let utxos: EsploraUtxo[] = await provider.esplora.getAddressUtxo(address)
   const utxoSortGreatestToLeast =
     spendStrategy?.utxoSortGreatestToLeast !== undefined
       ? spendStrategy.utxoSortGreatestToLeast
@@ -73,12 +74,8 @@ export const addressSpendableUtxos = async ({
     utxos.sort((a, b) => a.value - b.value)
   }
 
-  utxos.filter((utxo) => {
-    return (
-      utxo.value > UTXO_DUST &&
-      utxo.value != 546 &&
-      utxo.status.confirmed === true
-    )
+  utxos = utxos.filter((utxo) => {
+    return utxo.value > UTXO_DUST && utxo.value != 546
   })
 
   for (let i = 0; i < utxos.length; i++) {
@@ -95,17 +92,12 @@ export const addressSpendableUtxos = async ({
         output: utxos[i].txid + ':' + utxos[i].vout,
       })
     }
-    const mempoolTxs: string[] = (
-      await provider.sandshrew.bitcoindRpc.getRawMemPool(true)
-    ).spentBy
-    const inMempool: boolean = mempoolTxs.includes(utxos[i].txid)
 
     if (
       hasInscription.inscriptions.length === 0 &&
       hasInscription.runes.length === 0 &&
       hasInscription.indexed &&
       hasInscription.value !== 546 &&
-      !inMempool &&
       !hasRune?.output
     ) {
       const transactionDetails = await provider.esplora.getTxInfo(utxos[i].txid)
@@ -158,3 +150,24 @@ export const accountSpendableUtxos = async ({
   }
   return { totalAmount, utxos: allUtxos }
 }
+
+const provider = new Provider({
+  url: 'http://localhost:3000',
+  projectId: 'regtest',
+  network: bitcoin.networks.regtest,
+  networkType: 'mainnet',
+  apiUrl: 'https://staging-api.oyl.gg',
+})
+
+const account = mnemonicToAccount({
+  mnemonic:
+    'dad wall sand scissors evil second elbow possible hour elbow recipe dinosaur',
+  opts: {
+    index: 0,
+    network: bitcoin.networks.regtest,
+  },
+})
+addressSpendableUtxos({
+  address: 'bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx',
+  provider,
+}).then((value) => console.log(value))
