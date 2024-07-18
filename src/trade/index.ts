@@ -424,7 +424,9 @@ export class Trade {
   async canAddressAffordOffers(address: string, estimatedCost: number) {
     const retrievedUtxos = await this.getUTXOsToCoverAmount(
       address,
-      estimatedCost
+      estimatedCost,
+      [],
+      true
     )
     return retrievedUtxos.length > 0
   }
@@ -463,6 +465,7 @@ export class Trade {
     address: string,
     amountNeeded: number,
     excludedUtxos = [],
+    insistConfirmedUtxos: boolean = false,
     inscriptionLocs?: string[]
   ) {
     try {
@@ -497,7 +500,7 @@ export class Trade {
           // Check if the UTXO should be excluded
           continue
         }
-        if (utxo.status.confirmed != true){
+        if (insistConfirmedUtxos && utxo.status.confirmed != true){
           continue
         }
         const currentUTXO = utxo

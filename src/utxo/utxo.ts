@@ -59,7 +59,7 @@ export const addressSpendableUtxos = async ({
 }) => {
   let totalAmount: number = 0
   const formattedUtxos: FormattedUtxo[] = []
-  const utxos: EsploraUtxo[] = await provider.esplora.getAddressUtxo(address)
+  let utxos: EsploraUtxo[] = await provider.esplora.getAddressUtxo(address)
   const utxoSortGreatestToLeast =
     spendStrategy?.utxoSortGreatestToLeast !== undefined
       ? spendStrategy.utxoSortGreatestToLeast
@@ -73,12 +73,8 @@ export const addressSpendableUtxos = async ({
     utxos.sort((a, b) => a.value - b.value)
   }
 
-  utxos.filter((utxo) => {
-    return (
-      utxo.value > UTXO_DUST &&
-      utxo.value != 546 &&
-      utxo.status.confirmed === true
-    )
+  utxos = utxos.filter((utxo) => {
+    return utxo.value > UTXO_DUST && utxo.value != 546
   })
 
   for (let i = 0; i < utxos.length; i++) {
@@ -95,17 +91,12 @@ export const addressSpendableUtxos = async ({
         output: utxos[i].txid + ':' + utxos[i].vout,
       })
     }
-    const mempoolTxs: string[] = (
-      await provider.sandshrew.bitcoindRpc.getRawMemPool(true)
-    ).spentBy
-    const inMempool: boolean = mempoolTxs.includes(utxos[i].txid)
 
     if (
       hasInscription.inscriptions.length === 0 &&
       hasInscription.runes.length === 0 &&
       hasInscription.indexed &&
       hasInscription.value !== 546 &&
-      !inMempool &&
       !hasRune?.output
     ) {
       const transactionDetails = await provider.esplora.getTxInfo(utxos[i].txid)
