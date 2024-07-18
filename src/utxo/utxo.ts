@@ -150,24 +150,3 @@ export const accountSpendableUtxos = async ({
   }
   return { totalAmount, utxos: allUtxos }
 }
-
-const provider = new Provider({
-  url: 'http://localhost:3000',
-  projectId: 'regtest',
-  network: bitcoin.networks.regtest,
-  networkType: 'mainnet',
-  apiUrl: 'https://staging-api.oyl.gg',
-})
-
-const account = mnemonicToAccount({
-  mnemonic:
-    'dad wall sand scissors evil second elbow possible hour elbow recipe dinosaur',
-  opts: {
-    index: 0,
-    network: bitcoin.networks.regtest,
-  },
-})
-addressSpendableUtxos({
-  address: 'bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx',
-  provider,
-}).then((value) => console.log(value))
