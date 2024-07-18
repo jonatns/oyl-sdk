@@ -1,8 +1,7 @@
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider'
-import { Account, SpendStrategy, mnemonicToAccount } from '../account'
+import { Account, SpendStrategy } from '../account'
 import { UTXO_DUST } from '../shared/constants'
-import { EsploraTx } from 'rpclient/esplora'
 
 export interface EsploraUtxo {
   txid: string
