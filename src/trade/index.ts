@@ -83,7 +83,7 @@ export class Trade {
       if (i === this.account.spendStrategy.addressOrder.length - 1) {
         throw new OylTransactionError(
           new Error(
-            'Not enough sats available to buy marketplace offers, need  ' +
+            'Not enough (confirmed) satoshis available to buy marketplace offers, need  ' +
               estimatedCost +
               ' sats'
           ),
@@ -240,6 +240,9 @@ export class Trade {
 
       case AssetType.RUNES:
         return await this.provider.api.initRuneSwapBid(payload)
+
+      case AssetType.COLLECTIBLE:
+        return await this.provider.api.initCollectionSwapBid(payload)
     }
   }
 
@@ -249,8 +252,11 @@ export class Trade {
         return await this.provider.api.submitSignedBid(payload)
 
       case AssetType.RUNES:
-        console.log('payload to submit', payload)
         return await this.provider.api.submitSignedRuneBid(payload)
+
+      case AssetType.COLLECTIBLE:
+        return await this.provider.api.submitSignedCollectionBid(payload)
+        
     }
   }
 
@@ -488,6 +494,9 @@ export class Trade {
       for await (let utxo of unspentsOrderedByValue) {
         if (this.isExcludedUtxo(utxo, excludedUtxos)) {
           // Check if the UTXO should be excluded
+          continue
+        }
+        if (utxo.status.confirmed != true){
           continue
         }
         const currentUTXO = utxo
