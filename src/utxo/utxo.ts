@@ -95,8 +95,9 @@ export const addressSpendableUtxos = async ({
         output: utxos[i].txid + ':' + utxos[i].vout,
       })
     }
-    const mempoolTxs: string[] =
-      await provider.sandshrew.bitcoindRpc.getRawMemPool(false)
+    const mempoolTxs: string[] = (
+      await provider.sandshrew.bitcoindRpc.getRawMemPool(true)
+    ).spentBy
     const inMempool: boolean = mempoolTxs.includes(utxos[i].txid)
 
     if (
