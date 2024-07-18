@@ -114,6 +114,7 @@ export class Trade {
         psbtBase64: order.psbtBase64,
         price: order.price,
         provider: this.provider,
+        feeRate: this.feeRate
       })
       const {
         psbtBase64: filledOutBase64,
@@ -317,6 +318,7 @@ export class Trade {
       psbtBase64: offers[0].psbtBase64,
       price: offers[0].price,
       provider: this.provider,
+      feeRate: this.feeRate
     })
 
     const preparedWallet = await this.prepareAddress(marketPlaceBuy)
@@ -410,7 +412,6 @@ export class Trade {
       }
       return true
     } catch (err) {
-      console.log('Error', err)
       throw new OylTransactionError(
         new Error(
           'An error occured while preparing address for marketplace buy'
@@ -585,6 +586,7 @@ export class Trade {
       receiveAddress: this.receiveAddress,
       psbtBase64: '',
       price: 0,
+      feeRate: this.feeRate,
       provider: this.provider,
     })
     const preparedWallet = await this.prepareAddress(marketPlaceBuy)
