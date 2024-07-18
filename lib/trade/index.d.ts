@@ -37,7 +37,7 @@ export declare class Trade {
     externalSign(options: any): Promise<string>;
     getUnspentsForAddress(address: string): Promise<any>;
     getUnspentsForAddressInOrderByValue(address: string): Promise<any>;
-    getUTXOsToCoverAmount(address: string, amountNeeded: number, excludedUtxos?: any[], inscriptionLocs?: string[]): Promise<any>;
+    getUTXOsToCoverAmount(address: string, amountNeeded: number, excludedUtxos?: any[], insistConfirmedUtxos?: boolean, inscriptionLocs?: string[]): Promise<any>;
     getAllUTXOsWorthASpecificValue(value: number): Promise<any>;
     buildDummyAndPaymentUtxos(orderPrice: number): Promise<{
         dummyUtxos: any[];
