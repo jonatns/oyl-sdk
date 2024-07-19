@@ -89,8 +89,6 @@ export class Provider {
       })
     }
 
-    console.log(psbtBase64)
-
     let extractedTx: bitcoin.Transaction
     try {
       extractedTx = psbt.extractTransaction()

@@ -74,7 +74,7 @@ export const addressSpendableUtxos = async ({
   }
 
   utxos = utxos.filter((utxo) => {
-    return utxo.value > UTXO_DUST && utxo.value != 546
+    return utxo.value > UTXO_DUST && utxo.value != 546 && utxo.status.confirmed
   })
 
   for (let i = 0; i < utxos.length; i++) {
