@@ -165,7 +165,6 @@ export class OylApiClient {
    * @param ticker - The ticker to query.
    */
   async getBrc20TokenDetails(ticker: string) {
-    console.log(ticker)
     return await this._call('/get-brc20-token-details', 'post', {
       ticker: ticker,
     })
