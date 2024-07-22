@@ -108,6 +108,8 @@ export const createPsbt = async ({
       }
     }
 
+    console.log(gatheredUtxos.totalAmount, finalFee, amount)
+
     if (gatheredUtxos.totalAmount < Number(finalFee) + Number(amount)) {
       throw new OylTransactionError(Error('Insufficient Balance'))
     }
