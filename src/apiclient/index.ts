@@ -72,7 +72,7 @@ export class OylApiClient {
         headers: {
           'Content-Type': 'application/json',
           Authorization: this.authToken ? `Bearer ${this.authToken}` : '',
-          'X-Bitcoin-Network': this.network,
+          'X-OYL-API-KEY': this.apiKey,
         },
         cache: 'no-cache',
       }
