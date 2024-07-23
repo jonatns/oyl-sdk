@@ -149,7 +149,7 @@ export class BuildMarketplaceTransaction {
 
     const amountRetrieved = this.calculateAmountGathered(retrievedUtxos)
     const maxTxSize = 350 //max of three taproot inputs, two outputs
-    const remainder = amountRetrieved  - 1200 - (maxTxSize * this.feeRate)
+    const remainder = amountRetrieved  - (1200 + (maxTxSize * this.feeRate))
     prepareTx.addOutput({
       address: this.walletAddress,
       value: 600,
