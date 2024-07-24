@@ -112,8 +112,9 @@ export async function getFee({
   psbt: string
   feeRate: number
 }) {
-  const vsize = (await provider.sandshrew.bitcoindRpc.decodePSBT!(psbt)).tx
-    .vsize
+  const vsize = (
+    await provider.sandshrew.bitcoindRpc.testMemPoolAccept[psbt]
+  )[0].vsize
 
   const accurateFee = vsize * feeRate
   return accurateFee

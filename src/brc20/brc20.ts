@@ -404,7 +404,11 @@ export const reveal = async ({
     psbt.signInput(0, tweakedTaprootKeyPair)
     psbt.finalizeInput(0)
 
-    return { psbt: psbt.toBase64(), fee: revealTxChange }
+    return {
+      psbt: psbt.toBase64(),
+      psbtHex: psbt.extractTransaction().toHex(),
+      fee: revealTxChange,
+    }
   } catch (error) {
     throw new OylTransactionError(error)
   }
@@ -551,14 +555,14 @@ export const send = async ({
     finalSendFee: estimate.fee,
   })
 
-  const { signedPsbt: commitSigned } = await signer.signAllInputs({
+  const { signedHexPsbt: commitHexSigned } = await signer.signAllInputs({
     rawPsbt: dryCommitPsbt!,
     finalize: true,
   })
 
   const commitFee = await getFee({
     provider,
-    psbt: commitSigned,
+    psbt: commitHexSigned,
     feeRate: feeRate,
   })
 
@@ -584,7 +588,7 @@ export const send = async ({
   })
 
   successTxIds.push(commitTxId)
-  const { psbt: revealPsbt } = await reveal({
+  const { psbtHex: revealPsbtHex } = await reveal({
     feeRate: feeRate,
     taprootPrivateKey: signer.taprootKeyPair.privateKey.toString('hex'),
     provider: provider,
@@ -595,7 +599,7 @@ export const send = async ({
 
   const revealFee = await getFee({
     provider,
-    psbt: revealPsbt,
+    psbt: revealPsbtHex,
     feeRate: feeRate,
   })
 
@@ -635,7 +639,7 @@ export const send = async ({
     toAddress: toAddress,
   })
 
-  const { signedPsbt: transferSigned } = await signer.signAllInputs({
+  const { signedHexPsbt: transferSigned } = await signer.signAllInputs({
     rawPsbt: transferPsbt!,
     finalize: true,
   })
