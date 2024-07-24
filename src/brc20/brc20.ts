@@ -504,7 +504,7 @@ export const transfer = async ({
       address: toAddress,
       value: 546,
     })
-
+    console.log(totalValue)
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
       value: totalValue - fee,
@@ -651,6 +651,8 @@ export const send = async ({
     psbt: transferSigned,
     feeRate: feeRate,
   })
+
+  console.log(transferFee)
 
   const { psbt: finalTransferPsbt } = await transfer({
     feeRate: feeRate,
