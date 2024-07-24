@@ -41,7 +41,7 @@ export const transferEstimate = async ({
     }
     const psbt: bitcoin.Psbt = new bitcoin.Psbt({ network: provider.network })
     const minFee = minimumFee({
-      taprootInputCount: 2,
+      taprootInputCount: 1,
       nonTaprootInputCount: 0,
       outputCount: 2,
     })
@@ -186,12 +186,10 @@ export const commit = async ({
 
     const baseEstimate =
       Number(feeForCommit) + Number(feeForReveal) + finalSendFee + 546
-
-    let calculatedFee =
-      baseEstimate * feeRate < 250 ? 250 : baseEstimate * feeRate
+    console.log(fee)
     let finalFee = fee
       ? fee + Number(feeForReveal) + 546 + finalSendFee
-      : calculatedFee
+      : baseEstimate
 
     let gatheredUtxos: {
       totalAmount: number
@@ -201,8 +199,6 @@ export const commit = async ({
       provider,
       spendAmount: finalFee,
     })
-
-    console.log(finalFee, gatheredUtxos.totalAmount)
 
     const taprootKeyPair: ECPairInterface = ECPair.fromPrivateKey(
       Buffer.from(taprootPrivateKey, 'hex')
@@ -343,8 +339,8 @@ export const reveal = async ({
       outputCount: 2,
     })
 
-    const revealTxBaseFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
-    const revealTxChange = Number(revealTxBaseFee) - fee
+    const revealTxBaseFee = minFee * feeRate < 546 ? 546 : minFee * feeRate
+    const revealTxChange = fee === 0 ? 0 : Number(revealTxBaseFee) - fee
 
     const commitTxOutput = await getOutputValueByVOutIndex({
       txId: commitTxId,
@@ -423,7 +419,7 @@ export const transfer = async ({
   feeRate,
   account,
   provider,
-  fee = 0,
+  fee,
 }: {
   commitChangeUtxoId: string
   revealTxId: string
@@ -440,6 +436,13 @@ export const transfer = async ({
     const psbt: bitcoin.Psbt = new bitcoin.Psbt({ network: provider.network })
     const utxoInfo = await provider.esplora.getTxInfo(commitChangeUtxoId)
     const revealInfo = await provider.esplora.getTxInfo(revealTxId)
+    const minFee = minimumFee({
+      taprootInputCount: 2,
+      nonTaprootInputCount: 0,
+      outputCount: 2,
+    })
+    let calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
+    let finalFee = fee ? fee : calculatedFee
     let totalValue: number = 0
 
     psbt.addInput({
@@ -504,10 +507,10 @@ export const transfer = async ({
       address: toAddress,
       value: 546,
     })
-    console.log(totalValue)
+
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
-      value: totalValue - fee,
+      value: totalValue - finalFee,
     })
 
     const formattedPsbt = await formatInputsToSign({
@@ -557,14 +560,14 @@ export const send = async ({
     finalSendFee: estimate.fee,
   })
 
-  const { signedHexPsbt: commitHexSigned } = await signer.signAllInputs({
+  const { signedPsbt: commitSigned } = await signer.signAllInputs({
     rawPsbt: dryCommitPsbt!,
     finalize: true,
   })
 
   const commitFee = await getFee({
     provider,
-    psbt: commitHexSigned,
+    psbt: commitSigned,
     feeRate: feeRate,
   })
 
@@ -573,7 +576,6 @@ export const send = async ({
     amount: amount,
     feeRate: feeRate,
     taprootPrivateKey: signer.taprootKeyPair.privateKey.toString('hex'),
-
     account: account,
     provider: provider,
     finalSendFee: estimate.fee,
@@ -590,7 +592,7 @@ export const send = async ({
   })
 
   successTxIds.push(commitTxId)
-  const { psbtHex: revealPsbtHex } = await reveal({
+  const { psbt: revealPsbt } = await reveal({
     feeRate: feeRate,
     taprootPrivateKey: signer.taprootKeyPair.privateKey.toString('hex'),
     provider: provider,
@@ -601,7 +603,7 @@ export const send = async ({
 
   const revealFee = await getFee({
     provider,
-    psbt: revealPsbtHex,
+    psbt: revealPsbt,
     feeRate: feeRate,
   })
 
@@ -641,7 +643,7 @@ export const send = async ({
     toAddress: toAddress,
   })
 
-  const { signedHexPsbt: transferSigned } = await signer.signAllInputs({
+  const { signedPsbt: transferSigned } = await signer.signAllInputs({
     rawPsbt: transferPsbt!,
     finalize: true,
   })
@@ -651,8 +653,6 @@ export const send = async ({
     psbt: transferSigned,
     feeRate: feeRate,
   })
-
-  console.log(transferFee)
 
   const { psbt: finalTransferPsbt } = await transfer({
     feeRate: feeRate,

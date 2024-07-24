@@ -113,16 +113,18 @@ export async function getFee({
   psbt: string
   feeRate: number
 }) {
-  const tx = await provider.sandshrew.bitcoindRpc.testMemPoolAccept([psbt])
+  let rawPsbt = bitcoin.Psbt.fromBase64(psbt, {
+    network: provider.network,
+  })
 
-  if (!tx[0]) {
-    new OylTransactionError(Error('Tx invalid'))
-  }
+  const signedHexPsbt = rawPsbt.extractTransaction().toHex()
+  const tx = await provider.sandshrew.bitcoindRpc.testMemPoolAccept([
+    signedHexPsbt,
+  ])
   const vsize = tx[0].vsize
 
-  console.log(vsize, tx)
-
   const accurateFee = vsize * feeRate
+  console.log(feeRate, vsize, accurateFee, tx)
   return accurateFee
 }
 
