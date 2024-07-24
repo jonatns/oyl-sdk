@@ -137,7 +137,7 @@ export class Signer {
     }
 
     const signedPsbt = unSignedPsbt.toBase64()
-    const signedHexPsbt = unSignedPsbt.extractTransaction().toHex()
+    const signedHexPsbt = unSignedPsbt.toHex()
     return {
       signedPsbt: signedPsbt,
       raw: unSignedPsbt,
@@ -232,7 +232,7 @@ export class Signer {
     }
 
     const signedPsbt = unSignedPsbt.toBase64()
-    const signedHexPsbt = unSignedPsbt.extractTransaction().toHex()
+    const signedHexPsbt = unSignedPsbt.toHex()
 
     return { signedPsbt, signedHexPsbt }
   }
@@ -265,7 +265,7 @@ export class Signer {
     }
 
     const signedPsbt = unSignedPsbt.toBase64()
-    const signedHexPsbt = unSignedPsbt.extractTransaction().toHex()
+    const signedHexPsbt = unSignedPsbt.toHex()
 
     return { signedPsbt: signedPsbt, signedHexPsbt: signedHexPsbt }
   }
