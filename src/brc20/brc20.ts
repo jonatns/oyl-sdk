@@ -202,6 +202,8 @@ export const commit = async ({
       spendAmount: finalFee,
     })
 
+    console.log(finalFee, gatheredUtxos.totalAmount)
+
     const taprootKeyPair: ECPairInterface = ECPair.fromPrivateKey(
       Buffer.from(taprootPrivateKey, 'hex')
     )
