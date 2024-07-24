@@ -24,6 +24,7 @@ import { isTaprootInput, toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew'
 import { EsploraRpc } from '../rpclient/esplora'
 import { Provider } from '../provider/provider'
+import { OylTransactionError } from '../errors'
 
 bitcoin.initEccLib(ecc)
 
@@ -112,10 +113,18 @@ export async function getFee({
   psbt: string
   feeRate: number
 }) {
-  const vsize = (await provider.sandshrew.bitcoindRpc.decodePSBT!(psbt)).tx
-    .vsize
+  let rawPsbt = bitcoin.Psbt.fromBase64(psbt, {
+    network: provider.network,
+  })
+
+  const signedHexPsbt = rawPsbt.extractTransaction().toHex()
+  const tx = await provider.sandshrew.bitcoindRpc.testMemPoolAccept([
+    signedHexPsbt,
+  ])
+  const vsize = tx[0].vsize
 
   const accurateFee = vsize * feeRate
+  console.log(feeRate, vsize, accurateFee, tx)
   return accurateFee
 }
 

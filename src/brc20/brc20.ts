@@ -41,7 +41,7 @@ export const transferEstimate = async ({
     }
     const psbt: bitcoin.Psbt = new bitcoin.Psbt({ network: provider.network })
     const minFee = minimumFee({
-      taprootInputCount: 2,
+      taprootInputCount: 1,
       nonTaprootInputCount: 0,
       outputCount: 2,
     })
@@ -186,12 +186,10 @@ export const commit = async ({
 
     const baseEstimate =
       Number(feeForCommit) + Number(feeForReveal) + finalSendFee + 546
-
-    let calculatedFee =
-      baseEstimate * feeRate < 250 ? 250 : baseEstimate * feeRate
+    console.log(fee)
     let finalFee = fee
       ? fee + Number(feeForReveal) + 546 + finalSendFee
-      : calculatedFee
+      : baseEstimate
 
     let gatheredUtxos: {
       totalAmount: number
@@ -341,8 +339,8 @@ export const reveal = async ({
       outputCount: 2,
     })
 
-    const revealTxBaseFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
-    const revealTxChange = Number(revealTxBaseFee) - fee
+    const revealTxBaseFee = minFee * feeRate < 546 ? 546 : minFee * feeRate
+    const revealTxChange = fee === 0 ? 0 : Number(revealTxBaseFee) - fee
 
     const commitTxOutput = await getOutputValueByVOutIndex({
       txId: commitTxId,
@@ -404,7 +402,11 @@ export const reveal = async ({
     psbt.signInput(0, tweakedTaprootKeyPair)
     psbt.finalizeInput(0)
 
-    return { psbt: psbt.toBase64(), fee: revealTxChange }
+    return {
+      psbt: psbt.toBase64(),
+      psbtHex: psbt.extractTransaction().toHex(),
+      fee: revealTxChange,
+    }
   } catch (error) {
     throw new OylTransactionError(error)
   }
@@ -417,7 +419,7 @@ export const transfer = async ({
   feeRate,
   account,
   provider,
-  fee = 0,
+  fee,
 }: {
   commitChangeUtxoId: string
   revealTxId: string
@@ -434,6 +436,13 @@ export const transfer = async ({
     const psbt: bitcoin.Psbt = new bitcoin.Psbt({ network: provider.network })
     const utxoInfo = await provider.esplora.getTxInfo(commitChangeUtxoId)
     const revealInfo = await provider.esplora.getTxInfo(revealTxId)
+    const minFee = minimumFee({
+      taprootInputCount: 2,
+      nonTaprootInputCount: 0,
+      outputCount: 2,
+    })
+    let calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
+    let finalFee = fee ? fee : calculatedFee
     let totalValue: number = 0
 
     psbt.addInput({
@@ -501,7 +510,7 @@ export const transfer = async ({
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
-      value: totalValue - fee,
+      value: totalValue - finalFee,
     })
 
     const formattedPsbt = await formatInputsToSign({
@@ -567,7 +576,6 @@ export const send = async ({
     amount: amount,
     feeRate: feeRate,
     taprootPrivateKey: signer.taprootKeyPair.privateKey.toString('hex'),
-
     account: account,
     provider: provider,
     finalSendFee: estimate.fee,

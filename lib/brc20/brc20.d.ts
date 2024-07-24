@@ -36,6 +36,7 @@ export declare const reveal: ({ receiverAddress, script, feeRate, taprootPrivate
     commitTxId: string;
 }) => Promise<{
     psbt: string;
+    psbtHex: string;
     fee: number;
 }>;
 export declare const transfer: ({ commitChangeUtxoId, revealTxId, toAddress, feeRate, account, provider, fee, }: {
