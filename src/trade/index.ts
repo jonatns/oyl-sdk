@@ -270,9 +270,6 @@ export class Trade {
       receiveAddress: this.receiveAddress,
       feerate: this.feeRate,
     }
-    console.log(payload)
-    console.log(this.receiveAddress)
-    console.log(this.addressesBound)
     if (
       this.selectedSpendAddress != this.receiveAddress &&
       !this.addressesBound

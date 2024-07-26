@@ -124,7 +124,6 @@ export async function getFee({
   const vsize = tx[0].vsize
 
   const accurateFee = vsize * feeRate
-  console.log(feeRate, vsize, accurateFee, tx)
   return accurateFee
 }
 
