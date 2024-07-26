@@ -186,7 +186,6 @@ export const commit = async ({
 
     const baseEstimate =
       Number(feeForCommit) + Number(feeForReveal) + finalSendFee + 546
-    console.log(fee)
     let finalFee = fee
       ? fee + Number(feeForReveal) + 546 + finalSendFee
       : baseEstimate
