@@ -311,7 +311,7 @@ export class Oyl {
    * @throws {Error} Throws an error if the balance retrieval fails.
    */
   async getAddressBalance({ address }: { address: string }) {
-    const balance = await this.apiClient.getAccountBalance(address)
+    const balance = await this.apiClient.getAddressBalance(address)
     return balance
   }
 
