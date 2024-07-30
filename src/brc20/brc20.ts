@@ -20,7 +20,6 @@ import { ECPairInterface } from 'ecpair'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import { getAddressType } from '../transactions'
 import { Signer } from '../signer'
-import { UTXO_DUST } from '../shared/constants'
 
 export const transferEstimate = async ({
   toAddress,
