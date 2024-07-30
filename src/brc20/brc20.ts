@@ -184,11 +184,9 @@ export const commit = async ({
     const feeForReveal =
       revealTxSize * feeRate < 250 ? 250 : revealTxSize * feeRate
 
-    const baseEstimate =
-      Number(feeForCommit) + Number(feeForReveal) + finalSendFee + 546
-    let finalFee = fee
-      ? fee + Number(feeForReveal) + 546 + finalSendFee
-      : baseEstimate
+    const baseEstimate = Number(feeForCommit) + Number(feeForReveal) + 546
+
+    let finalFee = fee ? fee + Number(feeForReveal) + 546 : baseEstimate
 
     let gatheredUtxos: {
       totalAmount: number
@@ -196,7 +194,7 @@ export const commit = async ({
     } = await accountSpendableUtxos({
       account,
       provider,
-      spendAmount: finalFee,
+      spendAmount: finalFee + finalSendFee,
     })
 
     const taprootKeyPair: ECPairInterface = ECPair.fromPrivateKey(
