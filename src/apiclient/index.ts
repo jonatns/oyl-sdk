@@ -251,9 +251,9 @@ export class OylApiClient {
     }
   }
 
-  async getAddressBalance(address: string): Promise<any> {
+  async getAddressBalance(account: string): Promise<any> {
     const res = await this._call('/get-address-balance', 'post', {
-      address: address,
+      account: account,
     })
     if (res.data) {
       return res.data
