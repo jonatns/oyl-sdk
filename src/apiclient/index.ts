@@ -598,81 +598,75 @@ export class OylApiClient {
   }
 
   async sendBtcEstimate({
-    feeRate,
     amount,
-    altSpendPubKey,
-    spendAddress,
-    spendPubKey,
-    altSpendAddress,
+    feeRate,
+    account,
+    signer,
   }: {
-    feeRate?: number
     amount: number
-    altSpendPubKey?: string
-    spendAddress: string
-    spendPubKey: string
-    altSpendAddress?: string
+    feeRate: number
+    account: string
+    signer: string
   }): Promise<any> {
     return await this._call('/send-btc-estimate', 'post', {
-      feeRate,
       amount,
-      altSpendPubKey,
-      spendAddress,
-      spendPubKey,
-      altSpendAddress,
+      feeRate,
+      account,
+      signer,
     })
   }
 
   async sendBrc20Estimate({
     feeRate,
-    altSpendPubKey,
-    spendAddress,
-    spendPubKey,
-    altSpendAddress,
+    account,
   }: {
-    feeRate?: number
-    altSpendPubKey?: string
-    spendAddress: string
-    spendPubKey: string
-    altSpendAddress?: string
+    feeRate: number
+    account: string
   }): Promise<any> {
     return await this._call('/send-brc20-estimate', 'post', {
-      spendPubKey,
       feeRate,
-      altSpendPubKey,
-      spendAddress,
-      altSpendAddress,
+      account,
     })
   }
 
   async sendCollectibleEstimate({
-    spendAddress,
-    altSpendAddress,
+    inscriptionId,
     feeRate,
+    account,
+    signer,
   }: {
-    feeRate?: number
-    spendAddress: string
-    altSpendAddress?: string
+    inscriptionId: string
+    feeRate: number
+    account: string
+    signer: string
   }): Promise<any> {
     return await this._call('/send-collectible-estimate', 'post', {
-      spendAddress,
-      altSpendAddress,
+      inscriptionId,
       feeRate,
+      account,
+      signer,
     })
   }
 
   async sendRuneEstimate({
-    spendAddress,
-    altSpendAddress,
+    runeId,
+    amount,
     feeRate,
+    account,
+    signer,
   }: {
-    feeRate?: number
-    spendAddress: string
-    altSpendAddress?: string
+    runeId: string
+    amount: number
+    feeRate: number
+    account: string
+    signer: string
   }): Promise<any> {
     return await this._call('/send-rune-estimate', 'post', {
-      spendAddress,
-      altSpendAddress,
+      runeId,
+      amount,
       feeRate,
+      account,
+      signer,
     })
   }
 

@@ -276,30 +276,28 @@ export declare class OylApiClient {
      * @param params - Parameters for the signed bid.
      */
     submitSignedRuneBid(params: SignedBid): Promise<any>;
-    sendBtcEstimate({ feeRate, amount, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, }: {
-        feeRate?: number;
+    sendBtcEstimate({ amount, feeRate, account, signer, }: {
         amount: number;
-        altSpendPubKey?: string;
-        spendAddress: string;
-        spendPubKey: string;
-        altSpendAddress?: string;
+        feeRate: number;
+        account: string;
+        signer: string;
     }): Promise<any>;
-    sendBrc20Estimate({ feeRate, altSpendPubKey, spendAddress, spendPubKey, altSpendAddress, }: {
-        feeRate?: number;
-        altSpendPubKey?: string;
-        spendAddress: string;
-        spendPubKey: string;
-        altSpendAddress?: string;
+    sendBrc20Estimate({ feeRate, account, }: {
+        feeRate: number;
+        account: string;
     }): Promise<any>;
-    sendCollectibleEstimate({ spendAddress, altSpendAddress, feeRate, }: {
-        feeRate?: number;
-        spendAddress: string;
-        altSpendAddress?: string;
+    sendCollectibleEstimate({ inscriptionId, feeRate, account, signer, }: {
+        inscriptionId: string;
+        feeRate: number;
+        account: string;
+        signer: string;
     }): Promise<any>;
-    sendRuneEstimate({ spendAddress, altSpendAddress, feeRate, }: {
-        feeRate?: number;
-        spendAddress: string;
-        altSpendAddress?: string;
+    sendRuneEstimate({ runeId, amount, feeRate, account, signer, }: {
+        runeId: string;
+        amount: number;
+        feeRate: number;
+        account: string;
+        signer: string;
     }): Promise<any>;
     getRuneOutpoints({ address }: {
         address: string;
