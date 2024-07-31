@@ -109,6 +109,11 @@ export declare class OylApiClient {
     getTaprootBalance(address: string): Promise<any>;
     getAddressBalance(address: string): Promise<any>;
     /**
+     * Get collectibles by address.
+     * @param account - The address to query.
+     */
+    getAccountBalance(account: string): Promise<any>;
+    /**
      * Get collectible by ID.
      * @param id - The ID of the collectible.
      */
