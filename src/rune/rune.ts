@@ -371,11 +371,9 @@ export const findRuneUtxos = async ({
   targetNumberOfRunes: number
 }) => {
   const runeUtxos: RuneUTXO[] = []
-  const runeUtxoOutpoints: any[] = (
-    await provider.api.getRuneOutpoints({
-      address: address,
-    })
-  ).data
+  const runeUtxoOutpoints: any[] = await provider.api.getRuneOutpoints({
+    address: address,
+  })
   if (greatestToLeast) {
     runeUtxoOutpoints?.sort((a, b) => b.satoshis - a.satoshis)
   } else {
