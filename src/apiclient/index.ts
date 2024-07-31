@@ -263,8 +263,8 @@ export class OylApiClient {
   }
 
   /**
-   * Get collectibles by address.
-   * @param account - The address to query.
+   * Get account balance.
+   * @param account - The stringified account object to get balance for.
    */
   async getAccountBalance(account: string): Promise<any> {
     const res = await this._call('/get-account-balance', 'post', {
