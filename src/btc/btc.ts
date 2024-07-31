@@ -206,13 +206,21 @@ export const actualFee = async ({
     account: account,
     provider: provider,
   })
+
   const { signedPsbt } = await signer.signAllInputs({
     rawPsbt: psbt,
     finalize: true,
   })
 
-  const vsize = (await provider.sandshrew.bitcoindRpc.decodePSBT!(signedPsbt))
-    .tx.vsize
+  let rawPsbt = bitcoin.Psbt.fromBase64(signedPsbt, {
+    network: account.network,
+  })
+
+  const signedHexPsbt = rawPsbt.extractTransaction().toHex()
+
+  const vsize = (
+    await provider.sandshrew.bitcoindRpc.testMemPoolAccept([signedHexPsbt])
+  )[0].vsize
 
   const correctFee = vsize * feeRate
 
@@ -230,9 +238,15 @@ export const actualFee = async ({
     finalize: true,
   })
 
+  let finalRawPsbt = bitcoin.Psbt.fromBase64(signedAll, {
+    network: account.network,
+  })
+
+  const finalSignedHexPsbt = finalRawPsbt.extractTransaction().toHex()
+
   const finalVsize = (
-    await provider.sandshrew.bitcoindRpc.decodePSBT!(signedAll)
-  ).tx.vsize
+    await provider.sandshrew.bitcoindRpc.testMemPoolAccept([finalSignedHexPsbt])
+  )[0].vsize
 
   const finalFee = finalVsize * feeRate
 
