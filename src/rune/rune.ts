@@ -375,9 +375,9 @@ export const findRuneUtxos = async ({
     address: address,
   })
   if (greatestToLeast) {
-    runeUtxoOutpoints.sort((a, b) => b.satoshis - a.satoshis)
+    runeUtxoOutpoints?.sort((a, b) => b.satoshis - a.satoshis)
   } else {
-    runeUtxoOutpoints.sort((a, b) => a.satoshis - b.satoshis)
+    runeUtxoOutpoints?.sort((a, b) => a.satoshis - b.satoshis)
   }
   let runeTotalSatoshis: number = 0
   let runeTotalAmount: number = 0
