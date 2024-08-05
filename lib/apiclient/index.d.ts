@@ -179,8 +179,9 @@ export declare class OylApiClient {
      * Get Okx offer psbt.
      * @param offerId - The offer Id to query.
      */
-    getOkxOfferPsbt({ offerId }: {
+    getOkxOfferPsbt({ offerId, rune }: {
         offerId: number;
+        rune?: boolean;
     }): Promise<any>;
     /**
      * Submit a signed bid for OKX marketplace.

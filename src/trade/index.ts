@@ -221,29 +221,37 @@ export class Trade {
         externalSwap = true
         await timeout(10000)
       } else if (offer.marketplace == 'okx' && !testnet) {
-        const offerPsbt = await this.provider.api.getOkxOfferPsbt({
-          offerId: offer.offerId,
-        })
-        const signedPsbt = await this.createOkxSignedPsbt(
-          offerPsbt.data.sellerPsbt,
-          offer.totalPrice
-        )
-        const payload: OkxBid = {
-          ticker: offer.ticker,
-          price: offer.totalPrice,
-          amount: parseInt(offer.amount),
-          fromAddress: this.selectedSpendAddress,
-          toAddress: offer.address,
-          inscriptionId: offer.inscriptionId,
-          buyerPsbt: signedPsbt,
-          orderId: offer.offerId,
-          brc20: this.assetType == AssetType.BRC20 ? true : false
-        }
-        const tx = await this.provider.api.submitOkxBid(payload)
-        let txId = tx?.data
-        if (txId != null) {
-          this.txIds.push(txId)
-          processedOffers.push(txId)
+        if (this.assetType != AssetType.RUNES) {
+          const offerPsbt = await this.provider.api.getOkxOfferPsbt({
+            offerId: offer.offerId,
+          })
+          const signedPsbt = await this.createOkxSignedPsbt(
+            offerPsbt.data.sellerPsbt,
+            offer.totalPrice
+          )
+          const payload: OkxBid = {
+            ticker: offer.ticker,
+            price: offer.totalPrice,
+            amount: parseInt(offer.amount),
+            fromAddress: this.selectedSpendAddress,
+            toAddress: offer.address,
+            inscriptionId: offer.inscriptionId,
+            buyerPsbt: signedPsbt,
+            orderId: offer.offerId,
+            brc20: this.assetType == AssetType.BRC20 ? true : false
+          }
+          const tx = await this.provider.api.submitOkxBid(payload)
+          let txId = tx?.data
+          if (txId != null) {
+            this.txIds.push(txId)
+            processedOffers.push(txId)
+          }
+        } else {
+          const sellerPsbt_ = "cHNidP8BAKYCAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////lIX5EGqN5OcCFZjFGB3TX+Q86N01lQ0Wzhjped42W10DAAAAAP////8CAQAAAAAAAAAiUSDBJU2tQKrqEh5T4M7AmYY2L2zUIieW0ZSMlHkbNSgctZiJAAAAAAAAFgAUbv8TKmrTLdH/c0iq4BhPoAKgfMgAAAAAAAEBKwEAAAAAAAAAIlEgwSVNrUCq6hIeU+DOwJmGNi9s1CInltGUjJR5GzUoHLUBAwQBAAAAARcgYW4nMjhA7gwq5DTZmCZ/gRcJiLqUd/eNzQD8JHon20AAAQEfIgIAAAAAAAAWABRu/xMqatMt0f9zSKrgGE+gAqB8yAEDBIMAAAAAAQUgYW4nMjhA7gwq5DTZmCZ/gRcJiLqUd/eNzQD8JHon20AAAA=="
+          const orderPrice = 35224
+          const sellerAddress = "bc1qdml3x2n26vkarlmnfz4wqxz05qp2qlxgrgv4jr"
+          const signedPsbt = await this.buildOkxRunesPsbt(sellerPsbt_, orderPrice, sellerAddress)
+          console.log("signed psbt", signedPsbt)
         }
         externalSwap = true
         await timeout(10000)
@@ -459,7 +467,7 @@ export class Trade {
     const psbt = bitcoin.Psbt.fromHex(options.psbt, {
       network: this.provider.network,
     })
-      const psbtPayload = await this.signMarketplacePsbt(psbt.toBase64(), false)
+    const psbtPayload = await this.signMarketplacePsbt(psbt.toBase64(), false)
     console.log('psbt payload', psbtPayload)
     return psbtPayload.signedHexPsbt
   }
@@ -652,18 +660,21 @@ export class Trade {
       }
     }));
 
-
-    // Add seller UTXO as input index 1
-    buyerPsbt.addInput({
+    const sellerUtxo = {
       hash: decoded.tx.vin[1].txid,
       index: decoded.tx.vin[1].vout,
       witnessUtxo: {
         value: sellerInputData.witnessUtxo.value,
         script: sellerInputData.witnessUtxo.script,
       },
-      tapInternalKey: sellerInputData.tapInternalKey,
       sighashType: bitcoin.Transaction.SIGHASH_SINGLE | bitcoin.Transaction.SIGHASH_ANYONECANPAY,
-    });
+    }
+
+    if ( sellerInputData?.tapInternalKey != null){
+      sellerUtxo["tapInternalKey"] = sellerInputData?.tapInternalKey
+    }
+    // Add seller UTXO as input index 1
+    buyerPsbt.addInput(sellerUtxo);
 
     for (let i = 1; i < retrievedUtxos.length; i++) {
       buyerPsbt.addInput(this.addInputConditionally({
@@ -695,11 +706,11 @@ export class Trade {
 
     if (remainder > 0) {
       buyerPsbt.addOutput({
-          address: this.selectedSpendAddress,
-          value: remainder,
+        address: this.selectedSpendAddress,
+        value: remainder,
       });
-  }
-    const {signedPsbt} = await this.signMarketplacePsbt(buyerPsbt.toBase64(), false)
+    }
+    const { signedPsbt } = await this.signMarketplacePsbt(buyerPsbt.toBase64(), false)
     return signedPsbt;
   }
 
