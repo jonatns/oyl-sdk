@@ -426,6 +426,15 @@ export class OylApiClient {
   }
 
   /**
+   * Submit a signed bid for rune offers on OKX marketplace.
+   * @param params - Parameters for the signed bid.
+   */
+  async submitOkxRuneBid({ orderId, fromAddress, psbt }: { orderId: number, fromAddress: string, psbt: string }): Promise<any> {
+    const response = await this._call('/finalize-okx-rune-offer', 'post', { orderId, fromAddress, psbt })
+    return response
+  }
+
+  /**
    * Get BTC price.
    */
   async getBtcPrice() {

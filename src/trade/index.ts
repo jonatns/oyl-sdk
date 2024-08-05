@@ -247,11 +247,26 @@ export class Trade {
             processedOffers.push(txId)
           }
         } else {
-          const sellerPsbt_ = "cHNidP8BAKYCAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////lIX5EGqN5OcCFZjFGB3TX+Q86N01lQ0Wzhjped42W10DAAAAAP////8CAQAAAAAAAAAiUSDBJU2tQKrqEh5T4M7AmYY2L2zUIieW0ZSMlHkbNSgctZiJAAAAAAAAFgAUbv8TKmrTLdH/c0iq4BhPoAKgfMgAAAAAAAEBKwEAAAAAAAAAIlEgwSVNrUCq6hIeU+DOwJmGNi9s1CInltGUjJR5GzUoHLUBAwQBAAAAARcgYW4nMjhA7gwq5DTZmCZ/gRcJiLqUd/eNzQD8JHon20AAAQEfIgIAAAAAAAAWABRu/xMqatMt0f9zSKrgGE+gAqB8yAEDBIMAAAAAAQUgYW4nMjhA7gwq5DTZmCZ/gRcJiLqUd/eNzQD8JHon20AAAA=="
-          const orderPrice = 35224
-          const sellerAddress = "bc1qdml3x2n26vkarlmnfz4wqxz05qp2qlxgrgv4jr"
-          const signedPsbt = await this.buildOkxRunesPsbt(sellerPsbt_, orderPrice, sellerAddress)
-          console.log("signed psbt", signedPsbt)
+          const offerPsbt = await this.provider.api.getOkxOfferPsbt({
+            offerId: offer.offerId,
+            rune: true
+          })
+          const signedPsbt = await this.buildOkxRunesPsbt(
+            offerPsbt.data.sellerPsbt,
+            offer.totalPrice,
+            offer.address
+          )
+          const payload = {
+            fromAddress: this.selectedSpendAddress,
+            psbt: signedPsbt,
+            orderId: offer.offerId,
+          }
+          const tx = await this.provider.api.submitOkxRuneBid(payload)
+          let txId = tx?.data
+          if (txId != null) {
+            this.txIds.push(txId)
+            processedOffers.push(txId)
+          }
         }
         externalSwap = true
         await timeout(10000)

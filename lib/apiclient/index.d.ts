@@ -189,6 +189,15 @@ export declare class OylApiClient {
      */
     submitOkxBid(bidDetails: OkxBid): Promise<any>;
     /**
+     * Submit a signed bid for rune offers on OKX marketplace.
+     * @param params - Parameters for the signed bid.
+     */
+    submitOkxRuneBid({ orderId, fromAddress, psbt }: {
+        orderId: number;
+        fromAddress: string;
+        psbt: string;
+    }): Promise<any>;
+    /**
      * Get BTC price.
      */
     getBtcPrice(): Promise<any>;
