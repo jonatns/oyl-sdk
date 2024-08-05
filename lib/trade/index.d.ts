@@ -43,6 +43,7 @@ export declare class Trade {
         dummyUtxos: any[];
         paymentUtxos: any[];
     }>;
+    buildOkxRunesPsbt(psbt: string, orderPrice: number): Promise<void>;
     createOkxSignedPsbt(sellerPsbt: string, orderPrice: number): Promise<string>;
     isExcludedUtxo(utxo: any, excludedUtxos: any): any;
     getSignatureForBind(): Promise<string>;
