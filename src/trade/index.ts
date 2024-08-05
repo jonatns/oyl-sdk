@@ -4,6 +4,7 @@ import {
   getNetwork,
   timeout,
   getSatpointFromUtxo,
+  assertHex,
 } from '..'
 import { BuildMarketplaceTransaction } from './buildMarketplaceTx'
 import * as bitcoin from 'bitcoinjs-lib'
@@ -37,6 +38,7 @@ export class Trade {
   public assetType: AssetType
   public feeRate: number
   public txIds: string[]
+  public takerScript: string
   public addressesBound: boolean = false
 
   constructor(options: MarketplaceAccount) {
@@ -63,6 +65,30 @@ export class Trade {
     return totalCost
   }
 
+  getScriptPubKey() {
+    const addressType = getAddressType(this.selectedSpendAddress)
+    switch (addressType) {
+      case AddressType.P2TR: {
+        const tapInternalKey = assertHex(Buffer.from(this.selectedSpendPubkey, 'hex'))
+        const p2tr = bitcoin.payments.p2tr({
+          internalPubkey: tapInternalKey,
+          network: this.provider.network,
+        })
+        this.takerScript = p2tr.output?.toString('hex')
+        break
+      }
+      case AddressType.P2WPKH: {
+        const p2wpkh = bitcoin.payments.p2wpkh({
+          pubkey: Buffer.from(this.selectedSpendPubkey, 'hex'),
+          network: this.provider.network,
+        })
+        this.takerScript = p2wpkh.output?.toString('hex')
+        break
+      }
+    }
+  }
+
+
   async selectSpendAddress(offers: MarketplaceOffer[]) {
     const estimatedCost = await this.getOffersCostEstimate(offers)
     for (let i = 0; i < this.account.spendStrategy.addressOrder.length; i++) {
@@ -77,6 +103,7 @@ export class Trade {
         if (await this.canAddressAffordOffers(address, estimatedCost)) {
           this.selectedSpendAddress = address
           this.selectedSpendPubkey = pubkey
+          this.getScriptPubKey();
           break
         }
       }
@@ -84,8 +111,8 @@ export class Trade {
         throw new OylTransactionError(
           new Error(
             'Not enough (confirmed) satoshis available to buy marketplace offers, need  ' +
-              estimatedCost +
-              ' sats'
+            estimatedCost +
+            ' sats'
           ),
           this.txIds
         )
@@ -257,7 +284,7 @@ export class Trade {
 
       case AssetType.COLLECTIBLE:
         return await this.provider.api.submitSignedCollectionBid(payload)
-        
+
     }
   }
 
@@ -432,9 +459,7 @@ export class Trade {
     const psbt = bitcoin.Psbt.fromHex(options.psbt, {
       network: this.provider.network,
     })
-    console.log(psbt.toBase64())
-    console.log('external sign options', options)
-    const psbtPayload = await this.signMarketplacePsbt(psbt.toBase64(), false)
+      const psbtPayload = await this.signMarketplacePsbt(psbt.toBase64(), false)
     console.log('psbt payload', psbtPayload)
     return psbtPayload.signedHexPsbt
   }
@@ -452,6 +477,13 @@ export class Trade {
     }
   }
 
+  addInputConditionally(inputData) {
+    const addressType = getAddressType(this.selectedSpendAddress)
+    if (addressType === AddressType.P2TR) {
+      inputData['tapInternalKey'] = assertHex(Buffer.from(this.selectedSpendPubkey, 'hex'))
+    }
+    return inputData
+  }
   async getUnspentsForAddressInOrderByValue(address: string) {
     const unspents = await this.getUnspentsForAddress(address)
     console.log('=========== Confirmed Utxos len', unspents.length)
@@ -497,7 +529,7 @@ export class Trade {
           // Check if the UTXO should be excluded
           continue
         }
-        if (insistConfirmedUtxos && utxo.status.confirmed != true){
+        if (insistConfirmedUtxos && utxo.status.confirmed != true) {
           continue
         }
         const currentUTXO = utxo
@@ -576,10 +608,10 @@ export class Trade {
     }
   }
 
-  async buildOkxRunesPsbt(psbt: string, orderPrice: number) {
-    const sellerPsbt = bitcoin.Psbt.fromBase64(psbt, {network: this.provider.network})
+  async buildOkxRunesPsbt(psbt: string, orderPrice: number, sellerAddress: string) {
+    const sellerPsbt = bitcoin.Psbt.fromBase64(psbt, { network: this.provider.network })
     const dummyUtxos = []
-    const requiredSatoshis = orderPrice +  parseInt((482 * this.feeRate).toFixed(0))
+    const requiredSatoshis = orderPrice + parseInt((482 * this.feeRate).toFixed(0))
 
     const allUtxosWorth600 = await this.getAllUTXOsWorthASpecificValue(600)
     if (allUtxosWorth600.length >= 2) {
@@ -603,6 +635,72 @@ export class Trade {
         this.txIds
       )
     }
+
+    const buyerPsbt = new bitcoin.Psbt({ network: this.provider.network });
+
+    const sellerInputData = sellerPsbt.data.inputs[1]
+    const decoded = await this.provider.sandshrew.bitcoindRpc.decodePSBT(psbt)
+
+
+    // Add the first UTXO from retrievedUtxos as input index 0
+    buyerPsbt.addInput(this.addInputConditionally({
+      hash: retrievedUtxos[0].txid,
+      index: retrievedUtxos[0].vout,
+      witnessUtxo: {
+        value: retrievedUtxos[0].value,
+        script: Buffer.from(this.takerScript, 'hex')
+      }
+    }));
+
+
+    // Add seller UTXO as input index 1
+    buyerPsbt.addInput({
+      hash: decoded.tx.vin[1].txid,
+      index: decoded.tx.vin[1].vout,
+      witnessUtxo: {
+        value: sellerInputData.witnessUtxo.value,
+        script: sellerInputData.witnessUtxo.script,
+      },
+      tapInternalKey: sellerInputData.tapInternalKey,
+      sighashType: bitcoin.Transaction.SIGHASH_SINGLE | bitcoin.Transaction.SIGHASH_ANYONECANPAY,
+    });
+
+    for (let i = 1; i < retrievedUtxos.length; i++) {
+      buyerPsbt.addInput(this.addInputConditionally({
+        hash: retrievedUtxos[i].txid,
+        index: retrievedUtxos[i].vout,
+        witnessUtxo: {
+          value: retrievedUtxos[i].value,
+          script: Buffer.from(this.takerScript, 'hex')
+        }
+      }));
+    }
+
+    buyerPsbt.addOutput({
+      address: this.receiveAddress, // Buyer's receiving address at index 0
+      value: sellerInputData.witnessUtxo.value,
+    });
+
+    buyerPsbt.addOutput({
+      address: sellerAddress, // Seller's output address at index 1
+      value: orderPrice,
+    });
+
+    const amountRetrieved = retrievedUtxos?.reduce(
+      (prev, currentValue) => prev + currentValue.value,
+      0
+    )
+
+    const remainder = amountRetrieved - requiredSatoshis;
+
+    if (remainder > 0) {
+      buyerPsbt.addOutput({
+          address: this.selectedSpendAddress,
+          value: remainder,
+      });
+  }
+    const {signedPsbt} = await this.signMarketplacePsbt(buyerPsbt.toBase64(), false)
+    return signedPsbt;
   }
 
   async createOkxSignedPsbt(sellerPsbt: string, orderPrice: number) {
