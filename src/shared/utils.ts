@@ -625,6 +625,7 @@ export async function waitForTransaction({
       const result = await sandshrewBtcClient.bitcoindRpc.getMemPoolEntry(txId)
 
       if (result) {
+        await delay(5000)
         break
       }
 
