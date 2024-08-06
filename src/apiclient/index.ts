@@ -408,9 +408,10 @@ export class OylApiClient {
    * Get Okx offer psbt.
    * @param offerId - The offer Id to query.
    */
-  async getOkxOfferPsbt({ offerId }: { offerId: number }): Promise<any> {
+  async getOkxOfferPsbt({ offerId, rune }: { offerId: number, rune?: boolean }): Promise<any> {
     const response = await this._call('/get-okx-offer-psbt', 'post', {
       offerId: offerId,
+      rune
     })
     return response
   }
@@ -421,6 +422,15 @@ export class OylApiClient {
    */
   async submitOkxBid(bidDetails: OkxBid): Promise<any> {
     const response = await this._call('/finalize-okx-bid', 'post', bidDetails)
+    return response
+  }
+
+  /**
+   * Submit a signed bid for rune offers on OKX marketplace.
+   * @param params - Parameters for the signed bid.
+   */
+  async submitOkxRuneBid({ orderId, fromAddress, psbt }: { orderId: number, fromAddress: string, psbt: string }): Promise<any> {
+    const response = await this._call('/finalize-okx-rune-offer', 'post', { orderId, fromAddress, psbt })
     return response
   }
 
