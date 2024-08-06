@@ -1,12 +1,10 @@
 import { OylTransactionError } from '../errors'
 import { Provider } from '../provider/provider'
 import * as bitcoin from 'bitcoinjs-lib'
-import { EsploraUtxo, FormattedUtxo, accountSpendableUtxos } from '../utxo/utxo'
+import { FormattedUtxo, accountSpendableUtxos } from '../utxo/utxo'
 import {
-  ECPair,
   calculateTaprootTxSize,
   createInscriptionScript,
-  delay,
   formatInputsToSign,
   getFee,
   getOutputValueByVOutIndex,
@@ -16,9 +14,8 @@ import {
 import { Account } from '../account/account'
 import { minimumFee } from '../btc/btc'
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
-import { ECPairInterface } from 'ecpair'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
-import { getAddressType } from '../transactions'
+import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
 
 export const transferEstimate = async ({
@@ -504,17 +501,17 @@ export const transfer = async ({
 }
 
 export const send = async ({
+  toAddress,
   ticker,
   amount,
-  toAddress,
   account,
   provider,
   feeRate,
   signer,
 }: {
+  toAddress: string
   ticker: string
   amount: number
-  toAddress: string
   feeRate: number
   account: Account
   provider: Provider

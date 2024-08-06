@@ -51,10 +51,10 @@ export declare const transfer: ({ commitChangeUtxoId, revealTxId, toAddress, fee
 }) => Promise<{
     psbt: string;
 }>;
-export declare const send: ({ ticker, amount, toAddress, account, provider, feeRate, signer, }: {
+export declare const send: ({ toAddress, ticker, amount, account, provider, feeRate, signer, }: {
+    toAddress: string;
     ticker: string;
     amount: number;
-    toAddress: string;
     feeRate: number;
     account: Account;
     provider: Provider;

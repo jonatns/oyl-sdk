@@ -19,6 +19,23 @@ export const regtestProviderConstructorArgs: ProviderConstructorArgs = {
   apiUrl: 'https://mainnet-api.oyl.gg',
 }
 
+export const defaultProvider = {
+  bitcoin: new Provider({
+    url: 'https://mainnet.sandshrew.io',
+    projectId: process.env.SANDSHREW_PROJECT_ID!,
+    network: bitcoin.networks.bitcoin,
+    networkType: 'mainnet',
+    apiUrl: 'https://staging-api.oyl.gg',
+  }),
+  regtest: new Provider({
+    url: 'http://localhost:3000',
+    projectId: 'regtest',
+    network: bitcoin.networks.regtest,
+    networkType: 'mainnet',
+    apiUrl: 'https://staging-api.oyl.gg',
+  }),
+}
+
 export const regtestOpts: MnemonicToAccountOptions = {
   network: bitcoin.networks.regtest,
   index: 0,

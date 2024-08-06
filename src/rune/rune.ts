@@ -11,7 +11,7 @@ import {
 } from '../shared/utils'
 import { OylTransactionError } from '../errors'
 import { RuneUTXO } from '../shared/interface'
-import { getAddressType } from '../transactions'
+import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
 
 export const createSendPsbt = async ({
@@ -569,24 +569,27 @@ export const actualMintFee = async ({
 }
 
 export const send = async ({
-  account,
-  runeId,
-  provider,
-  inscriptionAddress = account.taproot.address,
   toAddress,
   amount,
+  runeId,
+  inscriptionAddress,
   feeRate,
+  account,
+  provider,
   signer,
 }: {
-  account: Account
-  runeId: string
-  provider: Provider
-  inscriptionAddress: string
   toAddress: string
   amount: number
+  runeId: string
+  inscriptionAddress?: string
   feeRate?: number
+  account: Account
+  provider: Provider
   signer: Signer
 }) => {
+  if (!inscriptionAddress) {
+    inscriptionAddress = account.taproot.address
+  }
   const { fee } = await actualSendFee({
     account,
     runeId,
