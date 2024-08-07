@@ -31,7 +31,7 @@ export const defaultProvider = {
     url: 'http://localhost:3000',
     projectId: 'regtest',
     network: bitcoin.networks.regtest,
-    networkType: 'mainnet',
+    networkType: 'regtest',
     apiUrl: 'https://staging-api.oyl.gg',
     //opiUrl: 'https://mainnet-opi.sandshrew.io/v1'
   } as ProviderConstructorArgs),
@@ -46,7 +46,7 @@ export const Opts: MnemonicToAccountOptions = {
   network: bitcoin.networks.bitcoin,
   index: 0,
   spendStrategy: {
-    changeAddress: 'taproot',
+    changeAddress: 'nativeSegwit',
     addressOrder: ['nativeSegwit', 'nestedSegwit', 'taproot', 'legacy'],
     utxoSortGreatestToLeast: true,
   },
