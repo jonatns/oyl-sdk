@@ -1,6 +1,5 @@
-import { MnemonicToAccountOptions } from '../account/account'
-import { Provider, ProviderConstructorArgs } from '../provider'
-import { Network, NetworkOptions } from './interface'
+import { MnemonicToAccountOptions } from '..'
+import { Provider, ProviderConstructorArgs } from '..'
 import * as bitcoin from 'bitcoinjs-lib'
 import * as dotenv from 'dotenv'
 dotenv.config()
