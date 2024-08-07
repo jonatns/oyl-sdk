@@ -485,6 +485,9 @@ export const createRuneSendScript = ({
   sendOutputIndex?: number
   pointer: number
 }) => {
+    if (divisibility === 0) {
+      amount = Math.floor(amount)
+    }
   const pointerFlag = encodeVarint(BigInt(22)).varint
   const pointerVarint = encodeVarint(BigInt(pointer)).varint
   const bodyFlag = encodeVarint(BigInt(0)).varint
