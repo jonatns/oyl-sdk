@@ -33,6 +33,7 @@ export declare const findRuneUtxos: ({ address, greatestToLeast, provider, runeI
 }) => Promise<{
     runeUtxos: RuneUTXO[];
     runeTotalSatoshis: number;
+    divisibility: number;
 }>;
 export declare const actualSendFee: ({ account, runeId, provider, inscriptionAddress, toAddress, amount, feeRate, signer, }: {
     account: Account;

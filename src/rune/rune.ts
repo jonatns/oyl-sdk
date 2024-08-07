@@ -52,7 +52,7 @@ export const createSendPsbt = async ({
     })
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
-    const { runeUtxos, runeTotalSatoshis } = await findRuneUtxos({
+    const { runeUtxos, runeTotalSatoshis, divisibility } = await findRuneUtxos({
       address: inscriptionAddress,
       greatestToLeast: account.spendStrategy.utxoSortGreatestToLeast,
       provider,
@@ -201,6 +201,7 @@ export const createSendPsbt = async ({
     const script = createRuneSendScript({
       runeId,
       amount,
+      divisibility,
       sendOutputIndex: 1,
       pointer: 0,
     })
@@ -381,6 +382,7 @@ export const findRuneUtxos = async ({
   }
   let runeTotalSatoshis: number = 0
   let runeTotalAmount: number = 0
+  let divisibility: number
 
   for (const rune of runeUtxoOutpoints) {
     if (runeTotalAmount < targetNumberOfRunes) {
@@ -405,13 +407,15 @@ export const findRuneUtxos = async ({
           satoshis: satoshis,
         })
         runeTotalSatoshis += satoshis
-        runeTotalAmount += rune.balances[index]
+        runeTotalAmount += rune.balances[index] / 10 ** rune.decimals[index]
+        divisibility = rune.decimals[index]
       }
     } else {
       break
     }
   }
-  return { runeUtxos, runeTotalSatoshis }
+
+  return { runeUtxos, runeTotalSatoshis, divisibility }
 }
 
 export const actualSendFee = async ({

@@ -71,9 +71,10 @@ export declare const formatInputsToSign: ({ _psbt, senderPublicKey, network, }: 
 export declare const timeout: (n: any) => Promise<unknown>;
 export declare const signInputs: (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], taprootPubkey: string, segwitPubKey: string, segwitSigner: any, taprootSigner: any) => Promise<bitcoin.Psbt>;
 export declare const createInscriptionScript: (pubKey: Buffer, content: string) => bitcoin.payments.Stack;
-export declare const createRuneSendScript: ({ runeId, amount, sendOutputIndex, pointer, }: {
+export declare const createRuneSendScript: ({ runeId, amount, divisibility, sendOutputIndex, pointer, }: {
     runeId: string;
     amount: number;
+    divisibility: number;
     sendOutputIndex?: number;
     pointer: number;
 }) => Buffer;
