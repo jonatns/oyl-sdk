@@ -26,14 +26,16 @@ export const defaultProvider = {
     network: bitcoin.networks.bitcoin,
     networkType: 'mainnet',
     apiUrl: 'https://staging-api.oyl.gg',
-  }),
+    //opiUrl: 'https://mainnet-opi.sandshrew.io/v1'
+  } as ProviderConstructorArgs),
   regtest: new Provider({
     url: 'http://localhost:3000',
     projectId: 'regtest',
     network: bitcoin.networks.regtest,
     networkType: 'mainnet',
     apiUrl: 'https://staging-api.oyl.gg',
-  }),
+    //opiUrl: 'https://mainnet-opi.sandshrew.io/v1'
+  } as ProviderConstructorArgs),
 }
 
 export const regtestOpts: MnemonicToAccountOptions = {
@@ -65,37 +67,3 @@ export const getBrc20Data = ({
   mediaType: 'text/plain',
 })
 
-export const defaultNetworkOptions: Record<Network, NetworkOptions> = {
-  mainnet: {
-    baseUrl: 'https://mainnet.sandshrew.io',
-    version: 'v1',
-    projectId: process.env.SANDSHREW_PROJECT_ID,
-    network: 'mainnet',
-    apiUrl: 'https://api.oyl.gg',
-    opiUrl: 'https://mainnet-opi.sandshrew.io/v1',
-  },
-  testnet: {
-    baseUrl: 'https://testnet.sandshrew.io',
-    version: 'v1',
-    projectId: process.env.SANDSHREW_PROJECT_ID,
-    network: 'testnet',
-    apiUrl: 'https://testnet-api.oyl.gg',
-    opiUrl: 'https://testnet-opi.sandshrew.io/v1',
-  },
-  regtest: {
-    baseUrl: 'http://localhost:3000',
-    version: 'v1',
-    projectId: 'regtest',
-    network: 'regtest',
-    apiUrl: 'https://mainnet-api.oyl.gg',
-    opiUrl: 'http://localhost:3000',
-  },
-  signet: {
-    baseUrl: 'https://signet.sandshrew.io',
-    version: 'v1',
-    projectId: process.env.SANDSHREW_PROJECT_ID,
-    network: 'signet',
-    apiUrl: 'https://signet-api.oyl.gg',
-    opiUrl: 'https://testnet-opi.sandshrew.io/v1',
-  },
-}

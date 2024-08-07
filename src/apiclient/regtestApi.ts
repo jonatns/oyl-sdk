@@ -1,7 +1,15 @@
-import { defaultNetworkOptions, defaultProvider } from '../shared/constants'
+import * as bitcoin from 'bitcoinjs-lib'
+import { Provider } from '..'
 
-const oyl = defaultProvider['regtest']
+
 export const getAllInscriptionsByAddressRegtest = async (address: string) => {
+  const oyl = new Provider({
+    url: 'http://localhost:3000',
+    projectId: 'regtest',
+    network: bitcoin.networks.regtest,
+    networkType: 'mainnet',
+    apiUrl: 'https://staging-api.oyl.gg',
+  })
   const utxosResponse = await oyl.esplora.getAddressUtxo(address)
   const data = []
 
@@ -38,6 +46,13 @@ export const getAllInscriptionsByAddressRegtest = async (address: string) => {
 }
 
 export const getRuneOutpointsRegtest = async (address: string) => {
+  const oyl = new Provider({
+    url: 'http://localhost:3000',
+    projectId: 'regtest',
+    network: bitcoin.networks.regtest,
+    networkType: 'mainnet',
+    apiUrl: 'https://staging-api.oyl.gg',
+  })
   const allUtxos = await oyl.esplora.getAddressUtxo(address)
   const data = []
 
@@ -77,6 +92,13 @@ export const getRuneOutpointsRegtest = async (address: string) => {
 }
 
 export const getRuneBalanceRegtest = async (address: string) => {
+  const oyl = new Provider({
+    url: 'http://localhost:3000',
+    projectId: 'regtest',
+    network: bitcoin.networks.regtest,
+    networkType: 'mainnet',
+    apiUrl: 'https://staging-api.oyl.gg',
+  })
   const allUtxos = await oyl.esplora.getAddressUtxo(address)
   const data = []
 

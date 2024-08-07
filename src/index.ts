@@ -1,6 +1,6 @@
 export * from './shared/utils'
-export * from './shared/constants'
 export * from './shared/interface'
+export * from './shared/constants'
 export * from './errors'
 export * from './account'
 export * from './trade'
