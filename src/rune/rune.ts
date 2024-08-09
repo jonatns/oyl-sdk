@@ -408,7 +408,10 @@ export const findRuneUtxos = async ({
         })
         runeTotalSatoshis += satoshis
         runeTotalAmount += rune.balances[index] / 10 ** rune.decimals[index]
-        divisibility = rune.decimals[index]
+
+        if (divisibility === undefined) {
+          divisibility = rune.decimals[index];
+        }
       }
     } else {
       break

@@ -74,7 +74,7 @@ export declare const createInscriptionScript: (pubKey: Buffer, content: string) 
 export declare const createRuneSendScript: ({ runeId, amount, divisibility, sendOutputIndex, pointer, }: {
     runeId: string;
     amount: number;
-    divisibility: number;
+    divisibility?: number;
     sendOutputIndex?: number;
     pointer: number;
 }) => Buffer;

@@ -405,20 +405,23 @@ function encodeToBase26(inputString: string): string {
 export const createRuneSendScript = ({
   runeId,
   amount,
-  divisibility,
+  divisibility = 0,
   sendOutputIndex = 1,
   pointer = 0,
 }: {
   runeId: string
   amount: number
-  divisibility: number
+  divisibility?: number
   sendOutputIndex?: number
   pointer: number
 }) => {
+    if (divisibility === 0) {
+      amount = Math.floor(amount)
+    }
   const pointerFlag = encodeVarint(BigInt(22)).varint
   const pointerVarint = encodeVarint(BigInt(pointer)).varint
   const bodyFlag = encodeVarint(BigInt(0)).varint
-    const amountToSend = encodeVarint(BigInt(amount * (10 ** divisibility))).varint
+  const amountToSend = encodeVarint(BigInt(amount * 10 ** divisibility)).varint
   const encodedOutputIndex = encodeVarint(BigInt(sendOutputIndex)).varint
   const splitIdString = runeId.split(':')
   const block = Number(splitIdString[0])
