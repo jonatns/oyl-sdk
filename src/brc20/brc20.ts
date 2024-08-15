@@ -193,12 +193,15 @@ export const commit = async ({
       spendAmount: finalFee + finalSendFee,
     })
 
-    const script = createInscriptionScript(tweakedTaprootPublicKey, content)
+    const script = createInscriptionScript(
+      toXOnly(tweakedTaprootPublicKey),
+      content
+    )
 
     const outputScript = bitcoin.script.compile(script)
 
     const inscriberInfo = bitcoin.payments.p2tr({
-      internalPubkey: tweakedTaprootPublicKey,
+      internalPubkey: toXOnly(tweakedTaprootPublicKey),
       scriptTree: { output: outputScript },
       network: provider.network,
     })
@@ -341,7 +344,7 @@ export const reveal = async ({
     const p2pk_redeem = { output: script }
 
     const { output, witness } = bitcoin.payments.p2tr({
-      internalPubkey: tweakedTaprootKeyPair.publicKey,
+      internalPubkey: toXOnly(tweakedTaprootKeyPair.publicKey),
       scriptTree: p2pk_redeem,
       redeem: p2pk_redeem,
       network: provider.network,

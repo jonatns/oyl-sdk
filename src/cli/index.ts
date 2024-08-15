@@ -9,11 +9,7 @@ import * as brc20 from '../brc20'
 import * as collectible from '../collectible'
 import * as rune from '../rune'
 
-import {
-  generateMnemonic,
-  getWalletPrivateKeys,
-  mnemonicToAccount,
-} from '..'
+import { generateMnemonic, getWalletPrivateKeys, mnemonicToAccount } from '..'
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '..'
 import { Signer } from '..'
