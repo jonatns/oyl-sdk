@@ -1,6 +1,5 @@
-import { MnemonicToAccountOptions } from '../account/account'
-import { Provider, ProviderConstructorArgs } from '../provider'
-import { Network, NetworkOptions } from './interface'
+import { MnemonicToAccountOptions } from '..'
+import { Provider, ProviderConstructorArgs } from '..'
 import * as bitcoin from 'bitcoinjs-lib'
 import * as dotenv from 'dotenv'
 dotenv.config()
@@ -19,6 +18,25 @@ export const regtestProviderConstructorArgs: ProviderConstructorArgs = {
   apiUrl: 'https://mainnet-api.oyl.gg',
 }
 
+export const defaultProvider = {
+  bitcoin: new Provider({
+    url: 'https://mainnet.sandshrew.io',
+    projectId: process.env.SANDSHREW_PROJECT_ID!,
+    network: bitcoin.networks.bitcoin,
+    networkType: 'mainnet',
+    apiUrl: 'https://staging-api.oyl.gg',
+    //opiUrl: 'https://mainnet-opi.sandshrew.io/v1'
+  } as ProviderConstructorArgs),
+  regtest: new Provider({
+    url: 'http://localhost:3000',
+    projectId: 'regtest',
+    network: bitcoin.networks.regtest,
+    networkType: 'regtest',
+    apiUrl: 'https://staging-api.oyl.gg',
+    //opiUrl: 'https://mainnet-opi.sandshrew.io/v1'
+  } as ProviderConstructorArgs),
+}
+
 export const regtestOpts: MnemonicToAccountOptions = {
   network: bitcoin.networks.regtest,
   index: 0,
@@ -28,7 +46,7 @@ export const Opts: MnemonicToAccountOptions = {
   network: bitcoin.networks.bitcoin,
   index: 0,
   spendStrategy: {
-    changeAddress: 'taproot',
+    changeAddress: 'nativeSegwit',
     addressOrder: ['nativeSegwit', 'nestedSegwit', 'taproot', 'legacy'],
     utxoSortGreatestToLeast: true,
   },
@@ -48,37 +66,3 @@ export const getBrc20Data = ({
   mediaType: 'text/plain',
 })
 
-export const defaultNetworkOptions: Record<Network, NetworkOptions> = {
-  mainnet: {
-    baseUrl: 'https://mainnet.sandshrew.io',
-    version: 'v1',
-    projectId: process.env.SANDSHREW_PROJECT_ID,
-    network: 'mainnet',
-    apiUrl: 'https://api.oyl.gg',
-    opiUrl: 'https://mainnet-opi.sandshrew.io/v1',
-  },
-  testnet: {
-    baseUrl: 'https://testnet.sandshrew.io',
-    version: 'v1',
-    projectId: process.env.SANDSHREW_PROJECT_ID,
-    network: 'testnet',
-    apiUrl: 'https://testnet-api.oyl.gg',
-    opiUrl: 'https://testnet-opi.sandshrew.io/v1',
-  },
-  regtest: {
-    baseUrl: 'http://localhost:3000',
-    version: 'v1',
-    projectId: 'regtest',
-    network: 'regtest',
-    apiUrl: 'https://mainnet-api.oyl.gg',
-    opiUrl: 'http://localhost:3000',
-  },
-  signet: {
-    baseUrl: 'https://signet.sandshrew.io',
-    version: 'v1',
-    projectId: process.env.SANDSHREW_PROJECT_ID,
-    network: 'signet',
-    apiUrl: 'https://signet-api.oyl.gg',
-    opiUrl: 'https://testnet-opi.sandshrew.io/v1',
-  },
-}

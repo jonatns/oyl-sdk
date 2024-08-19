@@ -1,7 +1,6 @@
 /// <reference types="node" />
 import * as bitcoin from 'bitcoinjs-lib';
-import { BitcoinPaymentType, IBlockchainInfoUTXO, Network, RuneUtxo, ToSignInput, TxInput, UnspentOutput } from './interface';
-import { Utxo } from '../txbuilder/buildOrdTx';
+import { AddressType, BitcoinPaymentType, IBlockchainInfoUTXO, Network, RuneUtxo, ToSignInput, TxInput, UnspentOutput, Utxo } from './interface';
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew';
 import { EsploraRpc } from '../rpclient/esplora';
 import { Provider } from '../provider/provider';
@@ -64,14 +63,6 @@ export declare const getSatpointFromUtxo: (utxo: IBlockchainInfoUTXO) => string;
 export declare const getInscriptionsByWalletBIS: (walletAddress: string, offset?: number) => Promise<IBISWalletIx[]>;
 export declare function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]): number;
 export declare function calculateAmountGatheredUtxo(utxoArray: Utxo[]): number;
-export declare const formatOptionsToSignInputs: ({ _psbt, pubkey, segwitPubkey, segwitAddress, taprootAddress, network, }: {
-    _psbt: bitcoin.Psbt;
-    pubkey: string;
-    segwitPubkey: string;
-    segwitAddress: string;
-    taprootAddress: string;
-    network: bitcoin.Network;
-}) => Promise<ToSignInput[]>;
 export declare const formatInputsToSign: ({ _psbt, senderPublicKey, network, }: {
     _psbt: bitcoin.Psbt;
     senderPublicKey: string;
@@ -95,6 +86,7 @@ export declare const createRuneMintScript: ({ runeId, amountToMint, mintOutPutIn
 }) => Buffer;
 export declare let RPC_ADDR: string;
 export declare const callBTCRPCEndpoint: (method: string, params: string | string[], network: string) => Promise<any>;
+export declare function getAddressType(address: string): AddressType | null;
 export declare function waitForTransaction({ txId, sandshrewBtcClient, }: {
     txId: string;
     sandshrewBtcClient: SandshrewBitcoinClient;
@@ -114,28 +106,6 @@ export declare const isP2WPKH: (script: Buffer, network: Network) => BitcoinPaym
 export declare const isP2WSHScript: (script: Buffer, network: Network) => BitcoinPaymentType;
 export declare const isP2SHScript: (script: Buffer, network: Network) => BitcoinPaymentType;
 export declare const isP2TR: (script: Buffer, network: Network) => BitcoinPaymentType;
-export declare const sendCollectible: ({ inscriptionId, inputAddress, outputAddress, taprootPublicKey, segwitPublicKey, segwitAddress, isDry, segwitSigner, taprootSigner, payFeesWithSegwit, feeRate, network, taprootUtxos, segwitUtxos, metaOutputValue, sandshrewBtcClient, }: {
-    inscriptionId: string;
-    inputAddress: string;
-    outputAddress: string;
-    mnemonic: string;
-    taprootPublicKey: string;
-    segwitPublicKey: string;
-    segwitAddress: string;
-    isDry?: boolean;
-    feeRate: number;
-    segwitSigner: any;
-    taprootSigner: any;
-    payFeesWithSegwit?: boolean;
-    network: 'testnet' | 'main' | 'regtest';
-    taprootUtxos: Utxo[];
-    segwitUtxos: Utxo[];
-    metaOutputValue: number;
-    sandshrewBtcClient: SandshrewBitcoinClient;
-}) => Promise<{
-    txId: string;
-    rawTx: string;
-}>;
 export declare const filterTaprootUtxos: ({ taprootUtxos, }: {
     taprootUtxos: any[];
 }) => Promise<any>;

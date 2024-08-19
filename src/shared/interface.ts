@@ -1,6 +1,5 @@
 import { payments, Psbt } from 'bitcoinjs-lib'
 import * as bitcoin from 'bitcoinjs-lib'
-import { Oyl } from '../oylib'
 import { Signer } from '../signer'
 import { Provider } from '../provider'
 import { Account } from '../account'
@@ -11,6 +10,15 @@ export interface InscriptionResponse {
   scriptPubkey: string
   transaction: string
   value: string
+}
+export type Utxo = {
+  txId: string
+  outputIndex: number
+  satoshis: number
+  scriptPk: string
+  address: string
+  inscriptions: any[]
+  confirmations: number
 }
 
 export type Network = 'mainnet' | 'testnet' | 'regtest' | 'signet'
@@ -184,19 +192,18 @@ export interface SwapPayload {
 }
 
 export interface OkxBid {
-  ticker?: string;
-  amount?: number;
+  ticker?: string
+  amount?: number
   price?: number
-  fromAddress: string;
-  toAddress: string;
-  inscriptionId: string;
-  buyerPsbt: string;
-  orderId: number;
-  brc20: boolean;
+  fromAddress: string
+  toAddress: string
+  inscriptionId: string
+  buyerPsbt: string
+  orderId: number
+  brc20: boolean
 }
 
 export interface MarketplaceAccount {
-  wallet?: Oyl
   provider?: Provider
   spendAddress?: string
   spendPubKey?: string
@@ -263,7 +270,6 @@ export interface MarketplaceBuy {
   pubKey: string
   psbtBase64: string
   price: number
-  wallet?: Oyl
   provider?: Provider
   receiveAddress: string
   feeRate: number
