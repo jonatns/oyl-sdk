@@ -18,25 +18,6 @@ export const regtestProviderConstructorArgs: ProviderConstructorArgs = {
   apiUrl: 'https://mainnet-api.oyl.gg',
 }
 
-export const defaultProvider = {
-  bitcoin: new Provider({
-    url: 'https://mainnet.sandshrew.io',
-    projectId: process.env.SANDSHREW_PROJECT_ID!,
-    network: bitcoin.networks.bitcoin,
-    networkType: 'mainnet',
-    apiUrl: 'https://staging-api.oyl.gg',
-    //opiUrl: 'https://mainnet-opi.sandshrew.io/v1'
-  } as ProviderConstructorArgs),
-  regtest: new Provider({
-    url: 'http://localhost:3000',
-    projectId: 'regtest',
-    network: bitcoin.networks.regtest,
-    networkType: 'regtest',
-    apiUrl: 'https://staging-api.oyl.gg',
-    //opiUrl: 'https://mainnet-opi.sandshrew.io/v1'
-  } as ProviderConstructorArgs),
-}
-
 export const regtestOpts: MnemonicToAccountOptions = {
   network: bitcoin.networks.regtest,
   index: 0,
@@ -65,4 +46,3 @@ export const getBrc20Data = ({
   mediaContent: `{"p":"brc-20","op":"transfer","tick":"${tick}","amt":"${amount}"}`,
   mediaType: 'text/plain',
 })
-
