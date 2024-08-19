@@ -30,7 +30,7 @@ const defaultProvider = {
     networkType: 'mainnet',
     apiUrl: 'https://staging-api.oyl.gg',
     //opiUrl: 'https://mainnet-opi.sandshrew.io/v1'
-  } as ProviderConstructorArgs),
+  }),
   regtest: new Provider({
     url: 'http://localhost:3000',
     projectId: 'regtest',
@@ -38,7 +38,7 @@ const defaultProvider = {
     networkType: 'regtest',
     apiUrl: 'https://staging-api.oyl.gg',
     //opiUrl: 'https://mainnet-opi.sandshrew.io/v1'
-  } as ProviderConstructorArgs),
+  }),
 }
 
 const program = new Command()
