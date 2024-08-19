@@ -22,7 +22,7 @@ import { Trade } from '..'
 import { AssetType, MarketplaceOffers } from '..'
 import { OylTransactionError } from '../errors'
 
-export const defaultProvider = {
+const defaultProvider = {
   bitcoin: new Provider({
     url: 'https://mainnet.sandshrew.io',
     projectId: process.env.SANDSHREW_PROJECT_ID!,
