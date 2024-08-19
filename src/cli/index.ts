@@ -9,14 +9,37 @@ import * as brc20 from '../brc20'
 import * as collectible from '../collectible'
 import * as rune from '../rune'
 
-import { generateMnemonic, getWalletPrivateKeys, mnemonicToAccount } from '..'
+import {
+  generateMnemonic,
+  getWalletPrivateKeys,
+  mnemonicToAccount,
+  ProviderConstructorArgs,
+} from '..'
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '..'
 import { Signer } from '..'
 import { Trade } from '..'
 import { AssetType, MarketplaceOffers } from '..'
 import { OylTransactionError } from '../errors'
-import { defaultProvider } from '..'
+
+const defaultProvider = {
+  bitcoin: new Provider({
+    url: 'https://mainnet.sandshrew.io',
+    projectId: process.env.SANDSHREW_PROJECT_ID!,
+    network: bitcoin.networks.bitcoin,
+    networkType: 'mainnet',
+    apiUrl: 'https://staging-api.oyl.gg',
+    //opiUrl: 'https://mainnet-opi.sandshrew.io/v1'
+  }),
+  regtest: new Provider({
+    url: 'http://localhost:3000',
+    projectId: 'regtest',
+    network: bitcoin.networks.regtest,
+    networkType: 'regtest',
+    apiUrl: 'https://staging-api.oyl.gg',
+    //opiUrl: 'https://mainnet-opi.sandshrew.io/v1'
+  }),
+}
 
 const program = new Command()
 
