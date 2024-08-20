@@ -78,9 +78,8 @@ export declare const createRuneSendScript: ({ runeId, amount, divisibility, send
     sendOutputIndex?: number;
     pointer: number;
 }) => Buffer;
-export declare const createRuneMintScript: ({ runeId, amountToMint, mintOutPutIndex, pointer, }: {
+export declare const createRuneMintScript: ({ runeId, mintOutPutIndex, pointer, }: {
     runeId: string;
-    amountToMint: number;
     mintOutPutIndex: number;
     pointer?: number;
 }) => Buffer;

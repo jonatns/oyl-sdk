@@ -339,7 +339,6 @@ export const createMintPsbt = async ({
 
     const script = createRuneMintScript({
       runeId,
-      amountToMint: amount,
       mintOutPutIndex: 0,
       pointer: 0,
     })
@@ -410,7 +409,7 @@ export const findRuneUtxos = async ({
         runeTotalAmount += rune.balances[index] / 10 ** rune.decimals[index]
 
         if (divisibility === undefined) {
-          divisibility = rune.decimals[index];
+          divisibility = rune.decimals[index]
         }
       }
     } else {

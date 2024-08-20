@@ -415,9 +415,9 @@ export const createRuneSendScript = ({
   sendOutputIndex?: number
   pointer: number
 }) => {
-    if (divisibility === 0) {
-      amount = Math.floor(amount)
-    }
+  if (divisibility === 0) {
+    amount = Math.floor(amount)
+  }
   const pointerFlag = encodeVarint(BigInt(22)).varint
   const pointerVarint = encodeVarint(BigInt(pointer)).varint
   const bodyFlag = encodeVarint(BigInt(0)).varint
@@ -457,12 +457,10 @@ export const createRuneSendScript = ({
 
 export const createRuneMintScript = ({
   runeId,
-  amountToMint,
   mintOutPutIndex = 1,
   pointer = 1,
 }: {
   runeId: string
-  amountToMint: number
   mintOutPutIndex: number
   pointer?: number
 }) => {
@@ -470,8 +468,6 @@ export const createRuneMintScript = ({
   const pointerVarint = encodeVarint(BigInt(pointer)).varint
   const bodyFlag = encodeVarint(BigInt(0)).varint
   const mintFlag = encodeVarint(BigInt(20)).varint
-
-  const mintAmount = encodeVarint(BigInt(amountToMint)).varint
   const encodedOutputIndex = encodeVarint(BigInt(mintOutPutIndex)).varint
   const splitIdString = runeId.split(':')
   const block = Number(splitIdString[0])
@@ -490,7 +486,6 @@ export const createRuneMintScript = ({
     bodyFlag,
     encodedBlock,
     encodedBlockTxNumber,
-    mintAmount,
     encodedOutputIndex,
   ])
 
