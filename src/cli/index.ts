@@ -18,6 +18,7 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider/provider'
 import { Signer } from '../signer/index'
 import { Trade } from '../trade'
+import { Engine } from '../swap'
 import { AssetType, MarketplaceOffers } from '../shared/interface'
 import { OylTransactionError } from '../errors'
 
@@ -674,20 +675,28 @@ const marketPlaceBuy = new Command('buy')
         },
       },
     })
-    let quotes: MarketplaceOffers[]
+    let quotes = [{
+      "ticker": "MXRC",
+      "offerId": "pnvqpr2ywjwdmk2eyf2hyyawdabvpvpo",
+      "amount": "5500",
+      "address": "bc1p7jegst7g4n4akeuaf482jyyjrnk86jvgy3ln228qxvcr57hhxrxqwerjez",
+      "marketplace": "unisat",
+      "unitPrice": 3.4,
+      "totalPrice": 18700
+    }]
     switch (options.assetType) {
       case 'BRC20':
         options.assetType = AssetType.BRC20
-        quotes = await provider.api.getBrc20Offers({
-          ticker: options.ticker,
-        })
+        // quotes = await provider.api.getBrc20Offers({
+        //   ticker: options.ticker,
+        // })
 
         break
       case 'RUNES':
         options.assetType = AssetType.RUNES
-        quotes = await provider.api.getRuneOffers({
-          ticker: options.ticker,
-        })
+        // quotes = await provider.api.getRuneOffers({
+        //   ticker: options.ticker,
+        // })
         break
       case 'COLLECTIBLE':
         options.assetType = AssetType.COLLECTIBLE
@@ -695,7 +704,7 @@ const marketPlaceBuy = new Command('buy')
       default:
         throw new OylTransactionError(Error('Incorrect asset type'))
     }
-    const marketplace: Trade = new Trade({
+    const marketplace: Engine = new Engine({
       provider: provider,
       receiveAddress:
         options.receiveAddress === undefined
@@ -706,9 +715,8 @@ const marketPlaceBuy = new Command('buy')
       signer,
       feeRate: Number(options.feeRate),
     })
-    const offersToBuy = await marketplace.processAllOffers(quotes)
-    const signedTxs = await marketplace.buyMarketPlaceOffers(offersToBuy)
-    console.log(signedTxs)
+    const offersToBuy = await marketplace.processUnisatOffers(quotes)
+    console.log(offersToBuy)
   })
 
 const accountCommand = new Command('account')

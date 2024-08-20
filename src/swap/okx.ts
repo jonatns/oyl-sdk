@@ -13,85 +13,7 @@ import { DUMMY_UTXO_SATS, ESTIMATE_TX_SIZE, addInputConditionally, buildPsbtWith
 import { AddressType, AssetType } from "../shared/interface"
 import { BuiltPsbt, ConditionalInput, MarketplaceOffer, OutputTxTemplate } from "./types"
 
-interface DummyUtxoOptions {
-    address: string
-    utxos: FormattedUtxo[]
-    feeRate: number
-    pubKey: string
-    network: bitcoin.Network
-    addressType: AddressType
-}
 
-interface PaymentUtxoOptions {
-    utxos: FormattedUtxo[]
-    feeRate: number
-    orderPrice: number
-    address: string
-    receiveAddress: string
-    sellerPsbt: string
-}
-
-interface PrepareOkxAddress {
-    address: string
-    provider: Provider
-    feeRate: number
-    pubKey: string
-    addressType: AddressType
-}
-
-interface SignedOkxBid {
-    fromAddress: string;
-    psbt?: string;
-    assetType: AssetType
-    provider: Provider
-    offer: MarketplaceOffer
-}
-
-interface UnsignedOkxBid {
-    offerId: number
-    assetType: AssetType
-    provider: Provider
-}
-
-interface GenBrcAndCollectibleSignedPsbt {
-    address: string
-    utxos: FormattedUtxo[]
-    feeRate: number
-    receiveAddress: string
-    network: bitcoin.Network
-    pubKey: string
-    addressType: AddressType
-    signer?: Signer
-    sellerPsbt: string
-    orderPrice: number
-}
-
-interface GenBrcAndCollectibleUnsignedPsbt {
-    address: string
-    utxos: FormattedUtxo[]
-    feeRate: number
-    receiveAddress: string
-    network: bitcoin.Network
-    pubKey: string
-    addressType: AddressType
-    sellerPsbt: string
-    orderPrice: number
-}
-
-interface UnsignedPsbt {
-    address: string
-    utxos: FormattedUtxo[]
-    feeRate: number
-    receiveAddress: string
-    network: bitcoin.Network
-    pubKey: string
-    addressType: AddressType
-    signer?: Signer
-    sellerPsbt: string
-    orderPrice: number
-    sellerAddress?: string
-    assetType: AssetType
-}
 
 export async function prepareAddressForOkxPsbt({
     address,
@@ -375,7 +297,14 @@ export async function okxSwap ({
     signer: Signer
 }) {
     const addressType = getAddressType(address);
-    const psbtForDummyUtxos = await prepareAddressForOkxPsbt({address, provider, pubKey, feeRate, addressType})
+
+    const psbtForDummyUtxos =
+    (assetType != AssetType.RUNES) 
+    ?
+    await prepareAddressForOkxPsbt({address, provider, pubKey, feeRate, addressType})
+    :
+    null
+
     if (psbtForDummyUtxos != null){
         const {signedPsbt} = await signer.signAllInputs({
             rawPsbt: psbtForDummyUtxos,
@@ -411,11 +340,11 @@ export async function okxSwap ({
         rawPsbt: buyerPsbt,
         finalize: false
     })
-
-    const mergedPsbt = mergeSignedPsbt(signedPsbt, [sellerPsbt]) 
+    let finalPsbt = signedPsbt
+    if (assetType != AssetType.RUNES) finalPsbt = mergeSignedPsbt(signedPsbt, [sellerPsbt]) 
     const transaction = await submitSignedPsbt({
         fromAddress: address,
-        psbt: mergedPsbt,
+        psbt: finalPsbt,
         assetType,
         provider,
         offer

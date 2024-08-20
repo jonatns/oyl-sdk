@@ -21,7 +21,6 @@ export declare function getBidCostEstimate(offers: MarketplaceOffer[], feeRate: 
  *  */
 export declare function canAddressAffordBid({ address, estimatedCost, offers, provider }: BidAffordabilityCheck): Promise<Boolean>;
 export declare function calculateAmountGathered(utxoArray: FormattedUtxo[]): number;
-export declare function broadcastSignedTx(psbt: string, provider: Provider): Promise<any[]>;
 export declare function selectSpendAddress({ offers, provider, feeRate, account }: SelectSpendAddress): Promise<{
     selectedSpendAddress: string;
     selectedSpendPubkey: string;

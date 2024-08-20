@@ -207,27 +207,7 @@ export function calculateAmountGathered(utxoArray: FormattedUtxo[]): number {
     )
 }
 
-export async function broadcastSignedTx(psbt: string, provider: Provider){
-    const result = await provider.sandshrew.bitcoindRpc.finalizePSBT(
-        psbt
-    )
-    const [broadcast] =
-        await provider.sandshrew.bitcoindRpc.testMemPoolAccept([
-            result?.hex,
-        ])
 
-    if (!broadcast.allowed) {
-        throw new Error(result['reject-reason'])
-    }
-    await provider.sandshrew.bitcoindRpc.sendRawTransaction(result?.hex)
-    const txPayload =
-        await provider.sandshrew.bitcoindRpc.decodeRawTransaction(
-            result?.hex
-        )
-    const txId = txPayload.txid
-    return [txId]
-
-}
 
 export async function selectSpendAddress ({offers, provider, feeRate, account}: SelectSpendAddress) {
     feeRate = await sanitizeFeeRate(provider, feeRate);

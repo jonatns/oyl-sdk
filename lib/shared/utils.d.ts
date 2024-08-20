@@ -60,6 +60,7 @@ export declare const validator: (pubkey: Buffer, msghash: Buffer, signature: Buf
 export declare function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput;
 export declare const getWitnessDataChunk: (content: string, encodeType?: BufferEncoding) => Buffer[];
 export declare const getSatpointFromUtxo: (utxo: IBlockchainInfoUTXO) => string;
+export declare const getInscriptionsByWalletBIS: (walletAddress: string, offset?: number) => Promise<IBISWalletIx[]>;
 export declare function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]): number;
 export declare function calculateAmountGatheredUtxo(utxoArray: Utxo[]): number;
 export declare const formatOptionsToSignInputs: ({ _psbt, pubkey, segwitPubkey, segwitAddress, taprootAddress, network, }: {

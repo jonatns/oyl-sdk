@@ -1,9 +1,11 @@
-import { AddressType } from "../shared/interface";
-import { FormattedUtxo } from '@utxo/utxo'
+import { AddressType, AssetType } from "../shared/interface";
+import { FormattedUtxo } from '../utxo/utxo';
 import { Psbt } from 'bitcoinjs-lib';
 import { Provider } from '../provider'
 import { Account } from '../account'
 import * as bitcoin from 'bitcoinjs-lib'
+import { Signer } from '../signer'
+
 
 export interface ConditionalInput {
     hash: string
@@ -11,22 +13,102 @@ export interface ConditionalInput {
     witnessUtxo: { value: number; script: Buffer }
     tapInternalKey?: Buffer
     segwitInternalKey?: Buffer
-  }
-  
-  export interface SelectedUtxoOffers {
+}
+
+export interface SelectedUtxoOffers {
     offer: MarketplaceOffer;
     utxo: FormattedUtxo[];
-  };
+};
 
-  export interface SelectSpendAddress {
+export interface DummyUtxoOptions {
+    address: string
+    utxos: FormattedUtxo[]
+    feeRate: number
+    pubKey: string
+    network: bitcoin.Network
+    addressType: AddressType
+}
+
+export interface PaymentUtxoOptions {
+    utxos: FormattedUtxo[]
+    feeRate: number
+    orderPrice: number
+    address: string
+    receiveAddress: string
+    sellerPsbt: string
+}
+
+export interface PrepareOkxAddress {
+    address: string
+    provider: Provider
+    feeRate: number
+    pubKey: string
+    addressType: AddressType
+}
+
+export interface SignedOkxBid {
+    fromAddress: string;
+    psbt?: string;
+    assetType: AssetType
+    provider: Provider
+    offer: MarketplaceOffer
+}
+
+export interface UnsignedOkxBid {
+    offerId: number
+    assetType: AssetType
+    provider: Provider
+}
+
+export interface GenBrcAndCollectibleSignedPsbt {
+    address: string
+    utxos: FormattedUtxo[]
+    feeRate: number
+    receiveAddress: string
+    network: bitcoin.Network
+    pubKey: string
+    addressType: AddressType
+    signer?: Signer
+    sellerPsbt: string
+    orderPrice: number
+}
+
+export interface GenBrcAndCollectibleUnsignedPsbt {
+    address: string
+    utxos: FormattedUtxo[]
+    feeRate: number
+    receiveAddress: string
+    network: bitcoin.Network
+    pubKey: string
+    addressType: AddressType
+    sellerPsbt: string
+    orderPrice: number
+}
+
+export interface UnsignedPsbt {
+    address: string
+    utxos: FormattedUtxo[]
+    feeRate: number
+    receiveAddress: string
+    network: bitcoin.Network
+    pubKey: string
+    addressType: AddressType
+    signer?: Signer
+    sellerPsbt: string
+    orderPrice: number
+    sellerAddress?: string
+    assetType: AssetType
+}
+
+export interface SelectSpendAddress {
     offers: MarketplaceOffer[]
     provider: Provider
     feeRate: number
     account: Account
-  }
+}
 
 
-  export interface MarketplaceOffer {
+export interface MarketplaceOffer {
     ticker: string
     offerId: any
     amount?: string
@@ -37,20 +119,20 @@ export interface ConditionalInput {
     totalPrice?: number
     psbt?: string
     inscriptionId?: string
-  }
+}
 
-  export enum Marketplaces {
+export enum Marketplaces {
     UNISAT,
     OKX,
-  }
+}
 
-  export interface PsbtBuilder {
+export interface PsbtBuilder {
     network: bitcoin.Network
     utxos: FormattedUtxo[]
     retrievedUtxos?: FormattedUtxo[]
-    inputTemplate:  ConditionalInput[]
+    inputTemplate: ConditionalInput[]
     changeOutput: OutputTxTemplate | null
-    outputTemplate:  OutputTxTemplate[]
+    outputTemplate: OutputTxTemplate[]
     amountRetrieved: number
     spendAddress: string
     spendPubKey: string
@@ -60,13 +142,13 @@ export interface ConditionalInput {
 }
 
 export interface BuiltPsbt {
-  psbtHex: string,
-  psbtBase64: string
+    psbtHex: string,
+    psbtBase64: string
 }
 
 export interface OutputTxTemplate {
-  address: string
-  value: number
+    address: string
+    value: number
 }
 
 export interface SwapPayload {
@@ -76,30 +158,30 @@ export interface SwapPayload {
     pubKey: string
     receiveAddress: string
     feerate: number
-  }
+}
 
-  export const marketplaceName = {
-    'unisat':  Marketplaces.UNISAT,
+export const marketplaceName = {
+    'unisat': Marketplaces.UNISAT,
     'okx': Marketplaces.OKX
-  }
-  
-  export interface UtxosToCoverAmount {
+}
+
+export interface UtxosToCoverAmount {
     utxos: FormattedUtxo[],
     amountNeeded: number,
     excludedUtxos?: FormattedUtxo[],
     insistConfirmedUtxos?: boolean
 }
-  
-  export interface BidAffordabilityCheck{
-    address: string, 
+
+export interface BidAffordabilityCheck {
+    address: string,
     estimatedCost: number,
     offers: MarketplaceOffer[],
     provider: Provider
-  }
+}
 
-  export interface FeeEstimatorOptions {
+export interface FeeEstimatorOptions {
     feeRate: number
     network: bitcoin.Network
     psbt?: Psbt
     witness?: Buffer[]
-  }
+}

@@ -1,10 +1,11 @@
 /// <reference types="node" />
-import { AddressType } from "../shared/interface";
-import { FormattedUtxo } from '@utxo/utxo';
+import { AddressType, AssetType } from "../shared/interface";
+import { FormattedUtxo } from '../utxo/utxo';
 import { Psbt } from 'bitcoinjs-lib';
 import { Provider } from '../provider';
 import { Account } from '../account';
 import * as bitcoin from 'bitcoinjs-lib';
+import { Signer } from '../signer';
 export interface ConditionalInput {
     hash: string;
     index: number;
@@ -18,6 +19,78 @@ export interface ConditionalInput {
 export interface SelectedUtxoOffers {
     offer: MarketplaceOffer;
     utxo: FormattedUtxo[];
+}
+export interface DummyUtxoOptions {
+    address: string;
+    utxos: FormattedUtxo[];
+    feeRate: number;
+    pubKey: string;
+    network: bitcoin.Network;
+    addressType: AddressType;
+}
+export interface PaymentUtxoOptions {
+    utxos: FormattedUtxo[];
+    feeRate: number;
+    orderPrice: number;
+    address: string;
+    receiveAddress: string;
+    sellerPsbt: string;
+}
+export interface PrepareOkxAddress {
+    address: string;
+    provider: Provider;
+    feeRate: number;
+    pubKey: string;
+    addressType: AddressType;
+}
+export interface SignedOkxBid {
+    fromAddress: string;
+    psbt?: string;
+    assetType: AssetType;
+    provider: Provider;
+    offer: MarketplaceOffer;
+}
+export interface UnsignedOkxBid {
+    offerId: number;
+    assetType: AssetType;
+    provider: Provider;
+}
+export interface GenBrcAndCollectibleSignedPsbt {
+    address: string;
+    utxos: FormattedUtxo[];
+    feeRate: number;
+    receiveAddress: string;
+    network: bitcoin.Network;
+    pubKey: string;
+    addressType: AddressType;
+    signer?: Signer;
+    sellerPsbt: string;
+    orderPrice: number;
+}
+export interface GenBrcAndCollectibleUnsignedPsbt {
+    address: string;
+    utxos: FormattedUtxo[];
+    feeRate: number;
+    receiveAddress: string;
+    network: bitcoin.Network;
+    pubKey: string;
+    addressType: AddressType;
+    sellerPsbt: string;
+    orderPrice: number;
+}
+export interface UnsignedPsbt {
+    address: string;
+    utxos: FormattedUtxo[];
+    feeRate: number;
+    receiveAddress: string;
+    network: bitcoin.Network;
+    pubKey: string;
+    addressType: AddressType;
+    signer?: Signer;
+    sellerPsbt: string;
+    orderPrice: number;
+    sellerAddress?: string;
+    assetType: AssetType;
 }
 export interface SelectSpendAddress {
     offers: MarketplaceOffer[];
