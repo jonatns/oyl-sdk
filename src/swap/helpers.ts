@@ -258,11 +258,14 @@ export async function prepareAddressForDummyUtxos({
     pubKey,
     feeRate,
     addressType,
+    utxos = []
 }:
 PrepareAddressForDummyUtxos
 ): Promise<string | null>{
     try {
-        const { utxos } = await addressSpendableUtxos({ address, provider });
+        if (utxos.length < 1 ) {
+            utxos = (await addressSpendableUtxos({ address, provider })).utxos;
+        }
         const paddingUtxos = getAllUTXOsWorthASpecificValue(utxos, 600)
         if (paddingUtxos.length < 2) {
             const network = provider.network

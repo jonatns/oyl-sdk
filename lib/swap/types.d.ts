@@ -41,6 +41,7 @@ export interface PrepareAddressForDummyUtxos {
     provider: Provider;
     feeRate: number;
     pubKey: string;
+    utxos?: FormattedUtxo[];
     addressType: AddressType;
 }
 export interface SignedOkxBid {
@@ -55,7 +56,7 @@ export interface UnsignedOkxBid {
     assetType: AssetType;
     provider: Provider;
 }
-export interface GenBrcAndCollectibleSignedPsbt {
+export interface GenOkxBrcAndCollectibleUnsignedPsbt {
     address: string;
     utxos: FormattedUtxo[];
     feeRate: number;
@@ -63,11 +64,10 @@ export interface GenBrcAndCollectibleSignedPsbt {
     network: bitcoin.Network;
     pubKey: string;
     addressType: AddressType;
-    signer?: Signer;
     sellerPsbt: string;
     orderPrice: number;
 }
-export interface GenBrcAndCollectibleUnsignedPsbt {
+export interface GenOkxRuneUnsignedPsbt {
     address: string;
     utxos: FormattedUtxo[];
     feeRate: number;

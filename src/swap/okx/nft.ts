@@ -1,5 +1,5 @@
 import { ESTIMATE_TX_SIZE, getAllUTXOsWorthASpecificValue, getUTXOsToCoverAmount } from "../helpers"
-import { GenBrcAndCollectibleUnsignedPsbt, PaymentUtxoOptions } from "../types"
+import { GenOkxBrcAndCollectibleUnsignedPsbt, PaymentUtxoOptions } from "../types"
 import {
     generateUnsignedBuyingPsbt,
     mergeSignedBuyingPsbt,
@@ -16,7 +16,7 @@ export function genBrcAndOrdinalUnsignedPsbt({
     sellerPsbt,
     feeRate,
     receiveAddress
-}: GenBrcAndCollectibleUnsignedPsbt
+}: GenOkxBrcAndCollectibleUnsignedPsbt
 ): string {
     const data = buildDummyAndPaymentUtxos({ utxos, feeRate, orderPrice, address, receiveAddress, sellerPsbt }) as any
 

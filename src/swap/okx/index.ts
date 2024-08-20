@@ -1,5 +1,5 @@
 import { getAddressType } from "../.."
-import { addressSpendableUtxos } from  '../../utxo/utxo';
+import { FormattedUtxo, addressSpendableUtxos } from  '../../utxo/utxo';
 import { Signer } from "../../signer"
 import { Provider } from "../../provider"
 import { AssetType, MarketplaceOffer } from "../../shared/interface"
@@ -88,6 +88,7 @@ export async function okxSwap ({
     pubKey,
     assetType,
     provider,
+    utxos,
     signer
 }:{
     address: string
@@ -95,16 +96,16 @@ export async function okxSwap ({
     receiveAddress: string
     feeRate: number
     pubKey: string
+    utxos?: FormattedUtxo[]
     assetType: AssetType
     provider: Provider
     signer: Signer
 }) {
     const addressType = getAddressType(address);
-
     const psbtForDummyUtxos =
     (assetType != AssetType.RUNES) 
     ?
-    await prepareAddressForDummyUtxos({address, provider, pubKey, feeRate, addressType})
+    await prepareAddressForDummyUtxos({address, utxos, provider, pubKey, feeRate, addressType})
     :
     null
 
@@ -114,6 +115,8 @@ export async function okxSwap ({
             finalize: true,
         })
         const {txId} = await provider.pushPsbt({psbtBase64: signedPsbt})
+        utxos = (await addressSpendableUtxos({ address, provider }))["utxos"]
+
         console.log("preptxid", txId)
     }
     const unsignedBid: UnsignedOkxBid = {
@@ -125,7 +128,6 @@ export async function okxSwap ({
     const sellerData = await getSellerPsbt(unsignedBid);
     const sellerPsbt = sellerData.data.sellerPsbt;
     const network = provider.network
-    const { utxos } = await addressSpendableUtxos({ address, provider });
     const buyerPsbt = await getBuyerPsbt({
         address,
         utxos,
