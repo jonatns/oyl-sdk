@@ -4,8 +4,11 @@ import {
     BidAffordabilityCheck, 
     BuiltPsbt, 
     ConditionalInput, 
+    DummyUtxoOptions, 
     MarketplaceOffer, 
     Marketplaces, 
+    OutputTxTemplate, 
+    PrepareAddressForDummyUtxos, 
     PsbtBuilder, 
     SelectSpendAddress, 
     UtxosToCoverAmount, 
@@ -249,6 +252,86 @@ export async function sanitizeFeeRate(provider: Provider, feeRate: number): Prom
     return feeRate
 }
 
+export async function prepareAddressForDummyUtxos({
+    address,
+    provider,
+    pubKey,
+    feeRate,
+    addressType,
+}:
+PrepareAddressForDummyUtxos
+): Promise<string | null>{
+    try {
+        const { utxos } = await addressSpendableUtxos({ address, provider });
+        const paddingUtxos = getAllUTXOsWorthASpecificValue(utxos, 600)
+        if (paddingUtxos.length < 2) {
+            const network = provider.network
+            const { psbtBase64 } = dummyUtxosPsbt({ address, utxos, network, feeRate, pubKey, addressType })
+            return psbtBase64;
+        }
+        return null;
+    } catch (err) {
+        throw new Error(
+            'An error occured while preparing address for dummy utxos'
+        )
+    }
+}
+
+
+export function dummyUtxosPsbt({ address, utxos, feeRate, pubKey, addressType, network }: DummyUtxoOptions): BuiltPsbt {
+    const amountNeeded = (DUMMY_UTXO_SATS + parseInt((ESTIMATE_TX_SIZE * feeRate).toFixed(0)))
+    const retrievedUtxos = getUTXOsToCoverAmount({
+        utxos,
+        amountNeeded,
+    })
+    if (retrievedUtxos.length === 0) {
+        throw new Error('No utxos available')
+    }
+
+    const txInputs: ConditionalInput[] = []
+    const txOutputs: OutputTxTemplate[] = []
+
+    retrievedUtxos.forEach((utxo) => {
+        const input = addInputConditionally({
+            hash: utxo.txId,
+            index: utxo.outputIndex,
+            witnessUtxo: {
+                value: utxo.satoshis,
+                script: Buffer.from(utxo.scriptPk, 'hex'),
+            },
+        }, addressType, pubKey)
+        txInputs.push(input)
+    })
+
+    const amountRetrieved = calculateAmountGathered(retrievedUtxos)
+    const changeAmount = amountRetrieved - amountNeeded
+    let changeOutput: OutputTxTemplate | null = null
+    txOutputs.push({
+        address,
+        value: 600,
+    })
+    txOutputs.push({
+        address,
+        value: 600,
+    })
+    if (changeAmount > 0) changeOutput = { address, value: changeAmount }
+
+    return buildPsbtWithFee({
+        inputTemplate: txInputs,
+        outputTemplate: txOutputs,
+        utxos,
+        changeOutput,
+        retrievedUtxos,
+        spendAddress: address,
+        spendPubKey: pubKey,
+        amountRetrieved,
+        spendAmount: DUMMY_UTXO_SATS,
+        feeRate,
+        network,
+        addressType
+    })
+
+}
 
 export function psbtTxAddressTypes({
     psbt,

@@ -38,7 +38,7 @@ export interface PaymentUtxoOptions {
     sellerPsbt: string
 }
 
-export interface PrepareOkxAddress {
+export interface PrepareAddressForDummyUtxos {
     address: string
     provider: Provider
     feeRate: number
