@@ -110,6 +110,13 @@ export interface SelectSpendAddress {
     account: Account
 }
 
+export interface SelectSpendAddressResponse {
+    offers: MarketplaceOffer[]
+    utxos: FormattedUtxo[]
+    address: string
+    pubKey: string,
+    addressType: AddressType
+}
 
 export interface MarketplaceOffer {
     ticker: string
@@ -180,10 +187,16 @@ export interface UtxosToCoverAmount {
 
 export interface BidAffordabilityCheck {
     address: string,
-    utxos: FormattedUtxo[]
     estimatedCost: number,
     offers: MarketplaceOffer[],
     provider: Provider
+}
+
+export interface BidAffordabilityCheckResponse {
+    utxos: FormattedUtxo[]
+    estimatedCost: number,
+    offers_: MarketplaceOffer[],
+    canAfford: boolean
 }
 
 export interface OutputTxCheck {
@@ -191,6 +204,11 @@ export interface OutputTxCheck {
     swapTx: boolean, 
     output: OutputTxTemplate, 
     index: number
+}
+
+export interface TxAddressTypes {
+    inputAddressTypes: AddressType[]
+    outputAddressTypes: AddressType[]
 }
 
 

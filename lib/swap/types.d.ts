@@ -101,6 +101,13 @@ export interface SelectSpendAddress {
     feeRate: number;
     account: Account;
 }
+export interface SelectSpendAddressResponse {
+    offers: MarketplaceOffer[];
+    utxos: FormattedUtxo[];
+    address: string;
+    pubKey: string;
+    addressType: AddressType;
+}
 export interface MarketplaceOffer {
     ticker: string;
     offerId: any;
@@ -165,11 +172,21 @@ export interface BidAffordabilityCheck {
     offers: MarketplaceOffer[];
     provider: Provider;
 }
+export interface BidAffordabilityCheckResponse {
+    utxos: FormattedUtxo[];
+    estimatedCost: number;
+    offers_: MarketplaceOffer[];
+    canAfford: boolean;
+}
 export interface OutputTxCheck {
     blueprint: FormattedUtxo;
     swapTx: boolean;
     output: OutputTxTemplate;
     index: number;
+}
+export interface TxAddressTypes {
+    inputAddressTypes: AddressType[];
+    outputAddressTypes: AddressType[];
 }
 export interface UpdateUtxos {
     originalUtxos: FormattedUtxo[];

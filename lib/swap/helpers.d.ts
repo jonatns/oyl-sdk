@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { FormattedUtxo } from '../utxo/utxo';
 import { Provider } from '../provider';
-import { BidAffordabilityCheck, BuiltPsbt, ConditionalInput, DummyUtxoOptions, MarketplaceOffer, Marketplaces, PrepareAddressForDummyUtxos, PsbtBuilder, SelectSpendAddress, UpdateUtxos, UtxosToCoverAmount } from "./types";
+import { BidAffordabilityCheck, BidAffordabilityCheckResponse, BuiltPsbt, ConditionalInput, DummyUtxoOptions, MarketplaceOffer, Marketplaces, PrepareAddressForDummyUtxos, PsbtBuilder, SelectSpendAddress, SelectSpendAddressResponse, TxAddressTypes, UpdateUtxos, UtxosToCoverAmount } from "./types";
 import { AddressType } from "../shared/interface";
 import * as bitcoin from 'bitcoinjs-lib';
 export declare const maxTxSizeForOffers: number;
@@ -19,13 +19,9 @@ export declare function getBidCostEstimate(offers: MarketplaceOffer[], feeRate: 
  * Otherwise if there is AT LEAST ONE offer from a marketplace that does not enforce confirmed
  * utxos, DONT INSIST retrieving confirmed utxos.
  *  */
-export declare function canAddressAffordBid({ address, estimatedCost, offers, provider }: BidAffordabilityCheck): Promise<Boolean>;
+export declare function canAddressAffordBid({ address, estimatedCost, offers, provider }: BidAffordabilityCheck): Promise<BidAffordabilityCheckResponse>;
 export declare function calculateAmountGathered(utxoArray: FormattedUtxo[]): number;
-export declare function selectSpendAddress({ offers, provider, feeRate, account }: SelectSpendAddress): Promise<{
-    selectedSpendAddress: string;
-    selectedSpendPubkey: string;
-    addressType: AddressType;
-}>;
+export declare function selectSpendAddress({ offers, provider, feeRate, account }: SelectSpendAddress): Promise<SelectSpendAddressResponse>;
 export declare function sanitizeFeeRate(provider: Provider, feeRate: number): Promise<number>;
 export declare function prepareAddressForDummyUtxos({ address, network, pubKey, feeRate, addressType, utxos }: PrepareAddressForDummyUtxos): Promise<BuiltPsbt | null>;
 export declare function dummyUtxosPsbt({ address, utxos, feeRate, pubKey, addressType, network }: DummyUtxoOptions): BuiltPsbt;
@@ -37,9 +33,8 @@ export declare function psbtTxAddressTypes({ psbt, network }: {
     inputAddressTypes: AddressType[];
     outputAddressTypes: AddressType[];
 };
-export declare function estimatePsbtFee({ psbt, network, witness }: {
-    psbt: bitcoin.Psbt;
-    network: bitcoin.Network;
+export declare function estimatePsbtFee({ txAddressTypes, witness }: {
+    txAddressTypes: TxAddressTypes;
     witness?: Buffer[];
 }): number;
 export declare function buildPsbtWithFee({ inputTemplate, outputTemplate, utxos, changeOutput, retrievedUtxos, spendAddress, spendPubKey, amountRetrieved, spendAmount, addressType, feeRate, network }: PsbtBuilder): BuiltPsbt;

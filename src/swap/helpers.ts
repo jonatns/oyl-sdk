@@ -2,6 +2,7 @@ import { FormattedUtxo, addressSpendableUtxos } from '../utxo/utxo';
 import { Provider } from '../provider'
 import {  
     BidAffordabilityCheck, 
+    BidAffordabilityCheckResponse, 
     BuiltPsbt, 
     ConditionalInput, 
     DummyUtxoOptions, 
@@ -12,6 +13,8 @@ import {
     PrepareAddressForDummyUtxos, 
     PsbtBuilder, 
     SelectSpendAddress, 
+    SelectSpendAddressResponse, 
+    TxAddressTypes, 
     UpdateUtxos, 
     UtxosToCoverAmount, 
     marketplaceName 
@@ -185,9 +188,9 @@ export function getBidCostEstimate(offers: MarketplaceOffer[], feeRate: number):
  * Otherwise if there is AT LEAST ONE offer from a marketplace that does not enforce confirmed
  * utxos, DONT INSIST retrieving confirmed utxos.
  *  */
-export async function canAddressAffordBid({ address, estimatedCost, offers, provider }: BidAffordabilityCheck): Promise<Boolean> {
+export async function canAddressAffordBid({ address, estimatedCost, offers, provider }: BidAffordabilityCheck): Promise<BidAffordabilityCheckResponse> {
     let insistConfirmedUtxos: boolean = true;
-    const { utxos } = await addressSpendableUtxos({ address, provider });
+    const { utxos } = await addressSpendableUtxos({ address, provider })
     for (let i = 0; i < offers.length; i++) {
         const mktPlace = marketplaceName[offers[i]?.marketplace]
         if (!(CONFIRMED_UTXO_ENFORCED_MARKETPLACES.includes(mktPlace))) {
@@ -202,7 +205,12 @@ export async function canAddressAffordBid({ address, estimatedCost, offers, prov
         excludedUtxos,
         insistConfirmedUtxos
     })
-    return retrievedUtxos.length > 0
+    return{ 
+        offers_: offers,
+        estimatedCost,
+        utxos,
+        canAfford: retrievedUtxos.length > 0
+     }
 }
 
 export function calculateAmountGathered(utxoArray: FormattedUtxo[]): number {
@@ -214,7 +222,7 @@ export function calculateAmountGathered(utxoArray: FormattedUtxo[]): number {
 
 
 
-export async function selectSpendAddress ({offers, provider, feeRate, account}: SelectSpendAddress) {
+export async function selectSpendAddress ({offers, provider, feeRate, account}: SelectSpendAddress): Promise<SelectSpendAddressResponse>  {
     feeRate = await sanitizeFeeRate(provider, feeRate);
     const estimatedCost = getBidCostEstimate(offers, feeRate);
     for (let i = 0; i < account.spendStrategy.addressOrder.length; i++) {
@@ -225,15 +233,20 @@ export async function selectSpendAddress ({offers, provider, feeRate, account}: 
             const address =
                 account[account.spendStrategy.addressOrder[i]].address
             let pubkey: string =
-                account[this.account.spendStrategy.addressOrder[i]].pubkey
-            if (await canAddressAffordBid({ address, estimatedCost, offers, provider})) {
+                account[account.spendStrategy.addressOrder[i]].pubkey
+            const afford =  await canAddressAffordBid({ address, estimatedCost, offers, provider})
+            const {utxos, canAfford, offers_ } = afford
+            if (canAfford) {
                 const selectedSpendAddress = address
                 const selectedSpendPubkey = pubkey
                 const addressType = getAddressType(selectedSpendAddress)
                 return {
-                    selectedSpendAddress,
-                    selectedSpendPubkey,
-                    addressType
+                    address: selectedSpendAddress,
+                    pubKey: selectedSpendPubkey,
+                    addressType,
+                    utxos,
+                    offers: offers_
+                    
                 }
             }
         }
@@ -419,15 +432,13 @@ export function psbtTxAddressTypes({
 
 
 export function estimatePsbtFee({
-    psbt,
-    network,
+    txAddressTypes,
     witness = []
 }: {
-    psbt: bitcoin.Psbt,
-    network: bitcoin.Network,
+    txAddressTypes: TxAddressTypes,
     witness?: Buffer[],
 }): number {
-    const { inputAddressTypes, outputAddressTypes } = psbtTxAddressTypes({ psbt, network });
+    const { inputAddressTypes, outputAddressTypes } = txAddressTypes;
     const witnessHeaderSize = 2
     const inputVB = inputAddressTypes.reduce(
         (j, inputType) => {
@@ -487,16 +498,19 @@ export function buildPsbtWithFee(
     network
     }: PsbtBuilder
     ): BuiltPsbt {
-    const psbtTx = new bitcoin.Psbt({ network });
     if (inputTemplate.length === 0 || outputTemplate.length === 0) {
         throw new Error('Cant create a psbt with 0 inputs & outputs')
     } 
 
-    inputTemplate.forEach(input => psbtTx.addInput(input));
-    outputTemplate.forEach(output => psbtTx.addOutput(output));
-    if (changeOutput != null) psbtTx.addOutput(changeOutput)
+    const inputAddressTypes: AddressType[] = []
+    const outputAddressTypes: AddressType[] = []
 
-    const finalTxSize = estimatePsbtFee({psbt: psbtTx, network});
+    inputTemplate.forEach(input => inputAddressTypes.push(getOutputFormat(input.witnessUtxo.script, network)));
+    outputTemplate.forEach(output => outputAddressTypes.push(getAddressType(output.address)));
+    if (changeOutput != null) outputAddressTypes.push(getAddressType(changeOutput.address))
+    
+    const txAddressTypes = {inputAddressTypes, outputAddressTypes}
+    const finalTxSize = estimatePsbtFee({txAddressTypes})
     const finalFee = parseInt((finalTxSize * feeRate).toFixed(0));
     
     let newAmountNeeded = spendAmount + finalFee;

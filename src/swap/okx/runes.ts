@@ -17,30 +17,30 @@ export async function buildOkxRunesPsbt({
     receiveAddress
 }: GenOkxRuneUnsignedPsbt) {
 
-    const _sellerPsbt = bitcoin.Psbt.fromBase64(sellerPsbt, { network})
+    const _sellerPsbt = bitcoin.Psbt.fromBase64(sellerPsbt, { network })
     const dummyUtxos = []
     const amountNeeded = orderPrice + parseInt((ESTIMATE_TX_SIZE * feeRate).toFixed(0))
 
 
-    const allUtxosWorth600 =  getAllUTXOsWorthASpecificValue(utxos, 600)
+    const allUtxosWorth600 = getAllUTXOsWorthASpecificValue(utxos, 600)
     if (allUtxosWorth600.length >= 2) {
-      for (let i = 0; i < 2; i++) {
-        dummyUtxos.push({
-            txHash: allUtxosWorth600[i].txId,
-            vout: allUtxosWorth600[i].outputIndex,
-            coinAmount: allUtxosWorth600[i].satoshis
-        })
-      }
+        for (let i = 0; i < 2; i++) {
+            dummyUtxos.push({
+                txHash: allUtxosWorth600[i].txId,
+                vout: allUtxosWorth600[i].outputIndex,
+                coinAmount: allUtxosWorth600[i].satoshis
+            })
+        }
     }
 
-    const retrievedUtxos =  getUTXOsToCoverAmount({
+    const retrievedUtxos = getUTXOsToCoverAmount({
         utxos,
         amountNeeded,
         excludedUtxos: dummyUtxos
     })
-    
+
     if (retrievedUtxos.length === 0) {
-      throw new Error('Not enough funds to purchase this offer')
+        throw new Error('Not enough funds to purchase this offer')
     }
 
     const txInputs: ConditionalInput[] = []
@@ -65,41 +65,41 @@ export async function buildOkxRunesPsbt({
         hash: decodedPsbt.tx.vin[1].txid,
         index: decodedPsbt.tx.vin[1].vout,
         witnessUtxo: {
-          value: sellerInputData.witnessUtxo.value,
-          script: sellerInputData.witnessUtxo.script,
+            value: sellerInputData.witnessUtxo.value,
+            script: sellerInputData.witnessUtxo.script,
         },
         sighashType: bitcoin.Transaction.SIGHASH_SINGLE | bitcoin.Transaction.SIGHASH_ANYONECANPAY,
-      }
+    }
 
-      if ( sellerInputData?.tapInternalKey != null){
+    if (sellerInputData?.tapInternalKey != null) {
         sellerInput["tapInternalKey"] = sellerInputData?.tapInternalKey
-      }
-    
-      txInputs.push(sellerInput);
+    }
+
+    txInputs.push(sellerInput);
 
 
-      //Add remaining UTXOS as input to cover amount needed & fees
-      for (let i = 1; i < retrievedUtxos.length; i++) {
+    //Add remaining UTXOS as input to cover amount needed & fees
+    for (let i = 1; i < retrievedUtxos.length; i++) {
         txInputs.push(addInputConditionally({
-          hash: retrievedUtxos[i].txId,
-          index: retrievedUtxos[i].outputIndex,
-          witnessUtxo: {
-              value: retrievedUtxos[i].satoshis,
-              script: Buffer.from(retrievedUtxos[i].scriptPk, 'hex'),
-          },
-      }, addressType, pubKey))
-      }
+            hash: retrievedUtxos[i].txId,
+            index: retrievedUtxos[i].outputIndex,
+            witnessUtxo: {
+                value: retrievedUtxos[i].satoshis,
+                script: Buffer.from(retrievedUtxos[i].scriptPk, 'hex'),
+            },
+        }, addressType, pubKey))
+    }
 
-      txOutputs.push({
+    txOutputs.push({
         address: receiveAddress, // Buyer's receiving address at index 0
         value: sellerInputData.witnessUtxo.value,
     })
 
-      txOutputs.push({
+    txOutputs.push({
         address: sellerAddress, // Seller's output address at index 1
         value: orderPrice,
-      });
-   
+    });
+
 
     const amountRetrieved = calculateAmountGathered(retrievedUtxos)
     const changeAmount = amountRetrieved - amountNeeded
@@ -107,10 +107,8 @@ export async function buildOkxRunesPsbt({
 
     if (changeAmount > 0) changeOutput = { address, value: changeAmount }
 
-    console.log(txOutputs)
-    console.log(txInputs)
-    
-    const {psbtBase64} = buildPsbtWithFee({
+
+    const { psbtBase64 } = buildPsbtWithFee({
         inputTemplate: txInputs,
         outputTemplate: txOutputs,
         utxos,
@@ -126,4 +124,22 @@ export async function buildOkxRunesPsbt({
     })
 
     return psbtBase64;
-  }
+}
+
+
+export function simulateRunesBuy(sellerAddress, receieveAddress, utxos, orderPrice) {
+    const txInputs: ConditionalInput[] = []
+    const txOutputs: OutputTxTemplate[] = []
+
+
+    const sellerDummyInput = {
+        hash: "000000000000000000000000000000000000",
+        index: 2,
+        witnessUtxo: {
+            value: 546,
+            script: "0000000000000000000000000000000",
+        }
+    }
+
+
+}

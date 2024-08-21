@@ -12,7 +12,7 @@ export declare function okxSwap({ address, offer, receiveAddress, feeRate, pubKe
     receiveAddress: string;
     feeRate: number;
     pubKey: string;
-    utxos?: FormattedUtxo[];
+    utxos: FormattedUtxo[];
     assetType: AssetType;
     provider: Provider;
     signer: Signer;

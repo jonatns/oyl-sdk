@@ -1,9 +1,9 @@
 import { getAddressType } from "../.."
-import { FormattedUtxo, addressSpendableUtxos } from  '../../utxo/utxo';
+import { FormattedUtxo } from  '../../utxo/utxo';
 import { Signer } from "../../signer"
 import { Provider } from "../../provider"
 import { AssetType, MarketplaceOffer } from "../../shared/interface"
-import { UnsignedOkxBid, SignedOkxBid, UnsignedPsbt, GenOkxBrcAndCollectibleUnsignedPsbt, GenOkxRuneUnsignedPsbt } from "../types"
+import { UnsignedOkxBid, SignedOkxBid, UnsignedPsbt, GenOkxRuneUnsignedPsbt } from "../types"
 import { genBrcAndOrdinalUnsignedPsbt, mergeSignedPsbt } from "./nft"
 import { prepareAddressForDummyUtxos, updateUtxos } from "../helpers";
 import { buildOkxRunesPsbt } from "./runes";
@@ -89,7 +89,7 @@ export async function okxSwap ({
     pubKey,
     assetType,
     provider,
-    utxos = [],
+    utxos,
     signer
 }:{
     address: string
@@ -97,7 +97,7 @@ export async function okxSwap ({
     receiveAddress: string
     feeRate: number
     pubKey: string
-    utxos?: FormattedUtxo[]
+    utxos: FormattedUtxo[]
     assetType: AssetType
     provider: Provider
     signer: Signer
@@ -105,11 +105,6 @@ export async function okxSwap ({
     const addressType = getAddressType(address);
 
     const network = provider.network
-
-    if (utxos?.length < 1 ) {
-        utxos = (await addressSpendableUtxos({ address, provider })).utxos;
-    }
-
 
     const psbtForDummyUtxos =
     (assetType != AssetType.RUNES) 
