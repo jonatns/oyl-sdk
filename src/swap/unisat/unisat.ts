@@ -1,7 +1,7 @@
-import { AddressType, AssetType, MarketplaceOffer } from "../shared/interface"
-import { Signer } from '../signer'
-import { Provider } from "provider"
-import { getAddressType } from ".."
+import { AddressType, AssetType, MarketplaceOffer } from "../../shared/interface"
+import { Signer } from '../../signer'
+import { Provider } from "../../provider"
+import { getAddressType } from "../.."
 import { signBip322Message } from "./BIP322"
 
 export interface UnsignedUnisatBid {
@@ -83,7 +83,7 @@ export async function getPsbt(unsignedBid: UnsignedUnisatBid) {
     if (
       address != receiveAddress 
     ) {
-      const signature = await getMessageSignature({address, receiveAddress, signer})
+      const signature = await getMessageSignature({address, provider, receiveAddress, signer})
       unsignedBid['signature'] = signature
     }
     const psbt_ = await getPsbt(unsignedBid)
@@ -111,6 +111,12 @@ export async function getPsbt(unsignedBid: UnsignedUnisatBid) {
     address,
     receiveAddress,
     signer,
+    provider
+  }: {
+    address: string,
+    receiveAddress: string,
+    signer: Signer,
+    provider: Provider
   }): Promise<string> {
      const message = `Please confirm that\nPayment Address: ${address}\nOrdinals Address: ${receiveAddress}`
   if (getAddressType(receiveAddress) == AddressType.P2WPKH) {
@@ -118,7 +124,7 @@ export async function getPsbt(unsignedBid: UnsignedUnisatBid) {
     const privateKey = keyPair.privateKey
     const signature = await signBip322Message({
       message,
-      network: 'mainnet',
+      network: provider.networkType,
       privateKey,
       signatureAddress: receiveAddress,
     })
@@ -128,7 +134,7 @@ export async function getPsbt(unsignedBid: UnsignedUnisatBid) {
     const privateKey = keyPair.privateKey
     const signature = await signBip322Message({
       message,
-      network: 'mainnet',
+      network: provider.networkType,
       privateKey,
       signatureAddress: receiveAddress,
     })

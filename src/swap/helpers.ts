@@ -254,7 +254,7 @@ export async function sanitizeFeeRate(provider: Provider, feeRate: number): Prom
 
 export async function prepareAddressForDummyUtxos({
     address,
-    provider,
+    network,
     pubKey,
     feeRate,
     addressType,
@@ -263,12 +263,8 @@ export async function prepareAddressForDummyUtxos({
 PrepareAddressForDummyUtxos
 ): Promise<string | null>{
     try {
-        if (utxos.length < 1 ) {
-            utxos = (await addressSpendableUtxos({ address, provider })).utxos;
-        }
         const paddingUtxos = getAllUTXOsWorthASpecificValue(utxos, 600)
         if (paddingUtxos.length < 2) {
-            const network = provider.network
             const { psbtBase64 } = dummyUtxosPsbt({ address, utxos, network, feeRate, pubKey, addressType })
             return psbtBase64;
         }

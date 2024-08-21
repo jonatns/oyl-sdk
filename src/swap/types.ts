@@ -40,7 +40,7 @@ export interface PaymentUtxoOptions {
 
 export interface PrepareAddressForDummyUtxos {
     address: string
-    provider: Provider
+    network: bitcoin.Network
     feeRate: number
     pubKey: string
     utxos?: FormattedUtxo[]

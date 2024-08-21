@@ -15,7 +15,7 @@ import { Provider } from 'provider/provider'
 import { Account } from '@account/account'
 import { DUMMY_UTXO_SATS, ESTIMATE_TX_SIZE, addInputConditionally, calculateAmountGathered, canAddressAffordBid, estimatePsbtFee, getAllUTXOsWorthASpecificValue, getBidCostEstimate, getUTXOsToCoverAmount, sanitizeFeeRate } from './helpers'
 import { addressSpendableUtxos } from '../utxo/utxo'
-import { unisatSwap } from './unisat'
+import { unisatSwap } from './unisat/unisat'
 import { okxSwap } from './okx'
 
 export class Engine {

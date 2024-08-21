@@ -102,10 +102,18 @@ export async function okxSwap ({
     signer: Signer
 }) {
     const addressType = getAddressType(address);
+
+    const network = provider.network
+
+    if (utxos.length < 1 ) {
+        utxos = (await addressSpendableUtxos({ address, provider })).utxos;
+    }
+
+
     const psbtForDummyUtxos =
     (assetType != AssetType.RUNES) 
     ?
-    await prepareAddressForDummyUtxos({address, utxos, provider, pubKey, feeRate, addressType})
+    await prepareAddressForDummyUtxos({address, utxos, network, pubKey, feeRate, addressType})
     :
     null
 
@@ -127,7 +135,6 @@ export async function okxSwap ({
     
     const sellerData = await getSellerPsbt(unsignedBid);
     const sellerPsbt = sellerData.data.sellerPsbt;
-    const network = provider.network
     const decodedPsbt = await provider.sandshrew.bitcoindRpc.decodePSBT(sellerPsbt)
     const sellerAddress = offer?.address
     const buyerPsbt = await getBuyerPsbt({
