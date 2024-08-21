@@ -9,12 +9,7 @@ import * as brc20 from '../brc20'
 import * as collectible from '../collectible'
 import * as rune from '../rune'
 
-import {
-  generateMnemonic,
-  getWalletPrivateKeys,
-  mnemonicToAccount,
-  ProviderConstructorArgs,
-} from '..'
+import { generateMnemonic, getWalletPrivateKeys, mnemonicToAccount } from '..'
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '..'
 import { Signer } from '..'
@@ -113,7 +108,7 @@ const accountUtxosToSpend = new Command('accountSpendableUtxos')
     'mnemonic you want to get private keys from'
   )
   /* @dev example call
-    oyl utxo addressSpendableUtxos -a bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx -p regtest
+    oyl utxo accountSpendableUtxos -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -p regtest
   */
   .action(async (options) => {
     const provider: Provider = defaultProvider[options.provider]
@@ -182,6 +177,9 @@ const addressUtxosToSpend = new Command('addressSpendableUtxos')
     '-a, --address <address>',
     'address you want to get utxos for'
   )
+  /* @dev example call
+    oyl utxo addressSpendableUtxos -a bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx -p regtest
+  */
   .action(async (options) => {
     const provider = defaultProvider[options.provider]
     console.log(
