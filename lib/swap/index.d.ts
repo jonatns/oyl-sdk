@@ -14,7 +14,13 @@ export declare class Engine {
     takerScript: string;
     addressesBound: boolean;
     constructor(options: MarketplaceAccount);
-    selectSpendAddress(offers: MarketplaceOffer[]): Promise<void>;
+    selectSpendAddress(offers: MarketplaceOffer[]): Promise<{
+        address: string;
+        pubKey: string;
+        addressType: AddressType;
+        utxos: import("../utxo/utxo").FormattedUtxo[];
+        offers: import("./types").MarketplaceOffer[];
+    }>;
     processUnisatOffers(offers: MarketplaceOffer[]): Promise<void>;
     processOkxOffers(offers: MarketplaceOffer[]): Promise<void>;
 }

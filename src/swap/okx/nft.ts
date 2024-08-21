@@ -58,7 +58,7 @@ export function buildDummyAndPaymentUtxos({ utxos, feeRate, orderPrice, address,
     const retrievedUtxos = getUTXOsToCoverAmount({
         utxos,
         amountNeeded,
-        excludedUtxos: dummyUtxos
+        excludedUtxos: allUtxosWorth600
     })
     if (retrievedUtxos.length === 0) {
         throw new Error('Not enough funds to purchase this offer')
@@ -77,6 +77,7 @@ export function buildDummyAndPaymentUtxos({ utxos, feeRate, orderPrice, address,
         dummyUtxos,
         paymentUtxos,
     }
+
     data['receiveNftAddress'] = receiveAddress
     data['paymentAndChangeAddress'] = address
     data['feeRate'] = feeRate

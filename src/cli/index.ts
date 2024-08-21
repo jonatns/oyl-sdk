@@ -3,23 +3,23 @@ import {
   accountSpendableUtxos,
   addressSpendableUtxos,
   availableBalance,
-} from '../utxo/utxo'
-import * as btc from '../btc/btc'
-import * as brc20 from '../brc20/brc20'
-import * as collectible from '../collectible/collectible'
-import * as rune from '../rune/rune'
+} from '../utxo'
+import * as btc from '../btc'
+import * as brc20 from '../brc20'
+import * as collectible from '../collectible'
+import * as rune from '../rune'
 
 import {
   generateMnemonic,
   getWalletPrivateKeys,
   mnemonicToAccount,
-} from '../account/account'
+  ProviderConstructorArgs,
+} from '..'
 import * as bitcoin from 'bitcoinjs-lib'
-import { Provider } from '../provider/provider'
-import { Signer } from '../signer/index'
-import { Trade } from '../trade'
-import { Engine } from '../swap'
-import { AssetType, MarketplaceOffers } from '../shared/interface'
+import { Provider } from '..'
+import { Signer } from '..'
+import { Trade } from '..'
+import { AssetType, MarketplaceOffers } from '..'
 import { OylTransactionError } from '../errors'
 
 const defaultProvider = {
@@ -29,13 +29,15 @@ const defaultProvider = {
     network: bitcoin.networks.bitcoin,
     networkType: 'mainnet',
     apiUrl: 'https://staging-api.oyl.gg',
+    //opiUrl: 'https://mainnet-opi.sandshrew.io/v1'
   }),
   regtest: new Provider({
     url: 'http://localhost:3000',
     projectId: 'regtest',
     network: bitcoin.networks.regtest,
-    networkType: 'mainnet',
+    networkType: 'regtest',
     apiUrl: 'https://staging-api.oyl.gg',
+    //opiUrl: 'https://mainnet-opi.sandshrew.io/v1'
   }),
 }
 
@@ -675,29 +677,20 @@ const marketPlaceBuy = new Command('buy')
         },
       },
     })
-    let quotes = [{
-      "ticker": "oxbt",
-      "offerId": 5519313847,
-      "amount": "5000",
-      "address": "bc1p6nxp9nn2mqta4als76f7s86n3578wulmgke70rq8f069luc59rxsqvkvet",
-      "marketplace": "okx",
-      "inscriptionId": "9acb3c47e0d20bc591a8cdf8d7cb14c3c612c8ec8e2b96e4c55c62508907d7c7i0",
-      "unitPrice": 4.8,
-      "totalPrice": 24000
-    }]
+    let quotes: MarketplaceOffers[]
     switch (options.assetType) {
       case 'BRC20':
         options.assetType = AssetType.BRC20
-        // quotes = await provider.api.getBrc20Offers({
-        //   ticker: options.ticker,
-        // })
+        quotes = await provider.api.getBrc20Offers({
+          ticker: options.ticker,
+        })
 
         break
       case 'RUNES':
         options.assetType = AssetType.RUNES
-        // quotes = await provider.api.getRuneOffers({
-        //   ticker: options.ticker,
-        // })
+        quotes = await provider.api.getRuneOffers({
+          ticker: options.ticker,
+        })
         break
       case 'COLLECTIBLE':
         options.assetType = AssetType.COLLECTIBLE
@@ -705,7 +698,7 @@ const marketPlaceBuy = new Command('buy')
       default:
         throw new OylTransactionError(Error('Incorrect asset type'))
     }
-    const marketplace: Engine = new Engine({
+    const marketplace: Trade = new Trade({
       provider: provider,
       receiveAddress:
         options.receiveAddress === undefined
@@ -716,8 +709,9 @@ const marketPlaceBuy = new Command('buy')
       signer,
       feeRate: Number(options.feeRate),
     })
-    const offersToBuy = await marketplace.processOkxOffers(quotes)
-    console.log(offersToBuy)
+    const offersToBuy = await marketplace.processAllOffers(quotes)
+    const signedTxs = await marketplace.buyMarketPlaceOffers(offersToBuy)
+    console.log(signedTxs)
   })
 
 const accountCommand = new Command('account')

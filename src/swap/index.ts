@@ -54,11 +54,20 @@ export class Engine {
                     this.account[this.account.spendStrategy.addressOrder[i]].address
                 let pubkey: string =
                     this.account[this.account.spendStrategy.addressOrder[i]].pubkey
-                if (await canAddressAffordBid({ address, estimatedCost, offers, provider: this.provider })) {
+                    const afford =  await canAddressAffordBid({ address, estimatedCost, offers, provider: this.provider})
+                   const {utxos, canAfford, offers_ } = afford
+                   if (canAfford) {
                     this.selectedSpendAddress = address
                     this.selectedSpendPubkey = pubkey
                     this.addressType = getAddressType(this.selectedSpendAddress)
-                    break
+                    return {
+                        address: this.selectedSpendAddress,
+                        pubKey: this.selectedSpendPubkey,
+                        addressType: this.addressType,
+                        utxos,
+                        offers: offers_
+                        
+                    }
                 }
             }
             if (i === this.account.spendStrategy.addressOrder.length - 1) {
@@ -97,10 +106,12 @@ export class Engine {
 
     async processOkxOffers(offers: MarketplaceOffer[]) {
 
-        await this.selectSpendAddress(offers);
+        const {utxos} = await this.selectSpendAddress(offers);
+
         const processedOffers = await okxSwap ({
             address: this.selectedSpendAddress,
             offer: offers[0],
+            utxos,
             receiveAddress: this.receiveAddress,
             feeRate: this.feeRate,
             pubKey: this.selectedSpendPubkey,

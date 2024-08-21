@@ -1,4 +1,4 @@
-import { getAddressType } from "../.."
+import { getAddressType, timeout } from "../.."
 import { FormattedUtxo } from  '../../utxo/utxo';
 import { Signer } from "../../signer"
 import { Provider } from "../../provider"
@@ -118,17 +118,15 @@ export async function okxSwap ({
             rawPsbt: psbtBase64,
             finalize: true,
         })
+
         const {txId} = await provider.pushPsbt({psbtBase64: signedPsbt})
+        await timeout(5000)
         utxos = updateUtxos({
             originalUtxos: utxos,
             txId, 
             inputTemplate,
             outputTemplate
-        })
-
-
-        return
-        
+        })        
     }
     const unsignedBid: UnsignedOkxBid = {
         offerId: offer.offerId,
@@ -169,6 +167,7 @@ export async function okxSwap ({
         provider,
         offer
     })
+    console.log("Transaction", transaction)
     if (transaction?.statusCode == 200 || transaction?.data)return transaction.data
 
 }

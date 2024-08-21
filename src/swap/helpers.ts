@@ -208,7 +208,7 @@ export async function canAddressAffordBid({ address, estimatedCost, offers, prov
     return{ 
         offers_: offers,
         estimatedCost,
-        utxos,
+        utxos: retrievedUtxos,
         canAfford: retrievedUtxos.length > 0
      }
 }
@@ -279,7 +279,7 @@ PrepareAddressForDummyUtxos
 ): Promise<BuiltPsbt | null>{
     try {
         const paddingUtxos = getAllUTXOsWorthASpecificValue(utxos, 600)
-        if (paddingUtxos.length >= 0) {
+        if (paddingUtxos.length < 2) {
             return dummyUtxosPsbt({ address, utxos, network, feeRate, pubKey, addressType })
         }
         return null;
@@ -347,12 +347,13 @@ export function dummyUtxosPsbt({ address, utxos, feeRate, pubKey, addressType, n
 }
 
 export function updateUtxos({originalUtxos, txId, inputTemplate, swapTx = false, outputTemplate}: UpdateUtxos): FormattedUtxo[] {
+    const blueprint = originalUtxos[0]
     inputTemplate.forEach((input) => {
         const { hash, index } = input;
         originalUtxos = originalUtxos.filter(utxo => !(utxo.txId === hash && utxo.outputIndex === index));
     });
 
-    const blueprint = originalUtxos[0]
+    
 
     outputTemplate.forEach((output, index) => {
         if(outputTxCheck({blueprint, swapTx, output, index})) {
