@@ -67,14 +67,12 @@ export const addressSpendableUtxos = async ({
 
   const utxoSortGreatestToLeast = spendStrategy?.utxoSortGreatestToLeast ?? true
 
-  // Filter and sort UTXOs early
   utxos = utxos
     .filter((utxo) => utxo.value > UTXO_DUST && utxo.value !== 546)
     .sort((a, b) =>
       utxoSortGreatestToLeast ? b.value - a.value : a.value - b.value
     )
 
-  // Map UTXO IDs to their respective promises
   const utxoPromises = utxos.map(async (utxo) => {
     const outputId = `${utxo.txid}:${utxo.vout}`
 
@@ -90,7 +88,6 @@ export const addressSpendableUtxos = async ({
 
   const results = await Promise.all(utxoPromises)
 
-  // Iterate over the results and build the list of spendable UTXOs
   for (const { utxo, hasInscription, hasRune } of results) {
     if (
       (spendAmount && totalAmount >= spendAmount) ||
@@ -103,7 +100,6 @@ export const addressSpendableUtxos = async ({
       continue
     }
 
-    // Fetch transaction details only for UTXOs that pass the checks
     const transactionDetails = await provider.esplora.getTxInfo(utxo.txid)
     const voutEntry = transactionDetails.vout.find(
       (v) => v.scriptpubkey_address === address
