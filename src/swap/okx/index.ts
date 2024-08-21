@@ -5,7 +5,7 @@ import { Provider } from "../../provider"
 import { AssetType, MarketplaceOffer } from "../../shared/interface"
 import { UnsignedOkxBid, SignedOkxBid, UnsignedPsbt } from "../types"
 import { genBrcAndOrdinalUnsignedPsbt, mergeSignedPsbt } from "./nft"
-import { prepareAddressForDummyUtxos } from "swap/helpers";
+import { prepareAddressForDummyUtxos } from "../helpers";
 
 
 
@@ -128,6 +128,8 @@ export async function okxSwap ({
     const sellerData = await getSellerPsbt(unsignedBid);
     const sellerPsbt = sellerData.data.sellerPsbt;
     const network = provider.network
+    const decodedPsbt = await provider.sandshrew.bitcoindRpc.decodePSBT(sellerPsbt)
+    const sellerAddress = offer?.address
     const buyerPsbt = await getBuyerPsbt({
         address,
         utxos,
@@ -137,8 +139,10 @@ export async function okxSwap ({
         pubKey,
         addressType,
         sellerPsbt,
+        sellerAddress,
         orderPrice: offer.totalPrice,
-        assetType
+        assetType,
+        decodedPsbt
     })
 
    const {signedPsbt} = await signer.signAllInputs({

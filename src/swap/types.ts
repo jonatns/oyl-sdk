@@ -77,11 +77,13 @@ export interface GenOkxRuneUnsignedPsbt {
     address: string
     utxos: FormattedUtxo[]
     feeRate: number
+    decodedPsbt?: any
     receiveAddress: string
     network: bitcoin.Network
     pubKey: string
     addressType: AddressType
     sellerPsbt: string
+    sellerAddress: string
     orderPrice: number
 }
 
@@ -94,6 +96,7 @@ export interface UnsignedPsbt {
     pubKey: string
     addressType: AddressType
     signer?: Signer
+    decodedPsbt?: any
     sellerPsbt: string
     orderPrice: number
     sellerAddress?: string

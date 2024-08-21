@@ -1,97 +1,127 @@
-export async function buildOkxRunesPsbt(psbt: string, orderPrice: number, sellerAddress: string) {
-    const sellerPsbt = bitcoin.Psbt.fromBase64(psbt, { network: this.provider.network })
-    const dummyUtxos = []
-    const requiredSatoshis = orderPrice + parseInt((482 * this.feeRate).toFixed(0))
+import { ESTIMATE_TX_SIZE, addInputConditionally, buildPsbtWithFee, calculateAmountGathered, getAllUTXOsWorthASpecificValue, getUTXOsToCoverAmount } from "../helpers"
+import { ConditionalInput, GenOkxRuneUnsignedPsbt, OutputTxTemplate } from "../types"
+import * as bitcoin from 'bitcoinjs-lib'
 
-    const allUtxosWorth600 = await this.getAllUTXOsWorthASpecificValue(600)
+
+export async function buildOkxRunesPsbt({
+    address,
+    utxos,
+    network,
+    pubKey,
+    orderPrice,
+    sellerPsbt,
+    addressType,
+    sellerAddress,
+    decodedPsbt,
+    feeRate,
+    receiveAddress
+}: GenOkxRuneUnsignedPsbt) {
+
+    const _sellerPsbt = bitcoin.Psbt.fromBase64(sellerPsbt, { network})
+    const dummyUtxos = []
+    const amountNeeded = orderPrice + parseInt((ESTIMATE_TX_SIZE * feeRate).toFixed(0))
+
+
+    const allUtxosWorth600 =  getAllUTXOsWorthASpecificValue(utxos, 600)
     if (allUtxosWorth600.length >= 2) {
       for (let i = 0; i < 2; i++) {
         dummyUtxos.push({
-          txHash: allUtxosWorth600[i].txid,
-          vout: allUtxosWorth600[i].vout,
-          coinAmount: allUtxosWorth600[i].value,
+            txHash: allUtxosWorth600[i].txId,
+            vout: allUtxosWorth600[i].outputIndex,
+            coinAmount: allUtxosWorth600[i].satoshis
         })
       }
     }
 
-    const retrievedUtxos = await this.getUTXOsToCoverAmount(
-      this.selectedSpendAddress,
-      requiredSatoshis,
-      dummyUtxos
-    )
+    const retrievedUtxos = await getUTXOsToCoverAmount({
+        utxos,
+        amountNeeded,
+        excludedUtxos: dummyUtxos
+    })
+    
     if (retrievedUtxos.length === 0) {
-      throw new OylTransactionError(
-        new Error('Not enough funds to purchase this offer'),
-        this.txIds
-      )
+      throw new Error('Not enough funds to purchase this offer')
     }
 
-    const buyerPsbt = new bitcoin.Psbt({ network: this.provider.network });
-
-    const sellerInputData = sellerPsbt.data.inputs[1]
-    const decoded = await this.provider.sandshrew.bitcoindRpc.decodePSBT(psbt)
+    const txInputs: ConditionalInput[] = []
+    const txOutputs: OutputTxTemplate[] = []
 
 
     // Add the first UTXO from retrievedUtxos as input index 0
-    buyerPsbt.addInput(this.addInputConditionally({
-      hash: retrievedUtxos[0].txid,
-      index: retrievedUtxos[0].vout,
-      witnessUtxo: {
-        value: retrievedUtxos[0].value,
-        script: Buffer.from(this.takerScript, 'hex')
-      }
-    }));
-
-    const sellerUtxo = {
-      hash: decoded.tx.vin[1].txid,
-      index: decoded.tx.vin[1].vout,
-      witnessUtxo: {
-        value: sellerInputData.witnessUtxo.value,
-        script: sellerInputData.witnessUtxo.script,
-      },
-      sighashType: bitcoin.Transaction.SIGHASH_SINGLE | bitcoin.Transaction.SIGHASH_ANYONECANPAY,
-    }
-
-    if ( sellerInputData?.tapInternalKey != null){
-      sellerUtxo["tapInternalKey"] = sellerInputData?.tapInternalKey
-    }
-    // Add seller UTXO as input index 1
-    buyerPsbt.addInput(sellerUtxo);
-
-    for (let i = 1; i < retrievedUtxos.length; i++) {
-      buyerPsbt.addInput(this.addInputConditionally({
-        hash: retrievedUtxos[i].txid,
-        index: retrievedUtxos[i].vout,
+    txInputs.push(addInputConditionally({
+        hash: retrievedUtxos[0].txId,
+        index: retrievedUtxos[0].outputIndex,
         witnessUtxo: {
-          value: retrievedUtxos[i].value,
-          script: Buffer.from(this.takerScript, 'hex')
-        }
-      }));
-    }
+            value: retrievedUtxos[0].satoshis,
+            script: Buffer.from(retrievedUtxos[0].scriptPk, 'hex'),
+        },
+    }, addressType, pubKey))
 
-    buyerPsbt.addOutput({
-      address: this.receiveAddress, // Buyer's receiving address at index 0
-      value: sellerInputData.witnessUtxo.value,
-    });
+    const sellerInputData = _sellerPsbt.data.inputs[1]
 
-    buyerPsbt.addOutput({
-      address: sellerAddress, // Seller's output address at index 1
-      value: orderPrice,
-    });
 
-    const amountRetrieved = retrievedUtxos?.reduce(
-      (prev, currentValue) => prev + currentValue.value,
-      0
-    )
+    // Add seller UTXO as input index 1
+    const sellerInput = {
+        hash: decodedPsbt.tx.vin[1].txid,
+        index: decodedPsbt.tx.vin[1].vout,
+        witnessUtxo: {
+          value: sellerInputData.witnessUtxo.value,
+          script: sellerInputData.witnessUtxo.script,
+        },
+        sighashType: bitcoin.Transaction.SIGHASH_SINGLE | bitcoin.Transaction.SIGHASH_ANYONECANPAY,
+      }
 
-    const remainder = amountRetrieved - requiredSatoshis;
+      if ( sellerInputData?.tapInternalKey != null){
+        sellerInput["tapInternalKey"] = sellerInputData?.tapInternalKey
+      }
+    
+      txInputs.push(sellerInput);
 
-    if (remainder > 0) {
-      buyerPsbt.addOutput({
-        address: this.selectedSpendAddress,
-        value: remainder,
+
+      //Add remaining UTXOS as input to cover amount needed & fees
+      for (let i = 1; i < retrievedUtxos.length; i++) {
+        txInputs.push(addInputConditionally({
+          hash: retrievedUtxos[i].txId,
+          index: retrievedUtxos[i].outputIndex,
+          witnessUtxo: {
+              value: retrievedUtxos[i].satoshis,
+              script: Buffer.from(retrievedUtxos[i].scriptPk, 'hex'),
+          },
+      }, addressType, pubKey))
+      }
+
+      txOutputs.push({
+        address: receiveAddress, // Buyer's receiving address at index 0
+        value: sellerInputData.witnessUtxo.value,
+    })
+
+      txOutputs.push({
+        address: sellerAddress, // Seller's output address at index 1
+        value: orderPrice,
       });
-    }
-    const { signedPsbt } = await this.signMarketplacePsbt(buyerPsbt.toBase64(), false)
-    return signedPsbt;
+   
+
+    const amountRetrieved = calculateAmountGathered(retrievedUtxos)
+    const changeAmount = amountRetrieved - amountNeeded
+    let changeOutput: OutputTxTemplate | null = null
+
+    if (changeAmount > 0) changeOutput = { address, value: changeAmount }
+
+    
+    const {psbtBase64} = buildPsbtWithFee({
+        inputTemplate: txInputs,
+        outputTemplate: txOutputs,
+        utxos,
+        changeOutput,
+        retrievedUtxos,
+        spendAddress: address,
+        spendPubKey: pubKey,
+        amountRetrieved,
+        spendAmount: orderPrice,
+        feeRate,
+        network,
+        addressType
+    })
+
+    return psbtBase64;
   }
