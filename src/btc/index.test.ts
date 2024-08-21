@@ -1,6 +1,6 @@
 import * as bitcoin from 'bitcoinjs-lib'
 import { createPsbt, send } from './btc'
-import { accountSpendableUtxos } from '../utxo/utxo'
+import { accountUtxos } from '../utxo/utxo'
 import { Account, mnemonicToAccount } from '../account/account'
 import { Opts, mainnetMnemonic } from '../shared/constants'
 import { Provider } from '../provider/provider'
@@ -33,7 +33,7 @@ jest.mock('../provider/provider', () => ({
   })),
 }))
 
-jest.spyOn(require('../utxo'), 'accountSpendableUtxos').mockResolvedValue({
+jest.spyOn(require('../utxo'), 'accountUtxos').mockResolvedValue({
   totalAmount: 20000,
   utxos: [
     {
@@ -57,7 +57,7 @@ describe('btc sendTx', () => {
 
     expect(result.psbt).toBeDefined()
 
-    expect(accountSpendableUtxos).toHaveBeenCalledWith({
+    expect(accountUtxos).toHaveBeenCalledWith({
       account: account,
       provider: provider,
       spendAmount: 4540,

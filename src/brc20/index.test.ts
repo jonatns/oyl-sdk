@@ -304,7 +304,7 @@
 
 // describe('brc20', () => {
 //   it('transferEstimate', async () => {
-//     const result = await addressSpendableUtxos({
+//     const result = await addressUtxos({
 //       address: 'bc1pklamaklxrdgm7njpudghhq3j7vwxfuak0l7jmrhvluf0cld5etjsga00nj',
 //       provider: provider,
 //     })
@@ -312,7 +312,7 @@
 //     expect(result.totalAmount).toEqual(150000)
 //   })
 //   it('commit', async () => {
-//     const result = await addressSpendableUtxos({
+//     const result = await addressUtxos({
 //       address: 'bc1pklamaklxrdgm7njpudghhq3j7vwxfuak0l7jmrhvluf0cld5etjsga00nj',
 //       provider: provider,
 //     })
@@ -320,7 +320,7 @@
 //     expect(result.totalAmount).toEqual(150000)
 //   })
 //   it('reveal', async () => {
-//     const result = await addressSpendableUtxos({
+//     const result = await addressUtxos({
 //       address: 'bc1pklamaklxrdgm7njpudghhq3j7vwxfuak0l7jmrhvluf0cld5etjsga00nj',
 //       provider: provider,
 //     })
@@ -329,7 +329,7 @@
 //   })
 
 //   it('transfer', async () => {
-//     const result = await addressSpendableUtxos({
+//     const result = await addressUtxos({
 //       address: 'bc1pklamaklxrdgm7njpudghhq3j7vwxfuak0l7jmrhvluf0cld5etjsga00nj',
 //       provider: provider,
 //     })
@@ -338,7 +338,7 @@
 //   })
 
 //   it('send', async () => {
-//     const result = await addressSpendableUtxos({
+//     const result = await addressUtxos({
 //       address: 'bc1pklamaklxrdgm7njpudghhq3j7vwxfuak0l7jmrhvluf0cld5etjsga00nj',
 //       provider: provider,
 //     })

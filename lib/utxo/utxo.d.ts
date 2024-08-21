@@ -25,21 +25,25 @@ export declare const availableBalance: ({ account, provider, }: {
     provider: Provider;
 }) => Promise<{
     balance: number;
+    pendingBalance: number;
 }>;
-export declare const addressSpendableUtxos: ({ address, provider, spendAmount, spendStrategy, }: {
+export declare const addressUtxos: ({ address, provider, spendStrategy, }: {
     address: string;
     provider: Provider;
-    spendAmount?: number;
     spendStrategy?: SpendStrategy;
 }) => Promise<{
-    totalAmount: number;
-    utxos: FormattedUtxo[];
+    spendableTotalAmount: number;
+    spendableUtxos: FormattedUtxo[];
+    runeUtxos: FormattedUtxo[];
+    ordUtxos: FormattedUtxo[];
+    pendingUtxos: FormattedUtxo[];
+    pendingTotalAmount: number;
 }>;
-export declare const accountSpendableUtxos: ({ account, provider, spendAmount, }: {
+export declare const accountUtxos: ({ account, provider, }: {
     account: Account;
     provider: Provider;
-    spendAmount?: number;
 }) => Promise<{
-    totalAmount: number;
-    utxos: FormattedUtxo[];
+    spendableTotalAmount: number;
+    pendingTotalAmount: number;
+    accounts: any[];
 }>;

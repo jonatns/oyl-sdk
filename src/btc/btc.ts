@@ -1,7 +1,7 @@
 import { OylTransactionError } from '../errors'
 import { Provider } from '../provider/provider'
 import * as bitcoin from 'bitcoinjs-lib'
-import { FormattedUtxo, accountSpendableUtxos } from '../utxo/utxo'
+import { FormattedUtxo, accountUtxos } from '../utxo/utxo'
 import { calculateTaprootTxSize, formatInputsToSign } from '../shared/utils'
 import { Account } from '../account/account'
 import { Signer } from '../signer'
@@ -35,13 +35,9 @@ export const createPsbt = async ({
     let calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
     let finalFee: number = fee ? fee : calculatedFee
 
-    let gatheredUtxos: {
-      totalAmount: number
-      utxos: FormattedUtxo[]
-    } = await accountSpendableUtxos({
+    let gatheredUtxos: any = await accountUtxos({
       account,
       provider,
-      spendAmount: finalFee + Number(amount),
     })
 
     if (!fee && gatheredUtxos.utxos.length > 1) {
@@ -53,10 +49,9 @@ export const createPsbt = async ({
       finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
       if (gatheredUtxos.totalAmount < amount + finalFee) {
-        gatheredUtxos = await accountSpendableUtxos({
+        gatheredUtxos = await accountUtxos({
           account,
           provider,
-          spendAmount: finalFee + Number(amount),
         })
       }
     }

@@ -281,10 +281,7 @@ export class OylApiClient {
    * Get account balance.
    * @param account - The stringified account object to get balance for.
    */
-  async getAccountSpendableUtxos(
-    account: string,
-    spendAmount?: number
-  ): Promise<any> {
+  async getaccountUtxos(account: string, spendAmount?: number): Promise<any> {
     const res = await this._call('/get-account-spendable-utxos', 'post', {
       account,
       spendAmount,
@@ -300,7 +297,7 @@ export class OylApiClient {
    * Get account balance.
    * @param address - The stringified account object to get balance for.
    */
-  async getAddressSpendableUtxos(
+  async getaddressUtxos(
     address: string,
     spendAmount?: number,
     spendStrategy?: string

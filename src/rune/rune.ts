@@ -1,7 +1,7 @@
 import { minimumFee } from '../btc/btc'
 import { Provider } from '../provider/provider'
 import * as bitcoin from 'bitcoinjs-lib'
-import { FormattedUtxo, accountSpendableUtxos } from '../utxo/utxo'
+import { FormattedUtxo, accountUtxos } from '../utxo/utxo'
 import { Account } from '../account/account'
 import {
   createRuneMintScript,
@@ -42,13 +42,9 @@ export const createSendPsbt = async ({
     const calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
     let finalFee = fee ? fee : calculatedFee
 
-    let gatheredUtxos: {
-      totalAmount: number
-      utxos: FormattedUtxo[]
-    } = await accountSpendableUtxos({
+    let gatheredUtxos: any = await accountUtxos({
       account,
       provider,
-      spendAmount: finalFee + inscriptionSats,
     })
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
@@ -120,10 +116,9 @@ export const createSendPsbt = async ({
       finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
       if (gatheredUtxos.totalAmount < finalFee) {
-        gatheredUtxos = await accountSpendableUtxos({
+        gatheredUtxos = await accountUtxos({
           account,
           provider,
-          spendAmount: finalFee + inscriptionSats,
         })
       }
     }
@@ -244,13 +239,9 @@ export const createMintPsbt = async ({
     const calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
     let finalFee = fee ? fee : calculatedFee
 
-    let gatheredUtxos: {
-      totalAmount: number
-      utxos: FormattedUtxo[]
-    } = await accountSpendableUtxos({
+    let gatheredUtxos: any = await accountUtxos({
       account,
       provider,
-      spendAmount: finalFee + inscriptionSats,
     })
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
@@ -264,10 +255,9 @@ export const createMintPsbt = async ({
       finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
       if (gatheredUtxos.totalAmount < finalFee) {
-        gatheredUtxos = await accountSpendableUtxos({
+        gatheredUtxos = await accountUtxos({
           account,
           provider,
-          spendAmount: finalFee + inscriptionSats,
         })
       }
     }

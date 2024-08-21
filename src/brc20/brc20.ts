@@ -1,7 +1,7 @@
 import { OylTransactionError } from '../errors'
 import { Provider } from '../provider/provider'
 import * as bitcoin from 'bitcoinjs-lib'
-import { FormattedUtxo, accountSpendableUtxos } from '../utxo/utxo'
+import { accountUtxos } from '../utxo/utxo'
 import {
   calculateTaprootTxSize,
   createInscriptionScript,
@@ -44,13 +44,9 @@ export const transferEstimate = async ({
     let calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
     let finalFee = fee ? fee : calculatedFee
 
-    const gatheredUtxos: {
-      totalAmount: number
-      utxos: FormattedUtxo[]
-    } = await accountSpendableUtxos({
+    const gatheredUtxos: any = await accountUtxos({
       account,
       provider,
-      spendAmount: finalFee + 546,
     })
 
     let utxosToSend = gatheredUtxos
@@ -64,10 +60,9 @@ export const transferEstimate = async ({
       finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
       if (gatheredUtxos.totalAmount < finalFee + 546) {
-        utxosToSend = await accountSpendableUtxos({
+        utxosToSend = await accountUtxos({
           account,
           provider,
-          spendAmount: finalFee + 546,
         })
       }
     }
@@ -184,13 +179,9 @@ export const commit = async ({
 
     let finalFee = fee ? fee + Number(feeForReveal) + 546 : baseEstimate
 
-    let gatheredUtxos: {
-      totalAmount: number
-      utxos: FormattedUtxo[]
-    } = await accountSpendableUtxos({
+    let gatheredUtxos: any = await accountUtxos({
       account,
       provider,
-      spendAmount: finalFee + finalSendFee,
     })
 
     const script = createInscriptionScript(tweakedTaprootPublicKey, content)
@@ -217,10 +208,9 @@ export const commit = async ({
       finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
       if (gatheredUtxos.totalAmount < finalFee) {
-        gatheredUtxos = await accountSpendableUtxos({
+        gatheredUtxos = await accountUtxos({
           account,
           provider,
-          spendAmount: finalFee,
         })
       }
     }
