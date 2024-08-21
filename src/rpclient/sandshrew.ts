@@ -42,7 +42,7 @@ export class SandshrewBitcoinClient {
     }
   }
 
-  async multiCall(parameters: []) {
+  async multiCall(parameters: (string | string[])[][]) {
     return await this._call('sandshrew_multicall', parameters)
   }
 

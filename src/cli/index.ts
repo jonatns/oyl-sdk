@@ -112,6 +112,7 @@ const accountUtxosToSpend = new Command('accountSpendableUtxos')
   */
   .action(async (options) => {
     const provider: Provider = defaultProvider[options.provider]
+
     const account = mnemonicToAccount({
       mnemonic: options.mnemonic,
       opts: { network: provider.network },
@@ -526,6 +527,39 @@ const getRuneByName = new Command('getRuneByName')
     console.log(await provider.ord.getRuneByName(options.name))
   })
 
+const multiCallSandshrewProviderCall = new Command('sandShrewMulticall')
+  .description('Returns available utxos to spend')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+
+  .requiredOption(
+    '-c, --calls <calls>',
+    'calls in this format: {method: string, params: string[]}'
+  )
+
+  /* @dev example call
+    oyl provider sandShrewMulticall -c '[{"method":"esplora_tx","params":["688f5c239e4e114af461dc1331d02ad5702e795daf2dcf397815e0b05cd23dbc"]},{"method":"btc_getblockcount", "params":['']}]' -p bitcoin
+  */
+  .action(async (options) => {
+    type Call = { method: string; params: string[] }
+
+    let isJson: Call[] = []
+    try {
+      isJson = JSON.parse(options.calls)
+
+      const multiCall: (string | string[])[][] = isJson.map((call: Call) => {
+        return [call.method, call.params]
+      })
+
+      const provider: Provider = defaultProvider[options.provider]
+      console.log(await provider.sandshrew.multiCall(multiCall))
+    } catch (error) {
+      console.log(error)
+    }
+  })
+
 const apiProviderCall = new Command('api')
   .description('Returns data based on api method invoked')
   .requiredOption(
@@ -745,6 +779,7 @@ const providerCommand = new Command('provider')
   .addCommand(apiProviderCall)
   .addCommand(ordProviderCall)
   .addCommand(opiProviderCall)
+  .addCommand(multiCallSandshrewProviderCall)
 
 const marketPlaceCommand = new Command('marketplace')
   .description('Functions for marketplace')
