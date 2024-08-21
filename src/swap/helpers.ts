@@ -261,12 +261,11 @@ export async function prepareAddressForDummyUtxos({
     utxos = []
 }:
 PrepareAddressForDummyUtxos
-): Promise<string | null>{
+): Promise<BuiltPsbt | null>{
     try {
         const paddingUtxos = getAllUTXOsWorthASpecificValue(utxos, 600)
         if (paddingUtxos.length < 2) {
-            const { psbtBase64 } = dummyUtxosPsbt({ address, utxos, network, feeRate, pubKey, addressType })
-            return psbtBase64;
+            return dummyUtxosPsbt({ address, utxos, network, feeRate, pubKey, addressType })
         }
         return null;
     } catch (err) {
@@ -501,15 +500,18 @@ export function buildPsbtWithFee(
                 throw new Error('Insufficient funds: cannot cover transaction fee with available UTXOs')
         }
     } else {
-        if (changeAmount > 0) changeOutput = {address: spendAddress, value: changeAmount}
+        if (changeAmount > 0) outputTemplate.push({address: spendAddress, value: changeAmount})
+
         const finalPsbtTx = new bitcoin.Psbt({ network });
+
         inputTemplate.forEach(input => finalPsbtTx.addInput(input));
         outputTemplate.forEach(output => finalPsbtTx.addOutput(output));
         
-        if (changeOutput != null) finalPsbtTx.addOutput(changeOutput)
         return {
             psbtHex: finalPsbtTx.toHex(),
-            psbtBase64: finalPsbtTx.toBase64()
+            psbtBase64: finalPsbtTx.toBase64(),
+            inputTemplate,
+            outputTemplate
         };
     }
 }

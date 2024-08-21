@@ -33,7 +33,7 @@ export async function buildOkxRunesPsbt({
       }
     }
 
-    const retrievedUtxos = await getUTXOsToCoverAmount({
+    const retrievedUtxos =  getUTXOsToCoverAmount({
         utxos,
         amountNeeded,
         excludedUtxos: dummyUtxos
@@ -107,6 +107,8 @@ export async function buildOkxRunesPsbt({
 
     if (changeAmount > 0) changeOutput = { address, value: changeAmount }
 
+    console.log(txOutputs)
+    console.log(txInputs)
     
     const {psbtBase64} = buildPsbtWithFee({
         inputTemplate: txInputs,

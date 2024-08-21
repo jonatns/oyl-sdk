@@ -27,7 +27,7 @@ export declare function selectSpendAddress({ offers, provider, feeRate, account 
     addressType: AddressType;
 }>;
 export declare function sanitizeFeeRate(provider: Provider, feeRate: number): Promise<number>;
-export declare function prepareAddressForDummyUtxos({ address, provider, pubKey, feeRate, addressType, utxos }: PrepareAddressForDummyUtxos): Promise<string | null>;
+export declare function prepareAddressForDummyUtxos({ address, network, pubKey, feeRate, addressType, utxos }: PrepareAddressForDummyUtxos): Promise<string | null>;
 export declare function dummyUtxosPsbt({ address, utxos, feeRate, pubKey, addressType, network }: DummyUtxoOptions): BuiltPsbt;
 export declare function psbtTxAddressTypes({ psbt, network }: {
     psbt: bitcoin.Psbt;

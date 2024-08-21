@@ -676,13 +676,14 @@ const marketPlaceBuy = new Command('buy')
       },
     })
     let quotes = [{
-      "ticker": "MXRC",
-      "offerId": "pnvqpr2ywjwdmk2eyf2hyyawdabvpvpo",
-      "amount": "5500",
-      "address": "bc1p7jegst7g4n4akeuaf482jyyjrnk86jvgy3ln228qxvcr57hhxrxqwerjez",
-      "marketplace": "unisat",
-      "unitPrice": 3.4,
-      "totalPrice": 18700
+      "ticker": "oxbt",
+      "offerId": 5519313847,
+      "amount": "5000",
+      "address": "bc1p6nxp9nn2mqta4als76f7s86n3578wulmgke70rq8f069luc59rxsqvkvet",
+      "marketplace": "okx",
+      "inscriptionId": "9acb3c47e0d20bc591a8cdf8d7cb14c3c612c8ec8e2b96e4c55c62508907d7c7i0",
+      "unitPrice": 4.8,
+      "totalPrice": 24000
     }]
     switch (options.assetType) {
       case 'BRC20':
@@ -715,7 +716,7 @@ const marketPlaceBuy = new Command('buy')
       signer,
       feeRate: Number(options.feeRate),
     })
-    const offersToBuy = await marketplace.processUnisatOffers(quotes)
+    const offersToBuy = await marketplace.processOkxOffers(quotes)
     console.log(offersToBuy)
   })
 

@@ -1,6 +1,6 @@
-import { AssetType, MarketplaceOffer } from "../shared/interface";
-import { Signer } from '../signer';
-import { Provider } from "provider";
+import { AssetType, MarketplaceOffer } from "../../shared/interface";
+import { Signer } from '../../signer';
+import { Provider } from "../../provider";
 export interface UnsignedUnisatBid {
     address: string;
     auctionId: string;
@@ -31,8 +31,9 @@ export declare function unisatSwap({ address, offer, receiveAddress, feerate, pu
     provider: Provider;
     signer: Signer;
 }): Promise<any>;
-export declare function getMessageSignature({ address, receiveAddress, signer, }: {
-    address: any;
-    receiveAddress: any;
-    signer: any;
+export declare function getMessageSignature({ address, receiveAddress, signer, provider }: {
+    address: string;
+    receiveAddress: string;
+    signer: Signer;
+    provider: Provider;
 }): Promise<string>;

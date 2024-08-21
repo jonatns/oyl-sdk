@@ -3,9 +3,10 @@ import { FormattedUtxo, addressSpendableUtxos } from  '../../utxo/utxo';
 import { Signer } from "../../signer"
 import { Provider } from "../../provider"
 import { AssetType, MarketplaceOffer } from "../../shared/interface"
-import { UnsignedOkxBid, SignedOkxBid, UnsignedPsbt } from "../types"
+import { UnsignedOkxBid, SignedOkxBid, UnsignedPsbt, GenOkxBrcAndCollectibleUnsignedPsbt, GenOkxRuneUnsignedPsbt } from "../types"
 import { genBrcAndOrdinalUnsignedPsbt, mergeSignedPsbt } from "./nft"
 import { prepareAddressForDummyUtxos } from "../helpers";
+import { buildOkxRunesPsbt } from "./runes";
 
 
 
@@ -71,7 +72,7 @@ export async function getBuyerPsbt(unsignedPsbt: UnsignedPsbt) {
         case AssetType.BRC20:
             return genBrcAndOrdinalUnsignedPsbt(unsignedPsbt)
         case AssetType.RUNES:
-            return
+            return await buildOkxRunesPsbt(unsignedPsbt as GenOkxRuneUnsignedPsbt)
         case AssetType.COLLECTIBLE:
             return genBrcAndOrdinalUnsignedPsbt(unsignedPsbt)
             
@@ -88,7 +89,7 @@ export async function okxSwap ({
     pubKey,
     assetType,
     provider,
-    utxos,
+    utxos = [],
     signer
 }:{
     address: string
@@ -105,7 +106,7 @@ export async function okxSwap ({
 
     const network = provider.network
 
-    if (utxos.length < 1 ) {
+    if (utxos?.length < 1 ) {
         utxos = (await addressSpendableUtxos({ address, provider })).utxos;
     }
 
@@ -116,16 +117,16 @@ export async function okxSwap ({
     await prepareAddressForDummyUtxos({address, utxos, network, pubKey, feeRate, addressType})
     :
     null
-
     if (psbtForDummyUtxos != null){
+        const { psbtBase64, inputTemplate, outputTemplate} = psbtForDummyUtxos
         const {signedPsbt} = await signer.signAllInputs({
-            rawPsbt: psbtForDummyUtxos,
+            rawPsbt: psbtBase64,
             finalize: true,
         })
         const {txId} = await provider.pushPsbt({psbtBase64: signedPsbt})
-        utxos = (await addressSpendableUtxos({ address, provider }))["utxos"]
+        utxos = (await addressSpendableUtxos({ address, provider })).utxos
 
-        console.log("preptxid", txId)
+        
     }
     const unsignedBid: UnsignedOkxBid = {
         offerId: offer.offerId,
@@ -137,6 +138,7 @@ export async function okxSwap ({
     const sellerPsbt = sellerData.data.sellerPsbt;
     const decodedPsbt = await provider.sandshrew.bitcoindRpc.decodePSBT(sellerPsbt)
     const sellerAddress = offer?.address
+    console.log(utxos)
     const buyerPsbt = await getBuyerPsbt({
         address,
         utxos,
@@ -152,6 +154,7 @@ export async function okxSwap ({
         decodedPsbt
     })
 
+
    const {signedPsbt} = await signer.signAllInputs({
         rawPsbt: buyerPsbt,
         finalize: false
@@ -165,6 +168,6 @@ export async function okxSwap ({
         provider,
         offer
     })
-    if (transaction.statusCode == 200)return transaction.data
+    if (transaction?.statusCode == 200 || transaction?.data)return transaction.data
 
 }

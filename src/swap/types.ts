@@ -147,6 +147,9 @@ export interface PsbtBuilder {
 export interface BuiltPsbt {
     psbtHex: string,
     psbtBase64: string
+    inputTemplate: ConditionalInput[]
+    outputTemplate: OutputTxTemplate[]
+
 }
 
 export interface OutputTxTemplate {
