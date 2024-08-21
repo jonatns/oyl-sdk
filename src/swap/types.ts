@@ -180,9 +180,26 @@ export interface UtxosToCoverAmount {
 
 export interface BidAffordabilityCheck {
     address: string,
+    utxos: FormattedUtxo[]
     estimatedCost: number,
     offers: MarketplaceOffer[],
     provider: Provider
+}
+
+export interface OutputTxCheck {
+    blueprint: FormattedUtxo, 
+    swapTx: boolean, 
+    output: OutputTxTemplate, 
+    index: number
+}
+
+
+export interface UpdateUtxos {
+    originalUtxos: FormattedUtxo[]
+    swapTx?: boolean
+    txId: string
+    inputTemplate: ConditionalInput[]
+    outputTemplate: OutputTxTemplate[]
 }
 
 export interface FeeEstimatorOptions {

@@ -134,6 +134,8 @@ export interface PsbtBuilder {
 export interface BuiltPsbt {
     psbtHex: string;
     psbtBase64: string;
+    inputTemplate: ConditionalInput[];
+    outputTemplate: OutputTxTemplate[];
 }
 export interface OutputTxTemplate {
     address: string;
@@ -162,6 +164,19 @@ export interface BidAffordabilityCheck {
     estimatedCost: number;
     offers: MarketplaceOffer[];
     provider: Provider;
+}
+export interface OutputTxCheck {
+    blueprint: FormattedUtxo;
+    swapTx: boolean;
+    output: OutputTxTemplate;
+    index: number;
+}
+export interface UpdateUtxos {
+    originalUtxos: FormattedUtxo[];
+    swapTx?: boolean;
+    txId: string;
+    inputTemplate: ConditionalInput[];
+    outputTemplate: OutputTxTemplate[];
 }
 export interface FeeEstimatorOptions {
     feeRate: number;

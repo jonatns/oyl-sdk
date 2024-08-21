@@ -7,10 +7,12 @@ import {
     DummyUtxoOptions, 
     MarketplaceOffer, 
     Marketplaces, 
+    OutputTxCheck, 
     OutputTxTemplate, 
     PrepareAddressForDummyUtxos, 
     PsbtBuilder, 
     SelectSpendAddress, 
+    UpdateUtxos, 
     UtxosToCoverAmount, 
     marketplaceName 
 } from "./types";
@@ -21,7 +23,7 @@ import { AddressType } from "../shared/interface";
 
 import { assertHex } from "../shared/utils";
 import * as bitcoin from 'bitcoinjs-lib'
-import { getAddressType } from '..';
+import { UTXO_DUST, getAddressType } from '..';
 
 
 export const maxTxSizeForOffers: number = 482
@@ -264,7 +266,7 @@ PrepareAddressForDummyUtxos
 ): Promise<BuiltPsbt | null>{
     try {
         const paddingUtxos = getAllUTXOsWorthASpecificValue(utxos, 600)
-        if (paddingUtxos.length < 2) {
+        if (paddingUtxos.length >= 0) {
             return dummyUtxosPsbt({ address, utxos, network, feeRate, pubKey, addressType })
         }
         return null;
@@ -330,6 +332,51 @@ export function dummyUtxosPsbt({ address, utxos, feeRate, pubKey, addressType, n
     })
 
 }
+
+export function updateUtxos({originalUtxos, txId, inputTemplate, swapTx = false, outputTemplate}: UpdateUtxos): FormattedUtxo[] {
+    inputTemplate.forEach((input) => {
+        const { hash, index } = input;
+        originalUtxos = originalUtxos.filter(utxo => !(utxo.txId === hash && utxo.outputIndex === index));
+    });
+
+    const blueprint = originalUtxos[0]
+
+    outputTemplate.forEach((output, index) => {
+        if(outputTxCheck({blueprint, swapTx, output, index})) {
+        const newUtxo = {
+            txId: txId,
+            outputIndex: index,
+            satoshis: output.value,
+            scriptPk: blueprint.scriptPk, 
+            address: output.address,
+            inscriptions: [],  
+            confirmations: 0  
+        };
+        originalUtxos.push(newUtxo);
+    }
+    });
+
+    return originalUtxos;
+}
+
+function outputTxCheck({
+    blueprint, 
+    swapTx, 
+    output, 
+    index
+}: OutputTxCheck
+): boolean {
+   const matchAddress = blueprint.address == output.address
+   const dustAmount = output.value > UTXO_DUST
+   const nonInscriptionUtxo = !(swapTx == true && index == 1)
+   if (matchAddress && dustAmount && nonInscriptionUtxo) {
+    return true
+   } else {
+    return false
+   }
+
+}
+
 
 export function psbtTxAddressTypes({
     psbt,
