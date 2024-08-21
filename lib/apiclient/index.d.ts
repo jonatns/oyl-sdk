@@ -114,6 +114,16 @@ export declare class OylApiClient {
      */
     getAccountBalance(account: string): Promise<any>;
     /**
+     * Get account balance.
+     * @param account - The stringified account object to get balance for.
+     */
+    getAccountSpendableUtxos(account: string, spendAmount?: number): Promise<any>;
+    /**
+     * Get account balance.
+     * @param address - The stringified account object to get balance for.
+     */
+    getAddressSpendableUtxos(address: string, spendAmount?: number, spendStrategy?: string): Promise<any>;
+    /**
      * Get collectible by ID.
      * @param id - The ID of the collectible.
      */
@@ -179,7 +189,7 @@ export declare class OylApiClient {
      * Get Okx offer psbt.
      * @param offerId - The offer Id to query.
      */
-    getOkxOfferPsbt({ offerId, rune }: {
+    getOkxOfferPsbt({ offerId, rune, }: {
         offerId: number;
         rune?: boolean;
     }): Promise<any>;
@@ -192,7 +202,7 @@ export declare class OylApiClient {
      * Submit a signed bid for rune offers on OKX marketplace.
      * @param params - Parameters for the signed bid.
      */
-    submitOkxRuneBid({ orderId, fromAddress, psbt }: {
+    submitOkxRuneBid({ orderId, fromAddress, psbt, }: {
         orderId: number;
         fromAddress: string;
         psbt: string;

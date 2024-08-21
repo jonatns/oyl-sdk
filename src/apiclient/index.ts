@@ -278,6 +278,46 @@ export class OylApiClient {
   }
 
   /**
+   * Get account balance.
+   * @param account - The stringified account object to get balance for.
+   */
+  async getAccountSpendableUtxos(
+    account: string,
+    spendAmount?: number
+  ): Promise<any> {
+    const res = await this._call('/get-account-spendable-utxos', 'post', {
+      account,
+      spendAmount,
+    })
+    if (res.data) {
+      return res.data
+    } else {
+      return res
+    }
+  }
+
+  /**
+   * Get account balance.
+   * @param address - The stringified account object to get balance for.
+   */
+  async getAddressSpendableUtxos(
+    address: string,
+    spendAmount?: number,
+    spendStrategy?: string
+  ): Promise<any> {
+    const res = await this._call('/get-address-spendable-utxos', 'post', {
+      address,
+      spendAmount,
+      spendStrategy,
+    })
+    if (res.data) {
+      return res.data
+    } else {
+      return res
+    }
+  }
+
+  /**
    * Get collectible by ID.
    * @param id - The ID of the collectible.
    */
@@ -408,10 +448,16 @@ export class OylApiClient {
    * Get Okx offer psbt.
    * @param offerId - The offer Id to query.
    */
-  async getOkxOfferPsbt({ offerId, rune }: { offerId: number, rune?: boolean }): Promise<any> {
+  async getOkxOfferPsbt({
+    offerId,
+    rune,
+  }: {
+    offerId: number
+    rune?: boolean
+  }): Promise<any> {
     const response = await this._call('/get-okx-offer-psbt', 'post', {
       offerId: offerId,
-      rune
+      rune,
     })
     return response
   }
@@ -429,8 +475,20 @@ export class OylApiClient {
    * Submit a signed bid for rune offers on OKX marketplace.
    * @param params - Parameters for the signed bid.
    */
-  async submitOkxRuneBid({ orderId, fromAddress, psbt }: { orderId: number, fromAddress: string, psbt: string }): Promise<any> {
-    const response = await this._call('/finalize-okx-rune-offer', 'post', { orderId, fromAddress, psbt })
+  async submitOkxRuneBid({
+    orderId,
+    fromAddress,
+    psbt,
+  }: {
+    orderId: number
+    fromAddress: string
+    psbt: string
+  }): Promise<any> {
+    const response = await this._call('/finalize-okx-rune-offer', 'post', {
+      orderId,
+      fromAddress,
+      psbt,
+    })
     return response
   }
 
