@@ -203,6 +203,21 @@ export interface OkxBid {
   brc20: boolean
 }
 
+export interface GatheredUtxos {
+  utxos: FormattedUtxo[]
+  totalAmount: number
+}
+
+export interface FormattedUtxo {
+  txId: string
+  outputIndex: number
+  satoshis: number
+  scriptPk: string
+  address: string
+  inscriptions: any[]
+  confirmations: number
+}
+
 export interface MarketplaceAccount {
   provider?: Provider
   spendAddress?: string

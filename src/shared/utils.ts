@@ -4,6 +4,8 @@ import ecc from '@bitcoinerlab/secp256k1'
 import {
   AddressType,
   BitcoinPaymentType,
+  FormattedUtxo,
+  GatheredUtxos,
   IBlockchainInfoUTXO,
   Network,
   RuneUtxo,
@@ -820,5 +822,25 @@ export function findRuneUtxosToSpend(utxos: RuneUtxo[], target: number) {
     }
   } else {
     return undefined
+  }
+}
+
+export function findXAmountOfSats(utxos: FormattedUtxo[], target: number) {
+  if (!utxos || utxos.length === 0) {
+    return undefined
+  }
+
+  let totalAmount = 0
+  const selectedUtxos: FormattedUtxo[] = []
+
+  for (const utxo of utxos) {
+    if (totalAmount >= target) break
+
+    selectedUtxos.push(utxo)
+    totalAmount += utxo.satoshis
+  }
+  return {
+    utxos: selectedUtxos,
+    totalAmount,
   }
 }

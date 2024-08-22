@@ -298,6 +298,7 @@ const brc20Send = new Command('send')
     })
     console.log(
       await brc20.send({
+        gatheredUtxos: { utxos: [], totalAmount: 0 },
         ticker: options.ticker,
         toAddress: options.to,
         feeRate: options.feeRate,

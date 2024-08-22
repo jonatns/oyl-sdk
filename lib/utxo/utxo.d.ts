@@ -1,5 +1,6 @@
 import { Provider } from '../provider';
 import { Account, SpendStrategy } from '../account';
+import { FormattedUtxo } from 'shared/interface';
 export interface EsploraUtxo {
     txid: string;
     vout: number;
@@ -10,15 +11,6 @@ export interface EsploraUtxo {
         block_time: number;
     };
     value: number;
-}
-export interface FormattedUtxo {
-    txId: string;
-    outputIndex: number;
-    satoshis: number;
-    scriptPk: string;
-    address: string;
-    inscriptions: any[];
-    confirmations: number;
 }
 export declare const availableBalance: ({ account, provider, }: {
     account: Account;

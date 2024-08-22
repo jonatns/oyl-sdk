@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import * as bitcoin from 'bitcoinjs-lib';
-import { AddressType, BitcoinPaymentType, IBlockchainInfoUTXO, Network, RuneUtxo, ToSignInput, TxInput, UnspentOutput, Utxo } from './interface';
+import { AddressType, BitcoinPaymentType, FormattedUtxo, IBlockchainInfoUTXO, Network, RuneUtxo, ToSignInput, TxInput, UnspentOutput, Utxo } from './interface';
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew';
 import { EsploraRpc } from '../rpclient/esplora';
 import { Provider } from '../provider/provider';
@@ -119,4 +119,8 @@ export declare function findRuneUtxosToSpend(utxos: RuneUtxo[], target: number):
     selectedUtxos: RuneUtxo[];
     change: number;
     totalSatoshis: number;
+};
+export declare function findXAmountOfSats(utxos: FormattedUtxo[], target: number): {
+    utxos: FormattedUtxo[];
+    totalAmount: number;
 };

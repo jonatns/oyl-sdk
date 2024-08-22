@@ -2,6 +2,7 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider'
 import { Account, SpendStrategy } from '../account'
 import { UTXO_DUST } from '../shared/constants'
+import { FormattedUtxo } from 'shared/interface'
 
 export interface EsploraUtxo {
   txid: string
@@ -13,16 +14,6 @@ export interface EsploraUtxo {
     block_time: number
   }
   value: number
-}
-
-export interface FormattedUtxo {
-  txId: string
-  outputIndex: number
-  satoshis: number
-  scriptPk: string
-  address: string
-  inscriptions: any[]
-  confirmations: number
 }
 
 export const availableBalance = async ({

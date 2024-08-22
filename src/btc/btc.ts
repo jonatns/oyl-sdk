@@ -1,7 +1,7 @@
 import { OylTransactionError } from '../errors'
 import { Provider } from '../provider/provider'
 import * as bitcoin from 'bitcoinjs-lib'
-import { FormattedUtxo, accountUtxos } from '../utxo/utxo'
+import { accountUtxos } from '../utxo/utxo'
 import { calculateTaprootTxSize, formatInputsToSign } from '../shared/utils'
 import { Account } from '../account/account'
 import { Signer } from '../signer'
