@@ -5,7 +5,12 @@ import * as brc20 from '../brc20'
 import * as collectible from '../collectible'
 import * as rune from '../rune'
 
-import { generateMnemonic, getWalletPrivateKeys, mnemonicToAccount } from '..'
+import {
+  generateMnemonic,
+  getWalletPrivateKeys,
+  mnemonicToAccount,
+  utxo,
+} from '..'
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '..'
 import { Signer } from '..'
@@ -234,8 +239,14 @@ const btcSend = new Command('send')
         network: provider.network,
       },
     })
+
+    const gatheredUtxos = await utxo.accountUtxos({ account, provider })
     console.log(
       await btc.send({
+        gatheredUtxos: {
+          utxos: gatheredUtxos.accounts['nativeSegwit'].spendUtxos,
+          totalAmount: gatheredUtxos.accounts['nativeSegwit'].spendTotal,
+        },
         toAddress: options.to,
         feeRate: options.feeRate,
         account,
@@ -366,8 +377,13 @@ const collectibleSend = new Command('send')
         network: provider.network,
       },
     })
+    const gatheredUtxos = await utxo.accountUtxos({ account, provider })
     console.log(
       await collectible.send({
+        gatheredUtxos: {
+          utxos: gatheredUtxos.accounts['nativeSegwit'].spendUtxos,
+          totalAmount: gatheredUtxos.accounts['nativeSegwit'].spendTotal,
+        },
         inscriptionId: options.inscriptionId,
         inscriptionAddress: options.inscriptionAddress,
         toAddress: options.to,

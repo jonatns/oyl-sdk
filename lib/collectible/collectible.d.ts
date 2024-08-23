@@ -1,7 +1,9 @@
 import { Provider } from '../provider';
 import { Account } from '../account/account';
 import { Signer } from '../signer';
-export declare const createPsbt: ({ account, inscriptionId, provider, inscriptionAddress, toAddress, feeRate, fee, }: {
+import { GatheredUtxos } from '../shared/interface';
+export declare const createPsbt: ({ gatheredUtxos, account, inscriptionId, provider, inscriptionAddress, toAddress, feeRate, fee, }: {
+    gatheredUtxos: GatheredUtxos;
     account: Account;
     inscriptionId: string;
     provider: Provider;
@@ -21,7 +23,8 @@ export declare const findCollectible: ({ address, provider, inscriptionId, }: {
     voutIndex: string;
     data: any;
 }>;
-export declare const send: ({ toAddress, inscriptionId, inscriptionAddress, feeRate, account, provider, signer, }: {
+export declare const send: ({ gatheredUtxos, toAddress, inscriptionId, inscriptionAddress, feeRate, account, provider, signer, }: {
+    gatheredUtxos: GatheredUtxos;
     toAddress: string;
     inscriptionId: string;
     inscriptionAddress?: string;
@@ -37,7 +40,8 @@ export declare const send: ({ toAddress, inscriptionId, inscriptionAddress, feeR
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const actualFee: ({ account, inscriptionId, provider, inscriptionAddress, toAddress, feeRate, signer, }: {
+export declare const actualFee: ({ gatheredUtxos, account, inscriptionId, provider, inscriptionAddress, toAddress, feeRate, signer, }: {
+    gatheredUtxos: GatheredUtxos;
     account: Account;
     inscriptionId: string;
     provider: Provider;

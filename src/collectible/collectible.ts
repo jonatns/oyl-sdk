@@ -1,15 +1,15 @@
 import { minimumFee } from '../btc/btc'
 import { Provider } from '../provider'
 import * as bitcoin from 'bitcoinjs-lib'
-import { accountUtxos } from '../utxo/utxo'
 import { Account } from '../account/account'
-import { formatInputsToSign } from '../shared/utils'
+import { findXAmountOfSats, formatInputsToSign } from '../shared/utils'
 import { OylTransactionError } from '../errors'
 import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
-import { OrdCollectibleData } from '../shared/interface'
+import { GatheredUtxos, OrdCollectibleData } from '../shared/interface'
 
 export const createPsbt = async ({
+  gatheredUtxos,
   account,
   inscriptionId,
   provider,
@@ -18,6 +18,7 @@ export const createPsbt = async ({
   feeRate,
   fee,
 }: {
+  gatheredUtxos: GatheredUtxos
   account: Account
   inscriptionId: string
   provider: Provider
@@ -34,11 +35,6 @@ export const createPsbt = async ({
     })
     const calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
     let finalFee = fee ? fee : calculatedFee
-
-    let gatheredUtxos: any = await accountUtxos({
-      account,
-      provider,
-    })
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
     const { txId, voutIndex, data } = await findCollectible({
@@ -94,6 +90,8 @@ export const createPsbt = async ({
       value: data.value,
     })
 
+    gatheredUtxos = findXAmountOfSats(gatheredUtxos.utxos, finalFee)
+
     if (!fee && gatheredUtxos.utxos.length > 1) {
       const txSize = minimumFee({
         taprootInputCount: gatheredUtxos.utxos.length,
@@ -103,10 +101,7 @@ export const createPsbt = async ({
       finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
       if (gatheredUtxos.totalAmount < finalFee) {
-        gatheredUtxos = await accountUtxos({
-          account,
-          provider,
-        })
+        new OylTransactionError(Error('Insufficient balance'))
       }
     }
 
@@ -219,6 +214,7 @@ export const findCollectible = async ({
 }
 
 export const send = async ({
+  gatheredUtxos,
   toAddress,
   inscriptionId,
   inscriptionAddress,
@@ -227,6 +223,7 @@ export const send = async ({
   provider,
   signer,
 }: {
+  gatheredUtxos: GatheredUtxos
   toAddress: string
   inscriptionId: string
   inscriptionAddress?: string
@@ -239,6 +236,7 @@ export const send = async ({
     inscriptionAddress = account.taproot.address
   }
   const { fee } = await actualFee({
+    gatheredUtxos,
     account,
     inscriptionId,
     provider,
@@ -249,6 +247,7 @@ export const send = async ({
   })
 
   const { psbt: finalPsbt } = await createPsbt({
+    gatheredUtxos,
     account,
     inscriptionId,
     provider,
@@ -271,6 +270,7 @@ export const send = async ({
 }
 
 export const actualFee = async ({
+  gatheredUtxos,
   account,
   inscriptionId,
   provider,
@@ -279,6 +279,7 @@ export const actualFee = async ({
   feeRate,
   signer,
 }: {
+  gatheredUtxos: GatheredUtxos
   account: Account
   inscriptionId: string
   provider: Provider
@@ -288,6 +289,7 @@ export const actualFee = async ({
   signer: Signer
 }) => {
   const { psbt } = await createPsbt({
+    gatheredUtxos,
     account,
     inscriptionId,
     provider,
@@ -314,6 +316,7 @@ export const actualFee = async ({
   const correctFee = vsize * feeRate
 
   const { psbt: finalPsbt } = await createPsbt({
+    gatheredUtxos,
     account,
     inscriptionId,
     provider,
