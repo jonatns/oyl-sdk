@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import * as bitcoin from 'bitcoinjs-lib';
-import { AddressType, BitcoinPaymentType, IBlockchainInfoUTXO, Network, RuneUtxo, ToSignInput, TxInput, UnspentOutput, Utxo } from './interface';
+import { AddressType, IBlockchainInfoUTXO, Network, RuneUtxo, ToSignInput, TxInput, UnspentOutput, Utxo } from './interface';
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew';
 import { EsploraRpc } from '../rpclient/esplora';
 import { Provider } from '../provider/provider';
@@ -46,7 +46,6 @@ export declare const inscriptionSats = 546;
 export declare const ECPair: import("ecpair").ECPairAPI;
 export declare const assertHex: (pubKey: Buffer) => Buffer;
 export declare function getNetwork(value: Network | 'main' | 'mainnet' | 'regtest' | 'testnet' | 'signet'): bitcoin.networks.Network;
-export declare function checkPaymentType(payment: bitcoin.PaymentCreator, network: Network): (script: Buffer) => false | bitcoin.payments.Payment;
 export declare function getFee({ provider, psbt, feeRate, }: {
     provider: Provider;
     psbt: string;
@@ -100,11 +99,6 @@ export declare function getOutputValueByVOutIndex({ txId, vOut, esploraRpc, }: {
 } | null>;
 export declare function calculateTaprootTxSize(taprootInputCount: number, nonTaprootInputCount: number, outputCount: number): number;
 export declare function getRawTxnHashFromTxnId(txnId: string): Promise<any>;
-export declare const isP2PKH: (script: Buffer, network: Network) => BitcoinPaymentType;
-export declare const isP2WPKH: (script: Buffer, network: Network) => BitcoinPaymentType;
-export declare const isP2WSHScript: (script: Buffer, network: Network) => BitcoinPaymentType;
-export declare const isP2SHScript: (script: Buffer, network: Network) => BitcoinPaymentType;
-export declare const isP2TR: (script: Buffer, network: Network) => BitcoinPaymentType;
 export declare const filterTaprootUtxos: ({ taprootUtxos, }: {
     taprootUtxos: any[];
 }) => Promise<any>;

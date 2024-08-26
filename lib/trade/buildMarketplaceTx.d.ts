@@ -1,8 +1,8 @@
 import { MarketplaceBuy, AddressType } from '../shared/interface';
 import * as bitcoin from 'bitcoinjs-lib';
-import { OylApiClient } from 'apiclient';
-import { EsploraRpc } from 'rpclient/esplora';
-import { SandshrewBitcoinClient } from 'rpclient/sandshrew';
+import { OylApiClient } from '../apiclient';
+import { EsploraRpc } from '../rpclient/esplora';
+import { SandshrewBitcoinClient } from '../rpclient/sandshrew';
 export declare class BuildMarketplaceTransaction {
     walletAddress: string;
     pubKey: string;

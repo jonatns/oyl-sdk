@@ -3,7 +3,6 @@ import ECPairFactory from 'ecpair'
 import ecc from '@bitcoinerlab/secp256k1'
 import {
   AddressType,
-  BitcoinPaymentType,
   IBlockchainInfoUTXO,
   Network,
   RuneUtxo,
@@ -87,18 +86,7 @@ export function getNetwork(
   return bitcoin.networks[value]
 }
 
-export function checkPaymentType(
-  payment: bitcoin.PaymentCreator,
-  network: Network
-) {
-  return (script: Buffer) => {
-    try {
-      return payment({ output: script, network: getNetwork(network) })
-    } catch (error) {
-      return false
-    }
-  }
-}
+
 
 export async function getFee({
   provider,
@@ -269,6 +257,7 @@ export const getSatpointFromUtxo = (utxo: IBlockchainInfoUTXO) => {
   return `${utxo.tx_hash_big_endian}:${utxo.tx_output_n}:0`
 }
 
+//FLAG FOR REMOVAL
 export const getInscriptionsByWalletBIS = async (
   walletAddress: string,
   offset: number = 0
@@ -682,56 +671,7 @@ export async function getRawTxnHashFromTxnId(txnId: string) {
   return res.data
 }
 
-export const isP2PKH = (
-  script: Buffer,
-  network: Network
-): BitcoinPaymentType => {
-  const p2pkh = checkPaymentType(bitcoin.payments.p2pkh, network)(script)
-  return {
-    type: 'p2pkh',
-    payload: p2pkh,
-  }
-}
-export const isP2WPKH = (
-  script: Buffer,
-  network: Network
-): BitcoinPaymentType => {
-  const p2wpkh = checkPaymentType(bitcoin.payments.p2wpkh, network)(script)
-  return {
-    type: 'p2wpkh',
-    payload: p2wpkh,
-  }
-}
-export const isP2WSHScript = (
-  script: Buffer,
-  network: Network
-): BitcoinPaymentType => {
-  const p2wsh = checkPaymentType(bitcoin.payments.p2wsh, network)(script)
-  return {
-    type: 'p2sh',
-    payload: p2wsh,
-  }
-}
-export const isP2SHScript = (
-  script: Buffer,
-  network: Network
-): BitcoinPaymentType => {
-  const p2sh = checkPaymentType(bitcoin.payments.p2sh, network)(script)
-  return {
-    type: 'p2sh',
-    payload: p2sh,
-  }
-}
-export const isP2TR = (
-  script: Buffer,
-  network: Network
-): BitcoinPaymentType => {
-  const p2tr = checkPaymentType(bitcoin.payments.p2tr, network)(script)
-  return {
-    type: 'p2tr',
-    payload: p2tr,
-  }
-}
+
 
 export const filterTaprootUtxos = async ({
   taprootUtxos,
