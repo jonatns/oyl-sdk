@@ -117,7 +117,7 @@ describe('Signer', () => {
     }).address
 
     const signedMessage = await signer.signMessage({
-      message: hashedMessage,
+      message,
       address,
       keypair: signer.nestedSegwitKeyPair,
       protocol: 'bip322',
@@ -144,7 +144,7 @@ describe('Signer', () => {
     }).address
 
     const signedMessage = await signer.signMessage({
-      message: hashedMessage,
+      message,
       address,
       keypair: signer.taprootKeyPair,
       protocol: 'bip322',
@@ -171,7 +171,7 @@ describe('Signer', () => {
     }).address
 
     const signedMessage = await signer.signMessage({
-      message: hashedMessage,
+      message,
       address,
       keypair: signer.segwitKeyPair,
       protocol: 'bip322',
@@ -198,7 +198,7 @@ describe('Signer', () => {
     }).address
 
     const signedMessage = await signer.signMessage({
-      message: hashedMessage,
+      message: message,
       address,
       keypair: signer.legacyKeyPair,
       protocol: 'bip322',
@@ -220,7 +220,7 @@ describe('Signer', () => {
     let signer = new Signer(network, keys)
 
     const signedMessage = await signer.signMessage({
-      message: hashedMessage,
+      message,
       keypair: signer.segwitKeyPair,
       protocol: 'ecdsa',
     })
