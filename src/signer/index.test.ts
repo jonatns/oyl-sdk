@@ -48,7 +48,6 @@ describe('Signer', () => {
     const helloWorldHash = BIP322.hashMessage('Hello World')
     const emptyStringHash = BIP322.hashMessage('')
 
-    // Assert
     expect(Buffer.from(emptyStringHash).toString('hex').toLowerCase()).toEqual(
       'c90c269c4f8fcbe6880f72a721ddfbf1914268a794cbb21cfafee13770ae19f1'
     )
