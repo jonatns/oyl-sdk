@@ -51,8 +51,9 @@ export declare class Signer {
         signedPsbt: string;
         signedHexPsbt: string;
     }>;
-    signMessage({ message, address, }: {
+    signMessage({ message, address, keypair, }: {
         message: string;
         address: string;
+        keypair: ECPairInterface;
     }): Promise<string>;
 }

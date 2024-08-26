@@ -2,6 +2,7 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { Signer, walletInit } from '.'
 import { BIP322, Verifier, Signer as bipSigner } from 'bip322-js'
 import { ECPair } from '../shared/utils'
+import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 
 describe('Signer', () => {
   const network = bitcoin.networks.bitcoin
@@ -97,7 +98,7 @@ describe('Signer', () => {
     expect(signatureRegtestTestnetKey).toEqual(expectedSignature)
   })
 
-  test('Should sign a message with nested segwit key pair', async () => {
+  test('Should sign a message with nested segwit keypair', async () => {
     const signtaure =
       'AkgwRQIhAIeILWhMNozkb7d3AyiVoT0vBw2mwY1q96FybOfj/bksAiA4ai7LzotKFfmZ6D54Xc8ASeNhUuwqDA6to0x+GA+aLQEhA5s7aUuPxbXgf7Bpx4PKx1T104w+CL7Rlg4x/bHdo1wk'
     let signer = new Signer(network, keys)
@@ -112,6 +113,7 @@ describe('Signer', () => {
     const signedMessage = await signer.signMessage({
       message,
       address,
+      keypair: signer.nestedSegwitKeyPair,
     })
 
     const verifySignature: boolean = Verifier.verifySignature(
@@ -124,7 +126,85 @@ describe('Signer', () => {
     expect(verifySignature).toBe(true)
   })
 
-  test('should throw an error if segwit signer is not initialized when signing a message', async () => {
+  test('Should sign a message with taproot keypair', async () => {
+    const signtaure =
+      'AUGENGp6oQaTLd9wQt6gOS9lbv03VYMj+T8Hbl7Q5BVqyOl0vn4f8hj8W8e3t8XxqCN32X5sCKmjegMx0hL3Q6EQAQ=='
+    let signer = new Signer(network, keys)
+
+    const address = bitcoin.payments.p2tr({
+      internalPubkey: toXOnly(signer.taprootKeyPair.publicKey),
+      network,
+    }).address
+
+    const signedMessage = await signer.signMessage({
+      message,
+      address,
+      keypair: signer.taprootKeyPair,
+    })
+
+    const verifySignature: boolean = Verifier.verifySignature(
+      address,
+      message,
+      signedMessage
+    )
+
+    expect(signedMessage).toEqual(signtaure)
+    expect(verifySignature).toBe(true)
+  })
+
+  test('Should sign a message with native segwit keypair', async () => {
+    const signtaure =
+      'AkcwRAIgKjQeMT+Jb9zi6sHHxFb/RiwaLezvFRgB+AlEKcGMqCUCIEvNgnZFCrTJqvnQrw6VjTQ4V9k7PbK8uM44CHv6voffASEDMNVP0N1CCm5fjTYk9fNILK41D3nV8HU79b7vnC2Rrzw='
+    let signer = new Signer(network, keys)
+
+    const address = bitcoin.payments.p2wpkh({
+      pubkey: signer.segwitKeyPair.publicKey,
+      network,
+    }).address
+
+    const signedMessage = await signer.signMessage({
+      message,
+      address,
+      keypair: signer.segwitKeyPair,
+    })
+
+    const verifySignature: boolean = Verifier.verifySignature(
+      address,
+      message,
+      signedMessage
+    )
+
+    expect(signedMessage).toEqual(signtaure)
+    expect(verifySignature).toBe(true)
+  })
+
+  test('Should sign a message with legacy keypair', async () => {
+    const signtaure =
+      'Hymg5niRV2DQcJWcJllx1mIvPR+vDqekeUhr2/NelgBdfFfIpU5xSM5FsCSqikZmIC7AG03hACFkxKuPp8TfCTI='
+    let signer = new Signer(network, keys)
+
+    const address = bitcoin.payments.p2pkh({
+      pubkey: signer.legacyKeyPair.publicKey,
+      network: network,
+    }).address
+
+    const signedMessage = await signer.signMessage({
+      message,
+      address,
+      keypair: signer.legacyKeyPair,
+    })
+
+    const verifySignature: boolean = Verifier.verifySignature(
+      address,
+      message,
+      signedMessage
+    )
+
+    expect(signedMessage).toEqual(signtaure)
+    expect(verifySignature).toBe(true)
+  })
+
+  test('should throw an error if keypair is not passed when signing a message', async () => {
     keys.nestedSegwitPrivateKey = undefined
     let signer = new Signer(network, keys)
 
@@ -140,7 +220,8 @@ describe('Signer', () => {
       signer.signMessage({
         message,
         address,
+        keypair: signer.nestedSegwitKeyPair,
       })
-    ).rejects.toThrow('Nested Segwit signer was not initialized')
+    ).rejects.toThrow('Keypair required to sign')
   })
 })
