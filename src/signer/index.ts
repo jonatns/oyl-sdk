@@ -271,15 +271,17 @@ export class Signer {
   async signMessage({
     message,
     address,
+    keypair,
   }: {
     message: string
     address: string
+    keypair: ECPairInterface
   }) {
-    if (!this.nestedSegwitKeyPair) {
-      throw new Error('Nested Segwit signer was not initialized')
+    if (!keypair) {
+      throw new Error('Keypair required to sign')
     }
     const signature = bipSigner.sign(
-      this.nestedSegwitKeyPair.toWIF(),
+      keypair.toWIF(),
       address,
       message,
       bitcoin.networks.bitcoin
