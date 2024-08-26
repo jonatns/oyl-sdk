@@ -1,7 +1,9 @@
 import * as bitcoin from 'bitcoinjs-lib'
 import { ECPair, tweakSigner } from '../shared/utils'
 import { ECPairInterface } from 'ecpair'
-type walletInit = {
+import { Signer as bipSigner } from 'bip322-js'
+
+export type walletInit = {
   segwitPrivateKey?: string
   taprootPrivateKey?: string
   legacyPrivateKey?: string
@@ -17,33 +19,29 @@ export class Signer {
   addresses: walletInit
   constructor(network: bitcoin.Network, keys: walletInit) {
     if (keys.segwitPrivateKey) {
-      const keyPair = ECPair.fromPrivateKey(
+      this.segwitKeyPair = ECPair.fromPrivateKey(
         Buffer.from(keys.segwitPrivateKey, 'hex')
       )
-      this.segwitKeyPair = keyPair
     }
     if (keys.taprootPrivateKey) {
-      const keyPair = ECPair.fromPrivateKey(
+      this.taprootKeyPair = ECPair.fromPrivateKey(
         Buffer.from(keys.taprootPrivateKey, 'hex')
       )
-      this.taprootKeyPair = keyPair
     }
     if (keys.legacyPrivateKey) {
-      const keyPair = ECPair.fromPrivateKey(
+      this.legacyKeyPair = ECPair.fromPrivateKey(
         Buffer.from(keys.legacyPrivateKey, 'hex')
       )
-      this.legacyKeyPair = keyPair
     }
     if (keys.nestedSegwitPrivateKey) {
-      const keyPair = ECPair.fromPrivateKey(
+      this.nestedSegwitKeyPair = ECPair.fromPrivateKey(
         Buffer.from(keys.nestedSegwitPrivateKey, 'hex')
       )
-      this.nestedSegwitKeyPair = keyPair
     }
     this.network = network
   }
 
-  async signInput({
+  async signSegwitInput({
     rawPsbt,
     inputNumber,
     finalize,
@@ -271,20 +269,24 @@ export class Signer {
   }
 
   async signMessage({
-    messageToSign,
-    keyToUse,
+    message,
+    address,
+    keypair,
   }: {
-    messageToSign: string
-    keyToUse: 'segwitKeyPair' | 'taprootKeyPair'
+    message: string
+    address: string
+    keypair: ECPairInterface
   }) {
-    if (!this.taprootKeyPair && keyToUse === 'taprootKeyPair') {
-      throw new Error('Taproot signer was not initialized')
+    if (!keypair) {
+      throw new Error('Keypair required to sign')
     }
-    if (!this.taprootKeyPair && keyToUse === 'segwitKeyPair') {
-      throw new Error('Taproot signer was not initialized')
-    }
-    const signedMessage = this[keyToUse].sign(Buffer.from(messageToSign))
+    const signature = bipSigner.sign(
+      keypair.toWIF(),
+      address,
+      message,
+      bitcoin.networks.bitcoin
+    )
 
-    return signedMessage
+    return signature.toString('base64')
   }
 }
