@@ -272,21 +272,28 @@ export class Signer {
     message,
     address,
     keypair,
+    protocol,
   }: {
     message: string
-    address: string
+    address?: string
     keypair: ECPairInterface
+    protocol: 'ecdsa' | 'bip322'
   }) {
     if (!keypair) {
       throw new Error('Keypair required to sign')
     }
-    const signature = bipSigner.sign(
-      keypair.toWIF(),
-      address,
-      message,
-      bitcoin.networks.bitcoin
-    )
-
-    return signature.toString('base64')
+    if (protocol === 'bip322') {
+      const signature = bipSigner.sign(
+        keypair.toWIF(),
+        address,
+        message,
+        bitcoin.networks.bitcoin
+      )
+      return signature.toString('base64')
+    }
+    if (protocol === 'ecdsa') {
+      const signature = keypair.sign(Buffer.from(message, 'base64'))
+      return signature.toString('base64')
+    }
   }
 }
