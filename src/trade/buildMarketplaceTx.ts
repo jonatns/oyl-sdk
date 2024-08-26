@@ -2,9 +2,9 @@ import { assertHex, getSatpointFromUtxo } from '../shared/utils'
 import { getAddressType } from '../shared/utils'
 import { MarketplaceBuy, AddressType } from '../shared/interface'
 import * as bitcoin from 'bitcoinjs-lib'
-import { OylApiClient } from 'apiclient'
-import { EsploraRpc } from 'rpclient/esplora'
-import { SandshrewBitcoinClient } from 'rpclient/sandshrew'
+import { OylApiClient } from '../apiclient'
+import { EsploraRpc } from '../rpclient/esplora'
+import { SandshrewBitcoinClient } from '../rpclient/sandshrew'
 
 export class BuildMarketplaceTransaction {
   public walletAddress: string
