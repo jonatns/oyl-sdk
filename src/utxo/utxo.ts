@@ -58,16 +58,14 @@ export const addressSpendableUtxos = async ({
 }) => {
   let totalAmount = 0
   const formattedUtxos: FormattedUtxo[] = []
+
   let utxos = await provider.esplora.getAddressUtxo(address)
 
   if (utxos.length === 0) {
     return { totalAmount, utxos: formattedUtxos }
   }
 
-  const utxoSortGreatestToLeast =
-    spendStrategy?.utxoSortGreatestToLeast !== undefined
-      ? spendStrategy.utxoSortGreatestToLeast
-      : true
+  const utxoSortGreatestToLeast = spendStrategy?.utxoSortGreatestToLeast ?? true
 
   utxos = utxos
     .filter((utxo) => utxo.value > UTXO_DUST && utxo.value !== 546)
@@ -75,23 +73,22 @@ export const addressSpendableUtxos = async ({
       utxoSortGreatestToLeast ? b.value - a.value : a.value - b.value
     )
 
-  const inscriptionsAndRunesPromises = utxos.map(async (utxo) => {
-    const hasInscription = provider.ord.getTxOutput(utxo.txid + ':' + utxo.vout)
-    const hasRune =
-      provider.network !== bitcoin.networks.regtest
-        ? provider.api.getOutputRune({
-            output: utxo.txid + ':' + utxo.vout,
-          })
-        : Promise.resolve(false)
+  const utxoPromises = utxos.map(async (utxo) => {
+    const outputId = `${utxo.txid}:${utxo.vout}`
 
-    return Promise.all([hasInscription, hasRune])
+    const [hasInscription, hasRune] = await Promise.all([
+      provider.ord.getTxOutput(outputId),
+      provider.network !== bitcoin.networks.regtest
+        ? provider.api.getOutputRune({ output: outputId })
+        : Promise.resolve(false),
+    ])
+
+    return { utxo, hasInscription, hasRune }
   })
 
-  const results = await Promise.all(inscriptionsAndRunesPromises)
+  const results = await Promise.all(utxoPromises)
 
-  for (let i = 0; i < utxos.length; i++) {
-    const [hasInscription, hasRune] = results[i]
-
+  for (const { utxo, hasInscription, hasRune } of results) {
     if (
       (spendAmount && totalAmount >= spendAmount) ||
       hasInscription.inscriptions.length > 0 ||
@@ -103,20 +100,26 @@ export const addressSpendableUtxos = async ({
       continue
     }
 
-    const transactionDetails = await provider.esplora.getTxInfo(utxos[i].txid)
+    const transactionDetails = await provider.esplora.getTxInfo(utxo.txid)
     const voutEntry = transactionDetails.vout.find(
       (v) => v.scriptpubkey_address === address
     )
+
     formattedUtxos.push({
-      txId: utxos[i].txid,
-      outputIndex: utxos[i].vout,
-      satoshis: utxos[i].value,
-      confirmations: utxos[i].status.confirmed ? 3 : 0,
+      txId: utxo.txid,
+      outputIndex: utxo.vout,
+      satoshis: utxo.value,
+      confirmations: utxo.status.confirmed ? 3 : 0,
       scriptPk: voutEntry.scriptpubkey,
       address: address,
       inscriptions: [],
     })
-    totalAmount += utxos[i].value
+
+    totalAmount += utxo.value
+
+    if (spendAmount && totalAmount >= spendAmount) {
+      break
+    }
   }
 
   return { totalAmount, utxos: formattedUtxos }

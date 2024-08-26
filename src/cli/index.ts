@@ -9,12 +9,7 @@ import * as brc20 from '../brc20'
 import * as collectible from '../collectible'
 import * as rune from '../rune'
 
-import {
-  generateMnemonic,
-  getWalletPrivateKeys,
-  mnemonicToAccount,
-  ProviderConstructorArgs,
-} from '..'
+import { generateMnemonic, getWalletPrivateKeys, mnemonicToAccount } from '..'
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '..'
 import { Signer } from '..'
@@ -113,10 +108,11 @@ const accountUtxosToSpend = new Command('accountSpendableUtxos')
     'mnemonic you want to get private keys from'
   )
   /* @dev example call
-    oyl utxo addressSpendableUtxos -a bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx -p regtest
+    oyl utxo accountSpendableUtxos -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -p regtest
   */
   .action(async (options) => {
     const provider: Provider = defaultProvider[options.provider]
+
     const account = mnemonicToAccount({
       mnemonic: options.mnemonic,
       opts: { network: provider.network },
@@ -182,6 +178,9 @@ const addressUtxosToSpend = new Command('addressSpendableUtxos')
     '-a, --address <address>',
     'address you want to get utxos for'
   )
+  /* @dev example call
+    oyl utxo addressSpendableUtxos -a bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx -p regtest
+  */
   .action(async (options) => {
     const provider = defaultProvider[options.provider]
     console.log(
@@ -528,6 +527,39 @@ const getRuneByName = new Command('getRuneByName')
     console.log(await provider.ord.getRuneByName(options.name))
   })
 
+const multiCallSandshrewProviderCall = new Command('sandShrewMulticall')
+  .description('Returns available utxos to spend')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+
+  .requiredOption(
+    '-c, --calls <calls>',
+    'calls in this format: {method: string, params: string[]}'
+  )
+
+  /* @dev example call
+    oyl provider sandShrewMulticall -c '[{"method":"esplora_tx","params":["688f5c239e4e114af461dc1331d02ad5702e795daf2dcf397815e0b05cd23dbc"]},{"method":"btc_getblockcount", "params":['']}]' -p bitcoin
+  */
+  .action(async (options) => {
+    type Call = { method: string; params: string[] }
+
+    let isJson: Call[] = []
+    try {
+      isJson = JSON.parse(options.calls)
+
+      const multiCall: (string | string[])[][] = isJson.map((call: Call) => {
+        return [call.method, call.params]
+      })
+
+      const provider: Provider = defaultProvider[options.provider]
+      console.log(await provider.sandshrew.multiCall(multiCall))
+    } catch (error) {
+      console.log(error)
+    }
+  })
+
 const apiProviderCall = new Command('api')
   .description('Returns data based on api method invoked')
   .requiredOption(
@@ -747,6 +779,7 @@ const providerCommand = new Command('provider')
   .addCommand(apiProviderCall)
   .addCommand(ordProviderCall)
   .addCommand(opiProviderCall)
+  .addCommand(multiCallSandshrewProviderCall)
 
 const marketPlaceCommand = new Command('marketplace')
   .description('Functions for marketplace')
