@@ -10,6 +10,7 @@ import { GatheredUtxos, OrdCollectibleData } from '../shared/interface'
 
 export const createPsbt = async ({
   gatheredUtxos,
+  ordUtos,
   account,
   inscriptionId,
   provider,
@@ -19,6 +20,7 @@ export const createPsbt = async ({
   fee,
 }: {
   gatheredUtxos: GatheredUtxos
+  ordUtxos: GatheredUtxos
   account: Account
   inscriptionId: string
   provider: Provider
