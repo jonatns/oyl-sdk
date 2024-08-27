@@ -13,6 +13,12 @@ export interface UnsignedOrdinalsWalletBid {
     outpoints?:string[]
   }
 
+  export interface signedOrdinalsWalletBid {
+    psbt: string
+    provider: Provider
+    assetType: AssetType
+  }
+
 export async function getSellerPsbt(unsignedBid: UnsignedOrdinalsWalletBid) {
     const {
         assetType, 
@@ -34,3 +40,23 @@ export async function getSellerPsbt(unsignedBid: UnsignedOrdinalsWalletBid) {
             return await provider.api.getOrdinalsWalletNftOfferPsbt({address, publicKey,feeRate, inscriptions})
     }
 }
+
+
+export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
+    const {
+        assetType, 
+        psbt, 
+        provider
+    } = signedBid;
+    switch (assetType) {
+      case AssetType.BRC20:
+        return await provider.api.submitOrdinalsWalletBid({psbt})
+
+      case AssetType.RUNES:
+        return await provider.api.submitOrdinalsWalletBid({psbt})
+
+      case AssetType.COLLECTIBLE:
+        return await provider.api.submitOrdinalsWalletBid({psbt})
+
+    }
+  }

@@ -9,4 +9,10 @@ export interface UnsignedOrdinalsWalletBid {
     inscriptions?: string[];
     outpoints?: string[];
 }
+export interface signedOrdinalsWalletBid {
+    psbt: string;
+    provider: Provider;
+    assetType: AssetType;
+}
 export declare function getSellerPsbt(unsignedBid: UnsignedOrdinalsWalletBid): Promise<any>;
+export declare function submitPsbt(signedBid: signedOrdinalsWalletBid): Promise<any>;
