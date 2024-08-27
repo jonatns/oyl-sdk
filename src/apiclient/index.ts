@@ -435,6 +435,32 @@ export class OylApiClient {
   }
 
   /**
+   * Get Ordinals-Wallet offer psbt for Collectibles & BRC20s.
+   * @param offerId - The offer Id to query.
+   */
+  async getOrdinalsWalletNftOfferPsbt(
+    { 
+      publicKey, 
+      feeRate,
+      address,
+      inscriptions 
+    }: 
+    { 
+      publicKey: string, 
+      feeRate: number ,
+      address: string, 
+      inscriptions: string,
+    }): Promise<any> {
+    const response = await this._call('/get-ow-nft-offer-psbt', 'post', {
+      publicKey, 
+      feeRate,
+      address,
+      inscriptions 
+    })
+    return response
+  }
+
+  /**
    * Get BTC price.
    */
   async getBtcPrice() {
