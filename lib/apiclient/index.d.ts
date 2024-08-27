@@ -205,7 +205,17 @@ export declare class OylApiClient {
         publicKey: string;
         feeRate: number;
         address: string;
-        inscriptions: string;
+        inscriptions: string[];
+    }): Promise<any>;
+    /**
+    * Get Ordinals-Wallet offer psbt for Collectibles & BRC20s.
+    * @param offerId - The offer Id to query.
+    */
+    getOrdinalsWalletRuneOfferPsbt({ publicKey, feeRate, address, outpoints }: {
+        publicKey: string;
+        feeRate: number;
+        address: string;
+        outpoints: string[];
     }): Promise<any>;
     /**
      * Get BTC price.

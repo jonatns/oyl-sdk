@@ -449,13 +449,39 @@ export class OylApiClient {
       publicKey: string, 
       feeRate: number ,
       address: string, 
-      inscriptions: string,
+      inscriptions: string[],
     }): Promise<any> {
     const response = await this._call('/get-ow-nft-offer-psbt', 'post', {
       publicKey, 
       feeRate,
       address,
       inscriptions 
+    })
+    return response
+  }
+
+   /**
+   * Get Ordinals-Wallet offer psbt for Collectibles & BRC20s.
+   * @param offerId - The offer Id to query.
+   */
+   async getOrdinalsWalletRuneOfferPsbt(
+    { 
+      publicKey, 
+      feeRate,
+      address,
+      outpoints 
+    }: 
+    { 
+      publicKey: string, 
+      feeRate: number ,
+      address: string, 
+      outpoints: string[],
+    }): Promise<any> {
+    const response = await this._call('/get-ow-rune-offer-psbt', 'post', {
+      publicKey, 
+      feeRate,
+      address,
+      outpoints 
     })
     return response
   }
