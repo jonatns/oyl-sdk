@@ -61,6 +61,8 @@ export interface UnsignedOkxBid {
     provider: Provider
 }
 
+
+
 export interface GenOkxBrcAndCollectibleUnsignedPsbt {
     address: string
     utxos: FormattedUtxo[]
