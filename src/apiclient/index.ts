@@ -436,7 +436,6 @@ export class OylApiClient {
 
   /**
    * Get Ordinals-Wallet offer psbt for Collectibles & BRC20s.
-   * @param offerId - The offer Id to query.
    */
   async getOrdinalsWalletNftOfferPsbt(
     { 
@@ -462,10 +461,8 @@ export class OylApiClient {
 
    /**
    * Get Ordinals-Wallet offer psbt for Collectibles & BRC20s.
-   * @param offerId - The offer Id to query.
    */
-   async getOrdinalsWalletRuneOfferPsbt(
-    { 
+   async getOrdinalsWalletRuneOfferPsbt({ 
       publicKey, 
       feeRate,
       address,
@@ -483,6 +480,14 @@ export class OylApiClient {
       address,
       outpoints 
     })
+    return response
+  }
+
+  /**
+   * Submit a signed psbt to bid for offers on Ordinals Wallet marketplace.
+   */
+  async submitOrdinalsWalletBid({ psbt }: {  psbt: string }): Promise<any> {
+    const response = await this._call('/finalize-ow-bid', 'post', { psbt })
     return response
   }
 

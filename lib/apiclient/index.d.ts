@@ -199,7 +199,6 @@ export declare class OylApiClient {
     }): Promise<any>;
     /**
      * Get Ordinals-Wallet offer psbt for Collectibles & BRC20s.
-     * @param offerId - The offer Id to query.
      */
     getOrdinalsWalletNftOfferPsbt({ publicKey, feeRate, address, inscriptions }: {
         publicKey: string;
@@ -209,13 +208,18 @@ export declare class OylApiClient {
     }): Promise<any>;
     /**
     * Get Ordinals-Wallet offer psbt for Collectibles & BRC20s.
-    * @param offerId - The offer Id to query.
     */
     getOrdinalsWalletRuneOfferPsbt({ publicKey, feeRate, address, outpoints }: {
         publicKey: string;
         feeRate: number;
         address: string;
         outpoints: string[];
+    }): Promise<any>;
+    /**
+     * Submit a signed psbt to bid for offers on Ordinals Wallet marketplace.
+     */
+    submitOrdinalsWalletBid({ psbt }: {
+        psbt: string;
     }): Promise<any>;
     /**
      * Get BTC price.
