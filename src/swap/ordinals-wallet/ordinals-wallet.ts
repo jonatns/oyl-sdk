@@ -1,5 +1,11 @@
+import { MarketplaceOffer } from "swap/types"
 import { Provider } from "../../provider"
 import { AssetType } from "shared/interface"
+import { getAddressType, timeout } from "../.."
+import { FormattedUtxo } from  '../../utxo/utxo';
+import { Signer } from "../../signer"
+import { prepareAddressForDummyUtxos, updateUtxos } from "../helpers";
+
 
 
 
@@ -60,3 +66,77 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
 
     }
   }
+
+
+  export async function ordinalWalletSwap ({
+    address, 
+    offer,
+    receiveAddress,
+    feeRate,
+    pubKey,
+    assetType,
+    provider,
+    utxos,
+    signer
+}:{
+    address: string
+    offer: MarketplaceOffer
+    receiveAddress: string
+    feeRate: number
+    pubKey: string
+    utxos: FormattedUtxo[]
+    assetType: AssetType
+    provider: Provider
+    signer: Signer
+}) {
+    const addressType = getAddressType(address);
+
+    const network = provider.network
+
+    const psbtForDummyUtxos = await prepareAddressForDummyUtxos({address, utxos, network, pubKey, feeRate, addressType})
+
+    if (psbtForDummyUtxos != null){
+        const { psbtBase64, inputTemplate, outputTemplate} = psbtForDummyUtxos
+        const {signedPsbt} = await signer.signAllInputs({
+            rawPsbt: psbtBase64,
+            finalize: true,
+        })
+
+        const {txId} = await provider.pushPsbt({psbtBase64: signedPsbt})
+        await timeout(5000)
+        utxos = updateUtxos({
+            originalUtxos: utxos,
+            txId, 
+            inputTemplate,
+            outputTemplate
+        })        
+    }
+    const unsignedBid: UnsignedOrdinalsWalletBid = {
+        address, 
+        publicKey: pubKey, 
+        feeRate, 
+        provider, 
+        assetType
+    }
+    if (assetType === AssetType.RUNES){
+        unsignedBid["outpoints"] = [offer.outpoint]
+    } else {
+        unsignedBid["inscriptions"] = [offer.inscriptionId]
+    }
+    
+    const sellerData = await getSellerPsbt(unsignedBid);
+    const sellerPsbt = sellerData.data.purchase;
+    
+    const signedPsbt = await signer.signAllInputs({
+        rawPsbtHex: sellerPsbt,
+        finalize: true,
+    })
+
+    const data = await submitPsbt({
+        psbt: signedPsbt.signedHexPsbt,
+        assetType,
+        provider
+    })
+    if (data.success) return data.purchase
+
+}

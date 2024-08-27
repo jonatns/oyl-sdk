@@ -118,6 +118,7 @@ export interface MarketplaceOffer {
     unitPrice?: number;
     totalPrice?: number;
     psbt?: string;
+    outpoint?: string;
     inscriptionId?: string;
 }
 export declare enum Marketplaces {
