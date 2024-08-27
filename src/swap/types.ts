@@ -137,6 +137,7 @@ export interface MarketplaceOffer {
 export enum Marketplaces {
     UNISAT,
     OKX,
+    ORDINALS_WALLET
 }
 
 export interface PsbtBuilder {
@@ -178,7 +179,8 @@ export interface SwapPayload {
 
 export const marketplaceName = {
     'unisat': Marketplaces.UNISAT,
-    'okx': Marketplaces.OKX
+    'okx': Marketplaces.OKX,
+    'ordinals-wallet': Marketplaces.ORDINALS_WALLET
 }
 
 export interface UtxosToCoverAmount {
