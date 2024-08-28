@@ -2,7 +2,7 @@ import { Provider } from '../provider/provider'
 import * as dotenv from 'dotenv'
 import * as bitcoin from 'bitcoinjs-lib'
 import { Account, mnemonicToAccount } from '../account/account'
-import { EsploraUtxo, FormattedUtxo, addressSpendableUtxos } from './utxo'
+import { EsploraUtxo, FormattedUtxo, addressUtxos } from './utxo'
 
 dotenv.config()
 
@@ -303,12 +303,12 @@ jest.mock('../provider/provider', () => {
 })
 
 describe('utxo', () => {
-  it('addressSpendableUtxos', async () => {
-    const result = await addressSpendableUtxos({
+  it('addressUtxos', async () => {
+    const result = await addressUtxos({
       address: 'bc1pklamaklxrdgm7njpudghhq3j7vwxfuak0l7jmrhvluf0cld5etjsga00nj',
       provider: provider,
     })
-    expect(result.utxos).toEqual(testFormattedUtxos)
-    expect(result.totalAmount).toEqual(150000)
+    expect(result.spendableUtxos).toEqual(testFormattedUtxos)
+    expect(result.spendableTotalAmount).toEqual(150000)
   })
 })
