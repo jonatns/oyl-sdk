@@ -126,7 +126,7 @@ const accountUtxosToSpend = new Command('accountUtxos')
     )
   })
 
-const accountAvailableBalance = new Command('availableBalance')
+const accountAvailableBalance = new Command('balance')
   .description('Returns available utxos to spend')
   .requiredOption(
     '-p, --provider <provider>',
@@ -137,7 +137,7 @@ const accountAvailableBalance = new Command('availableBalance')
     'mnemonic you want to get private keys from'
   )
   /* @dev example call
-    oyl utxo availableBalance -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'  -p regtest
+    oyl utxo balance -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'  -p regtest
   */
   .action(async (options) => {
     const provider: Provider = defaultProvider[options.provider]
