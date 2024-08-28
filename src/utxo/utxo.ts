@@ -157,7 +157,7 @@ export const accountSpendableUtxos = async ({
   return { totalAmount, utxos: allUtxos }
 }
 
-export const addressBalance = async ({
+export const accountBalance = async ({
   account,
   provider,
 }: {
@@ -170,16 +170,17 @@ export const addressBalance = async ({
   for (let i = 0; i < account.spendStrategy.addressOrder.length; i++) {
     const address = account[account.spendStrategy.addressOrder[i]].address
 
-    const { spendableTotalAmount, pendingTotalAmount } = await addressUtxos({
+    const { spendableTotalBalance, pendingTotalBalance } = await addressUtxos({
       address,
       provider,
       spendStrategy: account.spendStrategy,
     })
-    balance += spendableTotalAmount
-    pendingBalance += pendingTotalAmount
+    balance += spendableTotalBalance
+    pendingBalance += pendingTotalBalance
   }
   return { balance, pendingBalance }
 }
+
 export const addressUtxos = async ({
   address,
   provider,
@@ -189,8 +190,9 @@ export const addressUtxos = async ({
   provider: Provider
   spendStrategy?: SpendStrategy
 }) => {
-  let spendableTotalAmount: number = 0
-  let pendingTotalAmount: number = 0
+  let spendableTotalBalance: number = 0
+  let pendingTotalBalance: number = 0
+  let totalBalance: number = 0
   const spendableUtxos: FormattedUtxo[] = []
   const pendingUtxos: FormattedUtxo[] = []
   const ordUtxos: FormattedUtxo[] = []
@@ -205,12 +207,13 @@ export const addressUtxos = async ({
   let utxos = multiCall[0].result
   if (utxos.length === 0) {
     return {
-      spendableTotalAmount,
+      spendableTotalBalance,
       spendableUtxos,
       runeUtxos,
       ordUtxos,
       pendingUtxos,
-      pendingTotalAmount,
+      pendingTotalBalance,
+      totalBalance,
     }
   }
 
@@ -245,7 +248,6 @@ export const addressUtxos = async ({
       !hasRune?.output
     ) {
       const transactionDetails = await provider.esplora.getTxInfo(utxo.txid)
-
       const voutEntry = transactionDetails.vout.find(
         (v) => v.scriptpubkey_address === address
       )
@@ -262,7 +264,8 @@ export const addressUtxos = async ({
         inscriptions: [],
       })
 
-      spendableTotalAmount += utxo.value
+      spendableTotalBalance += utxo.value
+      totalBalance += utxo.value
     }
 
     if (hasRune?.output || hasInscription.runes.length > 0) {
@@ -281,6 +284,7 @@ export const addressUtxos = async ({
         address: address,
         inscriptions: [],
       })
+      totalBalance += utxo.value
     }
 
     if (
@@ -303,6 +307,7 @@ export const addressUtxos = async ({
         address: address,
         inscriptions: hasInscription.inscriptions,
       })
+      totalBalance += utxo.value
     }
 
     if (!hasInscription.indexed && !utxo.status.confirmed) {
@@ -321,17 +326,18 @@ export const addressUtxos = async ({
         address: address,
         inscriptions: [],
       })
-      pendingTotalAmount += utxo.value
+      pendingTotalBalance += utxo.value
+      totalBalance += utxo.value
     }
   }
-
   return {
-    spendableTotalAmount,
+    spendableTotalBalance,
     spendableUtxos,
     runeUtxos,
     ordUtxos,
     pendingUtxos,
-    pendingTotalAmount,
+    pendingTotalBalance,
+    totalBalance,
   }
 }
 
@@ -342,39 +348,48 @@ export const accountUtxos = async ({
   account: Account
   provider: Provider
 }) => {
-  let spendableTotalAmount: number = 0
-  let pendingTotalAmount: number = 0
+  let accountSpendableTotalBalance: number = 0
+  let accountPendingTotalBalance: number = 0
+  let accountTotalBalance: number = 0
   const accounts = []
 
   for (let i = 0; i < account.spendStrategy.addressOrder.length; i++) {
     const address = account[account.spendStrategy.addressOrder[i]].address
     const addressType = account.spendStrategy.addressOrder[i]
     const {
-      spendableTotalAmount: spendTotal,
-      spendableUtxos: spendUtxos,
-      runeUtxos: rune,
-      ordUtxos: ord,
-      pendingUtxos: pending,
-      pendingTotalAmount: pendingTotal,
+      spendableTotalBalance,
+      spendableUtxos,
+      runeUtxos,
+      ordUtxos,
+      pendingUtxos,
+      pendingTotalBalance,
+      totalBalance,
     } = await addressUtxos({
       address,
       provider,
       spendStrategy: account.spendStrategy,
     })
 
-    spendableTotalAmount += spendTotal
-    pendingTotalAmount += pendingTotal
+    accountSpendableTotalBalance += spendableTotalBalance
+    accountPendingTotalBalance += pendingTotalBalance
+    accountTotalBalance += totalBalance
 
     accounts.push({
       [addressType]: {
-        spendTotal,
-        spendUtxos,
-        rune,
-        ord,
-        pending,
-        pendingTotal,
+        spendableTotalBalance,
+        spendableUtxos,
+        runeUtxos,
+        ordUtxos,
+        pendingUtxos,
+        pendingTotalBalance,
+        totalBalance,
       },
     })
   }
-  return { spendableTotalAmount, pendingTotalAmount, accounts }
+  return {
+    accountTotalBalance,
+    accountSpendableTotalBalance,
+    accountPendingTotalBalance,
+    accounts,
+  }
 }

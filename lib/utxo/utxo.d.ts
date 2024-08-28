@@ -43,7 +43,7 @@ export declare const accountSpendableUtxos: ({ account, provider, spendAmount, }
     totalAmount: number;
     utxos: FormattedUtxo[];
 }>;
-export declare const addressBalance: ({ account, provider, }: {
+export declare const accountBalance: ({ account, provider, }: {
     account: Account;
     provider: Provider;
 }) => Promise<{
@@ -55,18 +55,20 @@ export declare const addressUtxos: ({ address, provider, spendStrategy, }: {
     provider: Provider;
     spendStrategy?: SpendStrategy;
 }) => Promise<{
-    spendableTotalAmount: number;
+    spendableTotalBalance: number;
     spendableUtxos: FormattedUtxo[];
     runeUtxos: FormattedUtxo[];
     ordUtxos: FormattedUtxo[];
     pendingUtxos: FormattedUtxo[];
-    pendingTotalAmount: number;
+    pendingTotalBalance: number;
+    totalBalance: number;
 }>;
 export declare const accountUtxos: ({ account, provider, }: {
     account: Account;
     provider: Provider;
 }) => Promise<{
-    spendableTotalAmount: number;
-    pendingTotalAmount: number;
+    accountTotalBalance: number;
+    accountSpendableTotalBalance: number;
+    accountPendingTotalBalance: number;
     accounts: any[];
 }>;
