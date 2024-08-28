@@ -1,5 +1,10 @@
 import { Command } from 'commander'
-import { accountUtxos, addressUtxos, availableBalance } from '../utxo'
+import {
+  accountBalance,
+  accountUtxos,
+  addressUtxos,
+  availableBalance,
+} from '../utxo'
 import * as btc from '../btc'
 import * as brc20 from '../brc20'
 import * as collectible from '../collectible'
@@ -146,7 +151,7 @@ const accountAvailableBalance = new Command('balance')
       opts: { network: provider.network },
     })
     console.log(
-      await availableBalance({
+      await accountBalance({
         account,
         provider,
       })
