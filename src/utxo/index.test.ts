@@ -267,6 +267,9 @@ const testEsploraTxInfo = [
 ]
 
 const mockEsploraUtxos = jest.fn().mockResolvedValue(testEsploraUtxos)
+const mockedMultiCall = jest
+  .fn()
+  .mockResolvedValue([{ result: testEsploraUtxos }, { result: 283 }])
 const mockOrdTxOutputs = jest
   .fn()
   .mockResolvedValueOnce(testOrdTxOutputs[0])
@@ -283,10 +286,15 @@ const mockEsploraTxInfo = jest
   .fn()
   .mockResolvedValueOnce(testEsploraTxInfo[0])
   .mockResolvedValueOnce(testEsploraTxInfo[1])
+  .mockResolvedValueOnce(testEsploraTxInfo[0])
 
 jest.mock('../provider/provider', () => {
   return {
     Provider: jest.fn().mockImplementation(() => ({
+      network: bitcoin.networks.bitcoin,
+      sandshrew: {
+        multiCall: () => mockedMultiCall(),
+      },
       esplora: {
         getFeeEstimates: jest.fn().mockResolvedValue({ '1': 100 }),
         getAddressUtxo: () => mockEsploraUtxos(),
