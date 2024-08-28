@@ -20,6 +20,15 @@ export interface FormattedUtxo {
     inscriptions: any[];
     confirmations: number;
 }
+export interface AddressPortfolio {
+    spendableTotalBalance: number;
+    spendableUtxos: FormattedUtxo[];
+    runeUtxos: FormattedUtxo[];
+    ordUtxos: FormattedUtxo[];
+    pendingUtxos: FormattedUtxo[];
+    pendingTotalBalance: number;
+    totalBalance: number;
+}
 export declare const availableBalance: ({ account, provider, }: {
     account: Account;
     provider: Provider;
@@ -54,15 +63,7 @@ export declare const addressUtxos: ({ address, provider, spendStrategy, }: {
     address: string;
     provider: Provider;
     spendStrategy?: SpendStrategy;
-}) => Promise<{
-    spendableTotalBalance: number;
-    spendableUtxos: FormattedUtxo[];
-    runeUtxos: FormattedUtxo[];
-    ordUtxos: FormattedUtxo[];
-    pendingUtxos: FormattedUtxo[];
-    pendingTotalBalance: number;
-    totalBalance: number;
-}>;
+}) => Promise<AddressPortfolio>;
 export declare const accountUtxos: ({ account, provider, }: {
     account: Account;
     provider: Provider;

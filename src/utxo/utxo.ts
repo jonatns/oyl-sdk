@@ -25,6 +25,16 @@ export interface FormattedUtxo {
   confirmations: number
 }
 
+export interface AddressPortfolio {
+  spendableTotalBalance: number
+  spendableUtxos: FormattedUtxo[]
+  runeUtxos: FormattedUtxo[]
+  ordUtxos: FormattedUtxo[]
+  pendingUtxos: FormattedUtxo[]
+  pendingTotalBalance: number
+  totalBalance: number
+}
+
 export const availableBalance = async ({
   account,
   provider,
@@ -189,7 +199,7 @@ export const addressUtxos = async ({
   address: string
   provider: Provider
   spendStrategy?: SpendStrategy
-}) => {
+}): Promise<AddressPortfolio> => {
   let spendableTotalBalance: number = 0
   let pendingTotalBalance: number = 0
   let totalBalance: number = 0
