@@ -25,6 +25,9 @@ describe('Signer', () => {
     .update(message)
     .digest()
     .toString('base64')
+  const bip322Hash = Buffer.from(BIP322.hashMessage('Hello World')).toString(
+    'base64'
+  )
   test('should initialize the Signer class with segwit, taproot, legacy, and nested segwit keys', () => {
     const signer = new Signer(network, keys)
 
@@ -106,7 +109,7 @@ describe('Signer', () => {
 
   test('Should sign a message with nested segwit keypair', async () => {
     const signtaure =
-      'AkcwRAIgYNyQYcMg9q7kIWSMniPLFs+JbWbD0YiAFMLLziUkINgCIElQKraLgD4RrRJzTPmZF9GjoyxCN/aDSbzUVpIy7uZxASEDmztpS4/FteB/sGnHg8rHVPXTjD4IvtGWDjH9sd2jXCQ='
+      'AkcwRAIgExPs5WhKRKgvKTggfwPyDjaJkOcr7/LD8h+wGhcmYBcCIBI4KGpz7tEraXQ7a9kvlXVpxvcTma+5iqWdkQ1ec5awASEDmztpS4/FteB/sGnHg8rHVPXTjD4IvtGWDjH9sd2jXCQ='
     let signer = new Signer(network, keys)
 
     const address = bitcoin.payments.p2sh({
@@ -125,7 +128,7 @@ describe('Signer', () => {
 
     const verifySignature: boolean = Verifier.verifySignature(
       address,
-      hashedMessage,
+      bip322Hash,
       signedMessage
     )
 
@@ -135,7 +138,7 @@ describe('Signer', () => {
 
   test('Should sign a message with taproot keypair', async () => {
     const signtaure =
-      'AUF+il3sadlcy8h8Im305KXn3EfUP06ra9Jpn1p228xaHEGLI3T59oo/59du9fDrqd2RtTrfFtgk/O8ev0KnLERrAQ=='
+      'AUHnVaY2a160fGETICoVNFO6I3I+q7s32JyJQk4Pc6ZATfwdFVkYGkB8r9rAncALD+9Ri5kQN/05UKk1w2176iXaAQ=='
     let signer = new Signer(network, keys)
 
     const address = bitcoin.payments.p2tr({
@@ -152,7 +155,7 @@ describe('Signer', () => {
 
     const verifySignature: boolean = Verifier.verifySignature(
       address,
-      hashedMessage,
+      bip322Hash,
       signedMessage
     )
 
@@ -162,7 +165,7 @@ describe('Signer', () => {
 
   test('Should sign a message with native segwit keypair', async () => {
     const signtaure =
-      'AkcwRAIgIVp4qcqPa5HsN5Kppc530WKw8RZXnme4irOepyYJ9O8CICo4db+aGShptCN512Pv0JY27c8xIuiPAmdK17Zh6wFxASEDMNVP0N1CCm5fjTYk9fNILK41D3nV8HU79b7vnC2Rrzw='
+      'AkgwRQIhAIeskX8weJabUu5u+gI0Tnlm99/9e2i015WVbuhzzIBxAiAFy7gj1OukkgipmBRENaE4/CZ/pJXcUcsFUZ8pQIaOSgEhAzDVT9DdQgpuX402JPXzSCyuNQ951fB1O/W+75wtka88'
     let signer = new Signer(network, keys)
 
     const address = bitcoin.payments.p2wpkh({
@@ -179,7 +182,7 @@ describe('Signer', () => {
 
     const verifySignature: boolean = Verifier.verifySignature(
       address,
-      hashedMessage,
+      bip322Hash,
       signedMessage
     )
 
@@ -189,7 +192,7 @@ describe('Signer', () => {
 
   test('Should sign a message with legacy keypair', async () => {
     const signtaure =
-      'IIFzCkVXWpRMaBySpCGfBHpPvplqo9QpdZl9NPYe3ZU3QaTv4eo/nfWtIj87Vl9kWXq6Drs45tJjtfYdXGQYoWo='
+      'H17cVBLC+0dxMrPP32z5T+kFNPitqwbDhzjKK/o9WTZFDq/lKA9HuElUqii6GHvqzPkW8HVSJIUNs8ljxgpAgpk='
     let signer = new Signer(network, keys)
 
     const address = bitcoin.payments.p2pkh({
@@ -206,7 +209,7 @@ describe('Signer', () => {
 
     const verifySignature: boolean = Verifier.verifySignature(
       address,
-      hashedMessage,
+      bip322Hash,
       signedMessage
     )
 
