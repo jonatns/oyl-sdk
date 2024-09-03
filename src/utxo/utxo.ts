@@ -252,7 +252,6 @@ export const addressUtxos = async ({
       hasInscription.inscriptions.length === 0 &&
       hasInscription.runes.length === 0 &&
       hasInscription.indexed &&
-      hasInscription.value !== 546 &&
       !hasRune?.output
     ) {
       const transactionDetails = await provider.esplora.getTxInfo(utxo.txid)
