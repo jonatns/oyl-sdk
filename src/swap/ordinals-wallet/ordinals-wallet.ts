@@ -1,6 +1,6 @@
 import { MarketplaceOffer } from "swap/types"
 import { Provider } from "../../provider"
-import { AssetType } from "shared/interface"
+import { AddressType, AssetType } from "shared/interface"
 import { getAddressType, timeout } from "../.."
 import { FormattedUtxo } from  '../../utxo/utxo';
 import { Signer } from "../../signer"
@@ -90,7 +90,7 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
     signer: Signer
 }) {
     const addressType = getAddressType(address);
-
+    if(addressType != AddressType.P2TR) throw new Error ('Can only purchase with taproot on ordinalswallet')
     const network = provider.network
 
     const psbtForDummyUtxos = await prepareAddressForDummyUtxos({address, utxos, network, pubKey, feeRate, addressType})
@@ -140,3 +140,4 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
     if (data.success) return data.purchase
 
 }
+
