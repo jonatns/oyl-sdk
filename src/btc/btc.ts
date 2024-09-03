@@ -121,7 +121,7 @@ export const createPsbt = async ({
       gatheredUtxos.totalAmount - (finalFee + Number(amount))
 
     // Change cannot be dust
-    if (changeAmount > 250 ) {
+    if (changeAmount > 295 ) {
       psbt.addOutput({
         address: account[account.spendStrategy.changeAddress].address,
         value: changeAmount,
