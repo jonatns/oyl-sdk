@@ -229,11 +229,9 @@ export const addressUtxos = async ({
 
   const utxoSortGreatestToLeast = spendStrategy?.utxoSortGreatestToLeast ?? true
 
-  utxos = utxos
-    .filter((utxo) => utxo.value >= UTXO_DUST)
-    .sort((a, b) =>
-      utxoSortGreatestToLeast ? b.value - a.value : a.value - b.value
-    )
+  utxos = utxos.sort((a, b) =>
+    utxoSortGreatestToLeast ? b.value - a.value : a.value - b.value
+  )
 
   const utxoPromises = utxos.map(async (utxo) => {
     const outputId = `${utxo.txid}:${utxo.vout}`
@@ -254,7 +252,6 @@ export const addressUtxos = async ({
       hasInscription.inscriptions.length === 0 &&
       hasInscription.runes.length === 0 &&
       hasInscription.indexed &&
-      hasInscription.value !== 546 &&
       !hasRune?.output
     ) {
       const transactionDetails = await provider.esplora.getTxInfo(utxo.txid)
