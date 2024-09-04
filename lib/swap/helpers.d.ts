@@ -6,6 +6,7 @@ import { AddressType } from "../shared/interface";
 import * as bitcoin from 'bitcoinjs-lib';
 export declare const maxTxSizeForOffers: number;
 export declare const CONFIRMED_UTXO_ENFORCED_MARKETPLACES: Marketplaces[];
+export declare const DUMMY_UTXO_ENFORCED_MARKETPLACES: Marketplaces[];
 export declare const ESTIMATE_TX_SIZE: number;
 export declare const DUMMY_UTXO_SATS: number;
 export declare function getUTXOsToCoverAmount({ utxos, amountNeeded, excludedUtxos, insistConfirmedUtxos }: UtxosToCoverAmount): FormattedUtxo[];

@@ -1,9 +1,6 @@
-import { getAddressType, timeout } from "../.."
-import { FormattedUtxo } from  '../../utxo/utxo';
-import { Signer } from "../../signer"
-import { Provider } from "../../provider"
-import { AssetType, MarketplaceOffer } from "../../shared/interface"
-import { UnsignedOkxBid, SignedOkxBid, UnsignedPsbt, GenOkxRuneUnsignedPsbt } from "../types"
+import { OylTransactionError, getAddressType, timeout } from "../.."
+import { AssetType } from "../../shared/interface"
+import { UnsignedOkxBid, SignedOkxBid, UnsignedPsbt, GenOkxRuneUnsignedPsbt, ProcessOfferOptions, SwapResponse } from "../types"
 import { genBrcAndOrdinalUnsignedPsbt, mergeSignedPsbt } from "./nft"
 import { prepareAddressForDummyUtxos, updateUtxos } from "../helpers";
 import { buildOkxRunesPsbt } from "./runes";
@@ -91,17 +88,10 @@ export async function okxSwap ({
     provider,
     utxos,
     signer
-}:{
-    address: string
-    offer: MarketplaceOffer
-    receiveAddress: string
-    feeRate: number
-    pubKey: string
-    utxos: FormattedUtxo[]
-    assetType: AssetType
-    provider: Provider
-    signer: Signer
-}) {
+}:ProcessOfferOptions
+): Promise<SwapResponse> {
+    let prepTx: string | null = null;
+    let purchaseTx: string | null = null;
     const addressType = getAddressType(address);
 
     const network = provider.network
@@ -120,6 +110,7 @@ export async function okxSwap ({
         })
 
         const {txId} = await provider.pushPsbt({psbtBase64: signedPsbt})
+        prepTx = txId;
         await timeout(5000)
         utxos = updateUtxos({
             originalUtxos: utxos,
@@ -167,7 +158,15 @@ export async function okxSwap ({
         provider,
         offer
     })
-    console.log("Transaction", transaction)
-    if (transaction?.statusCode == 200 || transaction?.data)return transaction.data
+    
+    if (transaction?.statusCode == 200 || transaction?.data){
+        purchaseTx = transaction.data
+        return {
+            prepTx,
+            purchaseTx
+        }
+    } else {
+        throw new OylTransactionError (new Error(JSON.stringify(transaction)))
+    }
 
 }
