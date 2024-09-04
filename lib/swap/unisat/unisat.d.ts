@@ -1,7 +1,7 @@
 import { AssetType } from "../../shared/interface";
 import { Signer } from '../../signer';
 import { Provider } from "../../provider";
-import { ProcessOfferOptions, SwapResponse } from "swap/types";
+import { ProcessOfferOptions, SwapResponse } from "../types";
 export interface UnsignedUnisatBid {
     address: string;
     auctionId: string;
