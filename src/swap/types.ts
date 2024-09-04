@@ -165,8 +165,8 @@ export interface BuiltPsbt {
 
 
 export interface SwapResponse {
-    prepTx: string
-    purchaseTx: string
+    dummyTxId: string
+    purchaseTxId: string
 }
 
 export interface OutputTxTemplate {
