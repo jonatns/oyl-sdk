@@ -13,12 +13,7 @@ import * as rune from '../rune'
 
 import "dotenv/config";
 import { generateMnemonic, getWalletPrivateKeys, mnemonicToAccount } from '..'
-import {
-  generateMnemonic,
-  getWalletPrivateKeys,
-  mnemonicToAccount,
-  utxo,
-} from '..'
+
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '..'
 import { Signer } from '..'
