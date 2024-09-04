@@ -118,11 +118,13 @@ export interface MarketplaceOffer {
     unitPrice?: number;
     totalPrice?: number;
     psbt?: string;
+    outpoint?: string;
     inscriptionId?: string;
 }
 export declare enum Marketplaces {
     UNISAT = 0,
-    OKX = 1
+    OKX = 1,
+    ORDINALS_WALLET = 2
 }
 export interface PsbtBuilder {
     network: bitcoin.Network;
@@ -159,6 +161,7 @@ export interface SwapPayload {
 export declare const marketplaceName: {
     unisat: Marketplaces;
     okx: Marketplaces;
+    'ordinals-wallet': Marketplaces;
 };
 export interface UtxosToCoverAmount {
     utxos: FormattedUtxo[];

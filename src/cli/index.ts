@@ -10,12 +10,10 @@ import * as brc20 from '../brc20'
 import * as collectible from '../collectible'
 import * as rune from '../rune'
 
-import {
-  generateMnemonic,
-  getWalletPrivateKeys,
-  mnemonicToAccount,
-  utxo,
-} from '..'
+
+import "dotenv/config";
+import { generateMnemonic, getWalletPrivateKeys, mnemonicToAccount } from '..'
+
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '..'
 import { Signer } from '..'
@@ -102,6 +100,62 @@ const generateMnemonicCommand = new Command('generateMnemonic')
     const mnemonic = generateMnemonic()
     console.log(mnemonic)
   })
+
+  const signPsbt = new Command('sign')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when signing the network psbt'
+  )
+  .requiredOption(
+    '-m, --mnemonic <mnemonic>',
+    'mnemonic you want to get private keys from'
+  )
+
+  .requiredOption(
+    '-f, --finalize <finalize>',
+    'flag to finalize and push psbt'
+  )
+  
+  .option('-legacy, --legacy <legacy>', 'legacy private key')
+  .option('-taproot, --taproot <taproot>', 'taproot private key')
+  .option(
+    '-nested, --nested-segwit <nestedSegwit>',
+    'nested segwit private key'
+  )
+  .option(
+    '-native, --native-segwit <nativeSegwit>',
+    'native segwit private key'
+  )
+
+  /* @dev example call 
+  oyl account sign 
+  -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' 
+  -native '4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3'
+  -p regtest 
+  -f yes
+*/
+
+  .action(async (options) => {
+    const provider: Provider = defaultProvider[options.provider]
+    const signer = new Signer(provider.network, {
+      segwitPrivateKey: options.nativeSegwit,
+      taprootPrivateKey: options.taproot,
+      nestedSegwitPrivateKey: options.nestedSegwit,
+      legacyPrivateKey: options.legacy,
+    })
+
+    let finalize = (options.finalize == 'yes') ? true : false
+
+    const {signedHexPsbt} =  await signer.signAllInputs({
+      rawPsbtHex: process.env.PSBT_HEX,
+      finalize,
+  })
+
+    console.log("signed hex psbt", signedHexPsbt)
+  
+
+  })
+
 
 const accountUtxosToSpend = new Command('accountUtxos')
   .description('Returns available utxos to spend')
@@ -755,6 +809,7 @@ const marketPlaceBuy = new Command('buy')
 const accountCommand = new Command('account')
   .description('Manage accounts')
   .addCommand(generateCommand)
+  .addCommand(signPsbt)
   .addCommand(privateKeysCommand)
   .addCommand(generateMnemonicCommand)
 

@@ -61,6 +61,8 @@ export interface UnsignedOkxBid {
     provider: Provider
 }
 
+
+
 export interface GenOkxBrcAndCollectibleUnsignedPsbt {
     address: string
     utxos: FormattedUtxo[]
@@ -128,12 +130,14 @@ export interface MarketplaceOffer {
     unitPrice?: number
     totalPrice?: number
     psbt?: string
+    outpoint?: string
     inscriptionId?: string
 }
 
 export enum Marketplaces {
     UNISAT,
     OKX,
+    ORDINALS_WALLET
 }
 
 export interface PsbtBuilder {
@@ -175,7 +179,8 @@ export interface SwapPayload {
 
 export const marketplaceName = {
     'unisat': Marketplaces.UNISAT,
-    'okx': Marketplaces.OKX
+    'okx': Marketplaces.OKX,
+    'ordinals-wallet': Marketplaces.ORDINALS_WALLET
 }
 
 export interface UtxosToCoverAmount {

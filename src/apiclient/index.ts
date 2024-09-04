@@ -435,6 +435,63 @@ export class OylApiClient {
   }
 
   /**
+   * Get Ordinals-Wallet offer psbt for Collectibles & BRC20s.
+   */
+  async getOrdinalsWalletNftOfferPsbt(
+    { 
+      publicKey, 
+      feeRate,
+      address,
+      inscriptions 
+    }: 
+    { 
+      publicKey: string, 
+      feeRate: number ,
+      address: string, 
+      inscriptions: string[],
+    }): Promise<any> {
+    const response = await this._call('/get-ow-nft-offer-psbt', 'post', {
+      publicKey, 
+      feeRate,
+      address,
+      inscriptions 
+    })
+    return response
+  }
+
+   /**
+   * Get Ordinals-Wallet offer psbt for Collectibles & BRC20s.
+   */
+   async getOrdinalsWalletRuneOfferPsbt({ 
+      publicKey, 
+      feeRate,
+      address,
+      outpoints 
+    }: 
+    { 
+      publicKey: string, 
+      feeRate: number ,
+      address: string, 
+      outpoints: string[],
+    }): Promise<any> {
+    const response = await this._call('/get-ow-rune-offer-psbt', 'post', {
+      publicKey, 
+      feeRate,
+      address,
+      outpoints 
+    })
+    return response
+  }
+
+  /**
+   * Submit a signed psbt to bid for offers on Ordinals Wallet marketplace.
+   */
+  async submitOrdinalsWalletBid({ psbt }: {  psbt: string }): Promise<any> {
+    const response = await this._call('/finalize-ow-bid', 'post', { psbt })
+    return response
+  }
+
+  /**
    * Get BTC price.
    */
   async getBtcPrice() {
