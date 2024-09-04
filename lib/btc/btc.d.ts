@@ -12,13 +12,14 @@ export declare const createPsbt: ({ toAddress, amount, feeRate, account, provide
     psbt: string;
     fee: number;
 }>;
-export declare const send: ({ toAddress, amount, feeRate, account, provider, signer, }: {
+export declare const send: ({ toAddress, amount, feeRate, account, provider, signer, fee, }: {
     toAddress: string;
     amount: number;
     feeRate: number;
     account: Account;
     provider: Provider;
     signer: Signer;
+    fee?: number;
 }) => Promise<{
     txId: string;
     rawTx: string;
