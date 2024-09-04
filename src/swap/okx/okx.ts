@@ -111,14 +111,14 @@ export async function okxSwap ({
         })
 
         const {txId} = await provider.pushPsbt({psbtBase64: signedPsbt})
-<
         dummyTxId = txId;
         await timeout(5000)
         utxos = await updateUtxos({
             originalUtxos: utxos,
             txId, 
             spendAddress: address,
-            provider     
+            provider    
+        })
     }
     const unsignedBid: UnsignedOkxBid = {
         offerId: offer.offerId,
