@@ -1,7 +1,7 @@
 import * as bitcoin from 'bitcoinjs-lib'
 import { ECPair, tweakSigner } from '../shared/utils'
 import { ECPairInterface } from 'ecpair'
-import { Signer as bipSigner } from 'bip322-js'
+import { BIP322, Signer as bipSigner } from 'bip322-js'
 import crypto from 'crypto'
 
 export type walletInit = {
@@ -283,12 +283,11 @@ export class Signer {
     if (!keypair) {
       throw new Error('Keypair required to sign')
     }
-    const hashedMessage = crypto
-      .createHash('sha256')
-      .update(message)
-      .digest()
-      .toString('base64')
+
     if (protocol === 'bip322') {
+      const hashedMessage = Buffer.from(BIP322.hashMessage(message)).toString(
+        'base64'
+      )
       const signature = bipSigner.sign(
         keypair.toWIF(),
         address,
@@ -298,6 +297,11 @@ export class Signer {
       return signature.toString('base64')
     }
     if (protocol === 'ecdsa') {
+      const hashedMessage = crypto
+        .createHash('sha256')
+        .update(message)
+        .digest()
+        .toString('base64')
       const signature = keypair.sign(Buffer.from(hashedMessage, 'base64'))
       return signature.toString('base64')
     }

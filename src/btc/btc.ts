@@ -120,10 +120,13 @@ export const createPsbt = async ({
     const changeAmount: number =
       gatheredUtxos.totalAmount - (finalFee + Number(amount))
 
-    psbt.addOutput({
-      address: account[account.spendStrategy.changeAddress].address,
-      value: changeAmount,
-    })
+    // Change cannot be dust
+    if (changeAmount > 295) {
+      psbt.addOutput({
+        address: account[account.spendStrategy.changeAddress].address,
+        value: changeAmount,
+      })
+    }
 
     const updatedPsbt = await formatInputsToSign({
       _psbt: psbt,
@@ -144,6 +147,7 @@ export const send = async ({
   account,
   provider,
   signer,
+  fee,
 }: {
   toAddress: string
   amount: number
@@ -151,15 +155,20 @@ export const send = async ({
   account: Account
   provider: Provider
   signer: Signer
+  fee?: number
 }) => {
-  const { fee } = await actualFee({
-    toAddress,
-    amount,
-    feeRate,
-    account,
-    provider,
-    signer,
-  })
+  if (!fee) {
+    fee = (
+      await actualFee({
+        toAddress,
+        amount,
+        feeRate,
+        account,
+        provider,
+        signer,
+      })
+    ).fee
+  }
 
   const { psbt: finalPsbt } = await createPsbt({
     toAddress,
