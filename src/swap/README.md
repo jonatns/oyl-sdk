@@ -6,23 +6,34 @@ To process an offer and execute a swap on a marketplace call `processOffer()` in
 
 Some marketplace apis have unique characteristics that need to be considered to avoid the process failing:
 
-## Distinguishing between Marketplaces that require confirmed UTXOs and those that do not.
+## Marketplaces that require confirmed UTXOs
 
 Some marketplaces require that submitted offers only contain confirmed utxos as inputs. See `CONFIRMED_UTXO_ENFORCED_MARKETPLACES` in `./helpers.ts` for the list of marketplaces that require confirmed utxos.
 - Offers from these marketplaces will fail unless there is/are enough confirmed UTXO(s) to cover the amount
 - Ideally clients should sort the different marketplace offers to make sure bids for these marketplaces are processed first. That way, confirmed utxos are first used against these marketplace offers. The other marketplaces that allows unconfirmed inputs (utxos in mempool) can then use the outputs of these initial marketplace offers.
-- To process other offers from marketplaces that don't enforce confirmed utxos requires clients to track the Oyl swap transactions that have been submitted for previous swaps and remain in the mempool. Utxos from these transactions can be used in swap transactions for marketplaces that allow unconfirmed utxos as inputs. See an example implementation at `updateUtxos()` in `./helpers.ts`
+
+
+## Marketplaces that do NOT require confirmed UTXOs
+
+Some marketplaces do NOT require confirmed utxos. UTXOs in mempool can be used as inputs to construct these swap transactions. But, we can not accept just any mempool transaction since mempool transactions have not been indexed yet and thus may have inscriptions or other meta-protocol items attached to them. Thus, clients should only use utxos that they know the origin of. I.e., only use unconfirmed mempool utxos that have come from previous Oyl swap transactions.
+
+- In general, a client should only be processing a set of offers from a single buy transaction, i.e., when a user selects multiple items to purchase in a single transaction.
+- To process other offers from marketplaces that don't enforce confirmed utxos, dApps may want to track the outputs from Oyl swap transactions that have been submitted previously and which are still in the mempool.
+- Any mempool transactions that have been identified from previous transactions and which are available for use must be passed into the `utxos[]` parameter alongside spendable utxos.
+- See an example implementation at `updateUtxos()` in `./helpers.ts`
 
 ## Using Dummy UTXOs to construct a Tx
 
 Some marketplaces require "dummy" utxos in their offer transactions. These are usually 600 sat utxos and are used to create proper inscription flows. See `DUMMY_UTXO_ENFORCED_MARKETPLACES` in ./helpers.ts for the list of marketplaces that use Dummy utxos
 
   - If an address does not have a sufficient number of dummy utxos (usually 2), then they must first be created.
-  - If there are enought dummy utxos and spendable utxos, you can automatically create a properly formatted psbt using `prepareAddressForDummyUtxos()`.
-  - If a dummy-utxo is created, the txId will be returned in `prepTx`
+  - Within the individual swap methods (e.g., `oxkSwap`) the `prepareAddressForDummyUtxos()` will automatically check for existing dummy utxos and, if they do not exist, will create and submit a transaction that creates the dummy utxos as outputs.
+  - If it is necessary to create dummy-utxos during a swap, the txId will be returned in `prepTx` from `processOffer`.
 
 ## UTXO Management
- `addressSpendables`, and other utxo methods can be very heavy; so to avoid calling them multiple times the `processOffer()` takes in a `FormattedUtxo[]` parameter. Ideally, getting spendable utxos should be done once, and updated locally with the txId and vout after each transaction. 
- 
- In the case of `CONFIRMED_UTXO_ENFORCED_MARKETPLACES` IT IS NOT required since they also enforce confirmed(or spendable) utxos and you can call the utxo methods as many times as you want. However, in the case for marketplaces not included in `CONFIRMED_UTXO_ENFORCED_MARKETPLACES`, IT IS REQUIRED to have some sort of mechanism to track  utxos in the mempool that were spawn from previous transactions in the swap process
+
+- `addressUtxos()` and `accountUtxos()` are heavy so avoid calling them multiple times.
+- Ideally, getting spendable utxos should be done once, and then the in memory utxo list would be updated after each transaction. For example, you would remove any utxos get used as inputs for a swap transaction, and you would add new change and dummy utxos that are outputs from a swap transaction. That way you always have an accurate set of spendable utxos.
+- `processOffer()` takes in a `FormattedUtxo[]` parameter that includes all utxos that can be used as spendable inputs or dummy utxos.
+- You can also include unconfirmed mempool utxos in `utxos: FormattedUtxo[]`, but you should only include mempool transactions that you know do not have inscriptions attached to them. I.e., only include mempool transactions that come from previous swaps that you have tracked.
 
