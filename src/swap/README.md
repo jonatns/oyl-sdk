@@ -10,7 +10,7 @@ Some marketplace apis have unique characteristics that need to be considered to 
   see       ```CONFIRMED_UTXO_ENFORCED_MARKETPLACES``` in ./helpers.ts
 - Offers from these marketplaces will fail unless there is a confirmed UTXO to cover the amount
 - Ideally should sort offers to make sure bids for these marketplaces are processed first to exhaust confirmed UTXOs on them
-- To process other offers from marketplaces that don't enforce confirmed utxos requires to track every previous transaction before it and update a local record of utxos to get spendable utxos. See an implementation at ```updateUtxos()``` in ./helpers.ts
+- To process other offers from marketplaces that don't enforce confirmed utxos requires to track every previous transaction and update a local record of utxos to get spendable utxos. See an implementation at ```updateUtxos()``` in ./helpers.ts
 
 ## Enforcing Dummy-Utxos to construct a Tx
   see ```DUMMY_UTXO_ENFORCED_MARKETPLACES``` in ./helpers.ts
