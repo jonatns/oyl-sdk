@@ -210,14 +210,16 @@ export const findCollectible = async ({
   const inscriptionUtxoData =
     inscriptionUtxoDetails.vout[inscriptionTxVOutIndex]
   const outputId = `${inscriptionTxId}:${inscriptionTxVOutIndex}`
-  const [inscriptionsOnOutput, isSpentArray] = await Promise.all([
+  const [inscriptionsOnOutput, isSpentArray, hasRune] = await Promise.all([
     provider.ord.getTxOutput(outputId),
     provider.esplora.getTxOutspends(inscriptionTxId),
+    provider.api.getOutputRune({ output: outputId }),
   ])
   const isSpent = isSpentArray[inscriptionTxVOutIndex]
   if (
-    inscriptionsOnOutput.inscriptions.length > 1 &&
-    inscriptionsOnOutput.runes.length > 1
+    inscriptionsOnOutput.inscriptions.length > 1 ||
+    inscriptionsOnOutput.runes.length > 0 ||
+    hasRune?.output
   ) {
     throw new Error(
       'Unable to send from UTXO with multiple inscriptions. Split UTXO before sending.'

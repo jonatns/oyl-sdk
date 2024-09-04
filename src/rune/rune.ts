@@ -397,11 +397,15 @@ export const findRuneUtxos = async ({
         }
 
         const outputId = `${txHash}:${txIndex}`
-        const inscriptionsOnOutput = await provider.ord.getTxOutput(outputId)
+        const [inscriptionsOnOutput, hasRune] = await Promise.all([
+          provider.ord.getTxOutput(outputId),
+          provider.api.getOutputRune({ output: outputId }),
+        ])
 
         if (
-          inscriptionsOnOutput.inscriptions.length > 1 &&
-          inscriptionsOnOutput.runes.length > 1
+          inscriptionsOnOutput.inscriptions.length > 0 ||
+          inscriptionsOnOutput.runes.length > 1 ||
+          hasRune?.rune_ids.length > 1
         ) {
           throw new Error(
             'Unable to send from UTXO with multiple inscriptions. Split UTXO before sending.'

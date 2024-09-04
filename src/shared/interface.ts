@@ -21,6 +21,33 @@ export type Utxo = {
   confirmations: number
 }
 
+export const belscoin = {
+  networks: {
+    bellcoin: {
+      messagePrefix: 'Bells Signed Message:\n',
+      bech32: 'bel',
+      bip32: {
+        public: 0x043587cf,
+        private: 0x04358394,
+      },
+      pubKeyHash: 25,
+      scriptHash: 30,
+      wif: 0x99,
+    },
+    testnet: {
+      messagePrefix: 'Bells Signed Message:\n',
+      bech32: 'tbel',
+      bip32: {
+        public: 0x043587cf,
+        private: 0x04358394,
+      },
+      pubKeyHash: 33,
+      scriptHash: 22,
+      wif: 0xef,
+    },
+  },
+}
+
 export type Network = 'mainnet' | 'testnet' | 'regtest' | 'signet'
 
 export type WitnessScriptOptions = {
