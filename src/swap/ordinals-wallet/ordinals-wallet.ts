@@ -1,6 +1,6 @@
-import { MarketplaceOffer, ProcessOfferOptions, SwapResponse } from "swap/types"
+import { MarketplaceOffer, ProcessOfferOptions, SwapResponse } from "../types"
 import { Provider } from "../../provider"
-import { AddressType, AssetType } from "shared/interface"
+import { AddressType, AssetType } from "../../shared/interface"
 import { getAddressType, timeout } from "../.."
 import { FormattedUtxo } from  '../../utxo/utxo';
 import { Signer } from "../../signer"

@@ -3,7 +3,7 @@ import { Signer } from '../../signer'
 import { Provider } from "../../provider"
 import { OylTransactionError, getAddressType } from "../.."
 import { signBip322Message } from "./BIP322"
-import { ProcessOfferOptions, SwapResponse } from "swap/types"
+import { ProcessOfferOptions, SwapResponse } from "../types"
 
 export interface UnsignedUnisatBid {
     address: string

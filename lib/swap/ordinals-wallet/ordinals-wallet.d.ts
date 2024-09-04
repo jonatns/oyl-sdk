@@ -1,6 +1,6 @@
-import { ProcessOfferOptions, SwapResponse } from "swap/types";
+import { ProcessOfferOptions, SwapResponse } from "../types";
 import { Provider } from "../../provider";
-import { AssetType } from "shared/interface";
+import { AssetType } from "../../shared/interface";
 export interface UnsignedOrdinalsWalletBid {
     address: string;
     publicKey: string;
