@@ -147,8 +147,8 @@ export interface BuiltPsbt {
     outputTemplate: OutputTxTemplate[];
 }
 export interface SwapResponse {
-    prepTx: string;
-    purchaseTx: string;
+    dummyTxId: string;
+    purchaseTxId: string;
 }
 export interface OutputTxTemplate {
     address: string;

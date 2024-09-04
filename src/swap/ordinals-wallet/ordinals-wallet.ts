@@ -80,8 +80,8 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
     signer
 }:ProcessOfferOptions
 ) : Promise<SwapResponse> {
-    let prepTx: string | null = null;
-    let purchaseTx: string | null = null;
+    let dummyTxId: string | null = null;
+    let purchaseTxId: string | null = null;
     
     const addressType = getAddressType(address);
     if(addressType != AddressType.P2TR) throw new Error ('Can only purchase with taproot on ordinalswallet')
@@ -97,7 +97,7 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
         })
 
         const {txId} = await provider.pushPsbt({psbtBase64: signedPsbt})
-        prepTx = txId
+        dummyTxId = txId
         await timeout(5000)
         utxos = await updateUtxos({
             originalUtxos: utxos,
@@ -132,10 +132,10 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
         assetType,
         provider
     })
-    if (data.success) purchaseTx = data.purchase
+    if (data.success) purchaseTxId = data.purchase
     return {
-        prepTx,
-        purchaseTx
+        dummyTxId,
+        purchaseTxId
     }
 }
 

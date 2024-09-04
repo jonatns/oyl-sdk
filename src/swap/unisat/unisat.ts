@@ -64,8 +64,8 @@ export async function getPsbt(unsignedBid: UnsignedUnisatBid) {
     signer
 }: ProcessOfferOptions
 ): Promise<SwapResponse> {
-    let prepTx: string | null = null;
-    let purchaseTx: string | null = null;
+    let dummyTxId: string | null = null;
+    let purchaseTxId: string | null = null;
     const unsignedBid: UnsignedUnisatBid = {
       address,
       auctionId: offer.offerId,
@@ -100,12 +100,12 @@ export async function getPsbt(unsignedBid: UnsignedUnisatBid) {
         provider
     })
     if (data.txid) {
-      purchaseTx = data.txid
+      purchaseTxId = data.txid
     }
 
     return {
-      prepTx,
-      purchaseTx
+      dummyTxId,
+      purchaseTxId
     }
    }
 
