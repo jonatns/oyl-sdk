@@ -1,8 +1,9 @@
 import { AddressType, AssetType, MarketplaceOffer } from "../../shared/interface"
 import { Signer } from '../../signer'
 import { Provider } from "../../provider"
-import { getAddressType } from "../.."
+import { OylTransactionError, getAddressType } from "../.."
 import { signBip322Message } from "./BIP322"
+import { ProcessOfferOptions, SwapResponse } from "swap/types"
 
 export interface UnsignedUnisatBid {
     address: string
@@ -55,28 +56,23 @@ export async function getPsbt(unsignedBid: UnsignedUnisatBid) {
     address, 
     offer,
     receiveAddress,
-    feerate,
+    feeRate,
     pubKey,
     assetType,
     provider,
+    utxos,
     signer
-}:{
-    address: string
-    offer: MarketplaceOffer
-    receiveAddress: string
-    feerate: number
-    pubKey: string
-    assetType: AssetType
-    provider: Provider
-    signer: Signer
-}) {
+}: ProcessOfferOptions
+): Promise<SwapResponse> {
+    let prepTx: string | null = null;
+    let purchaseTx: string | null = null;
     const unsignedBid: UnsignedUnisatBid = {
       address,
       auctionId: offer.offerId,
       bidPrice: offer.totalPrice,
       pubKey,
       receiveAddress,
-      feerate,
+      feerate: feeRate,
       provider,
       assetType
     }
@@ -87,9 +83,10 @@ export async function getPsbt(unsignedBid: UnsignedUnisatBid) {
       unsignedBid['signature'] = signature
     }
     const psbt_ = await getPsbt(unsignedBid)
-    console.log(psbt_)
 
-    if (!psbt_?.error) {
+    if (psbt_?.error) {
+      throw new OylTransactionError(psbt_?.error)
+    }
       const unsignedPsbt: string = psbt_.psbtBid
       const signedPsbt = await signer.signAllInputs({
         rawPsbtHex: unsignedPsbt,
@@ -102,11 +99,17 @@ export async function getPsbt(unsignedBid: UnsignedUnisatBid) {
         assetType,
         provider
     })
-    if (data.txid) return data.txid
-   }
-    
-  }
+    if (data.txid) {
+      purchaseTx = data.txid
+    }
 
+    return {
+      prepTx,
+      purchaseTx
+    }
+   }
+
+    
   export async function getMessageSignature({
     address,
     receiveAddress,

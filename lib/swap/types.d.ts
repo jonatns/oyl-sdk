@@ -146,6 +146,10 @@ export interface BuiltPsbt {
     inputTemplate: ConditionalInput[];
     outputTemplate: OutputTxTemplate[];
 }
+export interface SwapResponse {
+    prepTx: string;
+    purchaseTx: string;
+}
 export interface OutputTxTemplate {
     address: string;
     value: number;
@@ -203,4 +207,15 @@ export interface FeeEstimatorOptions {
     network: bitcoin.Network;
     psbt?: Psbt;
     witness?: Buffer[];
+}
+export interface ProcessOfferOptions {
+    address: string;
+    offer: MarketplaceOffer;
+    receiveAddress: string;
+    utxos: FormattedUtxo[];
+    feeRate: number;
+    pubKey: string;
+    assetType: AssetType;
+    provider: Provider;
+    signer: Signer;
 }

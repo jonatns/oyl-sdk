@@ -1,4 +1,4 @@
-import { MarketplaceOffer } from "swap/types"
+import { MarketplaceOffer, ProcessOfferOptions, SwapResponse } from "swap/types"
 import { Provider } from "../../provider"
 import { AddressType, AssetType } from "shared/interface"
 import { getAddressType, timeout } from "../.."
@@ -78,17 +78,11 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
     provider,
     utxos,
     signer
-}:{
-    address: string
-    offer: MarketplaceOffer
-    receiveAddress: string
-    feeRate: number
-    pubKey: string
-    utxos: FormattedUtxo[]
-    assetType: AssetType
-    provider: Provider
-    signer: Signer
-}) {
+}:ProcessOfferOptions
+) : Promise<SwapResponse> {
+    let prepTx: string | null = null;
+    let purchaseTx: string | null = null;
+    
     const addressType = getAddressType(address);
     if(addressType != AddressType.P2TR) throw new Error ('Can only purchase with taproot on ordinalswallet')
     const network = provider.network
@@ -103,6 +97,7 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
         })
 
         const {txId} = await provider.pushPsbt({psbtBase64: signedPsbt})
+        prepTx = txId
         await timeout(5000)
         utxos = updateUtxos({
             originalUtxos: utxos,
@@ -137,7 +132,10 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
         assetType,
         provider
     })
-    if (data.success) return data.purchase
-
+    if (data.success) purchaseTx = data.purchase
+    return {
+        prepTx,
+        purchaseTx
+    }
 }
 

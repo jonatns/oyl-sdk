@@ -1,6 +1,7 @@
-import { AssetType, MarketplaceOffer } from "../../shared/interface";
+import { AssetType } from "../../shared/interface";
 import { Signer } from '../../signer';
 import { Provider } from "../../provider";
+import { ProcessOfferOptions, SwapResponse } from "swap/types";
 export interface UnsignedUnisatBid {
     address: string;
     auctionId: string;
@@ -21,16 +22,7 @@ export interface SignedUnisatBid {
 }
 export declare function getPsbt(unsignedBid: UnsignedUnisatBid): Promise<any>;
 export declare function submitPsbt(signedBid: SignedUnisatBid): Promise<any>;
-export declare function unisatSwap({ address, offer, receiveAddress, feerate, pubKey, assetType, provider, signer }: {
-    address: string;
-    offer: MarketplaceOffer;
-    receiveAddress: string;
-    feerate: number;
-    pubKey: string;
-    assetType: AssetType;
-    provider: Provider;
-    signer: Signer;
-}): Promise<any>;
+export declare function unisatSwap({ address, offer, receiveAddress, feeRate, pubKey, assetType, provider, utxos, signer }: ProcessOfferOptions): Promise<SwapResponse>;
 export declare function getMessageSignature({ address, receiveAddress, signer, provider }: {
     address: string;
     receiveAddress: string;
