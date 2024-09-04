@@ -99,11 +99,11 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
         const {txId} = await provider.pushPsbt({psbtBase64: signedPsbt})
         prepTx = txId
         await timeout(5000)
-        utxos = updateUtxos({
+        utxos = await updateUtxos({
             originalUtxos: utxos,
             txId, 
-            inputTemplate,
-            outputTemplate
+            spendAddress: address,
+            provider
         })        
     }
     const unsignedBid: UnsignedOrdinalsWalletBid = {

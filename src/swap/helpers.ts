@@ -347,32 +347,46 @@ export function dummyUtxosPsbt({ address, utxos, feeRate, pubKey, addressType, n
 
 }
 
-export function updateUtxos({originalUtxos, txId, inputTemplate, swapTx = false, outputTemplate}: UpdateUtxos): FormattedUtxo[] {
-    const blueprint = originalUtxos[0]
-    inputTemplate.forEach((input) => {
-        const { hash, index } = input;
-        originalUtxos = originalUtxos.filter(utxo => !(utxo.txId === hash && utxo.outputIndex === index));
-    });
+export async function updateUtxos({
+    originalUtxos,
+    txId,
+    spendAddress,
+    provider
+  }: {
+    originalUtxos: FormattedUtxo[],
+    txId: string,
+    spendAddress: string,
+    provider: Provider
+  }): Promise<FormattedUtxo[]> {
+    const txInfo = await provider.esplora.getTxInfo(txId)
 
+    const spentInputs = txInfo.vin.map(input => ({
+      txId: input.txid,
+      outputIndex: input.vout
+    }));
     
-
-    outputTemplate.forEach((output, index) => {
-        if(outputTxCheck({blueprint, swapTx, output, index})) {
-        const newUtxo = {
-            txId: txId,
-            outputIndex: index,
-            satoshis: output.value,
-            scriptPk: blueprint.scriptPk, 
-            address: output.address,
-            inscriptions: [],  
-            confirmations: 0  
+    const updatedUtxos = originalUtxos.filter(utxo => 
+      !spentInputs.some(input => input.txId === utxo.txId && input.outputIndex === utxo.outputIndex)
+    );
+  
+    // Add new UTXOs
+    txInfo.vout.forEach((output, index) => {
+      if (output.scriptpubkey_address === spendAddress && output.value > UTXO_DUST) {
+        const newUtxo: FormattedUtxo = {
+          txId: txId,
+          outputIndex: index,
+          satoshis: output.value,
+          scriptPk: output.scriptpubkey,
+          address: output.scriptpubkey_address,
+          inscriptions: [],
+          confirmations: txInfo.status.confirmed ? 1 : 0
         };
-        originalUtxos.push(newUtxo);
-    }
+        updatedUtxos.push(newUtxo);
+      }
     });
-
-    return originalUtxos;
-}
+  
+    return updatedUtxos;
+  }
 
 function outputTxCheck({
     blueprint, 
