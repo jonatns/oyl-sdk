@@ -20,32 +20,6 @@ export type Utxo = {
     inscriptions: any[];
     confirmations: number;
 };
-export declare const belscoin: {
-    networks: {
-        bellcoin: {
-            messagePrefix: string;
-            bech32: string;
-            bip32: {
-                public: number;
-                private: number;
-            };
-            pubKeyHash: number;
-            scriptHash: number;
-            wif: number;
-        };
-        testnet: {
-            messagePrefix: string;
-            bech32: string;
-            bip32: {
-                public: number;
-                private: number;
-            };
-            pubKeyHash: number;
-            scriptHash: number;
-            wif: number;
-        };
-    };
-};
 export type Network = 'mainnet' | 'testnet' | 'regtest' | 'signet';
 export type WitnessScriptOptions = {
     pubKeyHex: string;

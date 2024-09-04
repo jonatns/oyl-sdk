@@ -11,7 +11,6 @@ import * as collectible from '../collectible'
 import * as rune from '../rune'
 
 import {
-  belscoin,
   generateMnemonic,
   getWalletPrivateKeys,
   mnemonicToAccount,
@@ -41,14 +40,6 @@ const defaultProvider = {
     apiUrl: 'https://staging-api.oyl.gg',
     //opiUrl: 'https://mainnet-opi.sandshrew.io/v1'
   }),
-
-  belcoin: new Provider({
-    url: 'https://bells.sandshrew.io',
-    projectId: process.env.SANDSHREW_PROJECT_ID!,
-    network: belscoin.networks.bellcoin,
-    networkType: 'mainnet',
-    apiUrl: 'https://staging-api.oyl.gg',
-  }),
 }
 
 const program = new Command()
@@ -68,17 +59,13 @@ const generateCommand = new Command('generate')
     '-i, --index <index>',
     'index you want to derive your account keys from'
   )
-  .requiredOption(
-    '-p, --provider <provider>',
-    'provider to use when querying the network'
-  )
+  .option('-n, --network <network>', 'the network you want to derive keys on')
   .action((options) => {
-    const provider: Provider = defaultProvider[options.provider]
     const account = mnemonicToAccount({
       mnemonic: options.mnemonic,
       opts: {
         index: options.index,
-        network: provider.network,
+        network: bitcoin.networks[options.network],
       },
     })
     console.log(account)

@@ -3,7 +3,6 @@ import ecc from '@bitcoinerlab/secp256k1'
 import { BIP32Factory } from 'bip32'
 const bip32 = BIP32Factory(ecc)
 import * as bip39 from 'bip39'
-import * as belcoin from 'belcoinjs-lib'
 bitcoin.initEccLib(ecc)
 import * as dotenv from 'dotenv'
 dotenv.config()
@@ -139,8 +138,7 @@ export const generateWallet = ({
   // Native Segwit
   const childSegwit = root.derivePath(pathSegwit)
   const pubkeySegwit = childSegwit.publicKey
-
-  const addressSegwit = belcoin.payments.p2wpkh({
+  const addressSegwit = bitcoin.payments.p2wpkh({
     pubkey: pubkeySegwit,
     network: opts.network,
   })
