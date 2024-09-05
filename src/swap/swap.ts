@@ -1,8 +1,12 @@
 import { unisatSwap } from './unisat/unisat'
 import { okxSwap } from './okx/okx'
-import { Marketplaces, ProcessOfferOptions, SwapResponse, marketplaceName } from './types'
+import {
+  Marketplaces,
+  ProcessOfferOptions,
+  SwapResponse,
+  marketplaceName,
+} from './types'
 import { ordinalWalletSwap } from './ordinals-wallet/ordinals-wallet'
-import { waitForTransaction } from '../shared/utils'
 
 
 export async function processOffer (options: ProcessOfferOptions): Promise<SwapResponse>{
@@ -21,3 +25,4 @@ export async function processOffer (options: ProcessOfferOptions): Promise<SwapR
 
     return swapResponse
 }
+
