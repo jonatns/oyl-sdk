@@ -13,6 +13,7 @@ export interface UnsignedOrdinalsWalletBid {
 }
 export interface signedOrdinalsWalletBid {
     psbt: string;
+    setupPsbt?: string;
     provider: Provider;
     assetType: AssetType;
 }

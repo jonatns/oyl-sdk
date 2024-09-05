@@ -115,6 +115,10 @@ const generateMnemonicCommand = new Command('generateMnemonic')
     '-f, --finalize <finalize>',
     'flag to finalize and push psbt'
   )
+  .requiredOption(
+    '-e, --extract <finalize>',
+    'flag to extract transaction'
+  )
   
   .option('-legacy, --legacy <legacy>', 'legacy private key')
   .option('-taproot, --taproot <taproot>', 'taproot private key')
@@ -133,6 +137,7 @@ const generateMnemonicCommand = new Command('generateMnemonic')
   -native '4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3'
   -p regtest 
   -f yes
+  -e yes
 */
 
   .action(async (options) => {
@@ -145,14 +150,20 @@ const generateMnemonicCommand = new Command('generateMnemonic')
     })
 
     let finalize = (options.finalize == 'yes') ? true : false
-
+    let extract = (options.extract == 'yes') ? true : false
     const {signedHexPsbt} =  await signer.signAllInputs({
       rawPsbtHex: process.env.PSBT_HEX,
       finalize,
   })
 
-    console.log("signed hex psbt", signedHexPsbt)
-  
+  if (extract) {
+    const extractedTx = bitcoin.Psbt.fromHex(signedHexPsbt).extractTransaction()
+    console.log("extracted tx", extractedTx)
+    console.log('extracted tx hex', extractedTx.toHex())
+  }
+  console.log("signed hex psbt", signedHexPsbt)
+
+
 
   })
 

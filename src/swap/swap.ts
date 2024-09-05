@@ -2,7 +2,7 @@ import { unisatSwap } from './unisat/unisat'
 import { okxSwap } from './okx/okx'
 import { Marketplaces, ProcessOfferOptions, SwapResponse, marketplaceName } from './types'
 import { ordinalWalletSwap } from './ordinals-wallet/ordinals-wallet'
-import { waitForTransaction } from 'shared/utils'
+import { waitForTransaction } from '../shared/utils'
 
 
 export async function processOffer (options: ProcessOfferOptions): Promise<SwapResponse>{
@@ -20,7 +20,7 @@ export async function processOffer (options: ProcessOfferOptions): Promise<SwapR
     }
     await waitForTransaction({
         txId: swapResponse.purchaseTxId,
-        sandshrewBtcClient: this.sandshrew,
+        sandshrewBtcClient: options.provider.sandshrew,
       })
 
     return swapResponse

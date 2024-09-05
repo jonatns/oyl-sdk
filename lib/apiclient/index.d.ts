@@ -220,8 +220,9 @@ export declare class OylApiClient {
     /**
      * Submit a signed psbt to bid for offers on Ordinals Wallet marketplace.
      */
-    submitOrdinalsWalletBid({ psbt }: {
+    submitOrdinalsWalletBid({ psbt, setupPsbt }: {
         psbt: string;
+        setupPsbt: string;
     }): Promise<any>;
     /**
      * Get BTC price.
