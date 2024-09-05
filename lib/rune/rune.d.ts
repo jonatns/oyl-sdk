@@ -1,8 +1,9 @@
 import { Provider } from '../provider/provider';
 import { Account } from '../account/account';
-import { RuneUTXO } from '../shared/interface';
+import { GatheredUtxos, RuneUTXO } from '../shared/interface';
 import { Signer } from '../signer';
-export declare const createSendPsbt: ({ account, runeId, provider, inscriptionAddress, toAddress, amount, feeRate, fee, }: {
+export declare const createSendPsbt: ({ gatheredUtxos, account, runeId, provider, inscriptionAddress, toAddress, amount, feeRate, fee, }: {
+    gatheredUtxos: GatheredUtxos;
     account: Account;
     runeId: string;
     provider: Provider;
@@ -14,11 +15,11 @@ export declare const createSendPsbt: ({ account, runeId, provider, inscriptionAd
 }) => Promise<{
     psbt: string;
 }>;
-export declare const createMintPsbt: ({ account, runeId, provider, amount, feeRate, fee, }: {
+export declare const createMintPsbt: ({ gatheredUtxos, account, runeId, provider, feeRate, fee, }: {
+    gatheredUtxos: GatheredUtxos;
     account: Account;
     runeId: string;
     provider: Provider;
-    amount: number;
     feeRate?: number;
     fee?: number;
 }) => Promise<{
@@ -35,7 +36,8 @@ export declare const findRuneUtxos: ({ address, greatestToLeast, provider, runeI
     runeTotalSatoshis: number;
     divisibility: number;
 }>;
-export declare const actualSendFee: ({ account, runeId, provider, inscriptionAddress, toAddress, amount, feeRate, signer, }: {
+export declare const actualSendFee: ({ gatheredUtxos, account, runeId, provider, inscriptionAddress, toAddress, amount, feeRate, signer, }: {
+    gatheredUtxos: GatheredUtxos;
     account: Account;
     runeId: string;
     provider: Provider;
@@ -47,17 +49,18 @@ export declare const actualSendFee: ({ account, runeId, provider, inscriptionAdd
 }) => Promise<{
     fee: number;
 }>;
-export declare const actualMintFee: ({ account, runeId, provider, amount, feeRate, signer, }: {
+export declare const actualMintFee: ({ gatheredUtxos, account, runeId, provider, feeRate, signer, }: {
+    gatheredUtxos: GatheredUtxos;
     account: Account;
     runeId: string;
     provider: Provider;
-    amount: number;
     feeRate?: number;
     signer: Signer;
 }) => Promise<{
     fee: number;
 }>;
-export declare const send: ({ toAddress, amount, runeId, inscriptionAddress, feeRate, account, provider, signer, }: {
+export declare const send: ({ gatheredUtxos, toAddress, amount, runeId, inscriptionAddress, feeRate, account, provider, signer, }: {
+    gatheredUtxos: GatheredUtxos;
     toAddress: string;
     amount: number;
     runeId: string;
@@ -74,11 +77,11 @@ export declare const send: ({ toAddress, amount, runeId, inscriptionAddress, fee
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const mint: ({ account, runeId, provider, amount, feeRate, signer, }: {
+export declare const mint: ({ gatheredUtxos, account, runeId, provider, feeRate, signer, }: {
+    gatheredUtxos: GatheredUtxos;
     account: Account;
     runeId: string;
     provider: Provider;
-    amount: number;
     feeRate?: number;
     signer: Signer;
 }) => Promise<{

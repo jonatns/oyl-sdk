@@ -7,10 +7,10 @@ import { OylTransactionError } from '../errors'
 import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
 import { GatheredUtxos, OrdCollectibleData } from '../shared/interface'
+import { accountSpendableUtxos } from '@utxo/utxo'
 
 export const createPsbt = async ({
   gatheredUtxos,
-  ordUtos,
   account,
   inscriptionId,
   provider,
@@ -20,7 +20,6 @@ export const createPsbt = async ({
   fee,
 }: {
   gatheredUtxos: GatheredUtxos
-  ordUtxos: GatheredUtxos
   account: Account
   inscriptionId: string
   provider: Provider
@@ -92,6 +91,13 @@ export const createPsbt = async ({
       value: data.value,
     })
 
+    if (!gatheredUtxos) {
+      gatheredUtxos = await accountSpendableUtxos({
+        account,
+        provider,
+        spendAmount: finalFee,
+      })
+    }
     gatheredUtxos = findXAmountOfSats(gatheredUtxos.utxos, finalFee)
 
     if (!fee && gatheredUtxos.utxos.length > 1) {
@@ -201,9 +207,22 @@ export const findCollectible = async ({
   )
   const inscriptionUtxoData =
     inscriptionUtxoDetails.vout[inscriptionTxVOutIndex]
-
-  const isSpentArray = await provider.esplora.getTxOutspends(inscriptionTxId)
+  const outputId = `${inscriptionTxId}:${inscriptionTxVOutIndex}`
+  const [inscriptionsOnOutput, isSpentArray, hasRune] = await Promise.all([
+    provider.ord.getTxOutput(outputId),
+    provider.esplora.getTxOutspends(inscriptionTxId),
+    provider.api.getOutputRune({ output: outputId }),
+  ])
   const isSpent = isSpentArray[inscriptionTxVOutIndex]
+  if (
+    inscriptionsOnOutput.inscriptions.length > 1 ||
+    inscriptionsOnOutput.runes.length > 0 ||
+    hasRune?.output
+  ) {
+    throw new Error(
+      'Unable to send from UTXO with multiple inscriptions. Split UTXO before sending.'
+    )
+  }
 
   if (isSpent.spent) {
     throw new Error('Inscription is missing')
@@ -224,6 +243,7 @@ export const send = async ({
   account,
   provider,
   signer,
+  fee,
 }: {
   gatheredUtxos: GatheredUtxos
   toAddress: string
@@ -233,20 +253,25 @@ export const send = async ({
   account: Account
   provider: Provider
   signer: Signer
+  fee?: number
 }) => {
   if (!inscriptionAddress) {
     inscriptionAddress = account.taproot.address
   }
-  const { fee } = await actualFee({
-    gatheredUtxos,
-    account,
-    inscriptionId,
-    provider,
-    inscriptionAddress,
-    toAddress,
-    feeRate,
-    signer,
-  })
+  if (!fee) {
+    fee = (
+      await actualFee({
+        gatheredUtxos,
+        account,
+        inscriptionId,
+        provider,
+        inscriptionAddress,
+        toAddress,
+        feeRate,
+        signer,
+      })
+    ).fee
+  }
 
   const { psbt: finalPsbt } = await createPsbt({
     gatheredUtxos,
@@ -256,7 +281,7 @@ export const send = async ({
     toAddress,
     inscriptionAddress: inscriptionAddress,
     feeRate,
-    fee: fee,
+    fee,
   })
 
   const { signedPsbt } = await signer.signAllInputs({

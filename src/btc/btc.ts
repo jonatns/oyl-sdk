@@ -10,6 +10,7 @@ import { Account } from '../account/account'
 import { Signer } from '../signer'
 import { getAddressType } from '../shared/utils'
 import { GatheredUtxos } from 'shared/interface'
+import { accountSpendableUtxos } from '@utxo/utxo'
 
 export const createPsbt = async ({
   gatheredUtxos,
@@ -40,6 +41,14 @@ export const createPsbt = async ({
     })
     let calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
     let finalFee: number = fee ? fee : calculatedFee
+
+    if (!gatheredUtxos) {
+      gatheredUtxos = await accountSpendableUtxos({
+        account,
+        provider,
+        spendAmount: finalFee + amount,
+      })
+    }
 
     gatheredUtxos = findXAmountOfSats(gatheredUtxos.utxos, finalFee + amount)
 
@@ -116,10 +125,12 @@ export const createPsbt = async ({
     const changeAmount: number =
       gatheredUtxos.totalAmount - (finalFee + Number(amount))
 
-    psbt.addOutput({
-      address: account[account.spendStrategy.changeAddress].address,
-      value: changeAmount,
-    })
+    if (changeAmount > 295) {
+      psbt.addOutput({
+        address: account[account.spendStrategy.changeAddress].address,
+        value: changeAmount,
+      })
+    }
 
     const updatedPsbt = await formatInputsToSign({
       _psbt: psbt,
@@ -141,6 +152,7 @@ export const send = async ({
   account,
   provider,
   signer,
+  fee,
 }: {
   gatheredUtxos: GatheredUtxos
   toAddress: string
@@ -149,16 +161,21 @@ export const send = async ({
   account: Account
   provider: Provider
   signer: Signer
+  fee?: number
 }) => {
-  const { fee } = await actualFee({
-    gatheredUtxos,
-    toAddress,
-    amount,
-    feeRate,
-    account,
-    provider,
-    signer,
-  })
+  if (!fee) {
+    fee = (
+      await actualFee({
+        gatheredUtxos,
+        toAddress,
+        amount,
+        feeRate,
+        account,
+        provider,
+        signer,
+      })
+    ).fee
+  }
 
   const { psbt: finalPsbt } = await createPsbt({
     gatheredUtxos,

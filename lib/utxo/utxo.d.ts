@@ -12,6 +12,15 @@ export interface EsploraUtxo {
     };
     value: number;
 }
+export interface AddressPortfolio {
+    spendableTotalBalance: number;
+    spendableUtxos: FormattedUtxo[];
+    runeUtxos: FormattedUtxo[];
+    ordUtxos: FormattedUtxo[];
+    pendingUtxos: FormattedUtxo[];
+    pendingTotalBalance: number;
+    totalBalance: number;
+}
 export declare const availableBalance: ({ account, provider, }: {
     account: Account;
     provider: Provider;
@@ -23,19 +32,30 @@ export declare const addressUtxos: ({ address, provider, spendStrategy, }: {
     address: string;
     provider: Provider;
     spendStrategy?: SpendStrategy;
-}) => Promise<{
-    spendableTotalAmount: number;
-    spendableUtxos: FormattedUtxo[];
-    runeUtxos: FormattedUtxo[];
-    ordUtxos: FormattedUtxo[];
-    pendingUtxos: FormattedUtxo[];
-    pendingTotalAmount: number;
-}>;
+}) => Promise<AddressPortfolio>;
 export declare const accountUtxos: ({ account, provider, }: {
     account: Account;
     provider: Provider;
 }) => Promise<{
-    spendableTotalAmount: number;
-    pendingTotalAmount: number;
+    accountTotalBalance: number;
+    accountSpendableTotalBalance: number;
+    accountPendingTotalBalance: number;
     accounts: any[];
+}>;
+export declare const addressSpendableUtxos: ({ address, provider, spendAmount, spendStrategy, }: {
+    address: string;
+    provider: Provider;
+    spendAmount?: number;
+    spendStrategy?: SpendStrategy;
+}) => Promise<{
+    totalAmount: number;
+    utxos: FormattedUtxo[];
+}>;
+export declare const accountSpendableUtxos: ({ account, provider, spendAmount, }: {
+    account: Account;
+    provider: Provider;
+    spendAmount?: number;
+}) => Promise<{
+    totalAmount: number;
+    utxos: FormattedUtxo[];
 }>;

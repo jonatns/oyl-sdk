@@ -23,7 +23,7 @@ export declare const findCollectible: ({ address, provider, inscriptionId, }: {
     voutIndex: string;
     data: any;
 }>;
-export declare const send: ({ gatheredUtxos, toAddress, inscriptionId, inscriptionAddress, feeRate, account, provider, signer, }: {
+export declare const send: ({ gatheredUtxos, toAddress, inscriptionId, inscriptionAddress, feeRate, account, provider, signer, fee, }: {
     gatheredUtxos: GatheredUtxos;
     toAddress: string;
     inscriptionId: string;
@@ -32,6 +32,7 @@ export declare const send: ({ gatheredUtxos, toAddress, inscriptionId, inscripti
     account: Account;
     provider: Provider;
     signer: Signer;
+    fee?: number;
 }) => Promise<{
     txId: string;
     rawTx: string;

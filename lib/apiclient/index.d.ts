@@ -208,6 +208,30 @@ export declare class OylApiClient {
         psbt: string;
     }): Promise<any>;
     /**
+     * Get Ordinals-Wallet offer psbt for Collectibles & BRC20s.
+     */
+    getOrdinalsWalletNftOfferPsbt({ publicKey, feeRate, address, inscriptions }: {
+        publicKey: string;
+        feeRate: number;
+        address: string;
+        inscriptions: string[];
+    }): Promise<any>;
+    /**
+    * Get Ordinals-Wallet offer psbt for Collectibles & BRC20s.
+    */
+    getOrdinalsWalletRuneOfferPsbt({ publicKey, feeRate, address, outpoints }: {
+        publicKey: string;
+        feeRate: number;
+        address: string;
+        outpoints: string[];
+    }): Promise<any>;
+    /**
+     * Submit a signed psbt to bid for offers on Ordinals Wallet marketplace.
+     */
+    submitOrdinalsWalletBid({ psbt }: {
+        psbt: string;
+    }): Promise<any>;
+    /**
      * Get BTC price.
      */
     getBtcPrice(): Promise<any>;

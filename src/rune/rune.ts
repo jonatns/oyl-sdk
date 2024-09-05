@@ -1,7 +1,7 @@
 import { minimumFee } from '../btc/btc'
 import { Provider } from '../provider/provider'
 import * as bitcoin from 'bitcoinjs-lib'
-import { accountUtxos } from '../utxo/utxo'
+import { accountSpendableUtxos, accountUtxos } from '../utxo/utxo'
 import { Account } from '../account/account'
 import {
   createRuneMintScript,
@@ -10,11 +10,12 @@ import {
   inscriptionSats,
 } from '../shared/utils'
 import { OylTransactionError } from '../errors'
-import { RuneUTXO } from '../shared/interface'
+import { GatheredUtxos, RuneUTXO } from '../shared/interface'
 import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
 
 export const createSendPsbt = async ({
+  gatheredUtxos,
   account,
   runeId,
   provider,
@@ -24,6 +25,7 @@ export const createSendPsbt = async ({
   feeRate,
   fee,
 }: {
+  gatheredUtxos: GatheredUtxos
   account: Account
   runeId: string
   provider: Provider
@@ -42,10 +44,13 @@ export const createSendPsbt = async ({
     const calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
     let finalFee = fee ? fee : calculatedFee
 
-    let gatheredUtxos: any = await accountUtxos({
-      account,
-      provider,
-    })
+    if (!gatheredUtxos) {
+      gatheredUtxos = await accountSpendableUtxos({
+        account,
+        provider,
+        spendAmount: finalFee,
+      })
+    }
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
     const { runeUtxos, runeTotalSatoshis, divisibility } = await findRuneUtxos({
@@ -115,12 +120,13 @@ export const createSendPsbt = async ({
       })
       finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
-      if (gatheredUtxos.totalAmount < finalFee) {
-        gatheredUtxos = await accountUtxos({
-          account,
-          provider,
-        })
+      if (gatheredUtxos.totalAmount < finalFee + inscriptionSats) {
+        throw new OylTransactionError(Error('Insufficient Balance'))
       }
+    }
+
+    if (gatheredUtxos.totalAmount < finalFee + inscriptionSats) {
+      throw new OylTransactionError(Error('Insufficient Balance'))
     }
 
     for (let i = 0; i < gatheredUtxos.utxos.length; i++) {
@@ -171,10 +177,6 @@ export const createSendPsbt = async ({
       }
     }
 
-    if (gatheredUtxos.totalAmount < finalFee + inscriptionSats) {
-      throw new OylTransactionError(Error('Insufficient Balance'))
-    }
-
     const changeAmount =
       gatheredUtxos.totalAmount - (finalFee + inscriptionSats)
 
@@ -216,17 +218,17 @@ export const createSendPsbt = async ({
 }
 
 export const createMintPsbt = async ({
+  gatheredUtxos,
   account,
   runeId,
   provider,
-  amount,
   feeRate,
   fee,
 }: {
+  gatheredUtxos: GatheredUtxos
   account: Account
   runeId: string
   provider: Provider
-  amount: number
   feeRate?: number
   fee?: number
 }) => {
@@ -238,12 +240,13 @@ export const createMintPsbt = async ({
     })
     const calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
     let finalFee = fee ? fee : calculatedFee
-
-    let gatheredUtxos: any = await accountUtxos({
-      account,
-      provider,
-    })
-
+    if (!gatheredUtxos) {
+      gatheredUtxos = await accountSpendableUtxos({
+        account,
+        provider,
+        spendAmount: finalFee,
+      })
+    }
     let psbt = new bitcoin.Psbt({ network: provider.network })
 
     if (!fee && gatheredUtxos.utxos.length > 1) {
@@ -254,14 +257,14 @@ export const createMintPsbt = async ({
       })
       finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
-      if (gatheredUtxos.totalAmount < finalFee) {
-        gatheredUtxos = await accountUtxos({
-          account,
-          provider,
-        })
+      if (gatheredUtxos.totalAmount < finalFee + inscriptionSats) {
+        throw new OylTransactionError(Error('Insufficient Balance'))
       }
     }
 
+    if (gatheredUtxos.totalAmount < finalFee + inscriptionSats) {
+      throw new OylTransactionError(Error('Insufficient Balance'))
+    }
     for (let i = 0; i < gatheredUtxos.utxos.length; i++) {
       if (getAddressType(gatheredUtxos.utxos[i].address) === 0) {
         const previousTxHex: string = await provider.esplora.getTxHex(
@@ -381,8 +384,25 @@ export const findRuneUtxos = async ({
         const txHash = txSplit[0]
         const txIndex = txSplit[1]
         const txDetails = await provider.esplora.getTxInfo(txHash)
+
         if (!txDetails?.vout || txDetails.vout.length < 1) {
           throw new Error('Unable to find rune utxo')
+        }
+
+        const outputId = `${txHash}:${txIndex}`
+        const [inscriptionsOnOutput, hasRune] = await Promise.all([
+          provider.ord.getTxOutput(outputId),
+          provider.api.getOutputRune({ output: outputId }),
+        ])
+
+        if (
+          inscriptionsOnOutput.inscriptions.length > 0 ||
+          inscriptionsOnOutput.runes.length > 1 ||
+          hasRune?.rune_ids.length > 1
+        ) {
+          throw new Error(
+            'Unable to send from UTXO with multiple inscriptions. Split UTXO before sending.'
+          )
         }
         const satoshis = txDetails.vout[txIndex].value
         const holderAddress = rune.wallet_addr
@@ -411,6 +431,7 @@ export const findRuneUtxos = async ({
 }
 
 export const actualSendFee = async ({
+  gatheredUtxos,
   account,
   runeId,
   provider,
@@ -420,6 +441,7 @@ export const actualSendFee = async ({
   feeRate,
   signer,
 }: {
+  gatheredUtxos: GatheredUtxos
   account: Account
   runeId: string
   provider: Provider
@@ -434,6 +456,7 @@ export const actualSendFee = async ({
   }
 
   const { psbt } = await createSendPsbt({
+    gatheredUtxos,
     account,
     runeId,
     provider,
@@ -461,6 +484,7 @@ export const actualSendFee = async ({
   const correctFee = vsize * feeRate
 
   const { psbt: finalPsbt } = await createSendPsbt({
+    gatheredUtxos,
     account,
     runeId,
     provider,
@@ -492,17 +516,17 @@ export const actualSendFee = async ({
 }
 
 export const actualMintFee = async ({
+  gatheredUtxos,
   account,
   runeId,
   provider,
-  amount,
   feeRate,
   signer,
 }: {
+  gatheredUtxos: GatheredUtxos
   account: Account
   runeId: string
   provider: Provider
-  amount: number
   feeRate?: number
   signer: Signer
 }) => {
@@ -511,10 +535,10 @@ export const actualMintFee = async ({
   }
 
   const { psbt } = await createMintPsbt({
+    gatheredUtxos,
     account,
     runeId,
     provider,
-    amount,
     feeRate,
   })
 
@@ -536,10 +560,10 @@ export const actualMintFee = async ({
   const correctFee = vsize * feeRate
 
   const { psbt: finalPsbt } = await createMintPsbt({
+    gatheredUtxos,
     account,
     runeId,
     provider,
-    amount,
     feeRate,
     fee: correctFee,
   })
@@ -565,6 +589,7 @@ export const actualMintFee = async ({
 }
 
 export const send = async ({
+  gatheredUtxos,
   toAddress,
   amount,
   runeId,
@@ -574,6 +599,7 @@ export const send = async ({
   provider,
   signer,
 }: {
+  gatheredUtxos: GatheredUtxos
   toAddress: string
   amount: number
   runeId: string
@@ -587,6 +613,7 @@ export const send = async ({
     inscriptionAddress = account.taproot.address
   }
   const { fee } = await actualSendFee({
+    gatheredUtxos,
     account,
     runeId,
     amount,
@@ -598,6 +625,7 @@ export const send = async ({
   })
 
   const { psbt: finalPsbt } = await createSendPsbt({
+    gatheredUtxos,
     account,
     runeId,
     amount,
@@ -621,33 +649,33 @@ export const send = async ({
 }
 
 export const mint = async ({
+  gatheredUtxos,
   account,
   runeId,
   provider,
-  amount,
   feeRate,
   signer,
 }: {
+  gatheredUtxos: GatheredUtxos
   account: Account
   runeId: string
   provider: Provider
-  amount: number
   feeRate?: number
   signer: Signer
 }) => {
   const { fee } = await actualMintFee({
+    gatheredUtxos,
     account,
     runeId,
-    amount,
     provider,
     feeRate,
     signer,
   })
 
   const { psbt: finalPsbt } = await createMintPsbt({
+    gatheredUtxos,
     account,
     runeId,
-    amount,
     provider,
     feeRate,
     fee: fee,

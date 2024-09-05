@@ -14,7 +14,7 @@ export declare const createPsbt: ({ gatheredUtxos, toAddress, amount, feeRate, a
     psbt: string;
     fee: number;
 }>;
-export declare const send: ({ gatheredUtxos, toAddress, amount, feeRate, account, provider, signer, }: {
+export declare const send: ({ gatheredUtxos, toAddress, amount, feeRate, account, provider, signer, fee, }: {
     gatheredUtxos: GatheredUtxos;
     toAddress: string;
     amount: number;
@@ -22,6 +22,7 @@ export declare const send: ({ gatheredUtxos, toAddress, amount, feeRate, account
     account: Account;
     provider: Provider;
     signer: Signer;
+    fee?: number;
 }) => Promise<{
     txId: string;
     rawTx: string;

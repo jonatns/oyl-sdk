@@ -1,7 +1,6 @@
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider'
 import { Account, SpendStrategy } from '../account'
-import { UTXO_DUST } from '../shared/constants'
 import { FormattedUtxo } from 'shared/interface'
 
 export interface EsploraUtxo {
@@ -14,6 +13,16 @@ export interface EsploraUtxo {
     block_time: number
   }
   value: number
+}
+
+export interface AddressPortfolio {
+  spendableTotalBalance: number
+  spendableUtxos: FormattedUtxo[]
+  runeUtxos: FormattedUtxo[]
+  ordUtxos: FormattedUtxo[]
+  pendingUtxos: FormattedUtxo[]
+  pendingTotalBalance: number
+  totalBalance: number
 }
 
 export const availableBalance = async ({
@@ -29,16 +38,17 @@ export const availableBalance = async ({
   for (let i = 0; i < account.spendStrategy.addressOrder.length; i++) {
     const address = account[account.spendStrategy.addressOrder[i]].address
 
-    const { spendableTotalAmount, pendingTotalAmount } = await addressUtxos({
+    const { spendableTotalBalance, pendingTotalBalance } = await addressUtxos({
       address,
       provider,
       spendStrategy: account.spendStrategy,
     })
-    balance += spendableTotalAmount
-    pendingBalance += pendingTotalAmount
+    balance += spendableTotalBalance
+    pendingBalance += pendingTotalBalance
   }
   return { balance, pendingBalance }
 }
+
 export const addressUtxos = async ({
   address,
   provider,
@@ -47,9 +57,10 @@ export const addressUtxos = async ({
   address: string
   provider: Provider
   spendStrategy?: SpendStrategy
-}) => {
-  let spendableTotalAmount: number = 0
-  let pendingTotalAmount: number = 0
+}): Promise<AddressPortfolio> => {
+  let spendableTotalBalance: number = 0
+  let pendingTotalBalance: number = 0
+  let totalBalance: number = 0
   const spendableUtxos: FormattedUtxo[] = []
   const pendingUtxos: FormattedUtxo[] = []
   const ordUtxos: FormattedUtxo[] = []
@@ -64,22 +75,21 @@ export const addressUtxos = async ({
   let utxos = multiCall[0].result
   if (utxos.length === 0) {
     return {
-      spendableTotalAmount,
+      spendableTotalBalance,
       spendableUtxos,
       runeUtxos,
       ordUtxos,
       pendingUtxos,
-      pendingTotalAmount,
+      pendingTotalBalance,
+      totalBalance,
     }
   }
 
   const utxoSortGreatestToLeast = spendStrategy?.utxoSortGreatestToLeast ?? true
 
-  utxos = utxos
-    .filter((utxo) => utxo.value >= UTXO_DUST)
-    .sort((a, b) =>
-      utxoSortGreatestToLeast ? b.value - a.value : a.value - b.value
-    )
+  utxos = utxos.sort((a, b) =>
+    utxoSortGreatestToLeast ? b.value - a.value : a.value - b.value
+  )
 
   const utxoPromises = utxos.map(async (utxo) => {
     const outputId = `${utxo.txid}:${utxo.vout}`
@@ -100,7 +110,6 @@ export const addressUtxos = async ({
       hasInscription.inscriptions.length === 0 &&
       hasInscription.runes.length === 0 &&
       hasInscription.indexed &&
-      hasInscription.value !== 546 &&
       !hasRune?.output
     ) {
       const transactionDetails = await provider.esplora.getTxInfo(utxo.txid)
@@ -120,7 +129,8 @@ export const addressUtxos = async ({
         inscriptions: [],
       })
 
-      spendableTotalAmount += utxo.value
+      spendableTotalBalance += utxo.value
+      totalBalance += utxo.value
     }
 
     if (hasRune?.output || hasInscription.runes.length > 0) {
@@ -139,6 +149,7 @@ export const addressUtxos = async ({
         address: address,
         inscriptions: [],
       })
+      totalBalance += utxo.value
     }
 
     if (
@@ -161,6 +172,7 @@ export const addressUtxos = async ({
         address: address,
         inscriptions: hasInscription.inscriptions,
       })
+      totalBalance += utxo.value
     }
 
     if (!hasInscription.indexed && !utxo.status.confirmed) {
@@ -179,17 +191,18 @@ export const addressUtxos = async ({
         address: address,
         inscriptions: [],
       })
-      pendingTotalAmount += utxo.value
+      pendingTotalBalance += utxo.value
+      totalBalance += utxo.value
     }
   }
-
   return {
-    spendableTotalAmount,
+    spendableTotalBalance,
     spendableUtxos,
     runeUtxos,
     ordUtxos,
     pendingUtxos,
-    pendingTotalAmount,
+    pendingTotalBalance,
+    totalBalance,
   }
 }
 
@@ -200,39 +213,157 @@ export const accountUtxos = async ({
   account: Account
   provider: Provider
 }) => {
-  let spendableTotalAmount: number = 0
-  let pendingTotalAmount: number = 0
+  let accountSpendableTotalBalance: number = 0
+  let accountPendingTotalBalance: number = 0
+  let accountTotalBalance: number = 0
   const accounts = []
 
   for (let i = 0; i < account.spendStrategy.addressOrder.length; i++) {
     const address = account[account.spendStrategy.addressOrder[i]].address
     const addressType = account.spendStrategy.addressOrder[i]
     const {
-      spendableTotalAmount: spendTotal,
-      spendableUtxos: spendUtxos,
-      runeUtxos: rune,
-      ordUtxos: ord,
-      pendingUtxos: pending,
-      pendingTotalAmount: pendingTotal,
+      spendableTotalBalance,
+      spendableUtxos,
+      runeUtxos,
+      ordUtxos,
+      pendingUtxos,
+      pendingTotalBalance,
+      totalBalance,
     } = await addressUtxos({
       address,
       provider,
       spendStrategy: account.spendStrategy,
     })
 
-    spendableTotalAmount += spendTotal
-    pendingTotalAmount += pendingTotal
+    accountSpendableTotalBalance += spendableTotalBalance
+    accountPendingTotalBalance += pendingTotalBalance
+    accountTotalBalance += totalBalance
 
     accounts.push({
       [addressType]: {
-        spendTotal,
-        spendUtxos,
-        rune,
-        ord,
-        pending,
-        pendingTotal,
+        spendableTotalBalance,
+        spendableUtxos,
+        runeUtxos,
+        ordUtxos,
+        pendingUtxos,
+        pendingTotalBalance,
+        totalBalance,
       },
     })
   }
-  return { spendableTotalAmount, pendingTotalAmount, accounts }
+  return {
+    accountTotalBalance,
+    accountSpendableTotalBalance,
+    accountPendingTotalBalance,
+    accounts,
+  }
+}
+
+export const addressSpendableUtxos = async ({
+  address,
+  provider,
+  spendAmount,
+  spendStrategy,
+}: {
+  address: string
+  provider: Provider
+  spendAmount?: number
+  spendStrategy?: SpendStrategy
+}) => {
+  let totalAmount = 0
+  const formattedUtxos: FormattedUtxo[] = []
+
+  let utxos = await provider.esplora.getAddressUtxo(address)
+
+  if (utxos.length === 0) {
+    return { totalAmount, utxos: formattedUtxos }
+  }
+
+  const utxoSortGreatestToLeast = spendStrategy?.utxoSortGreatestToLeast ?? true
+
+  utxos = utxos.sort((a, b) =>
+    utxoSortGreatestToLeast ? b.value - a.value : a.value - b.value
+  )
+
+  const utxoPromises = utxos.map(async (utxo) => {
+    const outputId = `${utxo.txid}:${utxo.vout}`
+
+    const [hasInscription, hasRune] = await Promise.all([
+      provider.ord.getTxOutput(outputId),
+      provider.network !== bitcoin.networks.regtest
+        ? provider.api.getOutputRune({ output: outputId })
+        : Promise.resolve(false),
+    ])
+
+    return { utxo, hasInscription, hasRune }
+  })
+
+  const results = await Promise.all(utxoPromises)
+
+  for (const { utxo, hasInscription, hasRune } of results) {
+    if (
+      (spendAmount && totalAmount >= spendAmount) ||
+      hasInscription.inscriptions.length > 0 ||
+      hasInscription.runes.length > 0 ||
+      !hasInscription.indexed ||
+      hasRune?.output
+    ) {
+      continue
+    }
+
+    const transactionDetails = await provider.esplora.getTxInfo(utxo.txid)
+    const voutEntry = transactionDetails.vout.find(
+      (v) => v.scriptpubkey_address === address
+    )
+
+    formattedUtxos.push({
+      txId: utxo.txid,
+      outputIndex: utxo.vout,
+      satoshis: utxo.value,
+      confirmations: utxo.status.confirmed ? 3 : 0,
+      scriptPk: voutEntry.scriptpubkey,
+      address: address,
+      inscriptions: [],
+    })
+
+    totalAmount += utxo.value
+
+    if (spendAmount && totalAmount >= spendAmount) {
+      break
+    }
+  }
+
+  return { totalAmount, utxos: formattedUtxos }
+}
+
+export const accountSpendableUtxos = async ({
+  account,
+  provider,
+  spendAmount,
+}: {
+  account: Account
+  provider: Provider
+  spendAmount?: number
+}) => {
+  let totalAmount: number = 0
+  let allUtxos: FormattedUtxo[] = []
+  let remainingSpendAmount = spendAmount
+  for (let i = 0; i < account.spendStrategy.addressOrder.length; i++) {
+    const address = account[account.spendStrategy.addressOrder[i]].address
+
+    const { totalAmount: addressTotal, utxos: formattedUtxos } =
+      await addressSpendableUtxos({
+        address,
+        provider,
+        spendAmount: remainingSpendAmount,
+        spendStrategy: account.spendStrategy,
+      })
+    totalAmount += addressTotal
+    allUtxos = [...allUtxos, ...formattedUtxos]
+    if (spendAmount && totalAmount >= spendAmount) {
+      return { totalAmount, utxos: allUtxos }
+    }
+    remainingSpendAmount -= addressTotal
+  }
+  return { totalAmount, utxos: allUtxos }
 }

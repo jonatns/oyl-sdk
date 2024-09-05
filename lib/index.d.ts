@@ -4,6 +4,7 @@ export * from './shared/constants';
 export * from './errors';
 export * from './account';
 export * from './trade';
+export * from './swap';
 export * from './signer';
 export * from './provider';
 export * as rune from './rune';

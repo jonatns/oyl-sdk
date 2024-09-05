@@ -98,6 +98,56 @@ const generateMnemonicCommand = new Command('generateMnemonic')
     console.log(mnemonic)
   })
 
+const signPsbt = new Command('sign')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when signing the network psbt'
+  )
+  .requiredOption(
+    '-m, --mnemonic <mnemonic>',
+    'mnemonic you want to get private keys from'
+  )
+
+  .requiredOption('-f, --finalize <finalize>', 'flag to finalize and push psbt')
+
+  .option('-legacy, --legacy <legacy>', 'legacy private key')
+  .option('-taproot, --taproot <taproot>', 'taproot private key')
+  .option(
+    '-nested, --nested-segwit <nestedSegwit>',
+    'nested segwit private key'
+  )
+  .option(
+    '-native, --native-segwit <nativeSegwit>',
+    'native segwit private key'
+  )
+
+  /* @dev example call 
+  oyl account sign 
+  -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' 
+  -native '4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3'
+  -p regtest 
+  -f yes
+*/
+
+  .action(async (options) => {
+    const provider: Provider = defaultProvider[options.provider]
+    const signer = new Signer(provider.network, {
+      segwitPrivateKey: options.nativeSegwit,
+      taprootPrivateKey: options.taproot,
+      nestedSegwitPrivateKey: options.nestedSegwit,
+      legacyPrivateKey: options.legacy,
+    })
+
+    let finalize = options.finalize == 'yes' ? true : false
+
+    const { signedHexPsbt } = await signer.signAllInputs({
+      rawPsbtHex: process.env.PSBT_HEX,
+      finalize,
+    })
+
+    console.log('signed hex psbt', signedHexPsbt)
+  })
+
 const accountUtxosToSpend = new Command('accountUtxos')
   .description('Returns available utxos to spend')
   .requiredOption(
@@ -450,8 +500,13 @@ const runeSend = new Command('send')
         network: provider.network,
       },
     })
+    const gatheredUtxos = await utxo.accountSpendableUtxos({
+      account,
+      provider,
+    })
     console.log(
       await rune.send({
+        gatheredUtxos,
         runeId: options.runeId,
         amount: options.amount,
         inscriptionAddress: options.inscriptionAddress,
@@ -474,7 +529,6 @@ const runeMint = new Command('mint')
     'mnemonic you want to get private keys from'
   )
   .requiredOption('-runeId, --runeId <runeId>', 'runeId to send')
-  .requiredOption('-amt, --amount <amount>', 'amount of runes you want to send')
   .option('-legacy, --legacy <legacy>', 'legacy private key')
   .option('-taproot, --taproot <taproot>', 'taproot private key')
   .option(
@@ -493,7 +547,6 @@ const runeMint = new Command('mint')
   -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3
   -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361
   -p regtest 
-  -amt 1000
   -runeId 279:1
   -feeRate 2
 */
@@ -512,10 +565,14 @@ const runeMint = new Command('mint')
         network: provider.network,
       },
     })
+    const gatheredUtxos = await utxo.accountSpendableUtxos({
+      account,
+      provider,
+    })
     console.log(
       await rune.mint({
+        gatheredUtxos,
         runeId: options.runeId,
-        amount: options.amount,
         feeRate: options.feeRate,
         account,
         signer,
@@ -761,6 +818,7 @@ const marketPlaceBuy = new Command('buy')
 const accountCommand = new Command('account')
   .description('Manage accounts')
   .addCommand(generateCommand)
+  .addCommand(signPsbt)
   .addCommand(privateKeysCommand)
   .addCommand(generateMnemonicCommand)
 
