@@ -13,6 +13,7 @@ export async function processOffer (options: ProcessOfferOptions): Promise<SwapR
             break;
         case Marketplaces.ORDINALS_WALLET:
             swapResponse = await ordinalWalletSwap(options);
+            break
         case Marketplaces.OKX:
             swapResponse = await okxSwap(options);
             break;
