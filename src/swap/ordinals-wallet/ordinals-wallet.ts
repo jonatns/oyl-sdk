@@ -13,6 +13,7 @@ export interface UnsignedOrdinalsWalletBid {
     address: string
     publicKey: string
     feeRate: number
+    receiveAddress: string
     provider: Provider
     assetType: AssetType
     inscriptions?: string[]
@@ -33,17 +34,18 @@ export async function getSellerPsbt(unsignedBid: UnsignedOrdinalsWalletBid) {
         feeRate, 
         provider, 
         inscriptions, 
-        outpoints
+        outpoints,
+        receiveAddress
     } = unsignedBid;
     switch (assetType) {
         case AssetType.BRC20:
-            return await provider.api.getOrdinalsWalletNftOfferPsbt({address, publicKey,feeRate, inscriptions})
+            return await provider.api.getOrdinalsWalletNftOfferPsbt({address, publicKey,feeRate, inscriptions, receiveAddress})
 
         case AssetType.RUNES:
-            return await provider.api.getOrdinalsWalletRuneOfferPsbt({address, publicKey,feeRate, outpoints})
+            return await provider.api.getOrdinalsWalletRuneOfferPsbt({address, publicKey,feeRate, outpoints, receiveAddress})
 
         case AssetType.COLLECTIBLE:
-            return await provider.api.getOrdinalsWalletNftOfferPsbt({address, publicKey,feeRate, inscriptions})
+            return await provider.api.getOrdinalsWalletNftOfferPsbt({address, publicKey,feeRate, inscriptions, receiveAddress})
     }
 }
 
@@ -84,7 +86,6 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
     let purchaseTxId: string | null = null;
     
     const addressType = getAddressType(address);
-    if(addressType != AddressType.P2TR) throw new Error ('Can only purchase with taproot on ordinalswallet')
     const network = provider.network
 
     const psbtForDummyUtxos = await prepareAddressForDummyUtxos({address, utxos, network, pubKey, feeRate, addressType})
@@ -111,6 +112,7 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
         publicKey: pubKey, 
         feeRate, 
         provider, 
+        receiveAddress,
         assetType
     }
     if (assetType === AssetType.RUNES){
