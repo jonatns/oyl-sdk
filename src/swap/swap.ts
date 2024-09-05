@@ -18,10 +18,6 @@ export async function processOffer (options: ProcessOfferOptions): Promise<SwapR
             swapResponse = await okxSwap(options);
             break;
     }
-    await waitForTransaction({
-        txId: swapResponse.purchaseTxId,
-        sandshrewBtcClient: options.provider.sandshrew,
-      })
 
     return swapResponse
 }
