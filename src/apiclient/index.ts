@@ -442,18 +442,21 @@ export class OylApiClient {
       publicKey, 
       feeRate,
       address,
+      receiveAddress,
       inscriptions 
     }: 
     { 
       publicKey: string, 
       feeRate: number ,
       address: string, 
+      receiveAddress: string,
       inscriptions: string[],
     }): Promise<any> {
     const response = await this._call('/get-ow-nft-offer-psbt', 'post', {
       publicKey, 
       feeRate,
       address,
+      receiveAddress,
       inscriptions 
     })
     return response
@@ -466,19 +469,22 @@ export class OylApiClient {
       publicKey, 
       feeRate,
       address,
-      outpoints 
+      outpoints,
+      receiveAddress
     }: 
     { 
       publicKey: string, 
       feeRate: number ,
       address: string, 
       outpoints: string[],
+      receiveAddress: string,
     }): Promise<any> {
     const response = await this._call('/get-ow-rune-offer-psbt', 'post', {
       publicKey, 
       feeRate,
       address,
-      outpoints 
+      outpoints,
+      receiveAddress
     })
     return response
   }
