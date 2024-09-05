@@ -86,7 +86,6 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
     let purchaseTxId: string | null = null;
 
     let setupTx: string | null = null;
-    
 
     const unsignedBid: UnsignedOrdinalsWalletBid = {
         address, 
