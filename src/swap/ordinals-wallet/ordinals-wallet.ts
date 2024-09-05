@@ -1,10 +1,8 @@
-import { MarketplaceOffer, ProcessOfferOptions, SwapResponse } from "../types"
+import { ProcessOfferOptions, SwapResponse } from "../types"
 import { Provider } from "../../provider"
-import { AddressType, AssetType } from "../../shared/interface"
+import { AssetType } from "../../shared/interface"
 import { getAddressType, timeout } from "../.."
-import { FormattedUtxo } from  '../../utxo/utxo';
-import { Signer } from "../../signer"
-import { prepareAddressForDummyUtxos, updateUtxos } from "../helpers";
+import * as bitcoin from 'bitcoinjs-lib'
 
 
 
@@ -22,6 +20,7 @@ export interface UnsignedOrdinalsWalletBid {
 
   export interface signedOrdinalsWalletBid {
     psbt: string
+    setupPsbt?: string
     provider: Provider
     assetType: AssetType
   }
@@ -54,17 +53,18 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
     const {
         assetType, 
         psbt, 
-        provider
+        provider,
+        setupPsbt
     } = signedBid;
     switch (assetType) {
       case AssetType.BRC20:
-        return await provider.api.submitOrdinalsWalletBid({psbt})
+        return await provider.api.submitOrdinalsWalletBid({psbt, setupPsbt})
 
       case AssetType.RUNES:
-        return await provider.api.submitOrdinalsWalletBid({psbt})
+        return await provider.api.submitOrdinalsWalletBid({psbt, setupPsbt})
 
       case AssetType.COLLECTIBLE:
-        return await provider.api.submitOrdinalsWalletBid({psbt})
+        return await provider.api.submitOrdinalsWalletBid({psbt, setupPsbt})
 
     }
   }
@@ -84,29 +84,9 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
 ) : Promise<SwapResponse> {
     let dummyTxId: string | null = null;
     let purchaseTxId: string | null = null;
-    
-    const addressType = getAddressType(address);
-    const network = provider.network
 
-    const psbtForDummyUtxos = await prepareAddressForDummyUtxos({address, utxos, network, pubKey, feeRate, addressType})
+    let setupTx: string | null = null;
 
-    if (psbtForDummyUtxos != null){
-        const { psbtBase64, inputTemplate, outputTemplate} = psbtForDummyUtxos
-        const {signedPsbt} = await signer.signAllInputs({
-            rawPsbt: psbtBase64,
-            finalize: true,
-        })
-
-        const {txId} = await provider.pushPsbt({psbtBase64: signedPsbt})
-        dummyTxId = txId
-        await timeout(5000)
-        utxos = await updateUtxos({
-            originalUtxos: utxos,
-            txId, 
-            spendAddress: address,
-            provider
-        })        
-    }
     const unsignedBid: UnsignedOrdinalsWalletBid = {
         address, 
         publicKey: pubKey, 
@@ -122,6 +102,16 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
     }
     
     const sellerData = await getSellerPsbt(unsignedBid);
+    if (sellerData.data.setup) {
+            const dummyPsbt = sellerData.data.setup
+            const signedDummyPsbt = await signer.signAllInputs({
+                rawPsbtHex: dummyPsbt,
+                finalize: true,
+            })
+
+            const extractedDummyTx = bitcoin.Psbt.fromHex(signedDummyPsbt.signedHexPsbt).extractTransaction()
+            setupTx = extractedDummyTx.toHex()
+    }
     const sellerPsbt = sellerData.data.purchase;
     
     const signedPsbt = await signer.signAllInputs({
@@ -131,10 +121,14 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
 
     const data = await submitPsbt({
         psbt: signedPsbt.signedHexPsbt,
+        setupPsbt: setupTx,
         assetType,
         provider
     })
-    if (data.success) purchaseTxId = data.purchase
+    if (data.success) {
+        purchaseTxId = data.purchase
+        if (setupTx) await timeout(5000)
+    }
     return {
         dummyTxId,
         purchaseTxId

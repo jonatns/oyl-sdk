@@ -492,8 +492,8 @@ export class OylApiClient {
   /**
    * Submit a signed psbt to bid for offers on Ordinals Wallet marketplace.
    */
-  async submitOrdinalsWalletBid({ psbt }: {  psbt: string }): Promise<any> {
-    const response = await this._call('/finalize-ow-bid', 'post', { psbt })
+  async submitOrdinalsWalletBid({ psbt, setupPsbt }: {  psbt: string, setupPsbt: string }): Promise<any> {
+    const response = await this._call('/finalize-ow-bid', 'post', { psbt, setupPsbt })
     return response
   }
 
