@@ -14,11 +14,10 @@ import {
 import BigNumber from 'bignumber.js'
 import { maximumScriptBytes } from './constants'
 import axios from 'axios'
-import { isTaprootInput, toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
+import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew'
 import { EsploraRpc } from '../rpclient/esplora'
 import { Provider } from '../provider/provider'
-import { OylTransactionError } from '../errors'
 import { addressFormats } from '@sadoprotocol/ordit-sdk'
 
 bitcoin.initEccLib(ecc)
@@ -85,8 +84,6 @@ export function getNetwork(
 
   return bitcoin.networks[value]
 }
-
-
 
 export async function getFee({
   provider,
@@ -670,8 +667,6 @@ export async function getRawTxnHashFromTxnId(txnId: string) {
 
   return res.data
 }
-
-
 
 export const filterTaprootUtxos = async ({
   taprootUtxos,
