@@ -195,10 +195,14 @@ export class Signer {
         )
       }
       if (this.nestedSegwitKeyPair) {
-        matchingNestedSegwit = unSignedPsbt.inputHasPubkey(
-          i,
-          this.nestedSegwitKeyPair.publicKey
-        )
+        try {
+          matchingNestedSegwit = unSignedPsbt.inputHasPubkey(
+            i,
+            this.nestedSegwitKeyPair.publicKey
+          )
+        } catch (e) {
+          console.log(e)
+        }
       }
 
       switch (true) {
