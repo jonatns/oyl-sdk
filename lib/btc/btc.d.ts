@@ -3,7 +3,7 @@ import { Account } from '../account/account';
 import { Signer } from '../signer';
 import { GatheredUtxos } from 'shared/interface';
 export declare const createPsbt: ({ gatheredUtxos, toAddress, amount, feeRate, account, provider, fee, }: {
-    gatheredUtxos: GatheredUtxos;
+    gatheredUtxos?: GatheredUtxos;
     toAddress: string;
     feeRate: number;
     amount: number;

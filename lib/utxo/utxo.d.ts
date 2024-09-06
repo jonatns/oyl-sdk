@@ -38,6 +38,7 @@ export declare const accountUtxos: ({ account, provider, }: {
     provider: Provider;
 }) => Promise<{
     accountTotalBalance: number;
+    accountSpendableTotalUtxos: FormattedUtxo[];
     accountSpendableTotalBalance: number;
     accountPendingTotalBalance: number;
     accounts: any[];
