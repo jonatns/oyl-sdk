@@ -206,6 +206,7 @@ export async function canAddressAffordBid({ address, estimatedCost, offers, prov
         excludedUtxos,
         insistConfirmedUtxos
     })
+    retrievedUtxos.push(...excludedUtxos)
     return{ 
         offers_: offers,
         estimatedCost,
