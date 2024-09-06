@@ -10,7 +10,7 @@ import { Account } from '../account/account'
 import { Signer } from '../signer'
 import { getAddressType } from '../shared/utils'
 import { GatheredUtxos } from 'shared/interface'
-import { accountSpendableUtxos } from '@utxo/utxo'
+import { accountSpendableUtxos } from '../utxo'
 
 export const createPsbt = async ({
   gatheredUtxos,
@@ -21,7 +21,7 @@ export const createPsbt = async ({
   provider,
   fee,
 }: {
-  gatheredUtxos: GatheredUtxos
+  gatheredUtxos?: GatheredUtxos
   toAddress: string
   feeRate: number
   amount: number

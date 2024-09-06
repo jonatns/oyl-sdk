@@ -216,6 +216,7 @@ export const accountUtxos = async ({
   let accountSpendableTotalBalance: number = 0
   let accountPendingTotalBalance: number = 0
   let accountTotalBalance: number = 0
+  let accountSpendableTotalUtxos: FormattedUtxo[] = []
   const accounts = []
 
   for (let i = 0; i < account.spendStrategy.addressOrder.length; i++) {
@@ -238,6 +239,7 @@ export const accountUtxos = async ({
     accountSpendableTotalBalance += spendableTotalBalance
     accountPendingTotalBalance += pendingTotalBalance
     accountTotalBalance += totalBalance
+    accountSpendableTotalUtxos.push(...spendableUtxos)
 
     accounts.push({
       [addressType]: {
@@ -253,6 +255,7 @@ export const accountUtxos = async ({
   }
   return {
     accountTotalBalance,
+    accountSpendableTotalUtxos,
     accountSpendableTotalBalance,
     accountPendingTotalBalance,
     accounts,

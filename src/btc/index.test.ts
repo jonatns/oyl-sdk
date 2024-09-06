@@ -63,5 +63,6 @@ describe('btc sendTx', () => {
     })
 
     expect(result.psbt).toBeDefined()
+    console.log(result.psbt)
   })
 })

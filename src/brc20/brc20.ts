@@ -18,7 +18,7 @@ import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
 import { GatheredUtxos } from 'shared/interface'
-import { accountSpendableUtxos } from '@utxo/utxo'
+import { accountSpendableUtxos } from '../utxo'
 
 export const transferEstimate = async ({
   gatheredUtxos,
