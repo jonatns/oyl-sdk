@@ -1,17 +1,11 @@
 import { Command } from 'commander'
-import {
-  accountBalance,
-  accountUtxos,
-  addressUtxos,
-  availableBalance,
-} from '../utxo'
+import { accountBalance, accountUtxos, addressUtxos } from '../utxo'
 import * as btc from '../btc'
 import * as brc20 from '../brc20'
 import * as collectible from '../collectible'
 import * as rune from '../rune'
 
-
-import "dotenv/config";
+import 'dotenv/config'
 import { generateMnemonic, getWalletPrivateKeys, mnemonicToAccount } from '..'
 
 import * as bitcoin from 'bitcoinjs-lib'
@@ -101,7 +95,7 @@ const generateMnemonicCommand = new Command('generateMnemonic')
     console.log(mnemonic)
   })
 
-  const signPsbt = new Command('sign')
+const signPsbt = new Command('sign')
   .requiredOption(
     '-p, --provider <provider>',
     'provider to use when signing the network psbt'
@@ -111,15 +105,9 @@ const generateMnemonicCommand = new Command('generateMnemonic')
     'mnemonic you want to get private keys from'
   )
 
-  .requiredOption(
-    '-f, --finalize <finalize>',
-    'flag to finalize and push psbt'
-  )
-  .requiredOption(
-    '-e, --extract <finalize>',
-    'flag to extract transaction'
-  )
-  
+  .requiredOption('-f, --finalize <finalize>', 'flag to finalize and push psbt')
+  .requiredOption('-e, --extract <finalize>', 'flag to extract transaction')
+
   .option('-legacy, --legacy <legacy>', 'legacy private key')
   .option('-taproot, --taproot <taproot>', 'taproot private key')
   .option(
@@ -149,24 +137,21 @@ const generateMnemonicCommand = new Command('generateMnemonic')
       legacyPrivateKey: options.legacy,
     })
 
-    let finalize = (options.finalize == 'yes') ? true : false
-    let extract = (options.extract == 'yes') ? true : false
-    const {signedHexPsbt} =  await signer.signAllInputs({
+    let finalize = options.finalize == 'yes' ? true : false
+    let extract = options.extract == 'yes' ? true : false
+    const { signedHexPsbt } = await signer.signAllInputs({
       rawPsbtHex: process.env.PSBT_HEX,
       finalize,
+    })
+
+    if (extract) {
+      const extractedTx =
+        bitcoin.Psbt.fromHex(signedHexPsbt).extractTransaction()
+      console.log('extracted tx', extractedTx)
+      console.log('extracted tx hex', extractedTx.toHex())
+    }
+    console.log('signed hex psbt', signedHexPsbt)
   })
-
-  if (extract) {
-    const extractedTx = bitcoin.Psbt.fromHex(signedHexPsbt).extractTransaction()
-    console.log("extracted tx", extractedTx)
-    console.log('extracted tx hex', extractedTx.toHex())
-  }
-  console.log("signed hex psbt", signedHexPsbt)
-
-
-
-  })
-
 
 const accountUtxosToSpend = new Command('accountUtxos')
   .description('Returns available utxos to spend')

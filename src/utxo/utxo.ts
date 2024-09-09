@@ -35,26 +35,70 @@ export interface AddressPortfolio {
   totalBalance: number
 }
 
-export const availableBalance = async ({
+export const accountBalance = async ({
   account,
   provider,
 }: {
   account: Account
   provider: Provider
 }) => {
-  let totalAmount: number = 0
+  let confirmedAmount: number = 0
+  let pendingAmount: number = 0
+  let amount: number = 0
+
   for (let i = 0; i < account.spendStrategy.addressOrder.length; i++) {
     const address = account[account.spendStrategy.addressOrder[i]].address
+    const { chain_stats, mempool_stats } = await provider.esplora._call(
+      'esplora_address',
+      [address]
+    )
 
-    const { totalAmount: addressTotal } = await addressSpendableUtxos({
-      address,
-      provider,
-      spendStrategy: account.spendStrategy,
-    })
-    totalAmount += addressTotal
+    const btcBalance = chain_stats.funded_txo_sum - chain_stats.spent_txo_sum
+    const pendingBtcBalance =
+      mempool_stats.funded_txo_sum - mempool_stats.spent_txo_sum
+
+    confirmedAmount += btcBalance
+    pendingAmount += pendingBtcBalance
+    amount += btcBalance + pendingAmount
   }
-  return { balance: totalAmount }
+  return {
+    confirmedAmount: confirmedAmount / 10 ** 8,
+    pendingAmount: pendingAmount / 10 ** 8,
+    amount: amount / 10 ** 8,
+  }
 }
+
+export const addressBalance = async ({
+  address,
+  provider,
+}: {
+  address: string
+  provider: Provider
+}) => {
+  let confirmedAmount: number = 0
+  let pendingAmount: number = 0
+  let amount: number = 0
+
+  const { chain_stats, mempool_stats } = await provider.esplora._call(
+    'esplora_address',
+    [address]
+  )
+
+  const btcBalance = chain_stats.funded_txo_sum - chain_stats.spent_txo_sum
+  const pendingBtcBalance =
+    mempool_stats.funded_txo_sum - mempool_stats.spent_txo_sum
+
+  confirmedAmount += btcBalance
+  pendingAmount += pendingBtcBalance
+  amount += btcBalance + pendingAmount
+
+  return {
+    confirmedAmount: confirmedAmount / 10 ** 8,
+    pendingAmount: pendingAmount / 10 ** 8,
+    amount: amount / 10 ** 8,
+  }
+}
+
 export const addressSpendableUtxos = async ({
   address,
   provider,
@@ -165,30 +209,6 @@ export const accountSpendableUtxos = async ({
     remainingSpendAmount -= addressTotal
   }
   return { totalAmount, utxos: allUtxos }
-}
-
-export const accountBalance = async ({
-  account,
-  provider,
-}: {
-  account: Account
-  provider: Provider
-}) => {
-  let balance: number = 0
-  let pendingBalance: number = 0
-
-  for (let i = 0; i < account.spendStrategy.addressOrder.length; i++) {
-    const address = account[account.spendStrategy.addressOrder[i]].address
-
-    const { spendableTotalBalance, pendingTotalBalance } = await addressUtxos({
-      address,
-      provider,
-      spendStrategy: account.spendStrategy,
-    })
-    balance += spendableTotalBalance
-    pendingBalance += pendingTotalBalance
-  }
-  return { balance, pendingBalance }
 }
 
 export const addressUtxos = async ({
