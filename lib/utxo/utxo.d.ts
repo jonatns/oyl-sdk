@@ -29,11 +29,21 @@ export interface AddressPortfolio {
     pendingTotalBalance: number;
     totalBalance: number;
 }
-export declare const availableBalance: ({ account, provider, }: {
+export declare const accountBalance: ({ account, provider, }: {
     account: Account;
     provider: Provider;
 }) => Promise<{
-    balance: number;
+    confirmedAmount: number;
+    pendingAmount: number;
+    amount: number;
+}>;
+export declare const addressBalance: ({ address, provider, }: {
+    address: string;
+    provider: Provider;
+}) => Promise<{
+    confirmedAmount: number;
+    pendingAmount: number;
+    amount: number;
 }>;
 export declare const addressSpendableUtxos: ({ address, provider, spendAmount, spendStrategy, }: {
     address: string;
@@ -51,13 +61,6 @@ export declare const accountSpendableUtxos: ({ account, provider, spendAmount, }
 }) => Promise<{
     totalAmount: number;
     utxos: FormattedUtxo[];
-}>;
-export declare const accountBalance: ({ account, provider, }: {
-    account: Account;
-    provider: Provider;
-}) => Promise<{
-    balance: number;
-    pendingBalance: number;
 }>;
 export declare const addressUtxos: ({ address, provider, spendStrategy, }: {
     address: string;
