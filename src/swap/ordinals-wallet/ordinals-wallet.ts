@@ -125,6 +125,8 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
         assetType,
         provider
     })
+
+    console.log(data)
     if (data.success) {
         purchaseTxId = data.purchase
         if (setupTx) await timeout(5000)
