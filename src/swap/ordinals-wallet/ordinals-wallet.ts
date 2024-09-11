@@ -119,12 +119,13 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
         finalize: true,
     })
 
-    const data = await submitPsbt({
+    const finalizeResponse = await submitPsbt({
         psbt: signedPsbt.signedHexPsbt,
         setupPsbt: setupTx,
         assetType,
         provider
     })
+    const data = finalizeResponse.data
     if (data.success) {
         purchaseTxId = data.purchase
         if (setupTx) await timeout(5000)
