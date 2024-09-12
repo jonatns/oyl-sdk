@@ -158,10 +158,7 @@ export enum AssetType {
   RUNES,
 }
 
-export interface ExternalSwap {
-  auctionId: string
-  bidPrice: number
-}
+
 
 export type OrdCollectibleData = {
   address: string
@@ -203,18 +200,7 @@ export interface OkxBid {
   brc20: boolean
 }
 
-export interface MarketplaceAccount {
-  provider?: Provider
-  spendAddress?: string
-  spendPubKey?: string
-  altSpendAddress?: string
-  altSpendPubKey?: string
-  account?: Account
-  signer: Signer
-  assetType: AssetType
-  receiveAddress: string
-  feeRate: number
-}
+
 
 export interface MarketplaceOffers {
   offerId: string
