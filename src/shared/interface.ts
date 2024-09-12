@@ -199,7 +199,21 @@ export interface OkxBid {
   orderId: number
   brc20: boolean
 }
+export interface GetOffersParams {
+  ticker: string;
+  sort_by?: 'unitPrice' | 'totalPrice';
+  order?: 'asc' | 'desc';
+  limit?: number;
+  offset?: number;
+}
 
+export interface GetCollectionOffersParams {
+  collectionId: string;
+  sort_by?: 'unitPrice' | 'totalPrice';
+  order?: 'asc' | 'desc';
+  limit?: number;
+  offset?: number;
+}
 
 
 export interface MarketplaceOffers {
