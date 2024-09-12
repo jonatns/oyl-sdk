@@ -1,5 +1,5 @@
 import fetch from 'node-fetch'
-import { SwapBrcBid, SignedBid, OkxBid } from '../shared/interface'
+import { SwapBrcBid, SignedBid, OkxBid, GetOffersParams, GetCollectionOffersParams } from '../shared/interface'
 import {
   getAllInscriptionsByAddressRegtest,
   getRuneBalanceRegtest,
@@ -367,18 +367,24 @@ export class OylApiClient {
   /**
    * Get BRC-20 offers.
    * @param ticker - The ticker to query.
-   * @param limit - The limit of offers to return (Default = 5).
+   * @param limit - The number of offers to return.
+   * @param sort_by - The sort by field.
+   * @param order - The order of sorted offers to return.
+   * @param offset - The offset to paginate offers.
    */
   async getBrc20Offers({
     ticker,
-    limit = 5,
-  }: {
-    ticker: string
-    limit?: number
-  }): Promise<any> {
+    limit,
+    sort_by,
+    order,
+    offset,
+  }: GetOffersParams): Promise<any> {
     const response = await this._call('/get-brc20-offers', 'post', {
       ticker,
       limit,
+      sort_by,
+      order,
+      offset,
     })
     if (response.error) throw Error(response.error)
     return response
@@ -387,18 +393,24 @@ export class OylApiClient {
   /**
    * Get Rune offers.
    * @param ticker - The ticker to query.
-   * @param limit - The limit of offers to return (Default = 5).
+   * @param limit - The number of offers to return.
+   * @param sort_by - The sort by field.
+   * @param order - The order of sorted offers to return.
+   * @param offset - The offset to paginate offers.
    */
   async getRuneOffers({
     ticker,
-    limit = 5,
-  }: {
-    ticker: string
-    limit?: number
-  }): Promise<any> {
+    limit,
+    sort_by,
+    order,
+    offset,
+  }: GetOffersParams): Promise<any> {
     const response = await this._call('/get-rune-offers', 'post', {
       ticker,
       limit,
+      sort_by,
+      order,
+      offset,
     })
     if (response.error) throw Error(response.error)
     return response
@@ -407,18 +419,24 @@ export class OylApiClient {
   /**
    * Get Collection offers.
    * @param collectionId - The collectionId to query.
-   * @param limit - The limit of offers to return (Default = 5).
+   * @param limit - The number of offers to return.
+   * @param sort_by - The sort by field.
+   * @param order - The order of sorted offers to return.
+   * @param offset - The offset to paginate offers.
    */
   async getCollectionOffers({
     collectionId,
-    limit = 5,
-  }: {
-    collectionId: string
-    limit?: number
-  }): Promise<any> {
+    limit,
+    sort_by,
+    order,
+    offset,
+  }: GetCollectionOffersParams): Promise<any> {
     const response = await this._call('/get-collection-offers', 'post', {
       collectionId,
       limit,
+      sort_by,
+      order,
+      offset, 
     })
     if (response.error) throw Error(response.error)
     return response

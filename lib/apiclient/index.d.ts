@@ -1,4 +1,4 @@
-import { SwapBrcBid, SignedBid, OkxBid } from '../shared/interface';
+import { SwapBrcBid, SignedBid, OkxBid, GetOffersParams, GetCollectionOffersParams } from '../shared/interface';
 /**
  * Represents the client for interacting with the Oyl API.
  */
@@ -155,30 +155,30 @@ export declare class OylApiClient {
     /**
      * Get BRC-20 offers.
      * @param ticker - The ticker to query.
-     * @param limit - The limit of offers to return (Default = 5).
+     * @param limit - The number of offers to return.
+     * @param sort_by - The sort by field.
+     * @param order - The order of sorted offers to return.
+     * @param offset - The offset to paginate offers.
      */
-    getBrc20Offers({ ticker, limit, }: {
-        ticker: string;
-        limit?: number;
-    }): Promise<any>;
+    getBrc20Offers({ ticker, limit, sort_by, order, offset, }: GetOffersParams): Promise<any>;
     /**
      * Get Rune offers.
      * @param ticker - The ticker to query.
-     * @param limit - The limit of offers to return (Default = 5).
+     * @param limit - The number of offers to return.
+     * @param sort_by - The sort by field.
+     * @param order - The order of sorted offers to return.
+     * @param offset - The offset to paginate offers.
      */
-    getRuneOffers({ ticker, limit, }: {
-        ticker: string;
-        limit?: number;
-    }): Promise<any>;
+    getRuneOffers({ ticker, limit, sort_by, order, offset, }: GetOffersParams): Promise<any>;
     /**
      * Get Collection offers.
      * @param collectionId - The collectionId to query.
-     * @param limit - The limit of offers to return (Default = 5).
+     * @param limit - The number of offers to return.
+     * @param sort_by - The sort by field.
+     * @param order - The order of sorted offers to return.
+     * @param offset - The offset to paginate offers.
      */
-    getCollectionOffers({ collectionId, limit, }: {
-        collectionId: string;
-        limit?: number;
-    }): Promise<any>;
+    getCollectionOffers({ collectionId, limit, sort_by, order, offset, }: GetCollectionOffersParams): Promise<any>;
     /**
      * Get Okx ticker offers.
      * @param _ticker - The ticker to query.
