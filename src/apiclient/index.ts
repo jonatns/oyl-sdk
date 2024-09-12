@@ -5,6 +5,7 @@ import {
   getRuneBalanceRegtest,
   getRuneOutpointsRegtest,
 } from './regtestApi'
+import { Account, SpendStrategy } from '@account/account'
 
 /**
  * Represents the client for interacting with the Oyl API.
@@ -279,11 +280,12 @@ export class OylApiClient {
 
    /**
    * Get account utxos.
-   * @param account - The stringified account object to get utxos for.
+   * @param account - The account object to get utxos for.
    */
-   async getAccountUtxos(account: string): Promise<any> {
+   async getAccountUtxos(account: Account): Promise<any> {
+    const stringifiedAccount = JSON.stringify(account)
     const res = await this._call('/get-account-utxos', 'post', {
-      account: account,
+      account: stringifiedAccount,
     })
     if (res.data) {
       return res.data
@@ -295,12 +297,13 @@ export class OylApiClient {
    /**
    * Get address utxos.
    * @param address - The address to get utxos for.
-   * @param spendStrategy - The stringified spendStrategy object to use.
+   * @param spendStrategy - The spendStrategy object to use.
    */
-   async getAddressUtxos(address: string, spendStrategy?: string): Promise<any> {
+   async getAddressUtxos(address: string, spendStrategy?: SpendStrategy): Promise<any> {
+    const stringifiedSpendStrategy = spendStrategy ? JSON.stringify(spendStrategy) : null
     const res = await this._call('/get-address-utxos', 'post', {
       address: address,
-      spendStrategy: spendStrategy,
+      spendStrategy: stringifiedSpendStrategy,
     })
     if (res.data) {
       return res.data
