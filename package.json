@@ -35,6 +35,7 @@
     "@bitcoinerlab/secp256k1": "^1.0.2",
     "@cmdcode/crypto-utils": "^2.4.6",
     "@cmdcode/tapscript": "^1.4.3",
+    "@magiceden-oss/runestone-lib": "^1.0.2",
     "@okxweb3/coin-bitcoin": "1.0.8-beta.12",
     "@sadoprotocol/ordit-sdk": "^2.2.4",
     "@scure/base": "^1.1.6",
