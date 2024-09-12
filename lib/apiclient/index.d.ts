@@ -114,6 +114,17 @@ export declare class OylApiClient {
      */
     getAccountBalance(account: string): Promise<any>;
     /**
+    * Get account utxos.
+    * @param account - The stringified account object to get utxos for.
+    */
+    getAccountUtxos(account: string): Promise<any>;
+    /**
+    * Get address utxos.
+    * @param address - The address to get utxos for.
+    * @param spendStrategy - The stringified spendStrategy object to use.
+    */
+    getAddressUtxos(address: string, spendStrategy?: string): Promise<any>;
+    /**
      * Get collectible by ID.
      * @param id - The ID of the collectible.
      */
