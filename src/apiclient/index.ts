@@ -5,7 +5,7 @@ import {
   getRuneBalanceRegtest,
   getRuneOutpointsRegtest,
 } from './regtestApi'
-import { Account, SpendStrategy } from '@account/account'
+import { Account, SpendStrategy } from "../account"
 
 /**
  * Represents the client for interacting with the Oyl API.
