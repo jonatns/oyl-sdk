@@ -74,5 +74,5 @@ export declare const accountUtxos: ({ account, provider, }: {
     accountTotalBalance: number;
     accountSpendableTotalBalance: number;
     accountPendingTotalBalance: number;
-    accounts: any[];
+    accounts: {};
 }>;
