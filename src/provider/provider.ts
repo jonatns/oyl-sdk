@@ -23,25 +23,25 @@ export const defaultNetworkOptions = (networkType:string) => {
           version: 'v1',
           projectId: process.env.SANDSHREW_PROJECT_ID,
           network: 'mainnet',
-          apiUrl: 'https://api.oyl.gg',
+          apiUrl: 'https://mainnet-api.oyl.gg',
           opiUrl: 'https://mainnet-opi.sandshrew.io/v1'
       }
-    case('testnet'):
-      return {
-        baseUrl: 'https://testnet.sandshrew.io',
-          version: 'v1',
-          projectId: process.env.SANDSHREW_PROJECT_ID,
-          network: 'testnet',
-          apiUrl: 'https://testnet-api.oyl.gg',
-          opiUrl: 'https://testnet-opi.sandshrew.io/v1',
-      }
+    // case('testnet'):
+    //   return {
+    //     baseUrl: 'https://testnet.sandshrew.io',
+    //       version: 'v1',
+    //       projectId: process.env.SANDSHREW_PROJECT_ID,
+    //       network: 'testnet',
+    //       apiUrl: 'https://testnet-api.oyl.gg',
+    //       opiUrl: 'https://testnet-opi.sandshrew.io/v1',
+    //   }
       case('regtest'):
         return {
             baseUrl: 'http://localhost:3000',
           version: 'v1',
           projectId: 'regtest',
           network: 'regtest',
-          apiUrl: 'https://mainnet-api.oyl.gg',
+          apiUrl: 'http://localhost:3000',
           opiUrl: 'http://localhost:3000',
       }
       case('signet'):
