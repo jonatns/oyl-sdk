@@ -251,9 +251,7 @@ export const getWitnessDataChunk = function (
   return contentChunks
 }
 
-export const getSatpointFromUtxo = (utxo: IBlockchainInfoUTXO) => {
-  return `${utxo.tx_hash_big_endian}:${utxo.tx_output_n}:0`
-}
+
 
 //FLAG FOR REMOVAL
 export const getInscriptionsByWalletBIS = async (

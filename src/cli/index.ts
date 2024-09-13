@@ -11,7 +11,6 @@ import { generateMnemonic, getWalletPrivateKeys, mnemonicToAccount } from '..'
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '..'
 import { Signer } from '..'
-import { Trade } from '..'
 import { AssetType, MarketplaceOffers } from '..'
 import { OylTransactionError } from '../errors'
 
@@ -855,20 +854,20 @@ const marketPlaceBuy = new Command('buy')
       default:
         throw new OylTransactionError(Error('Incorrect asset type'))
     }
-    const marketplace: Trade = new Trade({
-      provider: provider,
-      receiveAddress:
-        options.receiveAddress === undefined
-          ? account.taproot.address
-          : options.receiveAddress,
-      account: account,
-      assetType: options.assetType,
-      signer,
-      feeRate: Number(options.feeRate),
-    })
-    const offersToBuy = await marketplace.processAllOffers(quotes)
-    const signedTxs = await marketplace.buyMarketPlaceOffers(offersToBuy)
-    console.log(signedTxs)
+    // const marketplace: Trade = new Trade({
+    //   provider: provider,
+    //   receiveAddress:
+    //     options.receiveAddress === undefined
+    //       ? account.taproot.address
+    //       : options.receiveAddress,
+    //   account: account,
+    //   assetType: options.assetType,
+    //   signer,
+    //   feeRate: Number(options.feeRate),
+    // })
+    // const offersToBuy = await marketplace.processAllOffers(quotes)
+    // const signedTxs = await marketplace.buyMarketPlaceOffers(offersToBuy)
+    // console.log(signedTxs)
   })
 
 const accountCommand = new Command('account')
