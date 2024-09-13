@@ -386,6 +386,7 @@ export const accountUtxos = async ({
   ]
   for (let i = 0; i < addresses.length; i++) {
     const address = addresses[i].address
+    const addressType = addresses[i].addressType
     const {
       spendableTotalBalance,
       spendableUtxos,
@@ -403,7 +404,7 @@ export const accountUtxos = async ({
     accountPendingTotalBalance += pendingTotalBalance
     accountTotalBalance += totalBalance
 
-    accounts[address] = {
+    accounts[addressType] = {
       spendableTotalBalance,
       spendableUtxos,
       runeUtxos,
