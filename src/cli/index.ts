@@ -567,6 +567,75 @@ const runeMint = new Command('mint')
     )
   })
 
+const runeEtch = new Command('etch')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+  .requiredOption(
+    '-m, --mnemonic <mnemonic>',
+    'mnemonic you want to get private keys from'
+  )
+  .requiredOption('-symbol, --symbol <symbol>', 'symbol for rune to etch')
+  .requiredOption('-rune-name, --rune-name <runeName>', 'name of rune to etch')
+  .requiredOption(
+    '-per-mint-amount, --per-mint-amount <perMintAmount>',
+    'the amount of runes each mint'
+  )
+  .option('-legacy, --legacy <legacy>', 'legacy private key')
+  .option('-taproot, --taproot <taproot>', 'taproot private key')
+  .option(
+    '-nested, --nested-segwit <nestedSegwit>',
+    'nested segwit private key'
+  )
+  .option(
+    '-native, --native-segwit <nativeSegwit>',
+    'native segwit private key'
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .option('-turbo, --turbo <turbo>', 'use turbo')
+  .option(
+    '-divisibility, --divisibility <divisibility>',
+    'divisibility of rune'
+  )
+  .option('-cap, --cap <cap>', 'cap / total number of rune')
+  .option('-pre, --premine <premine>', 'premined amount of rune')
+
+  /* @dev example call 
+oyl rune etch -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2 -divisibility 3 -cap 100000 -pre 1000 -symbol Z -rune-name OYLTESTER -per-mint-amount 500
+*/
+
+  .action(async (options) => {
+    const provider = defaultProvider[options.provider]
+    const signer = new Signer(provider.network, {
+      segwitPrivateKey: options.nativeSegwit,
+      taprootPrivateKey: options.taproot,
+      nestedSegwitPrivateKey: options.nestedSegwit,
+      legacyPrivateKey: options.legacy,
+    })
+    const account = mnemonicToAccount({
+      mnemonic: options.mnemonic,
+      opts: {
+        network: provider.network,
+      },
+    })
+    console.log(
+      await rune.etch({
+        symbol: options.symbol,
+        premine: options.premine,
+        perMintAmount: options.perMintAmount,
+        turbo: Boolean(Number(options.turbo)),
+        divisibility: Number(options.divisibility),
+        runeName: options.runeName,
+        cap: options.cap,
+        feeRate: options.feeRate,
+        account,
+        signer,
+        provider,
+      })
+    )
+  })
+
 const getRuneByName = new Command('getRuneByName')
   .description('Returns rune details based on name provided')
   .requiredOption(
@@ -828,6 +897,7 @@ const runeCommand = new Command('rune')
   .description('Functions for runes')
   .addCommand(runeSend)
   .addCommand(runeMint)
+  .addCommand(runeEtch)
   .addCommand(getRuneByName)
 
 const providerCommand = new Command('provider')

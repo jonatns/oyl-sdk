@@ -81,6 +81,16 @@ export declare const createRuneMintScript: ({ runeId, mintOutPutIndex, pointer, 
     mintOutPutIndex: number;
     pointer?: number;
 }) => Buffer;
+export declare const createRuneEtchScript: ({ pointer, runeName, symbol, divisibility, perMintAmount, premine, cap, turbo, }: {
+    pointer?: number;
+    runeName: string;
+    symbol: string;
+    divisibility?: number;
+    perMintAmount: number;
+    cap?: number;
+    premine?: number;
+    turbo?: boolean;
+}) => Buffer;
 export declare let RPC_ADDR: string;
 export declare const callBTCRPCEndpoint: (method: string, params: string | string[], network: string) => Promise<any>;
 export declare function getAddressType(address: string): AddressType | null;
