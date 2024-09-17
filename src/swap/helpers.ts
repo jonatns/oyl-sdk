@@ -6,6 +6,7 @@ import {
     BuiltPsbt, 
     ConditionalInput, 
     DummyUtxoOptions, 
+    MarketplaceBatchOffer, 
     MarketplaceOffer, 
     Marketplaces, 
     OutputTxCheck, 
@@ -407,6 +408,54 @@ function outputTxCheck({
 
 }
 
+export function batchMarketplaceOffer(offers: MarketplaceOffer[]): (MarketplaceOffer | MarketplaceBatchOffer)[] {
+    const groupedOffers: { [key: string]: MarketplaceOffer[] } = {};
+
+    // Group offers by marketplace
+    offers.forEach(offer => {
+        if (!groupedOffers[offer.marketplace]) {
+            groupedOffers[offer.marketplace] = [];
+        }
+        groupedOffers[offer.marketplace].push(offer);
+    });
+
+    return Object.entries(groupedOffers).flatMap(([marketplace, marketplaceOffers]) => {
+        if (marketplace === 'unisat' || marketplace === 'ordinals-wallet') {
+            const batchOffer: MarketplaceBatchOffer = {
+                ticker: marketplaceOffers[0].ticker,
+                offerId: [],
+                marketplace,
+                price: [],
+                unitPrice: [],
+                totalPrice: [],
+                amount: [],
+                address: [],
+                inscriptionId: [],
+                outpoint: []
+            };
+
+
+            marketplaceOffers.forEach(offer => {
+                batchOffer.offerId.push(offer.offerId);
+                batchOffer.price?.push(offer.price || 0);
+                batchOffer.unitPrice?.push(offer.unitPrice || 0);
+                batchOffer.totalPrice?.push(offer.totalPrice || 0);
+
+                if (marketplace === 'unisat') {
+                    batchOffer.amount?.push(offer.amount || '');
+                    batchOffer.address?.push(offer.address || '');
+                } else if (marketplace === 'ordinals-wallet') {
+                    batchOffer.inscriptionId?.push(offer.inscriptionId || '');
+                    batchOffer.outpoint?.push(offer.outpoint || '');
+                }
+            });
+
+            return [batchOffer as MarketplaceOffer | MarketplaceBatchOffer];
+        } else {
+            return marketplaceOffers;
+        }
+    });
+}
 
 export function psbtTxAddressTypes({
     psbt,

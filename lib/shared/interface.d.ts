@@ -280,8 +280,8 @@ export interface InscribeTransfer {
 }
 export interface SwapBrcBid {
     address: string;
-    auctionId: string;
-    bidPrice: number;
+    auctionId: string | string[];
+    bidPrice: number | number[];
     feerate: number;
     pubKey: string;
     receiveAddress: string;
@@ -289,7 +289,7 @@ export interface SwapBrcBid {
 }
 export interface SignedBid {
     psbtBid: string;
-    auctionId: string;
+    auctionId?: string;
     bidId: string;
 }
 export declare const addressTypeToName: {
