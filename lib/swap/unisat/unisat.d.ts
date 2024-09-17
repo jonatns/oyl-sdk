@@ -4,8 +4,8 @@ import { Provider } from "../../provider";
 import { ProcessOfferOptions, SwapResponse } from "../types";
 export interface UnsignedUnisatBid {
     address: string;
-    auctionId: string;
-    bidPrice: number;
+    auctionId: string | string[];
+    bidPrice: number | number[];
     pubKey: string;
     receiveAddress: string;
     altAddressSignature?: string;

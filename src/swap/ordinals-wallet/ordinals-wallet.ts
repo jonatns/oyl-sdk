@@ -96,9 +96,9 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
         assetType
     }
     if (assetType === AssetType.RUNES){
-        unsignedBid["outpoints"] = [offer.outpoint]
+        unsignedBid["outpoints"] = Array.isArray(offer.outpoint) ? offer.outpoint : [offer.outpoint];
     } else {
-        unsignedBid["inscriptions"] = [offer.inscriptionId]
+        unsignedBid["inscriptions"] = Array.isArray(offer.inscriptionId) ? offer.inscriptionId : [offer.inscriptionId];
     }
     
     const sellerData = await getSellerPsbt(unsignedBid);
