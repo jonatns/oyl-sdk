@@ -550,6 +550,14 @@ export class OylApiClient {
     return response
   }
 
+   /**
+   * Submit a signed psbt to bid for runeoffers on Ordinals Wallet marketplace.
+   */
+   async submitOrdinalsWalletRuneBid({ psbt, setupPsbt }: {  psbt: string, setupPsbt: string }): Promise<any> {
+    const response = await this._call('/finalize-ow-rune-bid', 'post', { psbt, setupPsbt })
+    return response
+  }
+
   /**
    * Get BTC price.
    */
