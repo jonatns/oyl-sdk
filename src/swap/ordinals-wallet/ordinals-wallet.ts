@@ -61,7 +61,7 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
         return await provider.api.submitOrdinalsWalletBid({psbt, setupPsbt})
 
       case AssetType.RUNES:
-        return await provider.api.submitOrdinalsWalletBid({psbt, setupPsbt})
+        return await provider.api.submitOrdinalsWalletRuneBid({psbt, setupPsbt})
 
       case AssetType.COLLECTIBLE:
         return await provider.api.submitOrdinalsWalletBid({psbt, setupPsbt})

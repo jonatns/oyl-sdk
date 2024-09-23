@@ -237,6 +237,13 @@ export declare class OylApiClient {
         setupPsbt: string;
     }): Promise<any>;
     /**
+    * Submit a signed psbt to bid for runeoffers on Ordinals Wallet marketplace.
+    */
+    submitOrdinalsWalletRuneBid({ psbt, setupPsbt }: {
+        psbt: string;
+        setupPsbt: string;
+    }): Promise<any>;
+    /**
      * Get BTC price.
      */
     getBtcPrice(): Promise<any>;
