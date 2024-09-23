@@ -143,10 +143,6 @@ export declare enum AssetType {
     COLLECTIBLE = 1,
     RUNES = 2
 }
-export interface ExternalSwap {
-    auctionId: string;
-    bidPrice: number;
-}
 export type OrdCollectibleData = {
     address: string;
     children: any[];
@@ -208,6 +204,20 @@ export interface MarketplaceAccount {
     assetType: AssetType;
     receiveAddress: string;
     feeRate: number;
+}
+export interface GetOffersParams {
+    ticker: string;
+    sort_by?: 'unitPrice' | 'totalPrice';
+    order?: 'asc' | 'desc';
+    limit?: number;
+    offset?: number;
+}
+export interface GetCollectionOffersParams {
+    collectionId: string;
+    sort_by?: 'unitPrice' | 'totalPrice';
+    order?: 'asc' | 'desc';
+    limit?: number;
+    offset?: number;
 }
 export interface MarketplaceOffers {
     offerId: string;
@@ -297,8 +307,8 @@ export interface InscribeTransfer {
 }
 export interface SwapBrcBid {
     address: string;
-    auctionId: string;
-    bidPrice: number;
+    auctionId: string | string[];
+    bidPrice: number | number[];
     feerate: number;
     pubKey: string;
     receiveAddress: string;
@@ -306,7 +316,7 @@ export interface SwapBrcBid {
 }
 export interface SignedBid {
     psbtBid: string;
-    auctionId: string;
+    auctionId?: string;
     bidId: string;
 }
 export declare const addressTypeToName: {

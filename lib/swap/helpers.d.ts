@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { FormattedUtxo } from '../shared/interface';
 import { Provider } from '../provider';
-import { BidAffordabilityCheck, BidAffordabilityCheckResponse, BuiltPsbt, ConditionalInput, DummyUtxoOptions, MarketplaceOffer, Marketplaces, PrepareAddressForDummyUtxos, PsbtBuilder, SelectSpendAddress, SelectSpendAddressResponse, TxAddressTypes, UtxosToCoverAmount } from './types';
+import { BidAffordabilityCheck, BidAffordabilityCheckResponse, BuiltPsbt, ConditionalInput, DummyUtxoOptions, MarketplaceBatchOffer, MarketplaceOffer, Marketplaces, PrepareAddressForDummyUtxos, PsbtBuilder, SelectSpendAddress, SelectSpendAddressResponse, TxAddressTypes, UtxosToCoverAmount } from './types';
 import { AddressType } from '../shared/interface';
 import * as bitcoin from 'bitcoinjs-lib';
 export declare const maxTxSizeForOffers: number;
@@ -32,6 +32,7 @@ export declare function updateUtxos({ originalUtxos, txId, spendAddress, provide
     spendAddress: string;
     provider: Provider;
 }): Promise<FormattedUtxo[]>;
+export declare function batchMarketplaceOffer(offers: MarketplaceOffer[]): (MarketplaceOffer | MarketplaceBatchOffer)[];
 export declare function psbtTxAddressTypes({ psbt, network, }: {
     psbt: bitcoin.Psbt;
     network: bitcoin.Network;

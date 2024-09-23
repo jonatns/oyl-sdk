@@ -17,12 +17,12 @@ import {
 import BigNumber from 'bignumber.js'
 import { maximumScriptBytes } from './constants'
 import axios from 'axios'
-import { isTaprootInput, toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
+import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew'
 import { EsploraRpc } from '../rpclient/esplora'
 import { Provider } from '../provider/provider'
-import { OylTransactionError } from '../errors'
 import { addressFormats } from '@sadoprotocol/ordit-sdk'
+import { encodeRunestone } from '@magiceden-oss/runestone-lib'
 
 bitcoin.initEccLib(ecc)
 
@@ -254,9 +254,7 @@ export const getWitnessDataChunk = function (
   return contentChunks
 }
 
-export const getSatpointFromUtxo = (utxo: IBlockchainInfoUTXO) => {
-  return `${utxo.tx_hash_big_endian}:${utxo.tx_output_n}:0`
-}
+
 
 //FLAG FOR REMOVAL
 export const getInscriptionsByWalletBIS = async (
@@ -492,6 +490,56 @@ export const createRuneMintScript = ({
     runeStone,
   ])
   return script
+}
+
+export const createRuneEtchScript = ({
+  pointer = 0,
+  runeName,
+  symbol,
+  divisibility,
+  perMintAmount,
+  premine = 0,
+  cap,
+  turbo,
+}: {
+  pointer?: number
+  runeName: string
+  symbol: string
+  divisibility?: number
+  perMintAmount: number
+  cap?: number
+  premine?: number
+  turbo?: boolean
+}) => {
+  console.log({
+    etching: {
+      divisibility,
+      premine: BigInt(premine),
+      runeName,
+      symbol,
+      terms: {
+        cap: cap && BigInt(cap),
+        amount: perMintAmount && BigInt(perMintAmount),
+      },
+      turbo,
+    },
+    pointer,
+  })
+  const runeEtch = encodeRunestone({
+    etching: {
+      divisibility,
+      premine: BigInt(premine),
+      runeName,
+      symbol,
+      terms: {
+        cap: cap && BigInt(cap),
+        amount: perMintAmount && BigInt(perMintAmount),
+      },
+      turbo,
+    },
+    pointer,
+  }).encodedRunestone
+  return runeEtch
 }
 
 export let RPC_ADDR =

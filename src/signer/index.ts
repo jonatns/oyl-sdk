@@ -1,7 +1,7 @@
 import * as bitcoin from 'bitcoinjs-lib'
 import { ECPair, tweakSigner } from '../shared/utils'
 import { ECPairInterface } from 'ecpair'
-import { BIP322, Signer as bipSigner } from 'bip322-js'
+import { Signer as bipSigner } from 'bip322-js'
 import crypto from 'crypto'
 
 export type walletInit = {
@@ -195,10 +195,14 @@ export class Signer {
         )
       }
       if (this.nestedSegwitKeyPair) {
-        matchingNestedSegwit = unSignedPsbt.inputHasPubkey(
-          i,
-          this.nestedSegwitKeyPair.publicKey
-        )
+        try {
+          matchingNestedSegwit = unSignedPsbt.inputHasPubkey(
+            i,
+            this.nestedSegwitKeyPair.publicKey
+          )
+        } catch (e) {
+          console.log(e)
+        }
       }
 
       switch (true) {
@@ -285,16 +289,9 @@ export class Signer {
     }
 
     if (protocol === 'bip322') {
-      const hashedMessage = Buffer.from(BIP322.hashMessage(message)).toString(
-        'base64'
-      )
-      const signature = bipSigner.sign(
-        keypair.toWIF(),
-        address,
-        hashedMessage,
-        bitcoin.networks.bitcoin
-      )
-      return signature.toString('base64')
+      return bipSigner
+        .sign(keypair.toWIF(), address, message)
+        .toString('base64')
     }
     if (protocol === 'ecdsa') {
       const hashedMessage = crypto

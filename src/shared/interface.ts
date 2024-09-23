@@ -158,11 +158,6 @@ export enum AssetType {
   RUNES,
 }
 
-export interface ExternalSwap {
-  auctionId: string
-  bidPrice: number
-}
-
 export type OrdCollectibleData = {
   address: string
   children: any[]
@@ -229,6 +224,22 @@ export interface MarketplaceAccount {
   assetType: AssetType
   receiveAddress: string
   feeRate: number
+}
+
+export interface GetOffersParams {
+  ticker: string
+  sort_by?: 'unitPrice' | 'totalPrice'
+  order?: 'asc' | 'desc'
+  limit?: number
+  offset?: number
+}
+
+export interface GetCollectionOffersParams {
+  collectionId: string
+  sort_by?: 'unitPrice' | 'totalPrice'
+  order?: 'asc' | 'desc'
+  limit?: number
+  offset?: number
 }
 
 export interface MarketplaceOffers {
@@ -329,8 +340,8 @@ export interface InscribeTransfer {
 
 export interface SwapBrcBid {
   address: string
-  auctionId: string
-  bidPrice: number
+  auctionId: string | string[]
+  bidPrice: number | number[]
   feerate: number
   pubKey: string
   receiveAddress: string
@@ -339,7 +350,7 @@ export interface SwapBrcBid {
 
 export interface SignedBid {
   psbtBid: string
-  auctionId: string
+  auctionId?: string
   bidId: string
 }
 

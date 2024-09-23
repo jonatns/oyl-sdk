@@ -5,6 +5,7 @@ export interface UnsignedOrdinalsWalletBid {
     address: string;
     publicKey: string;
     feeRate: number;
+    receiveAddress: string;
     provider: Provider;
     assetType: AssetType;
     inscriptions?: string[];
@@ -12,6 +13,7 @@ export interface UnsignedOrdinalsWalletBid {
 }
 export interface signedOrdinalsWalletBid {
     psbt: string;
+    setupPsbt?: string;
     provider: Provider;
     assetType: AssetType;
 }

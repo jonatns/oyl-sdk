@@ -1,4 +1,5 @@
-import { SwapBrcBid, SignedBid, OkxBid } from '../shared/interface';
+import { SwapBrcBid, SignedBid, OkxBid, GetOffersParams, GetCollectionOffersParams } from '../shared/interface';
+import { Account, SpendStrategy } from "../account";
 /**
  * Represents the client for interacting with the Oyl API.
  */
@@ -114,6 +115,17 @@ export declare class OylApiClient {
      */
     getAccountBalance(account: string): Promise<any>;
     /**
+    * Get account utxos.
+    * @param account - The account object to get utxos for.
+    */
+    getAccountUtxos(account: Account): Promise<any>;
+    /**
+    * Get address utxos.
+    * @param address - The address to get utxos for.
+    * @param spendStrategy - The spendStrategy object to use.
+    */
+    getAddressUtxos(address: string, spendStrategy?: SpendStrategy): Promise<any>;
+    /**
      * Get account balance.
      * @param account - The stringified account object to get balance for.
      */
@@ -154,30 +166,30 @@ export declare class OylApiClient {
     /**
      * Get BRC-20 offers.
      * @param ticker - The ticker to query.
-     * @param limit - The limit of offers to return (Default = 5).
+     * @param limit - The number of offers to return.
+     * @param sort_by - The sort by field.
+     * @param order - The order of sorted offers to return.
+     * @param offset - The offset to paginate offers.
      */
-    getBrc20Offers({ ticker, limit, }: {
-        ticker: string;
-        limit?: number;
-    }): Promise<any>;
+    getBrc20Offers({ ticker, limit, sort_by, order, offset, }: GetOffersParams): Promise<any>;
     /**
      * Get Rune offers.
      * @param ticker - The ticker to query.
-     * @param limit - The limit of offers to return (Default = 5).
+     * @param limit - The number of offers to return.
+     * @param sort_by - The sort by field.
+     * @param order - The order of sorted offers to return.
+     * @param offset - The offset to paginate offers.
      */
-    getRuneOffers({ ticker, limit, }: {
-        ticker: string;
-        limit?: number;
-    }): Promise<any>;
+    getRuneOffers({ ticker, limit, sort_by, order, offset, }: GetOffersParams): Promise<any>;
     /**
      * Get Collection offers.
      * @param collectionId - The collectionId to query.
-     * @param limit - The limit of offers to return (Default = 5).
+     * @param limit - The number of offers to return.
+     * @param sort_by - The sort by field.
+     * @param order - The order of sorted offers to return.
+     * @param offset - The offset to paginate offers.
      */
-    getCollectionOffers({ collectionId, limit, }: {
-        collectionId: string;
-        limit?: number;
-    }): Promise<any>;
+    getCollectionOffers({ collectionId, limit, sort_by, order, offset, }: GetCollectionOffersParams): Promise<any>;
     /**
      * Get Okx ticker offers.
      * @param _ticker - The ticker to query.
@@ -210,26 +222,36 @@ export declare class OylApiClient {
     /**
      * Get Ordinals-Wallet offer psbt for Collectibles & BRC20s.
      */
-    getOrdinalsWalletNftOfferPsbt({ publicKey, feeRate, address, inscriptions }: {
+    getOrdinalsWalletNftOfferPsbt({ publicKey, feeRate, address, receiveAddress, inscriptions }: {
         publicKey: string;
         feeRate: number;
         address: string;
+        receiveAddress: string;
         inscriptions: string[];
     }): Promise<any>;
     /**
     * Get Ordinals-Wallet offer psbt for Collectibles & BRC20s.
     */
-    getOrdinalsWalletRuneOfferPsbt({ publicKey, feeRate, address, outpoints }: {
+    getOrdinalsWalletRuneOfferPsbt({ publicKey, feeRate, address, outpoints, receiveAddress }: {
         publicKey: string;
         feeRate: number;
         address: string;
         outpoints: string[];
+        receiveAddress: string;
     }): Promise<any>;
     /**
      * Submit a signed psbt to bid for offers on Ordinals Wallet marketplace.
      */
-    submitOrdinalsWalletBid({ psbt }: {
+    submitOrdinalsWalletBid({ psbt, setupPsbt }: {
         psbt: string;
+        setupPsbt: string;
+    }): Promise<any>;
+    /**
+    * Submit a signed psbt to bid for runeoffers on Ordinals Wallet marketplace.
+    */
+    submitOrdinalsWalletRuneBid({ psbt, setupPsbt }: {
+        psbt: string;
+        setupPsbt: string;
     }): Promise<any>;
     /**
      * Get BTC price.

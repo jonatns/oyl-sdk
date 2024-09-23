@@ -1,10 +1,11 @@
 import fetch from 'node-fetch'
-import { SwapBrcBid, SignedBid, OkxBid } from '../shared/interface'
+import { SwapBrcBid, SignedBid, OkxBid, GetOffersParams, GetCollectionOffersParams } from '../shared/interface'
 import {
   getAllInscriptionsByAddressRegtest,
   getRuneBalanceRegtest,
   getRuneOutpointsRegtest,
 } from './regtestApi'
+import { Account, SpendStrategy } from "../account"
 
 /**
  * Represents the client for interacting with the Oyl API.
@@ -277,6 +278,40 @@ export class OylApiClient {
     }
   }
 
+   /**
+   * Get account utxos.
+   * @param account - The account object to get utxos for.
+   */
+   async getAccountUtxos(account: Account): Promise<any> {
+    const stringifiedAccount = JSON.stringify(account)
+    const res = await this._call('/get-account-utxos', 'post', {
+      account: stringifiedAccount,
+    })
+    if (res.data) {
+      return res.data
+    } else {
+      return res
+    }
+  }
+
+   /**
+   * Get address utxos.
+   * @param address - The address to get utxos for.
+   * @param spendStrategy - The spendStrategy object to use.
+   */
+   async getAddressUtxos(address: string, spendStrategy?: SpendStrategy): Promise<any> {
+    const stringifiedSpendStrategy = spendStrategy ? JSON.stringify(spendStrategy) : null
+    const res = await this._call('/get-address-utxos', 'post', {
+      address: address,
+      spendStrategy: stringifiedSpendStrategy,
+    })
+    if (res.data) {
+      return res.data
+    } else {
+      return res
+    }
+  }
+
   /**
    * Get account balance.
    * @param account - The stringified account object to get balance for.
@@ -372,18 +407,24 @@ export class OylApiClient {
   /**
    * Get BRC-20 offers.
    * @param ticker - The ticker to query.
-   * @param limit - The limit of offers to return (Default = 5).
+   * @param limit - The number of offers to return.
+   * @param sort_by - The sort by field.
+   * @param order - The order of sorted offers to return.
+   * @param offset - The offset to paginate offers.
    */
   async getBrc20Offers({
     ticker,
-    limit = 5,
-  }: {
-    ticker: string
-    limit?: number
-  }): Promise<any> {
+    limit,
+    sort_by,
+    order,
+    offset,
+  }: GetOffersParams): Promise<any> {
     const response = await this._call('/get-brc20-offers', 'post', {
       ticker,
       limit,
+      sort_by,
+      order,
+      offset,
     })
     if (response.error) throw Error(response.error)
     return response
@@ -392,18 +433,24 @@ export class OylApiClient {
   /**
    * Get Rune offers.
    * @param ticker - The ticker to query.
-   * @param limit - The limit of offers to return (Default = 5).
+   * @param limit - The number of offers to return.
+   * @param sort_by - The sort by field.
+   * @param order - The order of sorted offers to return.
+   * @param offset - The offset to paginate offers.
    */
   async getRuneOffers({
     ticker,
-    limit = 5,
-  }: {
-    ticker: string
-    limit?: number
-  }): Promise<any> {
+    limit,
+    sort_by,
+    order,
+    offset,
+  }: GetOffersParams): Promise<any> {
     const response = await this._call('/get-rune-offers', 'post', {
       ticker,
       limit,
+      sort_by,
+      order,
+      offset,
     })
     if (response.error) throw Error(response.error)
     return response
@@ -412,18 +459,24 @@ export class OylApiClient {
   /**
    * Get Collection offers.
    * @param collectionId - The collectionId to query.
-   * @param limit - The limit of offers to return (Default = 5).
+   * @param limit - The number of offers to return.
+   * @param sort_by - The sort by field.
+   * @param order - The order of sorted offers to return.
+   * @param offset - The offset to paginate offers.
    */
   async getCollectionOffers({
     collectionId,
-    limit = 5,
-  }: {
-    collectionId: string
-    limit?: number
-  }): Promise<any> {
+    limit,
+    sort_by,
+    order,
+    offset,
+  }: GetCollectionOffersParams): Promise<any> {
     const response = await this._call('/get-collection-offers', 'post', {
       collectionId,
       limit,
+      sort_by,
+      order,
+      offset, 
     })
     if (response.error) throw Error(response.error)
     return response
@@ -497,18 +550,21 @@ export class OylApiClient {
       publicKey, 
       feeRate,
       address,
+      receiveAddress,
       inscriptions 
     }: 
     { 
       publicKey: string, 
       feeRate: number ,
       address: string, 
+      receiveAddress: string,
       inscriptions: string[],
     }): Promise<any> {
     const response = await this._call('/get-ow-nft-offer-psbt', 'post', {
       publicKey, 
       feeRate,
       address,
+      receiveAddress,
       inscriptions 
     })
     return response
@@ -521,19 +577,22 @@ export class OylApiClient {
       publicKey, 
       feeRate,
       address,
-      outpoints 
+      outpoints,
+      receiveAddress
     }: 
     { 
       publicKey: string, 
       feeRate: number ,
       address: string, 
       outpoints: string[],
+      receiveAddress: string,
     }): Promise<any> {
     const response = await this._call('/get-ow-rune-offer-psbt', 'post', {
       publicKey, 
       feeRate,
       address,
-      outpoints 
+      outpoints,
+      receiveAddress
     })
     return response
   }
@@ -541,8 +600,16 @@ export class OylApiClient {
   /**
    * Submit a signed psbt to bid for offers on Ordinals Wallet marketplace.
    */
-  async submitOrdinalsWalletBid({ psbt }: {  psbt: string }): Promise<any> {
-    const response = await this._call('/finalize-ow-bid', 'post', { psbt })
+  async submitOrdinalsWalletBid({ psbt, setupPsbt }: {  psbt: string, setupPsbt: string }): Promise<any> {
+    const response = await this._call('/finalize-ow-bid', 'post', { psbt, setupPsbt })
+    return response
+  }
+
+   /**
+   * Submit a signed psbt to bid for runeoffers on Ordinals Wallet marketplace.
+   */
+   async submitOrdinalsWalletRuneBid({ psbt, setupPsbt }: {  psbt: string, setupPsbt: string }): Promise<any> {
+    const response = await this._call('/finalize-ow-rune-bid', 'post', { psbt, setupPsbt })
     return response
   }
 

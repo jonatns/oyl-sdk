@@ -120,6 +120,19 @@ export interface MarketplaceOffer {
     outpoint?: string;
     inscriptionId?: string;
 }
+export interface MarketplaceBatchOffer {
+    ticker: string;
+    offerId: string[];
+    amount?: string[];
+    address?: string[];
+    marketplace: string;
+    price?: number[];
+    unitPrice?: number[];
+    totalPrice?: number[];
+    psbt?: string;
+    outpoint?: string[];
+    inscriptionId?: string[];
+}
 export declare enum Marketplaces {
     UNISAT = 0,
     OKX = 1,
@@ -209,7 +222,7 @@ export interface FeeEstimatorOptions {
 }
 export interface ProcessOfferOptions {
     address: string;
-    offer: MarketplaceOffer;
+    offer: MarketplaceOffer | MarketplaceBatchOffer;
     receiveAddress: string;
     utxos: FormattedUtxo[];
     feeRate: number;

@@ -25,6 +25,21 @@ export declare const createMintPsbt: ({ gatheredUtxos, account, runeId, provider
 }) => Promise<{
     psbt: string;
 }>;
+export declare const createEtchPsbt: ({ account, symbol, cap, premine, perMintAmount, turbo, divisibility, runeName, provider, feeRate, fee, }: {
+    account: Account;
+    provider: Provider;
+    symbol: string;
+    cap?: number;
+    premine?: number;
+    perMintAmount: number;
+    turbo?: boolean;
+    divisibility?: number;
+    runeName: string;
+    feeRate?: number;
+    fee?: number;
+}) => Promise<{
+    psbt: string;
+}>;
 export declare const findRuneUtxos: ({ address, greatestToLeast, provider, runeId, targetNumberOfRunes, }: {
     address: string;
     greatestToLeast: boolean;
@@ -59,6 +74,21 @@ export declare const actualMintFee: ({ gatheredUtxos, account, runeId, provider,
 }) => Promise<{
     fee: number;
 }>;
+export declare const actualEtchFee: ({ account, symbol, cap, premine, perMintAmount, turbo, divisibility, runeName, provider, feeRate, signer, }: {
+    symbol: string;
+    cap?: number;
+    premine?: number;
+    perMintAmount: number;
+    turbo?: boolean;
+    divisibility?: number;
+    runeName: string;
+    account: Account;
+    provider: Provider;
+    feeRate?: number;
+    signer: Signer;
+}) => Promise<{
+    fee: number;
+}>;
 export declare const send: ({ gatheredUtxos, toAddress, amount, runeId, inscriptionAddress, feeRate, account, provider, signer, }: {
     gatheredUtxos: GatheredUtxos;
     toAddress: string;
@@ -81,6 +111,26 @@ export declare const mint: ({ gatheredUtxos, account, runeId, provider, feeRate,
     gatheredUtxos: GatheredUtxos;
     account: Account;
     runeId: string;
+    provider: Provider;
+    feeRate?: number;
+    signer: Signer;
+}) => Promise<{
+    txId: string;
+    rawTx: string;
+    size: any;
+    weight: any;
+    fee: number;
+    satsPerVByte: string;
+}>;
+export declare const etch: ({ symbol, cap, premine, perMintAmount, turbo, divisibility, runeName, account, provider, feeRate, signer, }: {
+    symbol: string;
+    cap?: number;
+    premine?: number;
+    perMintAmount: number;
+    turbo?: boolean;
+    divisibility?: number;
+    runeName: string;
+    account: Account;
     provider: Provider;
     feeRate?: number;
     signer: Signer;

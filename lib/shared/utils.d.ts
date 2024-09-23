@@ -58,7 +58,6 @@ export declare function amountToSatoshis(val: any): number;
 export declare const validator: (pubkey: Buffer, msghash: Buffer, signature: Buffer) => boolean;
 export declare function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput;
 export declare const getWitnessDataChunk: (content: string, encodeType?: BufferEncoding) => Buffer[];
-export declare const getSatpointFromUtxo: (utxo: IBlockchainInfoUTXO) => string;
 export declare const getInscriptionsByWalletBIS: (walletAddress: string, offset?: number) => Promise<IBISWalletIx[]>;
 export declare function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]): number;
 export declare function calculateAmountGatheredUtxo(utxoArray: Utxo[]): number;
@@ -81,6 +80,16 @@ export declare const createRuneMintScript: ({ runeId, mintOutPutIndex, pointer, 
     runeId: string;
     mintOutPutIndex: number;
     pointer?: number;
+}) => Buffer;
+export declare const createRuneEtchScript: ({ pointer, runeName, symbol, divisibility, perMintAmount, premine, cap, turbo, }: {
+    pointer?: number;
+    runeName: string;
+    symbol: string;
+    divisibility?: number;
+    perMintAmount: number;
+    cap?: number;
+    premine?: number;
+    turbo?: boolean;
 }) => Buffer;
 export declare let RPC_ADDR: string;
 export declare const callBTCRPCEndpoint: (method: string, params: string | string[], network: string) => Promise<any>;
