@@ -69,6 +69,9 @@ export declare const formatInputsToSign: ({ _psbt, senderPublicKey, network, }: 
 export declare const timeout: (n: any) => Promise<unknown>;
 export declare const signInputs: (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], taprootPubkey: string, segwitPubKey: string, segwitSigner: any, taprootSigner: any) => Promise<bitcoin.Psbt>;
 export declare const createInscriptionScript: (pubKey: Buffer, content: string) => bitcoin.payments.Stack;
+export declare function encodeToBase26(inputString: string): string;
+export declare function runeFromStr(s: string): bigint;
+export declare function hexToLittleEndian(hex: string): string;
 export declare const createRuneSendScript: ({ runeId, amount, divisibility, sendOutputIndex, pointer, }: {
     runeId: string;
     amount: number;

@@ -270,13 +270,7 @@ const btcSend = new Command('send')
   .option('-feeRate, --feeRate <feeRate>', 'fee rate')
 
   /* @dev example call 
-  oyl btc send 
-  -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' 
-  -native '4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3'
-  -p regtest 
-  -t bcrt1qzr9vhs60g6qlmk7x3dd7g3ja30wyts48sxuemv 
-  -amt 1000
-  -feeRate 2
+  oyl btc send -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -t bcrt1qzr9vhs60g6qlmk7x3dd7g3ja30wyts48sxuemv -amt 1000 -feeRate 2
 */
 
   .action(async (options) => {
@@ -338,15 +332,7 @@ const brc20Send = new Command('send')
   .option('-feeRate, --feeRate <feeRate>', 'fee rate')
 
   /* @dev example call 
-  oyl brc20 send 
-  -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' 
-  -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3
-  -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361
-  -p regtest 
-  -t bcrt1qzr9vhs60g6qlmk7x3dd7g3ja30wyts48sxuemv 
-  -tick toyl
-  -amt 1000
-  -feeRate 2
+  oyl brc20 send -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -t bcrt1qzr9vhs60g6qlmk7x3dd7g3ja30wyts48sxuemv -tick toyl -amt 1000 -feeRate 2
 */
 
   .action(async (options) => {
@@ -355,7 +341,6 @@ const brc20Send = new Command('send')
       segwitPrivateKey: options.nativeSegwit,
       taprootPrivateKey: options.taproot,
       nestedSegwitPrivateKey: options.nestedSegwit,
-      legacyPrivateKey: options.legacy,
     })
     const account = mnemonicToAccount({
       mnemonic: options.mnemonic,
@@ -363,9 +348,16 @@ const brc20Send = new Command('send')
         network: provider.network,
       },
     })
+
+    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
+      await utxo.accountUtxos({ account, provider })
+
     console.log(
       await brc20.send({
-        gatheredUtxos: { utxos: [], totalAmount: 0 },
+        gatheredUtxos: {
+          utxos: accountSpendableTotalUtxos,
+          totalAmount: accountSpendableTotalBalance,
+        },
         ticker: options.ticker,
         toAddress: options.to,
         feeRate: options.feeRate,
@@ -506,13 +498,17 @@ const runeSend = new Command('send')
         network: provider.network,
       },
     })
-    const gatheredUtxos = await utxo.accountSpendableUtxos({
-      account,
-      provider,
-    })
+    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
+      await utxo.accountUtxos({
+        account,
+        provider,
+      })
     console.log(
       await rune.send({
-        gatheredUtxos,
+        gatheredUtxos: {
+          utxos: accountSpendableTotalUtxos,
+          totalAmount: accountSpendableTotalBalance,
+        },
         runeId: options.runeId,
         amount: options.amount,
         inscriptionAddress: options.inscriptionAddress,
@@ -587,7 +583,7 @@ const runeMint = new Command('mint')
     )
   })
 
-const runeEtch = new Command('etch')
+const runeEtchCommit = new Command('etchCommit')
   .requiredOption(
     '-p, --provider <provider>',
     'provider to use when querying the network for utxos'
@@ -596,6 +592,67 @@ const runeEtch = new Command('etch')
     '-m, --mnemonic <mnemonic>',
     'mnemonic you want to get private keys from'
   )
+  .requiredOption('-rune-name, --rune-name <runeName>', 'name of rune to etch')
+
+  .option('-legacy, --legacy <legacy>', 'legacy private key')
+  .option('-taproot, --taproot <taproot>', 'taproot private key')
+  .option(
+    '-nested, --nested-segwit <nestedSegwit>',
+    'nested segwit private key'
+  )
+  .option(
+    '-native, --native-segwit <nativeSegwit>',
+    'native segwit private key'
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+
+  /* @dev example call 
+oyl rune etch -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2 -divisibility 3 -cap 100000 -pre 1000 -symbol Z -rune-name OYLTESTER -per-mint-amount 500
+*/
+
+  .action(async (options) => {
+    const provider = defaultProvider[options.provider]
+    const signer = new Signer(provider.network, {
+      segwitPrivateKey: options.nativeSegwit,
+      taprootPrivateKey: options.taproot,
+      nestedSegwitPrivateKey: options.nestedSegwit,
+      legacyPrivateKey: options.legacy,
+    })
+    const account = mnemonicToAccount({
+      mnemonic: options.mnemonic,
+      opts: {
+        network: provider.network,
+      },
+    })
+    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
+      await utxo.accountUtxos({ account, provider })
+
+    console.log(
+      await rune.etchCommit({
+        gatheredUtxos: {
+          utxos: accountSpendableTotalUtxos,
+          totalAmount: accountSpendableTotalBalance,
+        },
+        runeName: options.runeName,
+        feeRate: options.feeRate,
+        account,
+        signer,
+        provider,
+      })
+    )
+  })
+
+const runeEtchReveal = new Command('etchReveal')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+  .requiredOption(
+    '-m, --mnemonic <mnemonic>',
+    'mnemonic you want to get private keys from'
+  )
+  .requiredOption('-commitId, --commitId <commitId>', 'commitId')
+  .requiredOption('-scrp, --script <script>', 'commit script to spend')
   .requiredOption('-symbol, --symbol <symbol>', 'symbol for rune to etch')
   .requiredOption('-rune-name, --rune-name <runeName>', 'name of rune to etch')
   .requiredOption(
@@ -639,15 +696,17 @@ oyl rune etch -m 'abandon abandon abandon abandon abandon abandon abandon abando
         network: provider.network,
       },
     })
+
     console.log(
-      await rune.etch({
+      await rune.etchReveal({
+        commitTxId: options.commitId,
+        script: options.script,
         symbol: options.symbol,
         premine: options.premine,
         perMintAmount: options.perMintAmount,
         turbo: Boolean(Number(options.turbo)),
         divisibility: Number(options.divisibility),
         runeName: options.runeName,
-        cap: options.cap,
         feeRate: options.feeRate,
         account,
         signer,
@@ -917,7 +976,8 @@ const runeCommand = new Command('rune')
   .description('Functions for runes')
   .addCommand(runeSend)
   .addCommand(runeMint)
-  .addCommand(runeEtch)
+  .addCommand(runeEtchCommit)
+  .addCommand(runeEtchReveal)
   .addCommand(getRuneByName)
 
 const providerCommand = new Command('provider')

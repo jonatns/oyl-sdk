@@ -254,8 +254,6 @@ export const getWitnessDataChunk = function (
   return contentChunks
 }
 
-
-
 //FLAG FOR REMOVAL
 export const getInscriptionsByWalletBIS = async (
   walletAddress: string,
@@ -374,7 +372,7 @@ export const createInscriptionScript = (
   ]
 }
 
-function encodeToBase26(inputString: string): string {
+export function encodeToBase26(inputString: string): string {
   const baseCharCode = 'a'.charCodeAt(0)
   return inputString
     .toLowerCase()
@@ -388,6 +386,35 @@ function encodeToBase26(inputString: string): string {
       }
     })
     .join('')
+}
+
+export function runeFromStr(s: string) {
+  let x = 0n // Use BigInt for handling large numbers equivalent to u128 in Rust.
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i]
+    if (i > 0) {
+      x += 1n
+    }
+    x *= 26n // Multiply by 26 at each step to shift left in base 26.
+
+    // Convert character to a number (0-25) and add it to x.
+    const charCode = c.charCodeAt(0)
+    if (charCode >= 65 && charCode <= 90) {
+      // 'A'.charCodeAt(0) is 65, 'Z'.charCodeAt(0) is 90
+      x += BigInt(charCode - 65)
+    } else {
+      throw new Error(`Invalid character in rune name: ${c}`)
+    }
+  }
+  return x
+}
+
+export function hexToLittleEndian(hex: string) {
+  let littleEndianHex = ''
+  for (let i = hex.length - 2; i >= 0; i -= 2) {
+    littleEndianHex += hex.substr(i, 2)
+  }
+  return littleEndianHex
 }
 
 export const createRuneSendScript = ({
@@ -511,20 +538,6 @@ export const createRuneEtchScript = ({
   premine?: number
   turbo?: boolean
 }) => {
-  console.log({
-    etching: {
-      divisibility,
-      premine: BigInt(premine),
-      runeName,
-      symbol,
-      terms: {
-        cap: cap && BigInt(cap),
-        amount: perMintAmount && BigInt(perMintAmount),
-      },
-      turbo,
-    },
-    pointer,
-  })
   const runeEtch = encodeRunestone({
     etching: {
       divisibility,
