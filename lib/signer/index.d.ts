@@ -6,6 +6,15 @@ export type walletInit = {
     legacyPrivateKey?: string;
     nestedSegwitPrivateKey?: string;
 };
+export declare enum SighashType {
+    ALL,
+    NONE,
+    SINGLE,
+    ANYONECANPAY,
+    ALL_ANYONECANPAY,
+    NONE_ANYONECANPAY,
+    SINGLE_ANYONECANPAY
+}
 export declare class Signer {
     network: bitcoin.Network;
     segwitKeyPair: ECPairInterface;
@@ -36,10 +45,11 @@ export declare class Signer {
         raw: bitcoin.Psbt;
         signedHexPsbt: string;
     }>;
-    signAllInputs({ rawPsbt, rawPsbtHex, finalize, }: {
+    signAllInputs({ rawPsbt, rawPsbtHex, finalize, allowedSighashTypes, }: {
         rawPsbt?: string;
         rawPsbtHex?: string;
-        finalize: boolean;
+        finalize?: boolean;
+        allowedSighashTypes?: SighashType[];
     }): Promise<{
         signedPsbt: string;
         signedHexPsbt: string;
