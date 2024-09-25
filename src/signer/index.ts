@@ -11,6 +11,16 @@ export type walletInit = {
   nestedSegwitPrivateKey?: string
 }
 
+export enum SighashType {
+  ALL = bitcoin.Transaction.SIGHASH_ALL,
+  NONE = bitcoin.Transaction.SIGHASH_NONE,
+  SINGLE = bitcoin.Transaction.SIGHASH_SINGLE,
+  ANYONECANPAY = bitcoin.Transaction.SIGHASH_ANYONECANPAY,
+  ALL_ANYONECANPAY = SighashType.ALL | SighashType.ANYONECANPAY,
+  NONE_ANYONECANPAY = SighashType.NONE | SighashType.ANYONECANPAY,
+  SINGLE_ANYONECANPAY = SighashType.SINGLE | SighashType.ANYONECANPAY,
+}
+
 export class Signer {
   network: bitcoin.Network
   segwitKeyPair: ECPairInterface
@@ -147,11 +157,13 @@ export class Signer {
   async signAllInputs({
     rawPsbt,
     rawPsbtHex,
-    finalize,
+    finalize = true,
+    allowedSighashTypes = [SighashType.ALL],
   }: {
     rawPsbt?: string
     rawPsbtHex?: string
-    finalize: boolean
+    finalize?: boolean
+    allowedSighashTypes?: SighashType[]
   }) {
     let unSignedPsbt: bitcoin.Psbt
     if (rawPsbt) {
@@ -207,25 +219,34 @@ export class Signer {
 
       switch (true) {
         case matchingTaprootPubKey:
-          unSignedPsbt.signTaprootInput(i, tweakedSigner)
+          unSignedPsbt.signTaprootInput(
+            i,
+            tweakedSigner,
+            undefined,
+            allowedSighashTypes
+          )
           if (finalize) {
             unSignedPsbt.finalizeInput(i)
           }
           break
         case matchingLegacy:
-          unSignedPsbt.signInput(i, this.legacyKeyPair)
+          unSignedPsbt.signInput(i, this.legacyKeyPair, allowedSighashTypes)
           if (finalize) {
             unSignedPsbt.finalizeInput(i)
           }
           break
         case matchingNative:
-          unSignedPsbt.signInput(i, this.segwitKeyPair)
+          unSignedPsbt.signInput(i, this.segwitKeyPair, allowedSighashTypes)
           if (finalize) {
             unSignedPsbt.finalizeInput(i)
           }
           break
         case matchingNestedSegwit:
-          unSignedPsbt.signInput(i, this.nestedSegwitKeyPair)
+          unSignedPsbt.signInput(
+            i,
+            this.nestedSegwitKeyPair,
+            allowedSighashTypes
+          )
           if (finalize) {
             unSignedPsbt.finalizeInput(i)
           }
