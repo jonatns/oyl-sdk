@@ -591,7 +591,7 @@
 
 "@magiceden-oss/runestone-lib@^1.0.2":
   version "1.0.2"
-  resolved "https://registry.npmjs.org/@magiceden-oss/runestone-lib/-/runestone-lib-1.0.2.tgz#524394b49119d1acace0edc351f9cd5d7ed1ad73"
+  resolved "https://registry.npmjs.org/@magiceden-oss/runestone-lib/-/runestone-lib-1.0.2.tgz"
   integrity sha512-C4XoE7tHxxaWQNzovBIEndXGrTesotshnKQA8DXlnoVDvriD6G26ezUoj9AlEb2UAPbEijSga4Dtwd86Z0a1jg==
 
 "@noble/curves@1.2.0":
@@ -1012,9 +1012,9 @@ await-outside@^2.1.2:
     async-to-gen "~1.3.2"
 
 axios@^1.6.2:
-  version "1.6.8"
-  resolved "https://registry.npmjs.org/axios/-/axios-1.6.8.tgz"
-  integrity sha512-v/ZHtJDU39mDpyBoFVkETcd/uNdxrWRrg3bKpOKzXFA6Bvqopts6ALSMU3y6ijYxbw2B+wPrIv46egTzJXCLGQ==
+  version "1.7.7"
+  resolved "https://registry.npmjs.org/axios/-/axios-1.7.7.tgz#2f554296f9892a72ac8d8e4c5b79c14a91d0a47f"
+  integrity sha512-S4kL7XrjgBmvdGut0sN3yJxqYzrDOnivkBiN0OFs6hLiUam3UPvswUo0kqGyhqUZGEOytHyumEdXsAkgCOUf3Q==
   dependencies:
     follow-redirects "^1.15.6"
     form-data "^4.0.0"
@@ -1187,7 +1187,7 @@ bip322-js@^1.1.0:
 
 bip322-js@^2.0.0:
   version "2.0.0"
-  resolved "https://registry.npmjs.org/bip322-js/-/bip322-js-2.0.0.tgz#827126d5563c21795d2be51b088a3734996b4fcf"
+  resolved "https://registry.npmjs.org/bip322-js/-/bip322-js-2.0.0.tgz"
   integrity sha512-wyewxyCLl+wudZWiyvA46SaNQL41dVDJ+sx4HvD6zRXScHzAycwuKEMmbvr2qN+P/IIYArF4XVqlyZVnjutELQ==
   dependencies:
     "@bitcoinerlab/secp256k1" "^1.1.1"
@@ -1929,7 +1929,7 @@ fs.realpath@^1.0.0:
 
 fsevents@^2.3.2:
   version "2.3.3"
-  resolved "https://registry.npmjs.org/fsevents/-/fsevents-2.3.3.tgz#cac6407785d03675a2a5e1a5305c697b347d90d6"
+  resolved "https://registry.npmjs.org/fsevents/-/fsevents-2.3.3.tgz"
   integrity sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==
 
 function-bind@^1.1.2:
