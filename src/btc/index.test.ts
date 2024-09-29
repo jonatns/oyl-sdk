@@ -1,6 +1,6 @@
 import * as bitcoin from 'bitcoinjs-lib'
-import { createPsbt, send } from './btc'
-import { accountSpendableUtxos } from '../utxo/utxo'
+import { createPsbt } from './btc'
+import * as utxo from '../utxo/utxo'
 import { Account, mnemonicToAccount } from '../account/account'
 import { Opts, mainnetMnemonic } from '../shared/constants'
 import { Provider } from '../provider/provider'
@@ -33,7 +33,7 @@ jest.mock('../provider/provider', () => ({
   })),
 }))
 
-jest.spyOn(require('../utxo'), 'accountSpendableUtxos').mockResolvedValue({
+jest.spyOn(utxo, 'accountSpendableUtxos').mockResolvedValue({
   totalAmount: 20000,
   utxos: [
     {
@@ -41,11 +41,18 @@ jest.spyOn(require('../utxo'), 'accountSpendableUtxos').mockResolvedValue({
       outputIndex: 0,
       satoshis: 20000,
       scriptPk: scriptPk,
+      address,
+      inscriptions: [],
+      confirmations: 1,
     },
   ],
 })
 
 describe('btc sendTx', () => {
+  beforeEach(() => {
+    jest.resetModules()
+  })
+
   it('creates a transaction successfully', async () => {
     const result = await createPsbt({
       toAddress: address,
@@ -57,7 +64,7 @@ describe('btc sendTx', () => {
 
     expect(result.psbt).toBeDefined()
 
-    expect(accountSpendableUtxos).toHaveBeenCalledWith({
+    expect(utxo.accountSpendableUtxos).toHaveBeenCalledWith({
       account: account,
       provider: provider,
       spendAmount: 4540,
