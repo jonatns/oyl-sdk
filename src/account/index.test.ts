@@ -1,4 +1,9 @@
-import { mnemonicToAccount, Account, generateMnemonic } from './account'
+import {
+  mnemonicToAccount,
+  Account,
+  generateMnemonic,
+  getWalletPrivateKeys,
+} from './account'
 
 function isAccount(obj: any): obj is Account {
   return (
@@ -45,14 +50,27 @@ describe('Account Tests', () => {
     ).toBe(true)
   })
 
-  it('Generate 12 word mnemonic', () => {
-    const countWords = (str: string): number => {
-      return str
-        .trim()
-        .split(/\s+/)
-        .filter((word) => word.length > 0).length
-    }
+  it('generateMnemonic generates a 12 word mnemonic', () => {
     const mnemonic = generateMnemonic()
-    expect(countWords(mnemonic)).toBe(12)
+    const words = mnemonic.split(' ')
+    expect(words).toHaveLength(12)
+  })
+
+  it('mnemonicToAccount throws error if mnemonic is invalid', () => {
+    expect(() => mnemonicToAccount({ mnemonic: 'invalid mnemonic' })).toThrow(
+      Error
+    )
+  })
+
+  it('getWalletPrivateKeys throws error if mnemonic is invalid', () => {
+    expect(() =>
+      getWalletPrivateKeys({ mnemonic: 'invalid mnemonic' })
+    ).toThrow(Error)
+  })
+
+  it('getWalletPrivateKeys throws error if mnemonic is invalid', () => {
+    expect(() =>
+      getWalletPrivateKeys({ mnemonic: 'invalid mnemonic' })
+    ).toThrow(Error)
   })
 })

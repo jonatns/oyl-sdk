@@ -13,7 +13,6 @@ import {
 } from './interface'
 import BigNumber from 'bignumber.js'
 import { maximumScriptBytes } from './constants'
-import axios from 'axios'
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew'
 import { EsploraRpc } from '../rpclient/esplora'
@@ -249,25 +248,6 @@ export const getWitnessDataChunk = function (
   }
 
   return contentChunks
-}
-
-
-
-//FLAG FOR REMOVAL
-export const getInscriptionsByWalletBIS = async (
-  walletAddress: string,
-  offset: number = 0
-) => {
-  return (await axios
-    .get(
-      `https://api.bestinslot.xyz/v3/wallet/inscriptions?address=${walletAddress}&sort_by=inscr_num&order=asc&offset=${offset}&count=100`,
-      {
-        headers: {
-          'X-Api-Key': 'abbfff3d-49fa-4f7f-883a-0a5fce48a9f1',
-        },
-      }
-    )
-    .then((res) => res.data?.data)) as IBISWalletIx[]
 }
 
 export function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]) {
@@ -542,39 +522,6 @@ export const createRuneEtchScript = ({
 export let RPC_ADDR =
   'https://mainnet.sandshrew.io/v1/6e3bc3c289591bb447c116fda149b094'
 
-export const callBTCRPCEndpoint = async (
-  method: string,
-  params: string | string[],
-  network: string
-) => {
-  if (network === 'testnet') {
-    RPC_ADDR =
-      'https://testnet.sandshrew.io/v1/6e3bc3c289591bb447c116fda149b094'
-  }
-  if (network === 'regtest') {
-    RPC_ADDR === 'http://localhost:3000/v1/regtest'
-  }
-  const data = JSON.stringify({
-    jsonrpc: '2.0',
-    id: method,
-    method: method,
-    params: [params],
-  })
-
-  // @ts-ignore
-  return await axios
-    .post(RPC_ADDR, data, {
-      headers: {
-        'content-type': 'application/json',
-      },
-    })
-    .then((res) => res.data)
-    .catch((e) => {
-      console.error(e.response)
-      throw e
-    })
-}
-
 export function getAddressType(address: string): AddressType | null {
   if (
     addressFormats.mainnet.p2pkh.test(address) ||
@@ -698,23 +645,6 @@ export function calculateTaprootTxSize(
   const totalOutputSize = outputCount * outputSize
 
   return baseTxSize + totalInputSize + totalOutputSize
-}
-
-export async function getRawTxnHashFromTxnId(txnId: string) {
-  const res = await axios.post(
-    'https://mainnet.sandshrew.io/v1/6e3bc3c289591bb447c116fda149b094',
-    {
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'btc_getrawtransaction',
-      params: [txnId],
-    },
-    {
-      headers: { 'Content-Type': 'application/json' },
-    }
-  )
-
-  return res.data
 }
 
 export const filterTaprootUtxos = async ({

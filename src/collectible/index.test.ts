@@ -1,9 +1,9 @@
 import * as bitcoin from 'bitcoinjs-lib'
-import { createPsbt, findCollectible } from './collectible'
-import { accountSpendableUtxos } from '../utxo/utxo'
-import { Account, mnemonicToAccount } from '../account/account'
+import * as collectible from './collectible'
+import * as utxo from '../utxo/utxo'
+import { Account, mnemonicToAccount } from '../account'
 import { Opts, mainnetMnemonic } from '../shared/constants'
-import { Provider } from '../provider/provider'
+import { Provider } from '../provider'
 import * as dotenv from 'dotenv'
 
 dotenv.config()
@@ -34,7 +34,7 @@ jest.mock('../provider/provider', () => ({
   })),
 }))
 
-jest.spyOn(require('../utxo'), 'accountSpendableUtxos').mockResolvedValue({
+jest.spyOn(utxo, 'accountSpendableUtxos').mockResolvedValue({
   totalAmount: 20000,
   utxos: [
     {
@@ -42,13 +42,16 @@ jest.spyOn(require('../utxo'), 'accountSpendableUtxos').mockResolvedValue({
       outputIndex: 0,
       satoshis: 20000,
       scriptPk: scriptPk,
+      address,
+      inscriptions: [],
+      confirmations: 1,
     },
   ],
 })
 
-jest.spyOn(require('.'), 'findCollectible').mockResolvedValue({
+jest.spyOn(collectible, 'findCollectible').mockResolvedValue({
   txId: 'e3c3b1c9e5a45b4f6c7e1a9c3d6e2a7d8f9b0c3a5c7e4f6d7e1a8b9c0a1b2c31',
-  voutIndex: 294,
+  voutIndex: '294',
   data: {
     scriptpubkey:
       '51200d89d702fafc100ab8eae890cbaf40b3547d6f1429564cf5d5f8d517f4caa390',
@@ -62,8 +65,12 @@ jest.spyOn(require('.'), 'findCollectible').mockResolvedValue({
 })
 
 describe('collectible sendTx', () => {
+  beforeEach(() => {
+    jest.resetModules()
+  })
+
   it('creates a transaction successfully', async () => {
-    const result = await createPsbt({
+    const result = await collectible.createPsbt({
       toAddress: address,
       inscriptionAddress: account.taproot.address,
       inscriptionId: 'testInscriptionId:0',
@@ -73,12 +80,12 @@ describe('collectible sendTx', () => {
     })
 
     expect(result.psbt).toBeDefined()
-    expect(accountSpendableUtxos).toHaveBeenCalledWith({
+    expect(utxo.accountSpendableUtxos).toHaveBeenCalledWith({
       account: account,
       provider: provider,
       spendAmount: 1540,
     })
-    expect(findCollectible).toHaveBeenCalledWith({
+    expect(collectible.findCollectible).toHaveBeenCalledWith({
       address: account.taproot.address,
       provider: provider,
       inscriptionId: 'testInscriptionId:0',
