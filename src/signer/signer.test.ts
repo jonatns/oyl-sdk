@@ -1,5 +1,5 @@
 import * as bitcoin from 'bitcoinjs-lib'
-import { Signer, walletInit } from '.'
+import { SighashType, Signer, walletInit } from './signer'
 import { BIP322, Verifier, Signer as bipSigner } from 'bip322-js'
 import { ECPair } from '../shared/utils'
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
