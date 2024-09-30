@@ -219,13 +219,6 @@ export class Signer {
 
       switch (true) {
         case matchingTaprootPubKey:
-          console.log(
-            'signTaprootInput',
-            i,
-            tweakedSigner,
-            undefined,
-            allowedSighashTypes
-          )
           unSignedPsbt.signTaprootInput(
             i,
             tweakedSigner,
