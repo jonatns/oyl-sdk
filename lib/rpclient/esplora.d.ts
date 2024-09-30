@@ -41,6 +41,7 @@ export declare class EsploraRpc {
     _call(method: any, params?: any[]): Promise<any>;
     getTxInfo(txid: string): Promise<EsploraTx>;
     getTxStatus(txid: string): Promise<any>;
+    getBlockTxids(hash: string): Promise<any>;
     getTxHex(txid: string): Promise<any>;
     getTxRaw(txid: string): Promise<any>;
     getTxOutspends(txid: string): Promise<{
