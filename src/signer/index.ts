@@ -158,7 +158,7 @@ export class Signer {
     rawPsbt,
     rawPsbtHex,
     finalize = true,
-    allowedSighashTypes = [SighashType.ALL],
+    allowedSighashTypes,
   }: {
     rawPsbt?: string
     rawPsbtHex?: string
@@ -219,6 +219,13 @@ export class Signer {
 
       switch (true) {
         case matchingTaprootPubKey:
+          console.log(
+            'signTaprootInput',
+            i,
+            tweakedSigner,
+            undefined,
+            allowedSighashTypes
+          )
           unSignedPsbt.signTaprootInput(
             i,
             tweakedSigner,
