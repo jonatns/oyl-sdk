@@ -32,7 +32,7 @@ import { UTXO_DUST, getAddressType } from '..';
 
 export const maxTxSizeForOffers: number = 482
 export const CONFIRMED_UTXO_ENFORCED_MARKETPLACES: Marketplaces[] = [Marketplaces.UNISAT, Marketplaces.ORDINALS_WALLET]
-export const DUMMY_UTXO_ENFORCED_MARKETPLACES: Marketplaces[] = [Marketplaces.OKX, Marketplaces.ORDINALS_WALLET]
+export const DUMMY_UTXO_ENFORCED_MARKETPLACES: Marketplaces[] = [Marketplaces.OKX, Marketplaces.ORDINALS_WALLET, Marketplaces.MAGISAT, Marketplaces.MAGIC_EDEN]
 export const ESTIMATE_TX_SIZE: number = 350
 export const DUMMY_UTXO_SATS = 600 + 600
 

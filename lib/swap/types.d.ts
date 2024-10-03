@@ -137,7 +137,9 @@ export interface MarketplaceBatchOffer {
 export declare enum Marketplaces {
     UNISAT = 0,
     OKX = 1,
-    ORDINALS_WALLET = 2
+    ORDINALS_WALLET = 2,
+    MAGISAT = 3,
+    MAGIC_EDEN = 4
 }
 export interface PsbtBuilder {
     network: bitcoin.Network;
@@ -179,6 +181,8 @@ export declare const marketplaceName: {
     unisat: Marketplaces;
     okx: Marketplaces;
     'ordinals-wallet': Marketplaces;
+    magisat: Marketplaces;
+    'magic-eden': Marketplaces;
 };
 export interface UtxosToCoverAmount {
     utxos: FormattedUtxo[];

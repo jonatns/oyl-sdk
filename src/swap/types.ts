@@ -151,7 +151,9 @@ export interface MarketplaceBatchOffer {
 export enum Marketplaces {
     UNISAT,
     OKX,
-    ORDINALS_WALLET
+    ORDINALS_WALLET,
+    MAGISAT,
+    MAGIC_EDEN
 }
 
 export interface PsbtBuilder {
@@ -200,7 +202,9 @@ export interface SwapPayload {
 export const marketplaceName = {
     'unisat': Marketplaces.UNISAT,
     'okx': Marketplaces.OKX,
-    'ordinals-wallet': Marketplaces.ORDINALS_WALLET
+    'ordinals-wallet': Marketplaces.ORDINALS_WALLET,
+    'magisat': Marketplaces.MAGISAT,
+    'magic-eden': Marketplaces.MAGIC_EDEN
 }
 
 export interface UtxosToCoverAmount {
