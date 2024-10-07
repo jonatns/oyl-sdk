@@ -3,6 +3,7 @@ import {
   Account,
   generateMnemonic,
   getWalletPrivateKeys,
+  validateMnemonic,
 } from './account'
 
 function isAccount(obj: any): obj is Account {
@@ -56,21 +57,27 @@ describe('Account Tests', () => {
     expect(words).toHaveLength(12)
   })
 
-  it('mnemonicToAccount throws error if mnemonic is invalid', () => {
-    expect(() => mnemonicToAccount({ mnemonic: 'invalid mnemonic' })).toThrow(
-      Error
-    )
+  it('mnemonicToAccount does not throw an error if mnemonic is invalid', () => {
+    expect(() =>
+      mnemonicToAccount({ mnemonic: 'invalid mnemonic' })
+    ).not.toThrow(Error)
   })
 
-  it('getWalletPrivateKeys throws error if mnemonic is invalid', () => {
+  it('getWalletPrivateKeys does not throw an error if mnemonic is invalid', () => {
     expect(() =>
       getWalletPrivateKeys({ mnemonic: 'invalid mnemonic' })
-    ).toThrow(Error)
+    ).not.toThrow(Error)
   })
 
-  it('getWalletPrivateKeys throws error if mnemonic is invalid', () => {
-    expect(() =>
-      getWalletPrivateKeys({ mnemonic: 'invalid mnemonic' })
-    ).toThrow(Error)
+  it('validateMnemonic returns true for valid mnemonic', () => {
+    expect(
+      validateMnemonic(
+        'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
+      )
+    ).toBeTruthy()
+  })
+
+  it('validateMnemonic returns false for invalid mnemonic', () => {
+    expect(validateMnemonic('invalid mnemonic')).toBeFalsy()
   })
 })
