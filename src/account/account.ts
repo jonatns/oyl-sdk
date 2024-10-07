@@ -44,6 +44,9 @@ export interface MnemonicToAccountOptions {
 export const generateMnemonic = () => {
   return bip39.generateMnemonic()
 }
+export const validateMnemonic = (mnemonic: string) => {
+  return bip39.validateMnemonic(mnemonic)
+}
 export const mnemonicToAccount = ({
   mnemonic = generateMnemonic(),
   opts,
@@ -87,10 +90,6 @@ export const generateWallet = ({
   mnemonic?: string
   opts: MnemonicToAccountOptions
 }) => {
-  if (!bip39.validateMnemonic(mnemonic)) {
-    throw Error('Invalid BIP39 mnemonic')
-  }
-
   const toXOnly = (pubKey: Buffer) =>
     pubKey.length === 32 ? pubKey : pubKey.slice(1, 33)
 
@@ -183,10 +182,6 @@ export const getWalletPrivateKeys = ({
   mnemonic: string
   opts?: MnemonicToAccountOptions
 }) => {
-  if (!bip39.validateMnemonic(mnemonic)) {
-    throw Error('Invalid BIP39 mnemonic')
-  }
-
   const options = {
     network: opts?.network ? opts.network : bitcoin.networks.bitcoin,
     index: opts?.index ? opts.index : 0,
