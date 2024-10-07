@@ -7,6 +7,7 @@ import {
   marketplaceName,
 } from './types'
 import { ordinalWalletSwap } from './ordinals-wallet/ordinals-wallet'
+import { magisatSwap } from './magisat'
 
 
 export async function processOffer (options: ProcessOfferOptions): Promise<SwapResponse>{
@@ -20,6 +21,9 @@ export async function processOffer (options: ProcessOfferOptions): Promise<SwapR
             break
         case Marketplaces.OKX:
             swapResponse = await okxSwap(options);
+            break;
+        case Marketplaces.MAGISAT:
+            swapResponse = await magisatSwap(options);
             break;
     }
 

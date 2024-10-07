@@ -25,6 +25,7 @@ export interface DummyUtxoOptions {
     utxos: FormattedUtxo[]
     feeRate: number
     pubKey: string
+    nUtxos?: number
     network: bitcoin.Network
     addressType: AddressType
 }
@@ -43,6 +44,7 @@ export interface PrepareAddressForDummyUtxos {
     network: bitcoin.Network
     feeRate: number
     pubKey: string
+    nUtxos?: number
     utxos?: FormattedUtxo[]
     addressType: AddressType
 }
@@ -187,7 +189,6 @@ export interface GetSellerPsbtRequest {
     feeRate: number;
     receiveAddress?: string;
     orders: BuyOrder[];
-    prepareAddressParams?: PrepareAddressForDummyUtxos
     //additionalParams?: Omit<T, keyof GetSellerPsbtRequest<T>>;
 }
 
