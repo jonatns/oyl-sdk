@@ -24,8 +24,8 @@ export declare function canAddressAffordBid({ address, estimatedCost, offers, pr
 export declare function calculateAmountGathered(utxoArray: FormattedUtxo[]): number;
 export declare function selectSpendAddress({ offers, provider, feeRate, account }: SelectSpendAddress): Promise<SelectSpendAddressResponse>;
 export declare function sanitizeFeeRate(provider: Provider, feeRate: number): Promise<number>;
-export declare function prepareAddressForDummyUtxos({ address, network, pubKey, feeRate, addressType, utxos }: PrepareAddressForDummyUtxos): Promise<BuiltPsbt | null>;
-export declare function dummyUtxosPsbt({ address, utxos, feeRate, pubKey, addressType, network }: DummyUtxoOptions): BuiltPsbt;
+export declare function prepareAddressForDummyUtxos({ address, network, pubKey, feeRate, addressType, nUtxos, utxos }: PrepareAddressForDummyUtxos): Promise<BuiltPsbt | null>;
+export declare function dummyUtxosPsbt({ address, utxos, feeRate, pubKey, addressType, network, nUtxos }: DummyUtxoOptions): BuiltPsbt;
 export declare function updateUtxos({ originalUtxos, txId, spendAddress, provider }: {
     originalUtxos: FormattedUtxo[];
     txId: string;

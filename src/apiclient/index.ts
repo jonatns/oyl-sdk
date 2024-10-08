@@ -12,6 +12,7 @@ import {
   getRuneOutpointsRegtest,
 } from './regtestApi'
 import { Account, SpendStrategy } from '../account'
+import { GetSellerPsbtRequest, SubmitBuyerPsbtRequest } from 'swap/types'
 
 /**
  * Represents the client for interacting with the Oyl API.
@@ -155,6 +156,14 @@ export class OylApiClient {
     return await this._call('/get-rune-token-info', 'post', {
       ticker: ticker,
     })
+  }
+
+  async getSellerPsbt(params: GetSellerPsbtRequest) {
+    return await this._call('/get-seller-psbt', 'post', params)
+  }
+
+  async submitBuyerPsbt(params: SubmitBuyerPsbtRequest) {
+    return await this._call('/submit-buyer-psbt', 'post', params)
   }
 
   /**
