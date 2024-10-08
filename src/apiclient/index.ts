@@ -12,7 +12,7 @@ import {
   getRuneOutpointsRegtest,
 } from './regtestApi'
 import { Account, SpendStrategy } from '../account'
-import { GetSellerPsbtRequest, SubmitBuyerPsbtRequest } from 'swap/types'
+import { GetSellerPsbtRequest, SubmitBuyerPsbtRequest } from '../swap/types'
 
 /**
  * Represents the client for interacting with the Oyl API.
