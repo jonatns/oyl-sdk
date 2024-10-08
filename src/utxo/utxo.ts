@@ -255,21 +255,26 @@ export const addressUtxos = async ({
 
   const utxoPromises = utxos.map(async (utxo) => {
     const outputId = `${utxo.txid}:${utxo.vout}`
-    const [hasInscription, hasRune] = await Promise.all([
-      provider.ord.getTxOutput(outputId),
-      provider.network.bech32 !== bitcoin.networks.regtest.bech32
-        ? provider.api.getOutputRune({ output: outputId })
-        : Promise.resolve(false),
-    ])
-
-    return { utxo, hasInscription, hasRune }
+    let hasRune: any[] = []
+    const hasInscription = await provider.ord.getTxOutput(outputId)
+    const v2: boolean = typeof hasInscription.runes === 'object'
+    if (!v2) {
+      hasRune =
+        provider.network.bech32 !== bitcoin.networks.regtest.bech32
+          ? await provider.api.getOutputRune({ output: outputId })
+          : []
+    }
+    return { utxo, hasInscription, hasRune, v2 }
   })
 
   const results = await Promise.all(utxoPromises)
-  for (const { utxo, hasInscription, hasRune } of results) {
+  for (const { utxo, hasInscription, hasRune, v2 } of results) {
+    const runes: number = v2
+      ? Object.keys(hasInscription.runes).length
+      : hasInscription.runes.length
     if (
       hasInscription.inscriptions.length === 0 &&
-      hasInscription.runes.length === 0 &&
+      runes === 0 &&
       hasInscription.indexed &&
       !hasRune?.output
     ) {
@@ -294,7 +299,7 @@ export const addressUtxos = async ({
       totalBalance += utxo.value
     }
 
-    if (hasRune?.output || hasInscription.runes.length > 0) {
+    if (hasRune?.output || runes > 0) {
       const transactionDetails = await provider.esplora.getTxInfo(utxo.txid)
       const voutEntry = transactionDetails.vout.find(
         (v) => v.scriptpubkey_address === address

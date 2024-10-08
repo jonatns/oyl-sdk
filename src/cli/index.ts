@@ -16,7 +16,7 @@ import { OylTransactionError } from '../errors'
 
 const defaultProvider = {
   bitcoin: new Provider({
-    url: 'https://mainnet.sandshrew.io',
+    url: 'https://mainnet2.sandshrew.io',
     projectId: process.env.SANDSHREW_PROJECT_ID!,
     network: bitcoin.networks.bitcoin,
     networkType: 'mainnet',
@@ -150,7 +150,7 @@ const signPsbt = new Command('sign')
       console.log('extracted tx hex', extractedTx.toHex())
     }
     console.log('signed hex psbt', signedHexPsbt)
-    console.log("--------------------------------------")
+    console.log('--------------------------------------')
     console.log('signed psbt', signedPsbt)
   })
 
