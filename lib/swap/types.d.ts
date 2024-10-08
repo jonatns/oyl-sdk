@@ -25,6 +25,7 @@ export interface DummyUtxoOptions {
     utxos: FormattedUtxo[];
     feeRate: number;
     pubKey: string;
+    nUtxos?: number;
     network: bitcoin.Network;
     addressType: AddressType;
 }
@@ -41,6 +42,7 @@ export interface PrepareAddressForDummyUtxos {
     network: bitcoin.Network;
     feeRate: number;
     pubKey: string;
+    nUtxos?: number;
     utxos?: FormattedUtxo[];
     addressType: AddressType;
 }
@@ -160,6 +162,47 @@ export interface BuiltPsbt {
     psbtBase64: string;
     inputTemplate: ConditionalInput[];
     outputTemplate: OutputTxTemplate[];
+}
+export interface GetSellerPsbtRequest {
+    marketplaceType: Marketplaces;
+    assetType: AssetType;
+    buyerAddress: string;
+    buyerPublicKey: string;
+    feeRate: number;
+    receiveAddress?: string;
+    orders: BuyOrder[];
+}
+export interface BuyOrder {
+    orderId?: string | number;
+    price?: number;
+    inscriptionId?: string;
+    outpoint?: string;
+    amount?: number;
+    bidId?: string;
+    fee?: number;
+}
+export interface GetSellerPsbtResponse {
+    marketplaceType: Marketplaces;
+    psbt: string;
+    additionalData?: {
+        [key: string]: any;
+    };
+}
+export interface SubmitBuyerPsbtRequest {
+    marketplaceType: Marketplaces;
+    assetType: AssetType;
+    buyerAddress: string;
+    buyerPublicKey?: string;
+    receiveAddress?: string;
+    psbt: string;
+    orders: BuyOrder[];
+}
+export interface SubmitBuyerPsbtResponse {
+    marketplaceType: Marketplaces;
+    txid: string;
+    additionalData?: {
+        [key: string]: any;
+    };
 }
 export interface SwapResponse {
     dummyTxId: string;

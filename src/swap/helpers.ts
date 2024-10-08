@@ -289,7 +289,7 @@ export async function prepareAddressForDummyUtxos({
         return null;
     } catch (err) {
         throw new Error(
-            'An error occured while preparing address for dummy utxos'
+            `An error occured while preparing address for dummy utxos ${err.message}`
         )
     }
 }

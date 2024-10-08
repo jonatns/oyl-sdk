@@ -1,5 +1,6 @@
 import { SwapBrcBid, SignedBid, OkxBid, GetOffersParams, GetCollectionOffersParams } from '../shared/interface';
 import { Account, SpendStrategy } from '../account';
+import { GetSellerPsbtRequest, SubmitBuyerPsbtRequest } from 'swap/types';
 /**
  * Represents the client for interacting with the Oyl API.
  */
@@ -78,6 +79,8 @@ export declare class OylApiClient {
      * @param ticker - The ticker to query.
      */
     getRuneTokenInfo(ticker: string): Promise<any>;
+    getSellerPsbt(params: GetSellerPsbtRequest): Promise<any>;
+    submitBuyerPsbt(params: SubmitBuyerPsbtRequest): Promise<any>;
     /**
      * Get Collection info by id.
      * @param collectionId - The collectionId to query.

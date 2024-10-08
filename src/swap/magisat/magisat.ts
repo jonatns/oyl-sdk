@@ -52,7 +52,7 @@ export async function magisatSwap ({
     const psbtForDummyUtxos =
     (assetType != AssetType.RUNES) 
     ?
-    await prepareAddressForDummyUtxos({address, utxos, network, pubKey, feeRate, addressType})
+    await prepareAddressForDummyUtxos({address, utxos, network, pubKey, feeRate, nUtxos, addressType})
     :
     null
     if (psbtForDummyUtxos != null){
