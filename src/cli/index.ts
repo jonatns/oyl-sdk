@@ -150,7 +150,7 @@ const signPsbt = new Command('sign')
       console.log('extracted tx hex', extractedTx.toHex())
     }
     console.log('signed hex psbt', signedHexPsbt)
-    console.log("--------------------------------------")
+    console.log('--------------------------------------')
     console.log('signed psbt', signedPsbt)
   })
 

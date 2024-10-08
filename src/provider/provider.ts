@@ -16,36 +16,37 @@ export type ProviderConstructorArgs = {
   opiUrl?: string
 }
 
-export const defaultNetworkOptions = (networkType:string) => {
-  switch(networkType) {
-    case('mainnet'):
-        return {baseUrl: 'https://mainnet.sandshrew.io',
-          version: 'v1',
-          projectId: process.env.SANDSHREW_PROJECT_ID,
-          network: 'mainnet',
-          apiUrl: 'https://mainnet-api.oyl.gg',
-          opiUrl: 'https://mainnet-opi.sandshrew.io/v1'
+export const defaultNetworkOptions = (networkType: string) => {
+  switch (networkType) {
+    case 'mainnet':
+      return {
+        baseUrl: 'https://mainnet.sandshrew.io',
+        version: 'v1',
+        projectId: process.env.SANDSHREW_PROJECT_ID,
+        network: 'mainnet',
+        apiUrl: 'https://mainnet-api.oyl.gg',
+        opiUrl: 'https://mainnet-opi.sandshrew.io/v1',
       }
-      case('regtest'):
-        return {
-            baseUrl: 'http://localhost:3000',
-          version: 'v1',
-          projectId: 'regtest',
-          network: 'regtest',
-          apiUrl: 'https://mainnet-api.oyl.gg',
-          opiUrl: 'http://localhost:3000',
+    case 'regtest':
+      return {
+        baseUrl: 'http://localhost:3000',
+        version: 'v1',
+        projectId: 'regtest',
+        network: 'regtest',
+        apiUrl: 'https://mainnet-api.oyl.gg',
+        opiUrl: 'http://localhost:3000',
       }
-      case('signet'):
-        return {
-          baseUrl: 'https://signet.sandshrew.io',
-          version: 'v1',
-          projectId: process.env.SANDSHREW_PROJECT_ID,
-          network: 'signet',
-          apiUrl: 'https://signet-api.oyl.gg',
-          opiUrl: 'https://testnet-opi.sandshrew.io/v1',
+    case 'signet':
+      return {
+        baseUrl: 'https://signet.sandshrew.io',
+        version: 'v1',
+        projectId: process.env.SANDSHREW_PROJECT_ID,
+        network: 'signet',
+        apiUrl: 'https://signet-api.oyl.gg',
+        opiUrl: 'https://testnet-opi.sandshrew.io/v1',
       }
-      default:
-        throw new Error(`Invalid network specified ${networkType}`)
+    default:
+      throw new Error(`Invalid network specified ${networkType}`)
   }
 }
 
@@ -57,6 +58,7 @@ export class Provider {
   public api: OylApiClient
   public network: bitcoin.networks.Network
   public networkType: string
+  public url: string
 
   constructor({
     url,
@@ -93,6 +95,7 @@ export class Provider {
     this.api.setAuthToken(process.env.API_TOKEN)
     this.network = network
     this.networkType = networkType
+    this.url = masterUrl
   }
 
   async pushPsbt({
