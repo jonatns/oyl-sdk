@@ -1,12 +1,7 @@
 import { AssetType } from "../../shared/interface";
 import { getAddressType, timeout } from "../../shared/utils";
 import { prepareAddressForDummyUtxos, updateUtxos } from "../helpers";
-import { GetSellerPsbtRequest, GetSellerPsbtResponse, Marketplaces, ProcessOfferOptions, SubmitBuyerPsbtRequest, SubmitBuyerPsbtResponse, SwapResponse } from "swap/types";
-
-
-
-
-
+import { GetSellerPsbtRequest, GetSellerPsbtResponse, Marketplaces, ProcessOfferOptions, SubmitBuyerPsbtRequest, SubmitBuyerPsbtResponse, SwapResponse } from "../types";
 
 export async function magisatSwap ({
     address, 
