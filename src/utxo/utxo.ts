@@ -257,7 +257,7 @@ export const addressUtxos = async ({
     const outputId = `${utxo.txid}:${utxo.vout}`
     let hasRune: any[] = []
     const hasInscription = await provider.ord.getTxOutput(outputId)
-    const v2: boolean = typeof hasInscription.runes === 'object'
+    const v2: boolean = !Array.isArray(hasInscription.runes)
     if (!v2) {
       hasRune =
         provider.network.bech32 !== bitcoin.networks.regtest.bech32
