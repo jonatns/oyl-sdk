@@ -19,7 +19,6 @@ export class OrdRpc {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestData),
-      signal: AbortSignal.timeout(30000),
     }
 
     try {
