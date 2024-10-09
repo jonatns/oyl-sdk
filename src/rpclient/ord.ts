@@ -19,6 +19,7 @@ export class OrdRpc {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestData),
+      signal: AbortSignal.timeout(30000),
     }
 
     try {
@@ -27,7 +28,7 @@ export class OrdRpc {
 
       if (responseData.error) {
         console.error('Ord JSON-RPC Error:', responseData.error)
-        throw new Error (responseData.error)
+        throw new Error(responseData.error)
       }
 
       return responseData.result
@@ -47,7 +48,9 @@ export class OrdRpc {
   }
 
   async getInscriptions(startingNumber?: string) {
-    return await this._call('ord_inscriptions', [startingNumber ? startingNumber : '']);
+    return await this._call('ord_inscriptions', [
+      startingNumber ? startingNumber : '',
+    ])
   }
 
   async getInscriptionsByBlockHash(blockHash: string) {
