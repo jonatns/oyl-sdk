@@ -178,14 +178,7 @@ const accountUtxosToSpend = new Command('accountUtxos')
     const start = performance.now()
 
     const utxos = await accountUtxos({
-      account: {
-        ...account,
-        taproot: {
-          ...account.taproot,
-          address:
-            'bc1pfj8gzcaccpv07u88evft09qezyfppe2nfw6rxxvntwuepackelxs2rwrlv',
-        },
-      },
+      account,
       provider,
     })
 
