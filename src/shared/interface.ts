@@ -1,8 +1,6 @@
 import { payments, Psbt } from 'bitcoinjs-lib'
 import * as bitcoin from 'bitcoinjs-lib'
-import { Signer } from '../signer'
 import { Provider } from '../provider'
-import { Account } from '../account'
 
 export interface InscriptionResponse {
   address: string
@@ -158,8 +156,6 @@ export enum AssetType {
   RUNES,
 }
 
-
-
 export type OrdCollectibleData = {
   address: string
   children: any[]
@@ -200,21 +196,20 @@ export interface OkxBid {
   brc20: boolean
 }
 export interface GetOffersParams {
-  ticker: string;
-  sort_by?: 'unitPrice' | 'totalPrice';
-  order?: 'asc' | 'desc';
-  limit?: number;
-  offset?: number;
+  ticker: string
+  sort_by?: 'unitPrice' | 'totalPrice'
+  order?: 'asc' | 'desc'
+  limit?: number
+  offset?: number
 }
 
 export interface GetCollectionOffersParams {
-  collectionId: string;
-  sort_by?: 'unitPrice' | 'totalPrice';
-  order?: 'asc' | 'desc';
-  limit?: number;
-  offset?: number;
+  collectionId: string
+  sort_by?: 'unitPrice' | 'totalPrice'
+  order?: 'asc' | 'desc'
+  limit?: number
+  offset?: number
 }
-
 
 export interface MarketplaceOffers {
   offerId: string

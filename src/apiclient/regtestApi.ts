@@ -1,7 +1,6 @@
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '..'
 
-
 export const getAllInscriptionsByAddressRegtest = async (address: string) => {
   const oyl = new Provider({
     url: 'http://localhost:3000',
@@ -60,7 +59,11 @@ export const getRuneOutpointsRegtest = async (address: string) => {
     if (utxo.txid) {
       const output = utxo.txid + ':' + utxo.vout
       const txDetails = await oyl.ord.getTxOutput(output)
-      for (let i = 0; i < txDetails.runes.length; i++) {
+      const runes = Array.isArray(txDetails.runes)
+        ? txDetails.runes
+        : Object.keys(txDetails.runes)
+
+      for (let i = 0; i < runes.length; i++) {
         const runeName = txDetails.runes[i][0]
         const { id } = await oyl.ord.getRuneByName(runeName)
         const runeAmount = txDetails.runes[i][1].amount
@@ -106,7 +109,11 @@ export const getRuneBalanceRegtest = async (address: string) => {
     if (utxo.txid) {
       const output = utxo.txid + ':' + utxo.vout
       const txDetails = await oyl.ord.getTxOutput(output)
-      if (txDetails.runes.length > 0) {
+      const runes = Array.isArray(txDetails.runes)
+        ? txDetails.runes
+        : Object.keys(txDetails.runes)
+
+      if (runes.length > 0) {
         const runeName = txDetails.runes[0][0]
         const { id } = await oyl.ord.getRuneByName(runeName)
         const runeAmount = txDetails.runes[0][1].amount

@@ -3,6 +3,7 @@ import { Provider } from '../provider'
 import { Account, SpendStrategy } from '../account'
 import { UTXO_DUST } from '../shared/constants'
 import asyncPool from 'tiny-async-pool'
+import { OrdOutput } from 'rpclient/ord'
 
 export interface EsploraUtxo {
   txid: string
@@ -144,10 +145,14 @@ export const addressSpendableUtxos = async ({
   const results = await Promise.all(utxoPromises)
 
   for (const { utxo, hasInscription, hasRune } of results) {
+    const runes = Array.isArray(hasInscription.runes)
+      ? hasInscription.runes
+      : Object.keys(hasInscription.runes)
+
     if (
       (spendAmount && totalAmount >= spendAmount) ||
       hasInscription.inscriptions.length > 0 ||
-      hasInscription.runes.length > 0 ||
+      runes.length > 0 ||
       !hasInscription.indexed ||
       hasInscription.value === 546 ||
       hasRune?.output
@@ -235,7 +240,8 @@ export const addressUtxos = async ({
   ])
 
   const blockCount = multiCall[1].result
-  let utxos = multiCall[0].result
+  let utxos = multiCall[0].result as EsploraUtxo[]
+
   if (utxos.length === 0) {
     return {
       spendableTotalBalance,
@@ -254,9 +260,13 @@ export const addressUtxos = async ({
   )
 
   const concurrencyLimit = 100
-  const results = []
+  const processedUtxos: {
+    utxo: EsploraUtxo
+    txOutput: OrdOutput
+    scriptPk: string
+  }[] = []
 
-  const iteratorFn = async (utxo) => {
+  const processUtxo = async (utxo: EsploraUtxo) => {
     try {
       const txIdVout = `${utxo.txid}:${utxo.vout}`
       const [txOutput, txDetails] = await Promise.all([
@@ -264,24 +274,25 @@ export const addressUtxos = async ({
         provider.esplora.getTxInfo(utxo.txid),
       ])
 
-      // Change the UTXO script_pubkey from ASM to hex.
-      // We might be able to derive this without making an extra call.
-      utxo.script_pubkey = txDetails.vout[utxo.vout].scriptpubkey
-
-      return { utxo, txOutput }
+      return {
+        utxo,
+        txOutput,
+        // We might be able to derive this from txOutput without making an extra call.
+        scriptPk: txDetails.vout[utxo.vout].scriptpubkey,
+      }
     } catch (error) {
       console.error(`Error processing UTXO ${utxo.txid}:${utxo.vout}`, error)
       return null
     }
   }
 
-  for await (const result of asyncPool(concurrencyLimit, utxos, iteratorFn)) {
+  for await (const result of asyncPool(concurrencyLimit, utxos, processUtxo)) {
     if (result !== null) {
-      results.push(result)
+      processedUtxos.push(result)
     }
   }
 
-  for (const { utxo, txOutput } of results) {
+  for (const { utxo, txOutput, scriptPk } of processedUtxos) {
     totalBalance += utxo.value
 
     if (txOutput.indexed) {
@@ -294,10 +305,10 @@ export const addressUtxos = async ({
           txId: utxo.txid,
           outputIndex: utxo.vout,
           satoshis: utxo.value,
-          scriptPk: utxo.script_pubkey,
           address: address,
           inscriptions: [],
           confirmations,
+          scriptPk,
         })
 
         spendableTotalBalance += utxo.value
@@ -308,10 +319,10 @@ export const addressUtxos = async ({
           txId: utxo.txid,
           outputIndex: utxo.vout,
           satoshis: utxo.value,
-          scriptPk: utxo.script_pubkey,
           address: address,
           inscriptions: [],
           confirmations,
+          scriptPk,
         })
       }
 
@@ -320,21 +331,21 @@ export const addressUtxos = async ({
           txId: utxo.txid,
           outputIndex: utxo.vout,
           satoshis: utxo.value,
-          scriptPk: utxo.script_pubkey,
           address: address,
           inscriptions: txOutput.inscriptions,
           confirmations,
+          scriptPk,
         })
       }
-    } else if (!utxo.status.confirmed) {
+    } else {
       pendingUtxos.push({
         txId: utxo.txid,
         outputIndex: utxo.vout,
         satoshis: utxo.value,
-        scriptPk: utxo.script_pubkey,
         address: address,
         inscriptions: [],
         confirmations: 0,
+        scriptPk,
       })
 
       pendingTotalBalance += utxo.value

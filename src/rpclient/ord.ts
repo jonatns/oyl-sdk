@@ -1,3 +1,20 @@
+export type OrdOutputRune = {
+  amount: number
+  divisibility: number
+}
+
+export interface OrdOutput {
+  address: string
+  indexed: boolean
+  inscriptions: string[]
+  runes: Record<string, OrdOutputRune> | OrdOutputRune[][]
+  sat_ranges: number[][]
+  script_pubkey: string
+  spent: boolean
+  transaction: string
+  value: number
+}
+
 export class OrdRpc {
   public ordUrl: string
 
@@ -71,7 +88,7 @@ export class OrdRpc {
   async getInscriptionMetaData(inscriptionId: string) {
     return await this._call('ord_r:metadata', [inscriptionId])
   }
-  async getTxOutput(txIdVout: string) {
+  async getTxOutput(txIdVout: string): Promise<OrdOutput> {
     return await this._call('ord_output', [txIdVout])
   }
   async getSatByNumber(number: string) {

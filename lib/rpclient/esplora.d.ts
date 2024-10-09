@@ -35,6 +35,17 @@ export interface EsploraTx {
         block_time: number;
     };
 }
+export interface EsploraUtxo {
+    txid: string;
+    vout: number;
+    status: {
+        confirmed: boolean;
+        block_height?: number;
+        block_hash?: string;
+        block_time?: number;
+    };
+    value: number;
+}
 export declare class EsploraRpc {
     esploraUrl: string;
     constructor(url: string);
@@ -49,6 +60,6 @@ export declare class EsploraRpc {
     }[]>;
     getAddressTx(address: string): Promise<any>;
     getAddressTxInMempool(address: string): Promise<EsploraTx[]>;
-    getAddressUtxo(address: string): Promise<any>;
+    getAddressUtxo(address: string): Promise<EsploraUtxo[]>;
     getFeeEstimates(): Promise<any>;
 }
