@@ -2,6 +2,7 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider'
 import { Account, SpendStrategy } from '../account'
 import { UTXO_DUST } from '../shared/constants'
+import asyncPool from 'tiny-async-pool'
 
 export interface EsploraUtxo {
   txid: string
@@ -252,42 +253,54 @@ export const addressUtxos = async ({
     utxoSortGreatestToLeast ? b.value - a.value : a.value - b.value
   )
 
-  const utxoPromises = utxos.map(async (utxo) => {
-    const txIdVout = `${utxo.txid}:${utxo.vout}`
-    const [txOutput, txDetails] = await Promise.all([
-      provider.ord.getTxOutput(txIdVout),
-      provider.esplora.getTxInfo(utxo.txid),
-    ])
+  const concurrencyLimit = 100
+  const results = []
 
-    const { scriptpubkey } = txDetails.vout.find(
-      (v) => v.scriptpubkey_address === address
-    )
+  const iteratorFn = async (utxo) => {
+    try {
+      const txIdVout = `${utxo.txid}:${utxo.vout}`
+      const [txOutput, txDetails] = await Promise.all([
+        provider.ord.getTxOutput(txIdVout),
+        provider.esplora.getTxInfo(utxo.txid),
+      ])
 
-    return { utxo, txOutput, scriptpubkey }
-  })
+      // Change the UTXO script_pubkey from ASM to hex.
+      // We might be able to derive this without making an extra call.
+      utxo.script_pubkey = txDetails.vout[utxo.vout].scriptpubkey
 
-  const results = await Promise.all(utxoPromises)
+      return { utxo, txOutput }
+    } catch (error) {
+      console.error(`Error processing UTXO ${utxo.txid}:${utxo.vout}`, error)
+      return null
+    }
+  }
 
-  for (const { utxo, txOutput, scriptpubkey } of results) {
+  for await (const result of asyncPool(concurrencyLimit, utxos, iteratorFn)) {
+    if (result !== null) {
+      results.push(result)
+    }
+  }
+
+  for (const { utxo, txOutput } of results) {
+    totalBalance += utxo.value
+
     if (txOutput.indexed) {
       const hasInscriptions = txOutput.inscriptions.length > 0
       const hasRunes = Object.keys(txOutput.runes).length > 0
+      const confirmations = blockCount - utxo.status.block_height
 
       if (!hasInscriptions && !hasRunes) {
         spendableUtxos.push({
           txId: utxo.txid,
           outputIndex: utxo.vout,
           satoshis: utxo.value,
-          confirmations: utxo.status.confirmed
-            ? blockCount - utxo.status.block_height
-            : 0,
-          scriptPk: scriptpubkey,
+          scriptPk: utxo.script_pubkey,
           address: address,
           inscriptions: [],
+          confirmations,
         })
 
         spendableTotalBalance += utxo.value
-        totalBalance += utxo.value
       }
 
       if (hasRunes) {
@@ -295,14 +308,11 @@ export const addressUtxos = async ({
           txId: utxo.txid,
           outputIndex: utxo.vout,
           satoshis: utxo.value,
-          confirmations: utxo.status.confirmed
-            ? blockCount - utxo.status.block_height
-            : 0,
-          scriptPk: scriptpubkey,
+          scriptPk: utxo.script_pubkey,
           address: address,
           inscriptions: [],
+          confirmations,
         })
-        totalBalance += utxo.value
       }
 
       if (hasInscriptions) {
@@ -310,29 +320,24 @@ export const addressUtxos = async ({
           txId: utxo.txid,
           outputIndex: utxo.vout,
           satoshis: utxo.value,
-          confirmations: utxo.status.confirmed
-            ? blockCount - utxo.status.block_height
-            : 0,
-          scriptPk: scriptpubkey,
+          scriptPk: utxo.script_pubkey,
           address: address,
           inscriptions: txOutput.inscriptions,
+          confirmations,
         })
-        totalBalance += utxo.value
       }
     } else if (!utxo.status.confirmed) {
       pendingUtxos.push({
         txId: utxo.txid,
         outputIndex: utxo.vout,
         satoshis: utxo.value,
-        confirmations: utxo.status.confirmed
-          ? blockCount - utxo.status.block_height
-          : 0,
-        scriptPk: scriptpubkey,
+        scriptPk: utxo.script_pubkey,
         address: address,
         inscriptions: [],
+        confirmations: 0,
       })
+
       pendingTotalBalance += utxo.value
-      totalBalance += utxo.value
     }
   }
 
