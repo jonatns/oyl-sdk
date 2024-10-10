@@ -16,7 +16,7 @@ import { OylTransactionError } from '../errors'
 
 const defaultProvider = {
   bitcoin: new Provider({
-    url: 'https://mainnet.sandshrew.io',
+    url: 'https://mainnet2.sandshrew.io',
     projectId: process.env.SANDSHREW_PROJECT_ID!,
     network: bitcoin.networks.bitcoin,
     networkType: 'mainnet',
@@ -174,12 +174,19 @@ const accountUtxosToSpend = new Command('accountUtxos')
       mnemonic: options.mnemonic,
       opts: { network: provider.network },
     })
-    console.log(
-      await accountUtxos({
-        account,
-        provider,
-      })
-    )
+
+    const start = performance.now()
+
+    const utxos = await accountUtxos({
+      account,
+      provider,
+    })
+
+    const end = performance.now()
+    const duration = end - start
+
+    console.log(utxos)
+    console.log(`\nTime taken: ${duration} milliseconds`)
   })
 
 const accountAvailableBalance = new Command('balance')

@@ -2,6 +2,8 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider'
 import { Account, SpendStrategy } from '../account'
 import { UTXO_DUST } from '../shared/constants'
+import asyncPool from 'tiny-async-pool'
+import { OrdOutput } from 'rpclient/ord'
 
 export interface EsploraUtxo {
   txid: string
@@ -143,10 +145,14 @@ export const addressSpendableUtxos = async ({
   const results = await Promise.all(utxoPromises)
 
   for (const { utxo, hasInscription, hasRune } of results) {
+    const runes = Array.isArray(hasInscription.runes)
+      ? hasInscription.runes
+      : Object.keys(hasInscription.runes)
+
     if (
       (spendAmount && totalAmount >= spendAmount) ||
       hasInscription.inscriptions.length > 0 ||
-      hasInscription.runes.length > 0 ||
+      runes.length > 0 ||
       !hasInscription.indexed ||
       hasInscription.value === 546 ||
       hasRune?.output
@@ -228,13 +234,14 @@ export const addressUtxos = async ({
   const ordUtxos: FormattedUtxo[] = []
   const runeUtxos: FormattedUtxo[] = []
 
-  let multiCall = await provider.sandshrew.multiCall([
+  const multiCall = await provider.sandshrew.multiCall([
     ['esplora_address::utxo', [address]],
     ['btc_getblockcount', []],
   ])
 
-  let blockCount = multiCall[1].result
-  let utxos = multiCall[0].result
+  const blockCount = multiCall[1].result
+  let utxos = multiCall[0].result as EsploraUtxo[]
+
   if (utxos.length === 0) {
     return {
       spendableTotalBalance,
@@ -248,119 +255,105 @@ export const addressUtxos = async ({
   }
 
   const utxoSortGreatestToLeast = spendStrategy?.utxoSortGreatestToLeast ?? true
-
-  utxos = utxos.sort((a, b) =>
+  utxos.sort((a, b) =>
     utxoSortGreatestToLeast ? b.value - a.value : a.value - b.value
   )
 
-  const utxoPromises = utxos.map(async (utxo) => {
-    const outputId = `${utxo.txid}:${utxo.vout}`
-    let hasRune: any[] = []
-    const hasInscription = await provider.ord.getTxOutput(outputId)
-    const v2: boolean = !Array.isArray(hasInscription.runes)
-    if (!v2) {
-      hasRune =
-        provider.network.bech32 !== bitcoin.networks.regtest.bech32
-          ? await provider.api.getOutputRune({ output: outputId })
-          : []
+  const concurrencyLimit = 100
+  const processedUtxos: {
+    utxo: EsploraUtxo
+    txOutput: OrdOutput
+    scriptPk: string
+  }[] = []
+
+  const processUtxo = async (utxo: EsploraUtxo) => {
+    try {
+      const txIdVout = `${utxo.txid}:${utxo.vout}`
+      const [txOutput, txDetails] = await Promise.all([
+        provider.ord.getTxOutput(txIdVout),
+        provider.esplora.getTxInfo(utxo.txid),
+      ])
+
+      return {
+        utxo,
+        txOutput,
+        // We might be able to derive this from txOutput without making an extra call.
+        scriptPk: txDetails.vout[utxo.vout].scriptpubkey,
+      }
+    } catch (error) {
+      console.error(`Error processing UTXO ${utxo.txid}:${utxo.vout}`, error)
+      return null
     }
-    return { utxo, hasInscription, hasRune, v2 }
-  })
+  }
 
-  const results = await Promise.all(utxoPromises)
-  for (const { utxo, hasInscription, hasRune, v2 } of results) {
-    const runes: number = v2
-      ? Object.keys(hasInscription.runes).length
-      : hasInscription.runes.length
-    if (
-      hasInscription.inscriptions.length === 0 &&
-      runes === 0 &&
-      hasInscription.indexed &&
-      !hasRune?.output
-    ) {
-      const transactionDetails = await provider.esplora.getTxInfo(utxo.txid)
-      const voutEntry = transactionDetails.vout.find(
-        (v) => v.scriptpubkey_address === address
-      )
-
-      spendableUtxos.push({
-        txId: utxo.txid,
-        outputIndex: utxo.vout,
-        satoshis: utxo.value,
-        confirmations: utxo.status.confirmed
-          ? blockCount - utxo.status.block_height
-          : 0,
-        scriptPk: voutEntry.scriptpubkey,
-        address: address,
-        inscriptions: [],
-      })
-
-      spendableTotalBalance += utxo.value
-      totalBalance += utxo.value
+  for await (const result of asyncPool(concurrencyLimit, utxos, processUtxo)) {
+    if (result !== null) {
+      processedUtxos.push(result)
     }
+  }
 
-    if (hasRune?.output || runes > 0) {
-      const transactionDetails = await provider.esplora.getTxInfo(utxo.txid)
-      const voutEntry = transactionDetails.vout.find(
-        (v) => v.scriptpubkey_address === address
-      )
-      runeUtxos.push({
-        txId: utxo.txid,
-        outputIndex: utxo.vout,
-        satoshis: utxo.value,
-        confirmations: utxo.status.confirmed
-          ? blockCount - utxo.status.block_height
-          : 0,
-        scriptPk: voutEntry.scriptpubkey,
-        address: address,
-        inscriptions: [],
-      })
-      totalBalance += utxo.value
-    }
+  for (const { utxo, txOutput, scriptPk } of processedUtxos) {
+    totalBalance += utxo.value
 
-    if (
-      hasInscription.indexed &&
-      hasInscription.inscriptions.length > 0 &&
-      !hasRune?.output
-    ) {
-      const transactionDetails = await provider.esplora.getTxInfo(utxo.txid)
-      const voutEntry = transactionDetails.vout.find(
-        (v) => v.scriptpubkey_address === address
-      )
-      ordUtxos.push({
-        txId: utxo.txid,
-        outputIndex: utxo.vout,
-        satoshis: utxo.value,
-        confirmations: utxo.status.confirmed
-          ? blockCount - utxo.status.block_height
-          : 0,
-        scriptPk: voutEntry.scriptpubkey,
-        address: address,
-        inscriptions: hasInscription.inscriptions,
-      })
-      totalBalance += utxo.value
+    if (txOutput.indexed) {
+      const hasInscriptions = txOutput.inscriptions.length > 0
+      const hasRunes = Object.keys(txOutput.runes).length > 0
+      const confirmations = blockCount - utxo.status.block_height
+
+      if (hasRunes) {
+        runeUtxos.push({
+          txId: utxo.txid,
+          outputIndex: utxo.vout,
+          satoshis: utxo.value,
+          address: address,
+          inscriptions: [],
+          confirmations,
+          scriptPk,
+        })
+      }
+
+      if (hasInscriptions) {
+        ordUtxos.push({
+          txId: utxo.txid,
+          outputIndex: utxo.vout,
+          satoshis: utxo.value,
+          address: address,
+          inscriptions: txOutput.inscriptions,
+          confirmations,
+          scriptPk,
+        })
+      }
+
+      if (!hasInscriptions && !hasRunes) {
+        spendableUtxos.push({
+          txId: utxo.txid,
+          outputIndex: utxo.vout,
+          satoshis: utxo.value,
+          address: address,
+          inscriptions: [],
+          confirmations,
+          scriptPk,
+        })
+
+        spendableTotalBalance += utxo.value
+      }
     }
 
-    if (!hasInscription.indexed && !utxo.status.confirmed) {
-      const transactionDetails = await provider.esplora.getTxInfo(utxo.txid)
-      const voutEntry = transactionDetails.vout.find(
-        (v) => v.scriptpubkey_address === address
-      )
+    if (!utxo.status.confirmed) {
       pendingUtxos.push({
         txId: utxo.txid,
         outputIndex: utxo.vout,
         satoshis: utxo.value,
-        confirmations: utxo.status.confirmed
-          ? blockCount - utxo.status.block_height
-          : 0,
-        scriptPk: voutEntry.scriptpubkey,
         address: address,
         inscriptions: [],
+        confirmations: 0,
+        scriptPk,
       })
+
       pendingTotalBalance += utxo.value
-      totalBalance += utxo.value
     }
   }
+
   return {
     spendableTotalBalance,
     spendableUtxos,
@@ -379,9 +372,9 @@ export const accountUtxos = async ({
   account: Account
   provider: Provider
 }) => {
-  let accountSpendableTotalBalance: number = 0
-  let accountPendingTotalBalance: number = 0
-  let accountTotalBalance: number = 0
+  let accountSpendableTotalBalance = 0
+  let accountPendingTotalBalance = 0
+  let accountTotalBalance = 0
   const accounts = {}
   const addresses = [
     { addressType: 'nativeSegwit', address: account.nativeSegwit.address },

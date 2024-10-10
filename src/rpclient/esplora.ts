@@ -38,6 +38,18 @@ export interface EsploraTx {
   }
 }
 
+export interface EsploraUtxo {
+  txid: string
+  vout: number
+  status: {
+    confirmed: boolean
+    block_height?: number
+    block_hash?: string
+    block_time?: number
+  }
+  value: number
+}
+
 export class EsploraRpc {
   public esploraUrl: string
 
@@ -86,7 +98,7 @@ export class EsploraRpc {
     return await this._call('esplora_tx::status', [txid])
   }
   async getBlockTxids(hash: string): Promise<any> {
-    return await this._call("esplora_block::txids", [ hash ]);
+    return await this._call('esplora_block::txids', [hash])
   }
   async getTxHex(txid: string) {
     return await this._call('esplora_tx::hex', [txid])
@@ -110,7 +122,7 @@ export class EsploraRpc {
       address,
     ])) as EsploraTx[]
   }
-  async getAddressUtxo(address: string) {
+  async getAddressUtxo(address: string): Promise<EsploraUtxo[]> {
     const response = await this._call('esplora_address::utxo', [address])
     return response
   }
