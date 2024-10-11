@@ -14,6 +14,26 @@ import { OylTransactionError } from '../errors'
 import { RuneUTXO } from '../shared/interface'
 import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
+import { encodeRunestone, RunestoneSpec } from '@magiceden-oss/runestone-lib'
+
+
+export const createRuneMintScript2 = ({
+  runeId,
+  pointer = 1,
+}: {
+  runeId: string
+  pointer?: number
+}) => {
+  const [blockStr, txStr] = runeId.split(':');
+  const runestone: RunestoneSpec = {
+    mint: {
+      block: BigInt(blockStr),
+      tx: parseInt(txStr, 10),
+    },
+    pointer
+  }
+  return encodeRunestone(runestone);
+}
 
 export const createSendPsbt = async ({
   account,
@@ -337,6 +357,12 @@ export const createMintPsbt = async ({
       address: account[account.spendStrategy.changeAddress].address,
       value: changeAmount,
     })
+
+    const minstScript = createRuneMintScript2({
+      runeId,
+      pointer: 0,
+    })
+    console.log('mintscript: ', minstScript)
 
     const script = createRuneMintScript({
       runeId,

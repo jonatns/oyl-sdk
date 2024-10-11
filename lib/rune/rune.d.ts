@@ -1,7 +1,15 @@
+/// <reference types="node" />
 import { Provider } from '../provider/provider';
 import { Account } from '../account/account';
 import { RuneUTXO } from '../shared/interface';
 import { Signer } from '../signer';
+export declare const createRuneMintScript2: ({ runeId, pointer, }: {
+    runeId: string;
+    pointer?: number;
+}) => {
+    encodedRunestone: Buffer;
+    etchingCommitment?: Buffer;
+};
 export declare const createSendPsbt: ({ account, runeId, provider, inscriptionAddress, toAddress, amount, feeRate, fee, }: {
     account: Account;
     runeId: string;
