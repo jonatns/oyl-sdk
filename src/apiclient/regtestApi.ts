@@ -4,6 +4,7 @@ import { Provider } from '..'
 export const getAllInscriptionsByAddressRegtest = async (address: string) => {
   const oyl = new Provider({
     url: 'http://localhost:3000',
+    version: 'v2',
     projectId: 'regtest',
     network: bitcoin.networks.regtest,
     networkType: 'mainnet',
@@ -47,6 +48,7 @@ export const getAllInscriptionsByAddressRegtest = async (address: string) => {
 export const getRuneOutpointsRegtest = async (address: string) => {
   const oyl = new Provider({
     url: 'http://localhost:3000',
+    version: 'v2',
     projectId: 'regtest',
     network: bitcoin.networks.regtest,
     networkType: 'mainnet',
@@ -94,6 +96,7 @@ export const getRuneOutpointsRegtest = async (address: string) => {
 export const getRuneBalanceRegtest = async (address: string) => {
   const oyl = new Provider({
     url: 'http://localhost:3000',
+    version: 'v2',
     projectId: 'regtest',
     network: bitcoin.networks.regtest,
     networkType: 'mainnet',
