@@ -14,11 +14,10 @@ export declare const createSendPsbt: ({ account, runeId, provider, inscriptionAd
 }) => Promise<{
     psbt: string;
 }>;
-export declare const createMintPsbt: ({ account, runeId, provider, amount, feeRate, fee, }: {
+export declare const createMintPsbt: ({ account, runeId, provider, feeRate, fee, }: {
     account: Account;
     runeId: string;
     provider: Provider;
-    amount: number;
     feeRate?: number;
     fee?: number;
 }) => Promise<{
@@ -62,11 +61,10 @@ export declare const actualSendFee: ({ account, runeId, provider, inscriptionAdd
 }) => Promise<{
     fee: number;
 }>;
-export declare const actualMintFee: ({ account, runeId, provider, amount, feeRate, signer, }: {
+export declare const actualMintFee: ({ account, runeId, provider, feeRate, signer, }: {
     account: Account;
     runeId: string;
     provider: Provider;
-    amount: number;
     feeRate?: number;
     signer: Signer;
 }) => Promise<{
@@ -104,11 +102,10 @@ export declare const send: ({ toAddress, amount, runeId, inscriptionAddress, fee
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const mint: ({ account, runeId, provider, amount, feeRate, signer, }: {
+export declare const mint: ({ account, runeId, provider, feeRate, signer, }: {
     account: Account;
     runeId: string;
     provider: Provider;
-    amount: number;
     feeRate?: number;
     signer: Signer;
 }) => Promise<{

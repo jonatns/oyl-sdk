@@ -4,6 +4,7 @@ import { Provider } from '..'
 export const getAllInscriptionsByAddressRegtest = async (address: string) => {
   const oyl = new Provider({
     url: 'http://localhost:3000',
+    version: 'v2',
     projectId: 'regtest',
     network: bitcoin.networks.regtest,
     networkType: 'mainnet',
@@ -47,6 +48,7 @@ export const getAllInscriptionsByAddressRegtest = async (address: string) => {
 export const getRuneOutpointsRegtest = async (address: string) => {
   const oyl = new Provider({
     url: 'http://localhost:3000',
+    version: 'v2',
     projectId: 'regtest',
     network: bitcoin.networks.regtest,
     networkType: 'mainnet',
@@ -59,14 +61,11 @@ export const getRuneOutpointsRegtest = async (address: string) => {
     if (utxo.txid) {
       const output = utxo.txid + ':' + utxo.vout
       const txDetails = await oyl.ord.getTxOutput(output)
-      const runes = Array.isArray(txDetails.runes)
-        ? txDetails.runes
-        : Object.keys(txDetails.runes)
+      const runes = txDetails.runes ? Object.entries(txDetails.runes) : []
 
-      for (let i = 0; i < runes.length; i++) {
-        const runeName = txDetails.runes[i][0]
+      for (const [runeName, runeInfo] of runes) {
         const { id } = await oyl.ord.getRuneByName(runeName)
-        const runeAmount = txDetails.runes[i][1].amount
+        const runeAmount = runeInfo.amount
         const index = data.findIndex((rune) => rune.rune_name == runeName)
         if (index != -1) {
           // update balance
@@ -82,7 +81,7 @@ export const getRuneOutpointsRegtest = async (address: string) => {
             balances: [runeAmount],
             rune_names: [runeName],
             spaced_rune_names: [runeName],
-            decimals: [txDetails.runes[i][1].divisibility],
+            decimals: [runeInfo.divisibility],
           })
         }
       }
@@ -97,6 +96,7 @@ export const getRuneOutpointsRegtest = async (address: string) => {
 export const getRuneBalanceRegtest = async (address: string) => {
   const oyl = new Provider({
     url: 'http://localhost:3000',
+    version: 'v2',
     projectId: 'regtest',
     network: bitcoin.networks.regtest,
     networkType: 'mainnet',
@@ -109,14 +109,12 @@ export const getRuneBalanceRegtest = async (address: string) => {
     if (utxo.txid) {
       const output = utxo.txid + ':' + utxo.vout
       const txDetails = await oyl.ord.getTxOutput(output)
-      const runes = Array.isArray(txDetails.runes)
-        ? txDetails.runes
-        : Object.keys(txDetails.runes)
+      const runes = txDetails.runes ? Object.entries(txDetails.runes) : []
 
       if (runes.length > 0) {
-        const runeName = txDetails.runes[0][0]
+        const [runeName, runeInfo] = runes[0]
         const { id } = await oyl.ord.getRuneByName(runeName)
-        const runeAmount = txDetails.runes[0][1].amount
+        const runeAmount = runeInfo.amount
         const index = data.findIndex((rune) => rune.rune_name == runeName)
         if (index != -1) {
           // update balance
@@ -125,13 +123,13 @@ export const getRuneBalanceRegtest = async (address: string) => {
           // create new record
           const txInfo = await oyl.esplora.getTxInfo(utxo.txid)
           data.push({
-            pkscript: txInfo.vout[1].scriptpubkey,
+            pkscript: txInfo.vout[utxo.vout].scriptpubkey,
             wallet_addr: address,
             rune_id: id,
             total_balance: runeAmount,
             rune_name: runeName,
             spaced_rune_name: runeName,
-            decimals: 0,
+            decimals: runeInfo.divisibility,
             avg_unit_price_in_sats: null,
           })
         }

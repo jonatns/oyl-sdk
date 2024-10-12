@@ -75,11 +75,13 @@ export declare const createRuneSendScript: ({ runeId, amount, divisibility, send
     sendOutputIndex?: number;
     pointer: number;
 }) => Buffer;
-export declare const createRuneMintScript: ({ runeId, mintOutPutIndex, pointer, }: {
+export declare const createRuneMintScript: ({ runeId, pointer, }: {
     runeId: string;
-    mintOutPutIndex: number;
     pointer?: number;
-}) => Buffer;
+}) => {
+    encodedRunestone: Buffer;
+    etchingCommitment?: Buffer;
+};
 export declare const createRuneEtchScript: ({ pointer, runeName, symbol, divisibility, perMintAmount, premine, cap, turbo, }: {
     pointer?: number;
     runeName: string;

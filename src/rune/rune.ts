@@ -14,6 +14,7 @@ import { OylTransactionError } from '../errors'
 import { RuneUTXO } from '../shared/interface'
 import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
+import { encodeRunestone, RunestoneSpec } from '@magiceden-oss/runestone-lib'
 
 export const createSendPsbt = async ({
   account,
@@ -225,14 +226,12 @@ export const createMintPsbt = async ({
   account,
   runeId,
   provider,
-  amount,
   feeRate,
   fee,
 }: {
   account: Account
   runeId: string
   provider: Provider
-  amount: number
   feeRate?: number
   fee?: number
 }) => {
@@ -338,13 +337,15 @@ export const createMintPsbt = async ({
       value: changeAmount,
     })
 
-    const script = createRuneMintScript({
+    const mintScript = createRuneMintScript({
       runeId,
-      mintOutPutIndex: 0,
       pointer: 0,
+    }).encodedRunestone
+
+    psbt.addOutput({ 
+      script: mintScript, 
+      value: 0 
     })
-    const output = { script: script, value: 0 }
-    psbt.addOutput(output)
 
     const formattedPsbtTx = await formatInputsToSign({
       _psbt: psbt,
@@ -675,14 +676,12 @@ export const actualMintFee = async ({
   account,
   runeId,
   provider,
-  amount,
   feeRate,
   signer,
 }: {
   account: Account
   runeId: string
   provider: Provider
-  amount: number
   feeRate?: number
   signer: Signer
 }) => {
@@ -694,7 +693,6 @@ export const actualMintFee = async ({
     account,
     runeId,
     provider,
-    amount,
     feeRate,
   })
 
@@ -719,7 +717,6 @@ export const actualMintFee = async ({
     account,
     runeId,
     provider,
-    amount,
     feeRate,
     fee: correctFee,
   })
@@ -897,21 +894,18 @@ export const mint = async ({
   account,
   runeId,
   provider,
-  amount,
   feeRate,
   signer,
 }: {
   account: Account
   runeId: string
   provider: Provider
-  amount: number
   feeRate?: number
   signer: Signer
 }) => {
   const { fee } = await actualMintFee({
     account,
     runeId,
-    amount,
     provider,
     feeRate,
     signer,
@@ -920,7 +914,6 @@ export const mint = async ({
   const { psbt: finalPsbt } = await createMintPsbt({
     account,
     runeId,
-    amount,
     provider,
     feeRate,
     fee: fee,
