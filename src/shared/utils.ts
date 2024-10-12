@@ -18,7 +18,7 @@ import { SandshrewBitcoinClient } from '../rpclient/sandshrew'
 import { EsploraRpc } from '../rpclient/esplora'
 import { Provider } from '../provider/provider'
 import { addressFormats } from '@sadoprotocol/ordit-sdk'
-import { encodeRunestone } from '@magiceden-oss/runestone-lib'
+import { encodeRunestone, RunestoneSpec } from '@magiceden-oss/runestone-lib'
 
 bitcoin.initEccLib(ecc)
 
@@ -422,51 +422,20 @@ export const createRuneSendScript = ({
 
 export const createRuneMintScript = ({
   runeId,
-  mintOutPutIndex = 1,
   pointer = 1,
 }: {
   runeId: string
-  mintOutPutIndex: number
   pointer?: number
 }) => {
-  const pointerFlag = encodeVarint(BigInt(22)).varint
-  const pointerVarint = encodeVarint(BigInt(pointer)).varint
-  const bodyFlag = encodeVarint(BigInt(0)).varint
-  const mintFlag = encodeVarint(BigInt(20)).varint
-  const encodedOutputIndex = encodeVarint(BigInt(mintOutPutIndex)).varint
-  const splitIdString = runeId.split(':')
-  const block = Number(splitIdString[0])
-  const blockTx = Number(splitIdString[1])
-
-  const encodedBlock = encodeVarint(BigInt(block)).varint
-  const encodedBlockTxNumber = encodeVarint(BigInt(blockTx)).varint
-
-  const runeStone = Buffer.concat([
-    pointerFlag,
-    pointerVarint,
-    mintFlag,
-    encodedBlock,
-    mintFlag,
-    encodedBlockTxNumber,
-    bodyFlag,
-    encodedBlock,
-    encodedBlockTxNumber,
-    encodedOutputIndex,
-  ])
-
-  let runeStoneLength: string = runeStone.byteLength.toString(16)
-
-  if (runeStoneLength.length % 2 !== 0) {
-    runeStoneLength = '0' + runeStone.byteLength.toString(16)
+  const [blockStr, txStr] = runeId.split(':');
+  const runestone: RunestoneSpec = {
+    mint: {
+      block: BigInt(blockStr),
+      tx: parseInt(txStr, 10),
+    },
+    pointer
   }
-
-  const script = Buffer.concat([
-    Buffer.from('6a', 'hex'),
-    Buffer.from('5d', 'hex'),
-    Buffer.from(runeStoneLength, 'hex'),
-    runeStone,
-  ])
-  return script
+  return encodeRunestone(runestone);
 }
 
 export const createRuneEtchScript = ({

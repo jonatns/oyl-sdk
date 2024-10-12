@@ -567,7 +567,6 @@ const runeMint = new Command('mint')
     console.log(
       await rune.mint({
         runeId: options.runeId,
-        amount: options.amount,
         feeRate: options.feeRate,
         account,
         signer,
