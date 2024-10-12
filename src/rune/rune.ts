@@ -337,13 +337,13 @@ export const createMintPsbt = async ({
       value: changeAmount,
     })
 
-    const minstScript = createRuneMintScript({
+    const mintScript = createRuneMintScript({
       runeId,
       pointer: 0,
     }).encodedRunestone
 
     psbt.addOutput({ 
-      script: minstScript, 
+      script: mintScript, 
       value: 0 
     })
 
