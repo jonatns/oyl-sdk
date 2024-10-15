@@ -13,6 +13,7 @@ import {
 } from './regtestApi'
 import { Account, SpendStrategy } from '../account'
 import { GetSellerPsbtRequest, SubmitBuyerPsbtRequest } from '../swap/types'
+import { AccountUtxoPortfolio } from '@utxo/utxo'
 
 /**
  * Represents the client for interacting with the Oyl API.
@@ -297,7 +298,7 @@ export class OylApiClient {
    * Get account utxos.
    * @param account - The account object to get utxos for.
    */
-  async getAccountUtxos(account: Account): Promise<any> {
+  async getAccountUtxos(account: Account): Promise<AccountUtxoPortfolio> {
     const stringifiedAccount = JSON.stringify(account)
     const res = await this._call('/get-account-utxos', 'post', {
       account: stringifiedAccount,

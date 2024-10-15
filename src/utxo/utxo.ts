@@ -1,6 +1,6 @@
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider'
-import { Account, SpendStrategy } from '../account'
+import { Account, AddressKey, SpendStrategy } from '../account'
 import asyncPool from 'tiny-async-pool'
 import { OrdOutput } from 'rpclient/ord'
 
@@ -26,7 +26,7 @@ export interface FormattedUtxo {
   confirmations: number
 }
 
-export interface AddressPortfolio {
+export interface AddressUtxoPortfolio {
   spendableTotalBalance: number
   spendableUtxos: FormattedUtxo[]
   runeUtxos: FormattedUtxo[]
@@ -34,6 +34,14 @@ export interface AddressPortfolio {
   pendingUtxos: FormattedUtxo[]
   pendingTotalBalance: number
   totalBalance: number
+}
+
+export interface AccountUtxoPortfolio {
+  accountTotalBalance: number
+  accountSpendableTotalUtxos: FormattedUtxo[]
+  accountSpendableTotalBalance: number
+  accountPendingTotalBalance: number
+  accounts: Record<AddressKey, AddressUtxoPortfolio>
 }
 
 export const accountBalance = async ({
@@ -222,7 +230,7 @@ export const addressUtxos = async ({
   address: string
   provider: Provider
   spendStrategy?: SpendStrategy
-}): Promise<AddressPortfolio> => {
+}): Promise<AddressUtxoPortfolio> => {
   let spendableTotalBalance: number = 0
   let pendingTotalBalance: number = 0
   let totalBalance: number = 0
@@ -368,21 +376,21 @@ export const accountUtxos = async ({
 }: {
   account: Account
   provider: Provider
-}) => {
+}): Promise<AccountUtxoPortfolio> => {
   let accountSpendableTotalUtxos = []
   let accountSpendableTotalBalance = 0
   let accountPendingTotalBalance = 0
   let accountTotalBalance = 0
-  const accounts = {}
+  const accounts = {} as Record<AddressKey, AddressUtxoPortfolio>
   const addresses = [
-    { addressType: 'nativeSegwit', address: account.nativeSegwit.address },
-    { addressType: 'nestedSegwit', address: account.nestedSegwit.address },
-    { addressType: 'taproot', address: account.taproot.address },
-    { addressType: 'legacy', address: account.legacy.address },
+    { addressKey: 'nativeSegwit', address: account.nativeSegwit.address },
+    { addressKey: 'nestedSegwit', address: account.nestedSegwit.address },
+    { addressKey: 'taproot', address: account.taproot.address },
+    { addressKey: 'legacy', address: account.legacy.address },
   ]
   for (let i = 0; i < addresses.length; i++) {
     const address = addresses[i].address
-    const addressType = addresses[i].addressType
+    const addressKey = addresses[i].addressKey
     const {
       spendableTotalBalance,
       spendableUtxos,
@@ -401,7 +409,7 @@ export const accountUtxos = async ({
     accountPendingTotalBalance += pendingTotalBalance
     accountTotalBalance += totalBalance
 
-    accounts[addressType] = {
+    accounts[addressKey] = {
       spendableTotalBalance,
       spendableUtxos,
       runeUtxos,

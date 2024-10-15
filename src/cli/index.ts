@@ -432,8 +432,9 @@ const collectibleSend = new Command('send')
     console.log(
       await collectible.send({
         gatheredUtxos: {
-          utxos: gatheredUtxos.accounts['nativeSegwit'].spendUtxos,
-          totalAmount: gatheredUtxos.accounts['nativeSegwit'].spendTotal,
+          utxos: gatheredUtxos.accounts['nativeSegwit'].spendableUtxos,
+          totalAmount:
+            gatheredUtxos.accounts['nativeSegwit'].spendableTotalBalance,
         },
         inscriptionId: options.inscriptionId,
         inscriptionAddress: options.inscriptionAddress,
