@@ -1,7 +1,6 @@
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider'
 import { Account, SpendStrategy } from '../account'
-import { UTXO_DUST } from '../shared/constants'
 import asyncPool from 'tiny-async-pool'
 import { OrdOutput } from 'rpclient/ord'
 
@@ -10,9 +9,9 @@ export interface EsploraUtxo {
   vout: number
   status: {
     confirmed: boolean
-    block_height: number
-    block_hash: string
-    block_time: number
+    block_height?: number
+    block_hash?: string
+    block_time?: number
   }
   value: number
 }

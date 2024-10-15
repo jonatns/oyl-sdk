@@ -16,7 +16,8 @@ import { OylTransactionError } from '../errors'
 
 const defaultProvider = {
   bitcoin: new Provider({
-    url: 'https://mainnet2.sandshrew.io',
+    url: 'https://mainnet.sandshrew.io',
+    version: 'v2',
     projectId: process.env.SANDSHREW_PROJECT_ID!,
     network: bitcoin.networks.bitcoin,
     networkType: 'mainnet',
