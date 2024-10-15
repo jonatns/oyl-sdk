@@ -23,6 +23,7 @@ export interface DummyUtxoOptions {
   utxos: FormattedUtxo[]
   feeRate: number
   pubKey: string
+  nUtxos?: number
   network: bitcoin.Network
   addressType: AddressType
 }
@@ -41,6 +42,7 @@ export interface PrepareAddressForDummyUtxos {
   network: bitcoin.Network
   feeRate: number
   pubKey: string
+  nUtxos?: number
   utxos?: FormattedUtxo[]
   addressType: AddressType
 }
@@ -148,6 +150,8 @@ export enum Marketplaces {
   UNISAT,
   OKX,
   ORDINALS_WALLET,
+  MAGISAT,
+  MAGIC_EDEN,
 }
 
 export interface PsbtBuilder {
@@ -170,6 +174,55 @@ export interface BuiltPsbt {
   psbtBase64: string
   inputTemplate: ConditionalInput[]
   outputTemplate: OutputTxTemplate[]
+}
+export interface GetSellerPsbtRequest {
+  //<T extends GetSellerPsbtSchemas = GetSellerPsbtSchemas> {
+  marketplaceType: Marketplaces
+  assetType: AssetType
+  buyerAddress: string
+  buyerPublicKey: string
+  feeRate: number
+  receiveAddress?: string
+  orders: BuyOrder[]
+  //additionalParams?: Omit<T, keyof GetSellerPsbtRequest<T>>;
+}
+
+export interface BuyOrder {
+  orderId?: string | number
+  price?: number
+  inscriptionId?: string
+  outpoint?: string
+  amount?: number
+  bidId?: string
+  fee?: number
+}
+
+export interface GetSellerPsbtResponse {
+  marketplaceType: Marketplaces
+  psbt: string
+  additionalData?: {
+    [key: string]: any
+  }
+}
+
+export interface SubmitBuyerPsbtRequest {
+  //<T extends SubmitBuyerPsbtSchemas = SubmitBuyerPsbtSchemas> {
+  marketplaceType: Marketplaces
+  assetType: AssetType
+  buyerAddress: string
+  buyerPublicKey?: string
+  receiveAddress?: string
+  psbt: string
+  orders: BuyOrder[]
+  //additionalParams?: Omit<T, keyof SubmitBuyerPsbtRequest<T>>;
+}
+
+export interface SubmitBuyerPsbtResponse {
+  marketplaceType: Marketplaces
+  txid: string
+  additionalData?: {
+    [key: string]: any
+  }
 }
 
 export interface SwapResponse {
@@ -195,6 +248,8 @@ export const marketplaceName = {
   unisat: Marketplaces.UNISAT,
   okx: Marketplaces.OKX,
   'ordinals-wallet': Marketplaces.ORDINALS_WALLET,
+  magisat: Marketplaces.MAGISAT,
+  'magic-eden': Marketplaces.MAGIC_EDEN,
 }
 
 export interface UtxosToCoverAmount {

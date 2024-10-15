@@ -1,11 +1,18 @@
 import fetch from 'node-fetch'
-import { SwapBrcBid, SignedBid, OkxBid, GetOffersParams, GetCollectionOffersParams } from '../shared/interface'
+import {
+  SwapBrcBid,
+  SignedBid,
+  OkxBid,
+  GetOffersParams,
+  GetCollectionOffersParams,
+} from '../shared/interface'
 import {
   getAllInscriptionsByAddressRegtest,
   getRuneBalanceRegtest,
   getRuneOutpointsRegtest,
 } from './regtestApi'
-import { Account, SpendStrategy } from "../account"
+import { Account, SpendStrategy } from '../account'
+import { GetSellerPsbtRequest, SubmitBuyerPsbtRequest } from '../swap/types'
 
 /**
  * Represents the client for interacting with the Oyl API.
@@ -151,6 +158,14 @@ export class OylApiClient {
     })
   }
 
+  async getSellerPsbt(params: GetSellerPsbtRequest) {
+    return await this._call('/get-seller-psbt', 'post', params)
+  }
+
+  async submitBuyerPsbt(params: SubmitBuyerPsbtRequest) {
+    return await this._call('/submit-buyer-psbt', 'post', params)
+  }
+
   /**
    * Get Collection info by id.
    * @param collectionId - The collectionId to query.
@@ -278,11 +293,11 @@ export class OylApiClient {
     }
   }
 
-   /**
+  /**
    * Get account utxos.
    * @param account - The account object to get utxos for.
    */
-   async getAccountUtxos(account: Account): Promise<any> {
+  async getAccountUtxos(account: Account): Promise<any> {
     const stringifiedAccount = JSON.stringify(account)
     const res = await this._call('/get-account-utxos', 'post', {
       account: stringifiedAccount,
@@ -294,13 +309,18 @@ export class OylApiClient {
     }
   }
 
-   /**
+  /**
    * Get address utxos.
    * @param address - The address to get utxos for.
    * @param spendStrategy - The spendStrategy object to use.
    */
-   async getAddressUtxos(address: string, spendStrategy?: SpendStrategy): Promise<any> {
-    const stringifiedSpendStrategy = spendStrategy ? JSON.stringify(spendStrategy) : null
+  async getAddressUtxos(
+    address: string,
+    spendStrategy?: SpendStrategy
+  ): Promise<any> {
+    const stringifiedSpendStrategy = spendStrategy
+      ? JSON.stringify(spendStrategy)
+      : null
     const res = await this._call('/get-address-utxos', 'post', {
       address: address,
       spendStrategy: stringifiedSpendStrategy,
@@ -476,7 +496,7 @@ export class OylApiClient {
       limit,
       sort_by,
       order,
-      offset, 
+      offset,
     })
     if (response.error) throw Error(response.error)
     return response
@@ -545,54 +565,51 @@ export class OylApiClient {
   /**
    * Get Ordinals-Wallet offer psbt for Collectibles & BRC20s.
    */
-  async getOrdinalsWalletNftOfferPsbt(
-    { 
-      publicKey, 
-      feeRate,
-      address,
-      receiveAddress,
-      inscriptions 
-    }: 
-    { 
-      publicKey: string, 
-      feeRate: number ,
-      address: string, 
-      receiveAddress: string,
-      inscriptions: string[],
-    }): Promise<any> {
+  async getOrdinalsWalletNftOfferPsbt({
+    publicKey,
+    feeRate,
+    address,
+    receiveAddress,
+    inscriptions,
+  }: {
+    publicKey: string
+    feeRate: number
+    address: string
+    receiveAddress: string
+    inscriptions: string[]
+  }): Promise<any> {
     const response = await this._call('/get-ow-nft-offer-psbt', 'post', {
-      publicKey, 
+      publicKey,
       feeRate,
       address,
       receiveAddress,
-      inscriptions 
+      inscriptions,
     })
     return response
   }
 
-   /**
+  /**
    * Get Ordinals-Wallet offer psbt for Collectibles & BRC20s.
    */
-   async getOrdinalsWalletRuneOfferPsbt({ 
-      publicKey, 
-      feeRate,
-      address,
-      outpoints,
-      receiveAddress
-    }: 
-    { 
-      publicKey: string, 
-      feeRate: number ,
-      address: string, 
-      outpoints: string[],
-      receiveAddress: string,
-    }): Promise<any> {
+  async getOrdinalsWalletRuneOfferPsbt({
+    publicKey,
+    feeRate,
+    address,
+    outpoints,
+    receiveAddress,
+  }: {
+    publicKey: string
+    feeRate: number
+    address: string
+    outpoints: string[]
+    receiveAddress: string
+  }): Promise<any> {
     const response = await this._call('/get-ow-rune-offer-psbt', 'post', {
-      publicKey, 
+      publicKey,
       feeRate,
       address,
       outpoints,
-      receiveAddress
+      receiveAddress,
     })
     return response
   }
@@ -600,16 +617,34 @@ export class OylApiClient {
   /**
    * Submit a signed psbt to bid for offers on Ordinals Wallet marketplace.
    */
-  async submitOrdinalsWalletBid({ psbt, setupPsbt }: {  psbt: string, setupPsbt: string }): Promise<any> {
-    const response = await this._call('/finalize-ow-bid', 'post', { psbt, setupPsbt })
+  async submitOrdinalsWalletBid({
+    psbt,
+    setupPsbt,
+  }: {
+    psbt: string
+    setupPsbt: string
+  }): Promise<any> {
+    const response = await this._call('/finalize-ow-bid', 'post', {
+      psbt,
+      setupPsbt,
+    })
     return response
   }
 
-   /**
+  /**
    * Submit a signed psbt to bid for runeoffers on Ordinals Wallet marketplace.
    */
-   async submitOrdinalsWalletRuneBid({ psbt, setupPsbt }: {  psbt: string, setupPsbt: string }): Promise<any> {
-    const response = await this._call('/finalize-ow-rune-bid', 'post', { psbt, setupPsbt })
+  async submitOrdinalsWalletRuneBid({
+    psbt,
+    setupPsbt,
+  }: {
+    psbt: string
+    setupPsbt: string
+  }): Promise<any> {
+    const response = await this._call('/finalize-ow-rune-bid', 'post', {
+      psbt,
+      setupPsbt,
+    })
     return response
   }
 

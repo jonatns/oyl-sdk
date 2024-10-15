@@ -58,7 +58,6 @@ export declare function amountToSatoshis(val: any): number;
 export declare const validator: (pubkey: Buffer, msghash: Buffer, signature: Buffer) => boolean;
 export declare function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput;
 export declare const getWitnessDataChunk: (content: string, encodeType?: BufferEncoding) => Buffer[];
-export declare const getInscriptionsByWalletBIS: (walletAddress: string, offset?: number) => Promise<IBISWalletIx[]>;
 export declare function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]): number;
 export declare function calculateAmountGatheredUtxo(utxoArray: Utxo[]): number;
 export declare const formatInputsToSign: ({ _psbt, senderPublicKey, network, }: {
@@ -79,9 +78,8 @@ export declare const createRuneSendScript: ({ runeId, amount, divisibility, send
     sendOutputIndex?: number;
     pointer: number;
 }) => Buffer;
-export declare const createRuneMintScript: ({ runeId, mintOutPutIndex, pointer, }: {
+export declare const createRuneMintScript: ({ runeId, pointer, }: {
     runeId: string;
-    mintOutPutIndex: number;
     pointer?: number;
 }) => Buffer;
 export declare const createRuneEtchScript: ({ pointer, runeName, symbol, divisibility, perMintAmount, premine, cap, turbo, }: {
@@ -95,7 +93,6 @@ export declare const createRuneEtchScript: ({ pointer, runeName, symbol, divisib
     turbo?: boolean;
 }) => Buffer;
 export declare let RPC_ADDR: string;
-export declare const callBTCRPCEndpoint: (method: string, params: string | string[], network: string) => Promise<any>;
 export declare function getAddressType(address: string): AddressType | null;
 export declare function waitForTransaction({ txId, sandshrewBtcClient, }: {
     txId: string;
@@ -110,7 +107,6 @@ export declare function getOutputValueByVOutIndex({ txId, vOut, esploraRpc, }: {
     script: string;
 } | null>;
 export declare function calculateTaprootTxSize(taprootInputCount: number, nonTaprootInputCount: number, outputCount: number): number;
-export declare function getRawTxnHashFromTxnId(txnId: string): Promise<any>;
 export declare const filterTaprootUtxos: ({ taprootUtxos, }: {
     taprootUtxos: any[];
 }) => Promise<any>;

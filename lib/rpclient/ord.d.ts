@@ -1,3 +1,18 @@
+export type OrdOutputRune = {
+    amount: number;
+    divisibility: number;
+};
+export interface OrdOutput {
+    address: string;
+    indexed: boolean;
+    inscriptions: string[];
+    runes: Record<string, OrdOutputRune> | OrdOutputRune[][];
+    sat_ranges: number[][];
+    script_pubkey: string;
+    spent: boolean;
+    transaction: string;
+    value: number;
+}
 export declare class OrdRpc {
     ordUrl: string;
     constructor(url: string);
@@ -12,7 +27,7 @@ export declare class OrdRpc {
     getInscriptionBySatWithIndex(satNumber: string, index?: string): Promise<any>;
     getInscriptionChildren(inscriptionId: string, page?: string): Promise<any>;
     getInscriptionMetaData(inscriptionId: string): Promise<any>;
-    getTxOutput(txIdVout: string): Promise<any>;
+    getTxOutput(txIdVout: string): Promise<OrdOutput>;
     getSatByNumber(number: string): Promise<any>;
     getSatByDecimal(decimal: string): Promise<any>;
     getSatByDegree(degree: string): Promise<any>;

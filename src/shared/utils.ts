@@ -16,13 +16,12 @@ import {
 } from './interface'
 import BigNumber from 'bignumber.js'
 import { maximumScriptBytes } from './constants'
-import axios from 'axios'
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew'
 import { EsploraRpc } from '../rpclient/esplora'
 import { Provider } from '../provider/provider'
 import { addressFormats } from '@sadoprotocol/ordit-sdk'
-import { encodeRunestone } from '@magiceden-oss/runestone-lib'
+import { encodeRunestone, RunestoneSpec } from '@magiceden-oss/runestone-lib'
 
 bitcoin.initEccLib(ecc)
 
@@ -254,23 +253,6 @@ export const getWitnessDataChunk = function (
   return contentChunks
 }
 
-//FLAG FOR REMOVAL
-export const getInscriptionsByWalletBIS = async (
-  walletAddress: string,
-  offset: number = 0
-) => {
-  return (await axios
-    .get(
-      `https://api.bestinslot.xyz/v3/wallet/inscriptions?address=${walletAddress}&sort_by=inscr_num&order=asc&offset=${offset}&count=100`,
-      {
-        headers: {
-          'X-Api-Key': 'abbfff3d-49fa-4f7f-883a-0a5fce48a9f1',
-        },
-      }
-    )
-    .then((res) => res.data?.data)) as IBISWalletIx[]
-}
-
 export function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]) {
   return utxoArray?.reduce((prev, currentValue) => prev + currentValue.value, 0)
 }
@@ -472,51 +454,20 @@ export const createRuneSendScript = ({
 
 export const createRuneMintScript = ({
   runeId,
-  mintOutPutIndex = 1,
   pointer = 1,
 }: {
   runeId: string
-  mintOutPutIndex: number
   pointer?: number
 }) => {
-  const pointerFlag = encodeVarint(BigInt(22)).varint
-  const pointerVarint = encodeVarint(BigInt(pointer)).varint
-  const bodyFlag = encodeVarint(BigInt(0)).varint
-  const mintFlag = encodeVarint(BigInt(20)).varint
-  const encodedOutputIndex = encodeVarint(BigInt(mintOutPutIndex)).varint
-  const splitIdString = runeId.split(':')
-  const block = Number(splitIdString[0])
-  const blockTx = Number(splitIdString[1])
-
-  const encodedBlock = encodeVarint(BigInt(block)).varint
-  const encodedBlockTxNumber = encodeVarint(BigInt(blockTx)).varint
-
-  const runeStone = Buffer.concat([
-    pointerFlag,
-    pointerVarint,
-    mintFlag,
-    encodedBlock,
-    mintFlag,
-    encodedBlockTxNumber,
-    bodyFlag,
-    encodedBlock,
-    encodedBlockTxNumber,
-    encodedOutputIndex,
-  ])
-
-  let runeStoneLength: string = runeStone.byteLength.toString(16)
-
-  if (runeStoneLength.length % 2 !== 0) {
-    runeStoneLength = '0' + runeStone.byteLength.toString(16)
+  const [blockStr, txStr] = runeId.split(':')
+  const runestone: RunestoneSpec = {
+    mint: {
+      block: BigInt(blockStr),
+      tx: parseInt(txStr, 10),
+    },
+    pointer,
   }
-
-  const script = Buffer.concat([
-    Buffer.from('6a', 'hex'),
-    Buffer.from('5d', 'hex'),
-    Buffer.from(runeStoneLength, 'hex'),
-    runeStone,
-  ])
-  return script
+  return encodeRunestone(runestone).encodedRunestone
 }
 
 export const createRuneEtchScript = ({
@@ -557,39 +508,6 @@ export const createRuneEtchScript = ({
 
 export let RPC_ADDR =
   'https://mainnet.sandshrew.io/v1/6e3bc3c289591bb447c116fda149b094'
-
-export const callBTCRPCEndpoint = async (
-  method: string,
-  params: string | string[],
-  network: string
-) => {
-  if (network === 'testnet') {
-    RPC_ADDR =
-      'https://testnet.sandshrew.io/v1/6e3bc3c289591bb447c116fda149b094'
-  }
-  if (network === 'regtest') {
-    RPC_ADDR === 'http://localhost:3000/v1/regtest'
-  }
-  const data = JSON.stringify({
-    jsonrpc: '2.0',
-    id: method,
-    method: method,
-    params: [params],
-  })
-
-  // @ts-ignore
-  return await axios
-    .post(RPC_ADDR, data, {
-      headers: {
-        'content-type': 'application/json',
-      },
-    })
-    .then((res) => res.data)
-    .catch((e) => {
-      console.error(e.response)
-      throw e
-    })
-}
 
 export function getAddressType(address: string): AddressType | null {
   if (
@@ -714,23 +632,6 @@ export function calculateTaprootTxSize(
   const totalOutputSize = outputCount * outputSize
 
   return baseTxSize + totalInputSize + totalOutputSize
-}
-
-export async function getRawTxnHashFromTxnId(txnId: string) {
-  const res = await axios.post(
-    'https://mainnet.sandshrew.io/v1/6e3bc3c289591bb447c116fda149b094',
-    {
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'btc_getrawtransaction',
-      params: [txnId],
-    },
-    {
-      headers: { 'Content-Type': 'application/json' },
-    }
-  )
-
-  return res.data
 }
 
 export const filterTaprootUtxos = async ({

@@ -35,12 +35,24 @@ export interface EsploraTx {
         block_time: number;
     };
 }
+export interface EsploraUtxo {
+    txid: string;
+    vout: number;
+    status: {
+        confirmed: boolean;
+        block_height?: number;
+        block_hash?: string;
+        block_time?: number;
+    };
+    value: number;
+}
 export declare class EsploraRpc {
     esploraUrl: string;
     constructor(url: string);
     _call(method: any, params?: any[]): Promise<any>;
     getTxInfo(txid: string): Promise<EsploraTx>;
     getTxStatus(txid: string): Promise<any>;
+    getBlockTxids(hash: string): Promise<any>;
     getTxHex(txid: string): Promise<any>;
     getTxRaw(txid: string): Promise<any>;
     getTxOutspends(txid: string): Promise<{
@@ -48,6 +60,6 @@ export declare class EsploraRpc {
     }[]>;
     getAddressTx(address: string): Promise<any>;
     getAddressTxInMempool(address: string): Promise<EsploraTx[]>;
-    getAddressUtxo(address: string): Promise<any>;
+    getAddressUtxo(address: string): Promise<EsploraUtxo[]>;
     getFeeEstimates(): Promise<any>;
 }

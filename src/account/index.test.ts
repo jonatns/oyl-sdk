@@ -1,4 +1,10 @@
-import { mnemonicToAccount, Account, generateMnemonic } from './account'
+import {
+  mnemonicToAccount,
+  Account,
+  generateMnemonic,
+  getWalletPrivateKeys,
+  validateMnemonic,
+} from './account'
 
 function isAccount(obj: any): obj is Account {
   return (
@@ -45,14 +51,33 @@ describe('Account Tests', () => {
     ).toBe(true)
   })
 
-  it('Generate 12 word mnemonic', () => {
-    const countWords = (str: string): number => {
-      return str
-        .trim()
-        .split(/\s+/)
-        .filter((word) => word.length > 0).length
-    }
+  it('generateMnemonic generates a 12 word mnemonic', () => {
     const mnemonic = generateMnemonic()
-    expect(countWords(mnemonic)).toBe(12)
+    const words = mnemonic.split(' ')
+    expect(words).toHaveLength(12)
+  })
+
+  it('mnemonicToAccount does not throw an error if mnemonic is invalid', () => {
+    expect(() =>
+      mnemonicToAccount({ mnemonic: 'invalid mnemonic' })
+    ).not.toThrow(Error)
+  })
+
+  it('getWalletPrivateKeys does not throw an error if mnemonic is invalid', () => {
+    expect(() =>
+      getWalletPrivateKeys({ mnemonic: 'invalid mnemonic' })
+    ).not.toThrow(Error)
+  })
+
+  it('validateMnemonic returns true for valid mnemonic', () => {
+    expect(
+      validateMnemonic(
+        'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
+      )
+    ).toBeTruthy()
+  })
+
+  it('validateMnemonic returns false for invalid mnemonic', () => {
+    expect(validateMnemonic('invalid mnemonic')).toBeFalsy()
   })
 })

@@ -1,5 +1,6 @@
 import { SwapBrcBid, SignedBid, OkxBid, GetOffersParams, GetCollectionOffersParams } from '../shared/interface';
-import { Account, SpendStrategy } from "../account";
+import { Account, SpendStrategy } from '../account';
+import { GetSellerPsbtRequest, SubmitBuyerPsbtRequest } from '../swap/types';
 /**
  * Represents the client for interacting with the Oyl API.
  */
@@ -78,6 +79,8 @@ export declare class OylApiClient {
      * @param ticker - The ticker to query.
      */
     getRuneTokenInfo(ticker: string): Promise<any>;
+    getSellerPsbt(params: GetSellerPsbtRequest): Promise<any>;
+    submitBuyerPsbt(params: SubmitBuyerPsbtRequest): Promise<any>;
     /**
      * Get Collection info by id.
      * @param collectionId - The collectionId to query.
@@ -115,15 +118,15 @@ export declare class OylApiClient {
      */
     getAccountBalance(account: string): Promise<any>;
     /**
-    * Get account utxos.
-    * @param account - The account object to get utxos for.
-    */
+     * Get account utxos.
+     * @param account - The account object to get utxos for.
+     */
     getAccountUtxos(account: Account): Promise<any>;
     /**
-    * Get address utxos.
-    * @param address - The address to get utxos for.
-    * @param spendStrategy - The spendStrategy object to use.
-    */
+     * Get address utxos.
+     * @param address - The address to get utxos for.
+     * @param spendStrategy - The spendStrategy object to use.
+     */
     getAddressUtxos(address: string, spendStrategy?: SpendStrategy): Promise<any>;
     /**
      * Get account balance.
@@ -222,7 +225,7 @@ export declare class OylApiClient {
     /**
      * Get Ordinals-Wallet offer psbt for Collectibles & BRC20s.
      */
-    getOrdinalsWalletNftOfferPsbt({ publicKey, feeRate, address, receiveAddress, inscriptions }: {
+    getOrdinalsWalletNftOfferPsbt({ publicKey, feeRate, address, receiveAddress, inscriptions, }: {
         publicKey: string;
         feeRate: number;
         address: string;
@@ -230,9 +233,9 @@ export declare class OylApiClient {
         inscriptions: string[];
     }): Promise<any>;
     /**
-    * Get Ordinals-Wallet offer psbt for Collectibles & BRC20s.
-    */
-    getOrdinalsWalletRuneOfferPsbt({ publicKey, feeRate, address, outpoints, receiveAddress }: {
+     * Get Ordinals-Wallet offer psbt for Collectibles & BRC20s.
+     */
+    getOrdinalsWalletRuneOfferPsbt({ publicKey, feeRate, address, outpoints, receiveAddress, }: {
         publicKey: string;
         feeRate: number;
         address: string;
@@ -242,14 +245,14 @@ export declare class OylApiClient {
     /**
      * Submit a signed psbt to bid for offers on Ordinals Wallet marketplace.
      */
-    submitOrdinalsWalletBid({ psbt, setupPsbt }: {
+    submitOrdinalsWalletBid({ psbt, setupPsbt, }: {
         psbt: string;
         setupPsbt: string;
     }): Promise<any>;
     /**
-    * Submit a signed psbt to bid for runeoffers on Ordinals Wallet marketplace.
-    */
-    submitOrdinalsWalletRuneBid({ psbt, setupPsbt }: {
+     * Submit a signed psbt to bid for runeoffers on Ordinals Wallet marketplace.
+     */
+    submitOrdinalsWalletRuneBid({ psbt, setupPsbt, }: {
         psbt: string;
         setupPsbt: string;
     }): Promise<any>;

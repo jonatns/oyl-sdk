@@ -36,6 +36,8 @@ export const CONFIRMED_UTXO_ENFORCED_MARKETPLACES: Marketplaces[] = [
 export const DUMMY_UTXO_ENFORCED_MARKETPLACES: Marketplaces[] = [
   Marketplaces.OKX,
   Marketplaces.ORDINALS_WALLET,
+  Marketplaces.MAGISAT,
+  Marketplaces.MAGIC_EDEN,
 ]
 export const ESTIMATE_TX_SIZE: number = 350
 export const DUMMY_UTXO_SATS = 600 + 600
@@ -272,6 +274,14 @@ export async function selectSpendAddress({
           ' sats'
       )
     }
+
+    if (i === account.spendStrategy.addressOrder.length - 1) {
+      throw new Error(
+        'Not enough (confirmed) satoshis available to buy marketplace offers, need  ' +
+          estimatedCost +
+          ' sats'
+      )
+    }
   }
 }
 
@@ -291,11 +301,12 @@ export async function prepareAddressForDummyUtxos({
   pubKey,
   feeRate,
   addressType,
+  nUtxos = 2,
   utxos = [],
 }: PrepareAddressForDummyUtxos): Promise<BuiltPsbt | null> {
   try {
     const paddingUtxos = getAllUTXOsWorthASpecificValue(utxos, 600)
-    if (paddingUtxos.length < 2) {
+    if (paddingUtxos.length < nUtxos) {
       return dummyUtxosPsbt({
         address,
         utxos,
@@ -303,11 +314,14 @@ export async function prepareAddressForDummyUtxos({
         feeRate,
         pubKey,
         addressType,
+        nUtxos,
       })
     }
     return null
   } catch (err) {
-    throw new Error('An error occured while preparing address for dummy utxos')
+    throw new Error(
+      `An error occured while preparing address for dummy utxos ${err.message}`
+    )
   }
 }
 
@@ -318,7 +332,10 @@ export function dummyUtxosPsbt({
   pubKey,
   addressType,
   network,
+  nUtxos = 2,
 }: DummyUtxoOptions): BuiltPsbt {
+  const txInputs: ConditionalInput[] = []
+  const txOutputs: OutputTxTemplate[] = []
   const amountNeeded =
     DUMMY_UTXO_SATS + parseInt((ESTIMATE_TX_SIZE * feeRate).toFixed(0))
   const retrievedUtxos = getUTXOsToCoverAmount({
@@ -329,8 +346,21 @@ export function dummyUtxosPsbt({
     throw new Error('No utxos available')
   }
 
-  const txInputs: ConditionalInput[] = []
-  const txOutputs: OutputTxTemplate[] = []
+  retrievedUtxos.forEach((utxo) => {
+    const input = addInputConditionally(
+      {
+        hash: utxo.txId,
+        index: utxo.outputIndex,
+        witnessUtxo: {
+          value: utxo.satoshis,
+          script: Buffer.from(utxo.scriptPk, 'hex'),
+        },
+      },
+      addressType,
+      pubKey
+    )
+    txInputs.push(input)
+  })
 
   retrievedUtxos.forEach((utxo) => {
     const input = addInputConditionally(
@@ -351,14 +381,13 @@ export function dummyUtxosPsbt({
   const amountRetrieved = calculateAmountGathered(retrievedUtxos)
   const changeAmount = amountRetrieved - amountNeeded
   let changeOutput: OutputTxTemplate | null = null
-  txOutputs.push({
-    address,
-    value: 600,
-  })
-  txOutputs.push({
-    address,
-    value: 600,
-  })
+
+  for (let i = 0; i < nUtxos; i++) {
+    txOutputs.push({
+      address,
+      value: 600,
+    })
+  }
   if (changeAmount > 0) changeOutput = { address, value: changeAmount }
 
   return buildPsbtWithFee({
@@ -425,7 +454,7 @@ export async function updateUtxos({
   return updatedUtxos
 }
 
-function outputTxCheck({
+export function outputTxCheck({
   blueprint,
   swapTx,
   output,
@@ -456,7 +485,11 @@ export function batchMarketplaceOffer(
 
   return Object.entries(groupedOffers).flatMap(
     ([marketplace, marketplaceOffers]) => {
-      if (marketplace === 'unisat' || marketplace === 'ordinals-wallet') {
+      if (
+        marketplace === 'unisat' ||
+        marketplace === 'ordinals-wallet' ||
+        marketplace === 'magisat'
+      ) {
         const batchOffer: MarketplaceBatchOffer = {
           ticker: marketplaceOffers[0].ticker,
           offerId: [],
@@ -476,7 +509,7 @@ export function batchMarketplaceOffer(
           batchOffer.unitPrice?.push(offer.unitPrice || 0)
           batchOffer.totalPrice?.push(offer.totalPrice || 0)
 
-          if (marketplace === 'unisat') {
+          if (marketplace === 'unisat' || marketplace === 'magisat') {
             batchOffer.amount?.push(offer.amount || '')
             batchOffer.address?.push(offer.address || '')
           } else if (marketplace === 'ordinals-wallet') {

@@ -216,8 +216,9 @@ export const findCollectible = async ({
   const isSpent = isSpentArray[inscriptionTxVOutIndex]
   if (
     inscriptionsOnOutput.inscriptions.length > 1 ||
-    inscriptionsOnOutput.runes.length > 0 ||
-    hasRune?.output
+    Array.isArray(inscriptionsOnOutput.runes)
+      ? Number(inscriptionsOnOutput.runes.length) > 1
+      : Object.keys(inscriptionsOnOutput.runes).length > 1 || hasRune?.output
   ) {
     throw new Error(
       'Unable to send from UTXO with multiple inscriptions. Split UTXO before sending.'

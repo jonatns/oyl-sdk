@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { FormattedUtxo } from '../shared/interface';
 import { Provider } from '../provider';
-import { BidAffordabilityCheck, BidAffordabilityCheckResponse, BuiltPsbt, ConditionalInput, DummyUtxoOptions, MarketplaceBatchOffer, MarketplaceOffer, Marketplaces, PrepareAddressForDummyUtxos, PsbtBuilder, SelectSpendAddress, SelectSpendAddressResponse, TxAddressTypes, UtxosToCoverAmount } from './types';
+import { BidAffordabilityCheck, BidAffordabilityCheckResponse, BuiltPsbt, ConditionalInput, DummyUtxoOptions, MarketplaceBatchOffer, MarketplaceOffer, Marketplaces, OutputTxCheck, PrepareAddressForDummyUtxos, PsbtBuilder, SelectSpendAddress, SelectSpendAddressResponse, TxAddressTypes, UtxosToCoverAmount } from './types';
 import { AddressType } from '../shared/interface';
 import * as bitcoin from 'bitcoinjs-lib';
 export declare const maxTxSizeForOffers: number;
@@ -24,14 +24,15 @@ export declare function canAddressAffordBid({ address, estimatedCost, offers, pr
 export declare function calculateAmountGathered(utxoArray: FormattedUtxo[]): number;
 export declare function selectSpendAddress({ offers, provider, feeRate, account, }: SelectSpendAddress): Promise<SelectSpendAddressResponse>;
 export declare function sanitizeFeeRate(provider: Provider, feeRate: number): Promise<number>;
-export declare function prepareAddressForDummyUtxos({ address, network, pubKey, feeRate, addressType, utxos, }: PrepareAddressForDummyUtxos): Promise<BuiltPsbt | null>;
-export declare function dummyUtxosPsbt({ address, utxos, feeRate, pubKey, addressType, network, }: DummyUtxoOptions): BuiltPsbt;
+export declare function prepareAddressForDummyUtxos({ address, network, pubKey, feeRate, addressType, nUtxos, utxos, }: PrepareAddressForDummyUtxos): Promise<BuiltPsbt | null>;
+export declare function dummyUtxosPsbt({ address, utxos, feeRate, pubKey, addressType, network, nUtxos, }: DummyUtxoOptions): BuiltPsbt;
 export declare function updateUtxos({ originalUtxos, txId, spendAddress, provider, }: {
     originalUtxos: FormattedUtxo[];
     txId: string;
     spendAddress: string;
     provider: Provider;
 }): Promise<FormattedUtxo[]>;
+export declare function outputTxCheck({ blueprint, swapTx, output, index, }: OutputTxCheck): boolean;
 export declare function batchMarketplaceOffer(offers: MarketplaceOffer[]): (MarketplaceOffer | MarketplaceBatchOffer)[];
 export declare function psbtTxAddressTypes({ psbt, network, }: {
     psbt: bitcoin.Psbt;

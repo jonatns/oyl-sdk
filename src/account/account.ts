@@ -44,6 +44,9 @@ export interface MnemonicToAccountOptions {
 export const generateMnemonic = () => {
   return bip39.generateMnemonic()
 }
+export const validateMnemonic = (mnemonic: string) => {
+  return bip39.validateMnemonic(mnemonic)
+}
 export const mnemonicToAccount = ({
   mnemonic = generateMnemonic(),
   opts,
@@ -179,10 +182,6 @@ export const getWalletPrivateKeys = ({
   mnemonic: string
   opts?: MnemonicToAccountOptions
 }) => {
-  if (!mnemonic) {
-    throw Error('mnemonic not given')
-  }
-
   const options = {
     network: opts?.network ? opts.network : bitcoin.networks.bitcoin,
     index: opts?.index ? opts.index : 0,

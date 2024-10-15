@@ -67,6 +67,10 @@ jest.spyOn(require('./collectible'), 'findCollectible').mockResolvedValue({
 })
 
 describe('collectible sendTx', () => {
+  beforeEach(() => {
+    jest.resetModules()
+  })
+
   it('creates a transaction successfully', async () => {
     const result = await createPsbt({
       gatheredUtxos: testFormattedUtxos,

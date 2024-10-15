@@ -1,3 +1,4 @@
+import { walletInit } from '@signer/signer'
 import {
   Account,
   GatheredUtxos,
@@ -8,7 +9,6 @@ import {
   getWalletPrivateKeys,
   mnemonicToAccount,
   tweakSigner,
-  walletInit,
 } from '..'
 import * as bitcoin from 'bitcoinjs-lib'
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'

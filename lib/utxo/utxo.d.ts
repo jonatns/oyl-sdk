@@ -1,6 +1,5 @@
 import { Provider } from '../provider';
 import { Account, SpendStrategy } from '../account';
-import { FormattedUtxo } from 'shared/interface';
 export interface EsploraUtxo {
     txid: string;
     vout: number;
@@ -11,6 +10,15 @@ export interface EsploraUtxo {
         block_time: number;
     };
     value: number;
+}
+export interface FormattedUtxo {
+    txId: string;
+    outputIndex: number;
+    satoshis: number;
+    scriptPk: string;
+    address: string;
+    inscriptions: any[];
+    confirmations: number;
 }
 export interface AddressPortfolio {
     spendableTotalBalance: number;
@@ -37,21 +45,6 @@ export declare const addressBalance: ({ address, provider, }: {
     pendingAmount: number;
     amount: number;
 }>;
-export declare const addressUtxos: ({ address, provider, spendStrategy, }: {
-    address: string;
-    provider: Provider;
-    spendStrategy?: SpendStrategy;
-}) => Promise<AddressPortfolio>;
-export declare const accountUtxos: ({ account, provider, }: {
-    account: Account;
-    provider: Provider;
-}) => Promise<{
-    accountSpendableTotalUtxos: any[];
-    accountTotalBalance: number;
-    accountSpendableTotalBalance: number;
-    accountPendingTotalBalance: number;
-    accounts: {};
-}>;
 export declare const addressSpendableUtxos: ({ address, provider, spendAmount, spendStrategy, }: {
     address: string;
     provider: Provider;
@@ -68,4 +61,19 @@ export declare const accountSpendableUtxos: ({ account, provider, spendAmount, }
 }) => Promise<{
     totalAmount: number;
     utxos: FormattedUtxo[];
+}>;
+export declare const addressUtxos: ({ address, provider, spendStrategy, }: {
+    address: string;
+    provider: Provider;
+    spendStrategy?: SpendStrategy;
+}) => Promise<AddressPortfolio>;
+export declare const accountUtxos: ({ account, provider, }: {
+    account: Account;
+    provider: Provider;
+}) => Promise<{
+    accountTotalBalance: number;
+    accountSpendableTotalUtxos: any[];
+    accountSpendableTotalBalance: number;
+    accountPendingTotalBalance: number;
+    accounts: {};
 }>;
