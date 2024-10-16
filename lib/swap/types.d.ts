@@ -1,6 +1,5 @@
 /// <reference types="node" />
-import { AddressType, AssetType } from "../shared/interface";
-import { FormattedUtxo } from '../utxo/utxo';
+import { AddressType, AssetType, FormattedUtxo } from '../shared/interface';
 import { Psbt } from 'bitcoinjs-lib';
 import { Provider } from '../provider';
 import { Account } from '../account';
