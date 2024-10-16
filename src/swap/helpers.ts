@@ -246,10 +246,11 @@ export async function selectSpendAddress({
     ) {
       const address = account[account.spendStrategy.addressOrder[i]].address
       let pubkey: string = account[account.spendStrategy.addressOrder[i]].pubkey
+      const addrUtxos = utxos.filter((utxo) => utxo.address === address)
       const afford = await canAddressAffordBid({
         estimatedCost,
         offers,
-        utxos,
+        utxos: addrUtxos,
       })
       const { retrievedUtxos, canAfford, offers_ } = afford
       if (canAfford) {
