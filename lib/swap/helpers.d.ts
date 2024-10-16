@@ -20,9 +20,9 @@ export declare function getBidCostEstimate(offers: MarketplaceOffer[], feeRate: 
  * Otherwise if there is AT LEAST ONE offer from a marketplace that does not enforce confirmed
  * utxos, DONT INSIST retrieving confirmed utxos.
  *  */
-export declare function canAddressAffordBid({ address, estimatedCost, offers, provider, }: BidAffordabilityCheck): Promise<BidAffordabilityCheckResponse>;
+export declare function canAddressAffordBid({ estimatedCost, offers, utxos }: BidAffordabilityCheck): Promise<BidAffordabilityCheckResponse>;
 export declare function calculateAmountGathered(utxoArray: FormattedUtxo[]): number;
-export declare function selectSpendAddress({ offers, provider, feeRate, account, }: SelectSpendAddress): Promise<SelectSpendAddressResponse>;
+export declare function selectSpendAddress({ offers, provider, feeRate, account, utxos }: SelectSpendAddress): Promise<SelectSpendAddressResponse>;
 export declare function sanitizeFeeRate(provider: Provider, feeRate: number): Promise<number>;
 export declare function prepareAddressForDummyUtxos({ address, network, pubKey, feeRate, addressType, nUtxos, utxos, }: PrepareAddressForDummyUtxos): Promise<BuiltPsbt | null>;
 export declare function dummyUtxosPsbt({ address, utxos, feeRate, pubKey, addressType, network, nUtxos, }: DummyUtxoOptions): BuiltPsbt;

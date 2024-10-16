@@ -108,6 +108,7 @@ export interface SelectSpendAddress {
   provider: Provider
   feeRate: number
   account: Account
+  utxos: FormattedUtxo[]
 }
 
 export interface SelectSpendAddressResponse {
@@ -260,14 +261,13 @@ export interface UtxosToCoverAmount {
 }
 
 export interface BidAffordabilityCheck {
-  address: string
   estimatedCost: number
   offers: MarketplaceOffer[]
-  provider: Provider
+  utxos: FormattedUtxo[]
 }
 
 export interface BidAffordabilityCheckResponse {
-  utxos: FormattedUtxo[]
+  retrievedUtxos: FormattedUtxo[]
   estimatedCost: number
   offers_: MarketplaceOffer[]
   canAfford: boolean

@@ -195,13 +195,11 @@ export function getBidCostEstimate(
  * utxos, DONT INSIST retrieving confirmed utxos.
  *  */
 export async function canAddressAffordBid({
-  address,
   estimatedCost,
   offers,
-  provider,
+  utxos
 }: BidAffordabilityCheck): Promise<BidAffordabilityCheckResponse> {
   let insistConfirmedUtxos: boolean = true
-  const { utxos } = await addressSpendableUtxos({ address, provider })
   for (let i = 0; i < offers.length; i++) {
     const mktPlace = marketplaceName[offers[i]?.marketplace]
     if (!CONFIRMED_UTXO_ENFORCED_MARKETPLACES.includes(mktPlace)) {
@@ -219,7 +217,7 @@ export async function canAddressAffordBid({
     return {
       offers_: offers,
       estimatedCost,
-      utxos: retrievedUtxos,
+     retrievedUtxos,
       canAfford: retrievedUtxos.length > 0,
     }
   }
@@ -237,6 +235,7 @@ export async function selectSpendAddress({
   provider,
   feeRate,
   account,
+  utxos
 }: SelectSpendAddress): Promise<SelectSpendAddressResponse> {
   feeRate = await sanitizeFeeRate(provider, feeRate)
   const estimatedCost = getBidCostEstimate(offers, feeRate)
@@ -248,12 +247,11 @@ export async function selectSpendAddress({
       const address = account[account.spendStrategy.addressOrder[i]].address
       let pubkey: string = account[account.spendStrategy.addressOrder[i]].pubkey
       const afford = await canAddressAffordBid({
-        address,
         estimatedCost,
         offers,
-        provider,
+        utxos,
       })
-      const { utxos, canAfford, offers_ } = afford
+      const { retrievedUtxos, canAfford, offers_ } = afford
       if (canAfford) {
         const selectedSpendAddress = address
         const selectedSpendPubkey = pubkey
@@ -262,7 +260,7 @@ export async function selectSpendAddress({
           address: selectedSpendAddress,
           pubKey: selectedSpendPubkey,
           addressType,
-          utxos,
+          utxos: retrievedUtxos,
           offers: offers_,
         }
       }
