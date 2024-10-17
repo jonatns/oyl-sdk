@@ -206,6 +206,7 @@ export async function canAddressAffordBid({
       insistConfirmedUtxos = false
       break
     }
+  }
     const excludedUtxos = getAllUTXOsWorthASpecificValue(utxos, 600).slice(0, 2)
     const retrievedUtxos: FormattedUtxo[] = getUTXOsToCoverAmount({
       utxos,
@@ -221,7 +222,7 @@ export async function canAddressAffordBid({
       canAfford: retrievedUtxos.length > 0,
     }
   }
-}
+
 
 export function calculateAmountGathered(utxoArray: FormattedUtxo[]): number {
   return utxoArray?.reduce(
