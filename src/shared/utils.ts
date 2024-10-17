@@ -725,10 +725,6 @@ export function findRuneUtxosToSpend(utxos: RuneUtxo[], target: number) {
 }
 
 export function findXAmountOfSats(utxos: FormattedUtxo[], target: number) {
-  if (!utxos || utxos.length === 0) {
-    return undefined
-  }
-
   let totalAmount = 0
   const selectedUtxos: FormattedUtxo[] = []
 
