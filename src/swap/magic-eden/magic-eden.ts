@@ -79,6 +79,7 @@ export async function magicEdenSwap({
         assetType,
         buyerAddress: address,
         orders,
+        ticker:offer.ticker,
         buyerPublicKey: pubKey,
         feeRate,
         receivePublicKey,

@@ -183,6 +183,7 @@ export interface GetSellerPsbtRequest {
   buyerAddress: string
   buyerPublicKey: string
   feeRate: number
+  ticker?: string
   receiveAddress?: string
   receivePublicKey?: string;
   orders: BuyOrder[]
