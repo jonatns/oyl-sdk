@@ -178,6 +178,17 @@ export class OylApiClient {
   }
 
   /**
+   * Get Collection Market info by id.
+   * @param collectionId - The collectionId to query.
+   */
+  async getCollectionMarketInfo(collectionId: string) {
+    return await this._call('/get-collection-market-info', 'post', {
+      collectionId: collectionId,
+    })
+  }
+
+
+  /**
    * Get brc20 details by ticker.
    * @param ticker - The ticker to query.
    */
