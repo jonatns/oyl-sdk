@@ -314,7 +314,7 @@ export async function prepareAddressForDummyUtxos({
         feeRate,
         pubKey,
         addressType,
-        nUtxos,
+        nUtxos: nUtxos - paddingUtxos.length,
       })
     }
     return null
@@ -345,23 +345,7 @@ export function dummyUtxosPsbt({
   if (retrievedUtxos.length === 0) {
     throw new Error('No utxos available')
   }
-
-  retrievedUtxos.forEach((utxo) => {
-    const input = addInputConditionally(
-      {
-        hash: utxo.txId,
-        index: utxo.outputIndex,
-        witnessUtxo: {
-          value: utxo.satoshis,
-          script: Buffer.from(utxo.scriptPk, 'hex'),
-        },
-      },
-      addressType,
-      pubKey
-    )
-    txInputs.push(input)
-  })
-
+  
   retrievedUtxos.forEach((utxo) => {
     const input = addInputConditionally(
       {
@@ -488,7 +472,8 @@ export function batchMarketplaceOffer(
       if (
         marketplace === 'unisat' ||
         marketplace === 'ordinals-wallet' ||
-        marketplace === 'magisat'
+        marketplace === 'magisat' ||
+        marketplace === 'magic-eden'
       ) {
         const batchOffer: MarketplaceBatchOffer = {
           ticker: marketplaceOffers[0].ticker,
@@ -509,7 +494,7 @@ export function batchMarketplaceOffer(
           batchOffer.unitPrice?.push(offer.unitPrice || 0)
           batchOffer.totalPrice?.push(offer.totalPrice || 0)
 
-          if (marketplace === 'unisat' || marketplace === 'magisat') {
+          if (marketplace === 'unisat' || marketplace === 'magisat' || marketplace === 'magic-eden') {
             batchOffer.amount?.push(offer.amount || '')
             batchOffer.address?.push(offer.address || '')
           } else if (marketplace === 'ordinals-wallet') {

@@ -183,7 +183,9 @@ export interface GetSellerPsbtRequest {
   buyerAddress: string
   buyerPublicKey: string
   feeRate: number
+  ticker?: string
   receiveAddress?: string
+  receivePublicKey?: string;
   orders: BuyOrder[]
   //additionalParams?: Omit<T, keyof GetSellerPsbtRequest<T>>;
 }
@@ -306,6 +308,7 @@ export interface ProcessOfferOptions {
   utxos: FormattedUtxo[]
   feeRate: number
   pubKey: string
+  receivePublicKey?: string;
   assetType: AssetType
   provider: Provider
   signer: Signer
