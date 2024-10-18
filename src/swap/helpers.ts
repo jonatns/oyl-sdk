@@ -345,23 +345,7 @@ export function dummyUtxosPsbt({
   if (retrievedUtxos.length === 0) {
     throw new Error('No utxos available')
   }
-
-  retrievedUtxos.forEach((utxo) => {
-    const input = addInputConditionally(
-      {
-        hash: utxo.txId,
-        index: utxo.outputIndex,
-        witnessUtxo: {
-          value: utxo.satoshis,
-          script: Buffer.from(utxo.scriptPk, 'hex'),
-        },
-      },
-      addressType,
-      pubKey
-    )
-    txInputs.push(input)
-  })
-
+  
   retrievedUtxos.forEach((utxo) => {
     const input = addInputConditionally(
       {
