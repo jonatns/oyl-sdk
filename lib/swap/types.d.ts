@@ -170,6 +170,7 @@ export interface GetSellerPsbtRequest {
     buyerPublicKey: string;
     feeRate: number;
     receiveAddress?: string;
+    receivePublicKey?: string;
     orders: BuyOrder[];
 }
 export interface BuyOrder {
@@ -274,6 +275,7 @@ export interface ProcessOfferOptions {
     utxos: FormattedUtxo[];
     feeRate: number;
     pubKey: string;
+    receivePublicKey?: string;
     assetType: AssetType;
     provider: Provider;
     signer: Signer;
