@@ -88,6 +88,11 @@ export declare class OylApiClient {
      */
     getCollectionInfo(collectionId: string): Promise<any>;
     /**
+     * Get Collection Market info by id.
+     * @param collectionId - The collectionId to query.
+     */
+    getCollectionMarketInfo(collectionId: string): Promise<any>;
+    /**
      * Get brc20 details by ticker.
      * @param ticker - The ticker to query.
      */
