@@ -2,7 +2,7 @@ import { Provider } from '../provider/provider'
 import * as dotenv from 'dotenv'
 import * as bitcoin from 'bitcoinjs-lib'
 import { EsploraUtxo, addressUtxos, selectUtxos } from './utxo'
-import { FormattedUtxo } from 'shared/interface'
+import { FormattedUtxo } from '../shared/interface'
 import { accountUtxos } from '../__fixtures__/utxos'
 
 dotenv.config()

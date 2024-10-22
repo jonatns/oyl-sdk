@@ -23,8 +23,9 @@
       "@utxo/*": ["utxo/*"]
     }
   },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "src/**/*.test.ts", "src/__fixtures__"],
   "ts-node": {
     "esm": true
-  },
-  "include": ["src/**/*.ts", "src/**/**/*.ts"]
+  }
 }
