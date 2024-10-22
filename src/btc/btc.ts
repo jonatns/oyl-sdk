@@ -28,7 +28,7 @@ export const createPsbt = async ({
   provider: Provider
   fee?: number
 }) => {
-  if (!utxos?.length) {
+  if (!utxos) {
     throw new OylTransactionError(new Error('No utxos provided'))
   }
 
@@ -158,7 +158,7 @@ export const send = async ({
   signer: Signer
   fee?: number
 }) => {
-  if (!utxos?.length) {
+  if (!utxos) {
     throw new OylTransactionError(new Error('No utxos provided'))
   }
 
@@ -215,7 +215,7 @@ export const actualFee = async ({
   provider: Provider
   signer: Signer
 }) => {
-  if (!utxos?.length) {
+  if (!utxos) {
     throw new OylTransactionError(new Error('No utxos provided'))
   }
 
