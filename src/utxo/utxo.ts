@@ -3,6 +3,7 @@ import { Provider } from '../provider'
 import { Account, AddressKey, SpendStrategy } from '../account'
 import asyncPool from 'tiny-async-pool'
 import { OrdOutput } from 'rpclient/ord'
+import { getAddressKey } from '../shared/utils'
 
 export interface EsploraUtxo {
   txid: string
@@ -405,7 +406,7 @@ export const accountUtxos = async ({
     })
 
     accountSpendableTotalBalance += spendableTotalBalance
-    accountSpendableTotalUtxos.push(spendableUtxos)
+    accountSpendableTotalUtxos.push(...spendableUtxos)
     accountPendingTotalBalance += pendingTotalBalance
     accountTotalBalance += totalBalance
 
@@ -426,4 +427,20 @@ export const accountUtxos = async ({
     accountPendingTotalBalance,
     accounts,
   }
+}
+
+export const selectUtxos = (
+  utxos: FormattedUtxo[],
+  spendStrategy: SpendStrategy
+) => {
+  return utxos
+    .filter((utxo) => {
+      const addressKey = getAddressKey(utxo.address)
+      return spendStrategy.addressOrder.includes(addressKey)
+    })
+    .sort(
+      (a, b) =>
+        (spendStrategy.utxoSortGreatestToLeast ? b.satoshis : a.satoshis) -
+        (spendStrategy.utxoSortGreatestToLeast ? a.satoshis : b.satoshis)
+    )
 }

@@ -1,8 +1,8 @@
 import * as bitcoin from 'bitcoinjs-lib'
-import { createPsbt, send } from './btc'
+import { createPsbt } from './btc'
 import { Account, mnemonicToAccount } from '../account/account'
 import { Provider } from '../provider/provider'
-import { GatheredUtxos } from 'shared/interface'
+import { FormattedUtxo } from '../utxo/utxo'
 
 const provider = new Provider({
   url: '',
@@ -27,34 +27,31 @@ const { output } = bitcoin.payments.p2wpkh({
 })
 const scriptPk = output.toString('hex')
 
-const testFormattedUtxos: GatheredUtxos = {
-  utxos: [
-    {
-      txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b274',
-      outputIndex: 0,
-      satoshis: 100000,
-      confirmations: 3,
-      scriptPk,
-      address: account.nativeSegwit.address,
-      inscriptions: [],
-    },
-    {
-      txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b275',
-      outputIndex: 0,
-      satoshis: 100000,
-      confirmations: 3,
-      scriptPk,
-      address: account.nativeSegwit.address,
-      inscriptions: [],
-    },
-  ],
-  totalAmount: 200000,
-}
+const testFormattedUtxos: FormattedUtxo[] = [
+  {
+    txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b274',
+    outputIndex: 0,
+    satoshis: 100000,
+    confirmations: 3,
+    scriptPk,
+    address: account.nativeSegwit.address,
+    inscriptions: [],
+  },
+  {
+    txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b275',
+    outputIndex: 0,
+    satoshis: 100000,
+    confirmations: 3,
+    scriptPk,
+    address: account.nativeSegwit.address,
+    inscriptions: [],
+  },
+]
 
 describe('btc sendTx', () => {
   it('construct psbt', async () => {
     const result = await createPsbt({
-      gatheredUtxos: testFormattedUtxos,
+      utxos: testFormattedUtxos,
       toAddress: address,
       amount: 3000,
       feeRate: 10,

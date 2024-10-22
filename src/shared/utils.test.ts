@@ -1,0 +1,38 @@
+import { mnemonicToAccount } from '../account/account'
+import { AddressType } from './interface'
+import { getAddressKey, getAddressType } from './utils'
+import * as bitcoin from 'bitcoinjs-lib'
+
+describe('Shared utils', () => {
+  it('getAddressType returns the right address type for an address', () => {
+    const account = mnemonicToAccount({
+      mnemonic:
+        'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
+      opts: { index: 0, network: bitcoin.networks.regtest },
+    })
+
+    expect(getAddressType(account.nativeSegwit.address)).toBe(
+      AddressType.P2WPKH
+    )
+    expect(getAddressType(account.nestedSegwit.address)).toBe(
+      AddressType.P2SH_P2WPKH
+    )
+    expect(getAddressType(account.taproot.address)).toBe(AddressType.P2TR)
+    expect(getAddressType(account.legacy.address)).toBe(AddressType.P2PKH)
+    expect(getAddressType('Not an address')).toBeNull()
+  })
+
+  it('getAddressKey returns the right address key for an address', () => {
+    const account = mnemonicToAccount({
+      mnemonic:
+        'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
+      opts: { index: 0, network: bitcoin.networks.regtest },
+    })
+
+    expect(getAddressKey(account.nativeSegwit.address)).toBe('nativeSegwit')
+    expect(getAddressKey(account.nestedSegwit.address)).toBe('nestedSegwit')
+    expect(getAddressKey(account.taproot.address)).toBe('taproot')
+    expect(getAddressKey(account.legacy.address)).toBe('legacy')
+    expect(getAddressKey('Not an address')).toBeNull()
+  })
+})

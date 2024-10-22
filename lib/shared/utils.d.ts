@@ -4,6 +4,7 @@ import { AddressType, FormattedUtxo, IBlockchainInfoUTXO, Network, RuneUtxo, ToS
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew';
 import { EsploraRpc } from '../rpclient/esplora';
 import { Provider } from '../provider/provider';
+import { AddressKey } from '@account/account';
 export interface IBISWalletIx {
     validity: any;
     isBrc: boolean;
@@ -94,6 +95,7 @@ export declare const createRuneEtchScript: ({ pointer, runeName, symbol, divisib
 }) => Buffer;
 export declare let RPC_ADDR: string;
 export declare function getAddressType(address: string): AddressType | null;
+export declare function getAddressKey(address: string): AddressKey;
 export declare function waitForTransaction({ txId, sandshrewBtcClient, }: {
     txId: string;
     sandshrewBtcClient: SandshrewBitcoinClient;
