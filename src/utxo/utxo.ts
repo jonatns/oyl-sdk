@@ -433,14 +433,24 @@ export const selectUtxos = (
   utxos: FormattedUtxo[],
   spendStrategy: SpendStrategy
 ) => {
-  return utxos
-    .filter((utxo) => {
-      const addressKey = getAddressKey(utxo.address)
-      return spendStrategy.addressOrder.includes(addressKey)
-    })
-    .sort(
+  const addressMap = new Map<string, FormattedUtxo[]>()
+
+  utxos.forEach((utxo) => {
+    const addressKey = getAddressKey(utxo.address)
+    if (spendStrategy.addressOrder.includes(addressKey)) {
+      if (!addressMap.has(addressKey)) {
+        addressMap.set(addressKey, [])
+      }
+      addressMap.get(addressKey)!.push(utxo)
+    }
+  })
+
+  return spendStrategy.addressOrder.flatMap((addressKey) => {
+    const utxosForAddress = addressMap.get(addressKey) || []
+    return utxosForAddress.sort(
       (a, b) =>
         (spendStrategy.utxoSortGreatestToLeast ? b.satoshis : a.satoshis) -
         (spendStrategy.utxoSortGreatestToLeast ? a.satoshis : b.satoshis)
     )
+  })
 }

@@ -442,16 +442,25 @@ describe('utxo', () => {
         changeAddress: 'nativeSegwit',
       })
 
-      expect(result[0].address).toMatch(/bcrt1p/) // Taproot
+      // Native SegWit
+      expect(result[0].address).toMatch(/bcrt1q/)
+      expect(result[1].address).toMatch(/bcrt1q/)
       expect(result[0].satoshis).toBeGreaterThan(result[1].satoshis)
 
-      expect(result[1].address).toMatch(/m/) // Nested SegWit
-      expect(result[1].satoshis).toBeGreaterThan(result[2].satoshis)
-
-      expect(result[2].address).toMatch(/bcrt1q/) // Native SegWit
+      // Nested Segwit
+      expect(result[2].address).toMatch(/2N/)
+      expect(result[3].address).toMatch(/2N/)
       expect(result[2].satoshis).toBeGreaterThan(result[3].satoshis)
 
-      expect(result[3].address).toMatch(/2N/) // Legacy
+      // Taproot
+      expect(result[4].address).toMatch(/bcrt1p/)
+      expect(result[5].address).toMatch(/bcrt1p/)
+      expect(result[4].satoshis).toBeGreaterThan(result[5].satoshis)
+
+      // Legacy
+      expect(result[6].address).toMatch(/m/)
+      expect(result[7].address).toMatch(/m/)
+      expect(result[6].satoshis).toBeGreaterThan(result[7].satoshis)
     })
 
     it('returns the right utxos when sorting from least to greatest', async () => {
@@ -461,16 +470,25 @@ describe('utxo', () => {
         changeAddress: 'nativeSegwit',
       })
 
-      expect(result[0].address).toMatch(/2N/) // Legacy
+      // Native SegWit
+      expect(result[0].address).toMatch(/bcrt1q/)
+      expect(result[1].address).toMatch(/bcrt1q/)
       expect(result[0].satoshis).toBeLessThan(result[1].satoshis)
 
-      expect(result[1].address).toMatch(/bcrt1q/) // Native SegWit
-      expect(result[1].satoshis).toBeLessThan(result[2].satoshis)
-
-      expect(result[2].address).toMatch(/m/) // Legacy
+      // Nested Segwit
+      expect(result[2].address).toMatch(/2N/)
+      expect(result[3].address).toMatch(/2N/)
       expect(result[2].satoshis).toBeLessThan(result[3].satoshis)
 
-      expect(result[3].address).toMatch(/bcrt1p/) // Taproot
+      // Taproot
+      expect(result[4].address).toMatch(/bcrt1p/)
+      expect(result[5].address).toMatch(/bcrt1p/)
+      expect(result[4].satoshis).toBeLessThan(result[5].satoshis)
+
+      // Legacy
+      expect(result[6].address).toMatch(/m/)
+      expect(result[7].address).toMatch(/m/)
+      expect(result[6].satoshis).toBeLessThan(result[7].satoshis)
     })
 
     it('returns the right utxos for single address', async () => {
@@ -480,8 +498,10 @@ describe('utxo', () => {
         changeAddress: 'nativeSegwit',
       })
 
-      expect(result.length).toBe(1)
-      expect(result[0].address).toMatch(/bcrt1p/) // Taproot
+      // Taproot
+      expect(result[0].address).toMatch(/bcrt1p/)
+      expect(result[1].address).toMatch(/bcrt1p/)
+      expect(result[0].satoshis).toBeGreaterThan(result[1].satoshis)
     })
   })
 })
