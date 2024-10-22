@@ -20,7 +20,7 @@ export const createPsbt = async ({
   provider,
   fee,
 }: {
-  utxos?: FormattedUtxo[]
+  utxos: FormattedUtxo[]
   toAddress: string
   feeRate: number
   amount: number
@@ -28,6 +28,10 @@ export const createPsbt = async ({
   provider: Provider
   fee?: number
 }) => {
+  if (!utxos?.length) {
+    throw new OylTransactionError(new Error('No utxos provided'))
+  }
+
   try {
     if (!feeRate) {
       feeRate = (await provider.esplora.getFeeEstimates())['1']
@@ -154,6 +158,10 @@ export const send = async ({
   signer: Signer
   fee?: number
 }) => {
+  if (!utxos?.length) {
+    throw new OylTransactionError(new Error('No utxos provided'))
+  }
+
   if (!fee) {
     fee = (
       await actualFee({
@@ -207,6 +215,10 @@ export const actualFee = async ({
   provider: Provider
   signer: Signer
 }) => {
+  if (!utxos?.length) {
+    throw new OylTransactionError(new Error('No utxos provided'))
+  }
+
   const { psbt } = await createPsbt({
     utxos,
     toAddress: toAddress,

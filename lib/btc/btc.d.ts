@@ -3,7 +3,7 @@ import { Account } from '../account/account';
 import { Signer } from '../signer';
 import { FormattedUtxo } from '../utxo';
 export declare const createPsbt: ({ utxos, toAddress, amount, feeRate, account, provider, fee, }: {
-    utxos?: FormattedUtxo[];
+    utxos: FormattedUtxo[];
     toAddress: string;
     feeRate: number;
     amount: number;
