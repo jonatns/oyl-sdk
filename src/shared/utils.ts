@@ -3,9 +3,7 @@ import ECPairFactory from 'ecpair'
 import ecc from '@bitcoinerlab/secp256k1'
 import {
   AddressType,
-  BitcoinPaymentType,
   FormattedUtxo,
-  GatheredUtxos,
   IBlockchainInfoUTXO,
   Network,
   RuneUtxo,
@@ -22,6 +20,7 @@ import { EsploraRpc } from '../rpclient/esplora'
 import { Provider } from '../provider/provider'
 import { addressFormats } from '@sadoprotocol/ordit-sdk'
 import { encodeRunestone, RunestoneSpec } from '@magiceden-oss/runestone-lib'
+import { AddressKey } from '@account/account'
 
 bitcoin.initEccLib(ecc)
 
@@ -536,6 +535,22 @@ export function getAddressType(address: string): AddressType | null {
     return AddressType.P2WPKH
   } else {
     return null
+  }
+}
+
+export function getAddressKey(address: string): AddressKey {
+  const addressType = getAddressType(address)
+  switch (addressType) {
+    case AddressType.P2WPKH:
+      return 'nativeSegwit'
+    case AddressType.P2SH_P2WPKH:
+      return 'nestedSegwit'
+    case AddressType.P2TR:
+      return 'taproot'
+    case AddressType.P2PKH:
+      return 'legacy'
+    default:
+      return null
   }
 }
 

@@ -291,15 +291,14 @@ const btcSend = new Command('send')
       },
     })
 
-    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
-      await utxo.accountUtxos({ account, provider })
+    const { accountSpendableTotalUtxos } = await utxo.accountUtxos({
+      account,
+      provider,
+    })
 
     console.log(
       await btc.send({
-        gatheredUtxos: {
-          utxos: accountSpendableTotalUtxos,
-          totalAmount: accountSpendableTotalBalance,
-        },
+        utxos: accountSpendableTotalUtxos,
         toAddress: options.to,
         feeRate: options.feeRate,
         account,

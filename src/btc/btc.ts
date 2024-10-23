@@ -9,11 +9,10 @@ import {
 import { Account } from '../account/account'
 import { Signer } from '../signer'
 import { getAddressType } from '../shared/utils'
-import { GatheredUtxos } from 'shared/interface'
-import { accountSpendableUtxos } from '../utxo'
+import { FormattedUtxo } from '../utxo'
 
 export const createPsbt = async ({
-  gatheredUtxos,
+  utxos,
   toAddress,
   amount,
   feeRate,
@@ -21,7 +20,7 @@ export const createPsbt = async ({
   provider,
   fee,
 }: {
-  gatheredUtxos?: GatheredUtxos
+  utxos: FormattedUtxo[]
   toAddress: string
   feeRate: number
   amount: number
@@ -30,27 +29,26 @@ export const createPsbt = async ({
   fee?: number
 }) => {
   try {
-    if (!feeRate) {
-      feeRate = (await provider.esplora.getFeeEstimates())['1']
+    if (!utxos?.length) {
+      throw new Error('No utxos provided')
     }
-    const psbt: bitcoin.Psbt = new bitcoin.Psbt({ network: provider.network })
-    const minFee = minimumFee({
+    if (!feeRate) {
+      throw new Error('No feeRate provided')
+    }
+
+    const minTxSize = minimumFee({
       taprootInputCount: 1,
       nonTaprootInputCount: 0,
       outputCount: 2,
     })
-    let calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
-    let finalFee: number = fee ? fee : calculatedFee
 
-    if (!gatheredUtxos) {
-      gatheredUtxos = await accountSpendableUtxos({
-        account,
-        provider,
-        spendAmount: finalFee + amount,
-      })
-    }
+    let calculatedFee = Math.max(minTxSize * feeRate, 250)
+    let finalFee = fee ?? calculatedFee
 
-    gatheredUtxos = findXAmountOfSats(gatheredUtxos.utxos, finalFee + amount)
+    let gatheredUtxos = findXAmountOfSats(
+      utxos,
+      Number(finalFee) + Number(amount)
+    )
 
     if (!fee && gatheredUtxos.utxos.length > 1) {
       const txSize = minimumFee({
@@ -58,13 +56,22 @@ export const createPsbt = async ({
         nonTaprootInputCount: 0,
         outputCount: 2,
       })
-      finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
-      gatheredUtxos = findXAmountOfSats(gatheredUtxos.utxos, finalFee + amount)
 
-      if (gatheredUtxos.totalAmount < Number(finalFee) + Number(amount)) {
-        throw new OylTransactionError(Error('Insufficient Balance'))
-      }
+      finalFee = Math.max(txSize * feeRate, 250)
+      gatheredUtxos = findXAmountOfSats(
+        utxos,
+        Number(finalFee) + Number(amount)
+      )
     }
+
+    if (gatheredUtxos.totalAmount < Number(finalFee) + Number(amount)) {
+      throw new Error('Insufficient Balance')
+    }
+
+    const psbt: bitcoin.Psbt = new bitcoin.Psbt({
+      network: provider.network,
+    })
+
     for (let i = 0; i < gatheredUtxos.utxos.length; i++) {
       if (getAddressType(gatheredUtxos.utxos[i].address) === 0) {
         const previousTxHex: string = await provider.esplora.getTxHex(
@@ -113,17 +120,12 @@ export const createPsbt = async ({
       }
     }
 
-    if (gatheredUtxos.totalAmount < Number(finalFee) + Number(amount)) {
-      throw new OylTransactionError(Error('Insufficient Balance'))
-    }
-
     psbt.addOutput({
       address: toAddress,
       value: Number(amount),
     })
 
-    const changeAmount: number =
-      gatheredUtxos.totalAmount - (finalFee + Number(amount))
+    const changeAmount = gatheredUtxos.totalAmount - (finalFee + Number(amount))
 
     if (changeAmount > 295) {
       psbt.addOutput({
@@ -145,7 +147,7 @@ export const createPsbt = async ({
 }
 
 export const send = async ({
-  gatheredUtxos,
+  utxos,
   toAddress,
   amount,
   feeRate,
@@ -154,7 +156,7 @@ export const send = async ({
   signer,
   fee,
 }: {
-  gatheredUtxos: GatheredUtxos
+  utxos: FormattedUtxo[]
   toAddress: string
   amount: number
   feeRate: number
@@ -166,7 +168,7 @@ export const send = async ({
   if (!fee) {
     fee = (
       await actualFee({
-        gatheredUtxos,
+        utxos,
         toAddress,
         amount,
         feeRate,
@@ -178,7 +180,7 @@ export const send = async ({
   }
 
   const { psbt: finalPsbt } = await createPsbt({
-    gatheredUtxos,
+    utxos,
     toAddress,
     amount,
     feeRate,
@@ -200,7 +202,7 @@ export const send = async ({
 }
 
 export const actualFee = async ({
-  gatheredUtxos,
+  utxos,
   toAddress,
   amount,
   feeRate,
@@ -208,7 +210,7 @@ export const actualFee = async ({
   provider,
   signer,
 }: {
-  gatheredUtxos: GatheredUtxos
+  utxos: FormattedUtxo[]
   toAddress: string
   feeRate: number
   amount: number
@@ -217,7 +219,7 @@ export const actualFee = async ({
   signer: Signer
 }) => {
   const { psbt } = await createPsbt({
-    gatheredUtxos,
+    utxos,
     toAddress: toAddress,
     amount: amount,
     feeRate: feeRate,
@@ -243,7 +245,7 @@ export const actualFee = async ({
   const correctFee = vsize * feeRate
 
   const { psbt: finalPsbt } = await createPsbt({
-    gatheredUtxos,
+    utxos,
     toAddress: toAddress,
     amount: amount,
     feeRate: feeRate,

@@ -78,3 +78,4 @@ export declare const accountUtxos: ({ account, provider, }: {
     account: Account;
     provider: Provider;
 }) => Promise<AccountUtxoPortfolio>;
+export declare const selectUtxos: (utxos: FormattedUtxo[], spendStrategy: SpendStrategy) => FormattedUtxo[];
