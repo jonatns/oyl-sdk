@@ -28,24 +28,27 @@ export const createPsbt = async ({
   provider: Provider
   fee?: number
 }) => {
-  if (!utxos?.length) {
-    throw new OylTransactionError(new Error('No utxos provided'))
-  }
-
   try {
-    if (!feeRate) {
-      feeRate = (await provider.esplora.getFeeEstimates())['1']
+    if (!utxos?.length) {
+      throw new Error('No utxos provided')
     }
-    const psbt: bitcoin.Psbt = new bitcoin.Psbt({ network: provider.network })
-    const minFee = minimumFee({
+    if (!feeRate) {
+      throw new Error('No feeRate provided')
+    }
+
+    const minTxSize = minimumFee({
       taprootInputCount: 1,
       nonTaprootInputCount: 0,
       outputCount: 2,
     })
-    let calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
-    let finalFee: number = fee ? fee : calculatedFee
 
-    let gatheredUtxos = findXAmountOfSats(utxos, finalFee + amount)
+    let calculatedFee = Math.max(minTxSize * feeRate, 250)
+    let finalFee = fee ?? calculatedFee
+
+    let gatheredUtxos = findXAmountOfSats(
+      utxos,
+      Number(finalFee) + Number(amount)
+    )
 
     if (!fee && gatheredUtxos.utxos.length > 1) {
       const txSize = minimumFee({
@@ -53,13 +56,22 @@ export const createPsbt = async ({
         nonTaprootInputCount: 0,
         outputCount: 2,
       })
-      finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
-      gatheredUtxos = findXAmountOfSats(gatheredUtxos.utxos, finalFee + amount)
 
-      if (gatheredUtxos.totalAmount < Number(finalFee) + Number(amount)) {
-        throw new OylTransactionError(Error('Insufficient Balance'))
-      }
+      finalFee = Math.max(txSize * feeRate, 250)
+      gatheredUtxos = findXAmountOfSats(
+        utxos,
+        Number(finalFee) + Number(amount)
+      )
     }
+
+    if (gatheredUtxos.totalAmount < Number(finalFee) + Number(amount)) {
+      throw new Error('Insufficient Balance')
+    }
+
+    const psbt: bitcoin.Psbt = new bitcoin.Psbt({
+      network: provider.network,
+    })
+
     for (let i = 0; i < gatheredUtxos.utxos.length; i++) {
       if (getAddressType(gatheredUtxos.utxos[i].address) === 0) {
         const previousTxHex: string = await provider.esplora.getTxHex(
@@ -108,17 +120,12 @@ export const createPsbt = async ({
       }
     }
 
-    if (gatheredUtxos.totalAmount < Number(finalFee) + Number(amount)) {
-      throw new OylTransactionError(Error('Insufficient Balance'))
-    }
-
     psbt.addOutput({
       address: toAddress,
       value: Number(amount),
     })
 
-    const changeAmount: number =
-      gatheredUtxos.totalAmount - (finalFee + Number(amount))
+    const changeAmount = gatheredUtxos.totalAmount - (finalFee + Number(amount))
 
     if (changeAmount > 295) {
       psbt.addOutput({
@@ -158,10 +165,6 @@ export const send = async ({
   signer: Signer
   fee?: number
 }) => {
-  if (!utxos?.length) {
-    throw new OylTransactionError(new Error('No utxos provided'))
-  }
-
   if (!fee) {
     fee = (
       await actualFee({
@@ -215,10 +218,6 @@ export const actualFee = async ({
   provider: Provider
   signer: Signer
 }) => {
-  if (!utxos?.length) {
-    throw new OylTransactionError(new Error('No utxos provided'))
-  }
-
   const { psbt } = await createPsbt({
     utxos,
     toAddress: toAddress,
