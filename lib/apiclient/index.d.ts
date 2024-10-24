@@ -64,11 +64,13 @@ export declare class OylApiClient {
     /**
      * Get an address's xp for the whitelist.
      * @param taprootAddress - taprootAddress.
-     * @param segwitAddress - .segwitAddress
+     * @param segwitAddress - segwitAddress
+     * @param nestedSegwitAddress - nestedSegwitAddress
      */
-    getWhitelistXp({ taprootAddress, segwitAddress, }: {
+    getWhitelistXp({ taprootAddress, segwitAddress, nestedSegwitAddress, }: {
         taprootAddress: string;
         segwitAddress?: string;
+        nestedSegwitAddress?: string;
     }): Promise<any>;
     /**
      * Get brc20 info by ticker.

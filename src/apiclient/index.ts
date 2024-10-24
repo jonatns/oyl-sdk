@@ -124,18 +124,22 @@ export class OylApiClient {
   /**
    * Get an address's xp for the whitelist.
    * @param taprootAddress - taprootAddress.
-   * @param segwitAddress - .segwitAddress
+   * @param segwitAddress - segwitAddress
+   * @param nestedSegwitAddress - nestedSegwitAddress
    */
   async getWhitelistXp({
     taprootAddress,
     segwitAddress,
+    nestedSegwitAddress,
   }: {
     taprootAddress: string
     segwitAddress?: string
+    nestedSegwitAddress?: string
   }) {
     return await this._call('/get-whitelist-xp', 'post', {
       taprootAddress,
       segwitAddress,
+      nestedSegwitAddress,
     })
   }
 
@@ -186,7 +190,6 @@ export class OylApiClient {
       collectionId: collectionId,
     })
   }
-
 
   /**
    * Get brc20 details by ticker.
