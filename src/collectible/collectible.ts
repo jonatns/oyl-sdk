@@ -7,7 +7,7 @@ import { OylTransactionError } from '../errors'
 import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
 import { GatheredUtxos, OrdCollectibleData } from '../shared/interface'
-import { accountSpendableUtxos } from '../utxo'
+import { accountSpendableUtxos, accountUtxos } from '../utxo'
 
 export const createPsbt = async ({
   gatheredUtxos,
@@ -90,15 +90,18 @@ export const createPsbt = async ({
       address: toAddress,
       value: data.value,
     })
-
     if (!gatheredUtxos) {
-      gatheredUtxos = await accountSpendableUtxos({
+      const { accountSpendableTotalUtxos } = await accountUtxos({
         account,
         provider,
-        spendAmount: finalFee,
       })
+      gatheredUtxos = findXAmountOfSats(
+        accountSpendableTotalUtxos,
+        Number(finalFee)
+      )
     }
-    gatheredUtxos = findXAmountOfSats(gatheredUtxos.utxos, finalFee)
+
+    gatheredUtxos = findXAmountOfSats(gatheredUtxos.utxos, Number(finalFee))
 
     if (!fee && gatheredUtxos.utxos.length > 1) {
       const txSize = minimumFee({

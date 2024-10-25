@@ -8,6 +8,7 @@ import {
   createRuneEtchScript,
   createRuneMintScript,
   createRuneSendScript,
+  findXAmountOfSats,
   formatInputsToSign,
   getOutputValueByVOutIndex,
   hexToLittleEndian,
@@ -16,12 +17,11 @@ import {
   tweakSigner,
 } from '../shared/utils'
 import { OylTransactionError } from '../errors'
-import { FormattedUtxo, GatheredUtxos, RuneUTXO } from '../shared/interface'
+import { GatheredUtxos, RuneUTXO } from '../shared/interface'
 import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
-import { ECPairInterface } from 'ecpair'
 import { encodeRunestone } from '@magiceden-oss/runestone-lib'
 
 export const createSendPsbt = async ({
@@ -55,12 +55,20 @@ export const createSendPsbt = async ({
     let finalFee = fee ? fee : calculatedFee
 
     if (!gatheredUtxos) {
-      gatheredUtxos = await accountSpendableUtxos({
+      const { accountSpendableTotalUtxos } = await accountUtxos({
         account,
         provider,
-        spendAmount: finalFee,
       })
+      gatheredUtxos = findXAmountOfSats(
+        accountSpendableTotalUtxos,
+        Number(finalFee) + Number(inscriptionSats)
+      )
     }
+
+    gatheredUtxos = findXAmountOfSats(
+      gatheredUtxos.utxos,
+      Number(finalFee) + Number(inscriptionSats)
+    )
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
     const { runeUtxos, runeTotalSatoshis, divisibility } = await findRuneUtxos({
@@ -235,7 +243,7 @@ export const createMintPsbt = async ({
   feeRate,
   fee,
 }: {
-  gatheredUtxos: GatheredUtxos
+  gatheredUtxos?: GatheredUtxos
   account: Account
   runeId: string
   provider: Provider
@@ -243,20 +251,31 @@ export const createMintPsbt = async ({
   fee?: number
 }) => {
   try {
-    const minFee = minimumFee({
+    const minTxSize = minimumFee({
       taprootInputCount: 2,
       nonTaprootInputCount: 0,
       outputCount: 2,
     })
-    const calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
-    let finalFee = fee ? fee : calculatedFee
+
+    let calculatedFee = Math.max(minTxSize * feeRate, 250)
+    let finalFee = fee ?? calculatedFee
+
     if (!gatheredUtxos) {
-      gatheredUtxos = await accountSpendableUtxos({
+      const { accountSpendableTotalUtxos } = await accountUtxos({
         account,
         provider,
-        spendAmount: finalFee,
       })
+      gatheredUtxos = findXAmountOfSats(
+        accountSpendableTotalUtxos,
+        Number(finalFee) + Number(inscriptionSats)
+      )
     }
+
+    gatheredUtxos = findXAmountOfSats(
+      gatheredUtxos.utxos,
+      Number(finalFee) + Number(inscriptionSats)
+    )
+
     let psbt = new bitcoin.Psbt({ network: provider.network })
 
     if (!fee && gatheredUtxos.utxos.length > 1) {
@@ -321,10 +340,6 @@ export const createMintPsbt = async ({
           },
         })
       }
-    }
-
-    if (gatheredUtxos.totalAmount < finalFee + inscriptionSats) {
-      throw new OylTransactionError(Error('Insufficient Balance'))
     }
 
     const script = createRuneMintScript({
@@ -423,12 +438,20 @@ export const createEtchCommit = async ({
     })
 
     if (!gatheredUtxos) {
-      gatheredUtxos = await accountSpendableUtxos({
+      const { accountSpendableTotalUtxos } = await accountUtxos({
         account,
         provider,
-        spendAmount: finalFee,
       })
+      gatheredUtxos = findXAmountOfSats(
+        accountSpendableTotalUtxos,
+        Number(finalFee) + Number(inscriptionSats)
+      )
     }
+
+    gatheredUtxos = findXAmountOfSats(
+      gatheredUtxos.utxos,
+      Number(finalFee) + Number(inscriptionSats)
+    )
 
     if (!fee && gatheredUtxos.utxos.length > 1) {
       const txSize = minimumFee({
