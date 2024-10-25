@@ -716,10 +716,7 @@ export const findRuneUtxos = async ({
 
         if (
           inscriptionsOnOutput.inscriptions.length > 0 ||
-          Array.isArray(inscriptionsOnOutput.runes)
-            ? Number(inscriptionsOnOutput.runes.length) > 1
-            : Object.keys(inscriptionsOnOutput.runes).length > 1 ||
-              hasRune?.rune_ids.length > 1
+          hasRune?.rune_ids.length > 1
         ) {
           throw new Error(
             'Unable to send from UTXO with multiple inscriptions. Split UTXO before sending.'
