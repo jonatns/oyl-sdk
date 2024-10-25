@@ -18,7 +18,7 @@ import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
 import { GatheredUtxos } from 'shared/interface'
-import { accountSpendableUtxos } from '../utxo'
+import { accountSpendableUtxos, accountUtxos } from '../utxo'
 
 export const transferEstimate = async ({
   gatheredUtxos,
@@ -194,11 +194,14 @@ export const commit = async ({
     })
 
     if (!gatheredUtxos) {
-      gatheredUtxos = await accountSpendableUtxos({
+      const { accountSpendableTotalUtxos } = await accountUtxos({
         account,
         provider,
-        spendAmount: finalFee + finalTransferFee,
       })
+      gatheredUtxos = findXAmountOfSats(
+        accountSpendableTotalUtxos,
+        Number(finalFee) + Number(finalTransferFee)
+      )
     }
 
     gatheredUtxos = findXAmountOfSats(
