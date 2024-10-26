@@ -2,6 +2,10 @@ import { SwapBrcBid, SignedBid, OkxBid, GetOffersParams, GetCollectionOffersPara
 import { Account, SpendStrategy } from '../account';
 import { GetSellerPsbtRequest, SubmitBuyerPsbtRequest } from '../swap/types';
 import { AccountUtxoPortfolio } from '@utxo/utxo';
+interface APIErrorResponse {
+    error: string;
+    stack: string;
+}
 /**
  * Represents the client for interacting with the Oyl API.
  */
@@ -390,4 +394,10 @@ export declare class OylApiClient {
     getOutputRune({ output }: {
         output: string;
     }): Promise<any>;
+    dailyCheckIn(params: {
+        address: string;
+    }): Promise<{
+        result: string;
+    } | APIErrorResponse>;
 }
+export {};
