@@ -390,4 +390,9 @@ export declare class OylApiClient {
     getOutputRune({ output }: {
         output: string;
     }): Promise<any>;
+    dailyCheckIn(params: {
+        address: string;
+    }): Promise<{
+        result: string;
+    }>;
 }
