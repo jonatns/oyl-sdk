@@ -961,9 +961,13 @@ export class OylApiClient {
     ).data
   }
 
-  async dailyCheckIn(params: {
-    address: string
-  }): Promise<{ result: string } | APIErrorResponse> {
-    return (await this._call('/daily-check-in', 'post', params)).data
+  async dailyCheckIn(params: { address: string }): Promise<{ result: string }> {
+    const response = await this._call('/daily-check-in', 'post', params)
+
+    if (response.error) {
+      throw new Error(response.error)
+    }
+
+    return response
   }
 }
