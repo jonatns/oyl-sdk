@@ -15,11 +15,6 @@ import { Account, SpendStrategy } from '../account'
 import { GetSellerPsbtRequest, SubmitBuyerPsbtRequest } from '../swap/types'
 import { AccountUtxoPortfolio } from '@utxo/utxo'
 
-interface APIErrorResponse {
-  error: string
-  stack: string
-}
-
 /**
  * Represents the client for interacting with the Oyl API.
  */
