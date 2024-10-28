@@ -55,24 +55,6 @@ export declare class OylApiClient {
         userId: string;
     }): Promise<any>;
     /**
-     * Get whitelist leaderboard.
-     * @param address - the address requesting the leaderboard.
-     */
-    getWhitelistLeaderboard({ address }: {
-        address: string;
-    }): Promise<any>;
-    /**
-     * Get an address's xp for the whitelist.
-     * @param taprootAddress - taprootAddress.
-     * @param segwitAddress - segwitAddress
-     * @param nestedSegwitAddress - nestedSegwitAddress
-     */
-    getWhitelistXp({ taprootAddress, segwitAddress, nestedSegwitAddress, }: {
-        taprootAddress: string;
-        segwitAddress?: string;
-        nestedSegwitAddress?: string;
-    }): Promise<any>;
-    /**
      * Get brc20 info by ticker.
      * @param ticker - The ticker to query.
      */
@@ -395,4 +377,53 @@ export declare class OylApiClient {
     }): Promise<{
         result: string;
     }>;
+    /**
+     * Get whitelist leaderboard.
+     * @param address - the address requesting the leaderboard.
+     */
+    getWhitelistLeaderboard({ address }: {
+        address: string;
+    }): Promise<any>;
+    /**
+     * Get an address's xp for the whitelist.
+     * @param taprootAddress - taprootAddress.
+     * @param segwitAddress - segwitAddress
+     * @param nestedSegwitAddress - nestedSegwitAddress
+     */
+    getWhitelistXp({ taprootAddress, segwitAddress, nestedSegwitAddress, }: {
+        taprootAddress: string;
+        segwitAddress?: string;
+        nestedSegwitAddress?: string;
+    }): Promise<any>;
+    /**
+  
+    /**
+     * Get Airheads mint status.
+     * @param buyerAddress - the address requesting the mint status.
+     * @returns information on the current mint.
+     */
+    getAirheadsMintStatus({ buyerAddress }: {
+        buyerAddress: string;
+    }): Promise<any>;
+    /**
+     * Submit Airhead claim.
+     * @param buyerAddress - the address submitting the claim.
+     * @param psbt - the psbt to submit.
+     * @returns tx id and psbt hex.
+     */
+    submitAirheadClaim({ buyerAddress, psbt, }: {
+        buyerAddress: string;
+        psbt: string;
+    }): Promise<any>;
+    /**
+     * Claim Airhead.
+     * @param account - the account address submitting the claim.
+     * @param feeRate - the fee rate to use.
+     * @param gatheredUtxos - the gathered utxos for spendable account.
+     */
+    claimAirhead({ account, feeRate, gatheredUtxos, }: {
+        account: string;
+        feeRate: number;
+        gatheredUtxos: any;
+    }): Promise<any>;
 }
