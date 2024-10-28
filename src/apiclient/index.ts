@@ -969,8 +969,6 @@ export class OylApiClient {
   }
 
   /**
-
-  /**
    * Get Airheads mint status.
    * @param buyerAddress - the address requesting the mint status.
    * @returns information on the current mint.
@@ -978,25 +976,6 @@ export class OylApiClient {
   async getAirheadsMintStatus({ buyerAddress }: { buyerAddress: string }) {
     return await this._call('/airhead-mint-status', 'post', {
       buyerAddress,
-    })
-  }
-
-  /**
-   * Submit Airhead claim.
-   * @param buyerAddress - the address submitting the claim.
-   * @param psbt - the psbt to submit.
-   * @returns tx id and psbt hex.
-   */
-  async submitAirheadClaim({
-    buyerAddress,
-    psbt,
-  }: {
-    buyerAddress: string
-    psbt: string
-  }) {
-    return await this._call('/submit-airhead-claim', 'post', {
-      buyerAddress,
-      psbt,
     })
   }
 
@@ -1019,6 +998,25 @@ export class OylApiClient {
       account,
       feeRate,
       gatheredUtxos,
+    })
+  }
+
+  /**
+   * Submit Airhead claim.
+   * @param buyerAddress - the address submitting the claim.
+   * @param psbt - the psbt to submit.
+   * @returns tx id and psbt hex.
+   */
+  async submitAirheadClaim({
+    buyerAddress,
+    psbt,
+  }: {
+    buyerAddress: string
+    psbt: string
+  }) {
+    return await this._call('/submit-airhead-claim', 'post', {
+      buyerAddress,
+      psbt,
     })
   }
 }

@@ -396,24 +396,12 @@ export declare class OylApiClient {
         nestedSegwitAddress?: string;
     }): Promise<any>;
     /**
-  
-    /**
      * Get Airheads mint status.
      * @param buyerAddress - the address requesting the mint status.
      * @returns information on the current mint.
      */
     getAirheadsMintStatus({ buyerAddress }: {
         buyerAddress: string;
-    }): Promise<any>;
-    /**
-     * Submit Airhead claim.
-     * @param buyerAddress - the address submitting the claim.
-     * @param psbt - the psbt to submit.
-     * @returns tx id and psbt hex.
-     */
-    submitAirheadClaim({ buyerAddress, psbt, }: {
-        buyerAddress: string;
-        psbt: string;
     }): Promise<any>;
     /**
      * Claim Airhead.
@@ -425,5 +413,15 @@ export declare class OylApiClient {
         account: string;
         feeRate: number;
         gatheredUtxos: any;
+    }): Promise<any>;
+    /**
+     * Submit Airhead claim.
+     * @param buyerAddress - the address submitting the claim.
+     * @param psbt - the psbt to submit.
+     * @returns tx id and psbt hex.
+     */
+    submitAirheadClaim({ buyerAddress, psbt, }: {
+        buyerAddress: string;
+        psbt: string;
     }): Promise<any>;
 }
