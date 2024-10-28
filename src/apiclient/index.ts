@@ -113,37 +113,6 @@ export class OylApiClient {
   }
 
   /**
-   * Get whitelist leaderboard.
-   * @param address - the address requesting the leaderboard.
-   */
-  async getWhitelistLeaderboard({ address }: { address: string }) {
-    return await this._call('/get-whitelist-leaderboard', 'post', {
-      address,
-    })
-  }
-  /**
-   * Get an address's xp for the whitelist.
-   * @param taprootAddress - taprootAddress.
-   * @param segwitAddress - segwitAddress
-   * @param nestedSegwitAddress - nestedSegwitAddress
-   */
-  async getWhitelistXp({
-    taprootAddress,
-    segwitAddress,
-    nestedSegwitAddress,
-  }: {
-    taprootAddress: string
-    segwitAddress?: string
-    nestedSegwitAddress?: string
-  }) {
-    return await this._call('/get-whitelist-xp', 'post', {
-      taprootAddress,
-      segwitAddress,
-      nestedSegwitAddress,
-    })
-  }
-
-  /**
    * Get brc20 info by ticker.
    * @param ticker - The ticker to query.
    */
@@ -964,5 +933,92 @@ export class OylApiClient {
     }
 
     return response
+  }
+
+  // AIRHEADS Related
+
+  /**
+   * Get whitelist leaderboard.
+   * @param address - the address requesting the leaderboard.
+   */
+  async getWhitelistLeaderboard({ address }: { address: string }) {
+    return await this._call('/get-whitelist-leaderboard', 'post', {
+      address,
+    })
+  }
+  /**
+   * Get an address's xp for the whitelist.
+   * @param taprootAddress - taprootAddress.
+   * @param segwitAddress - segwitAddress
+   * @param nestedSegwitAddress - nestedSegwitAddress
+   */
+  async getWhitelistXp({
+    taprootAddress,
+    segwitAddress,
+    nestedSegwitAddress,
+  }: {
+    taprootAddress: string
+    segwitAddress?: string
+    nestedSegwitAddress?: string
+  }) {
+    return await this._call('/get-whitelist-xp', 'post', {
+      taprootAddress,
+      segwitAddress,
+      nestedSegwitAddress,
+    })
+  }
+
+  /**
+
+  /**
+   * Get Airheads mint status.
+   * @param buyerAddress - the address requesting the mint status.
+   * @returns information on the current mint.
+   */
+  async getAirheadsMintStatus({ buyerAddress }: { buyerAddress: string }) {
+    return await this._call('/airhead-mint-status', 'post', {
+      buyerAddress,
+    })
+  }
+
+  /**
+   * Submit Airhead claim.
+   * @param buyerAddress - the address submitting the claim.
+   * @param psbt - the psbt to submit.
+   * @returns tx id and psbt hex.
+   */
+  async submitAirheadClaim({
+    buyerAddress,
+    psbt,
+  }: {
+    buyerAddress: string
+    psbt: string
+  }) {
+    return await this._call('/submit-airhead-claim', 'post', {
+      buyerAddress,
+      psbt,
+    })
+  }
+
+  /**
+   * Claim Airhead.
+   * @param account - the account address submitting the claim.
+   * @param feeRate - the fee rate to use.
+   * @param gatheredUtxos - the gathered utxos for spendable account.
+   */
+  async claimAirhead({
+    account,
+    feeRate,
+    gatheredUtxos,
+  }: {
+    account: string
+    feeRate: number
+    gatheredUtxos: any
+  }) {
+    return await this._call('/claim-airhead', 'post', {
+      account,
+      feeRate,
+      gatheredUtxos,
+    })
   }
 }
