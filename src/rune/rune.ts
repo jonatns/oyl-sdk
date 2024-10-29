@@ -4,8 +4,6 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { accountSpendableUtxos, accountUtxos } from '../utxo/utxo'
 import { Account } from '../account/account'
 import {
-  createInscriptionScript,
-  createRuneEtchScript,
   createRuneMintScript,
   createRuneSendScript,
   findXAmountOfSats,
@@ -54,21 +52,24 @@ export const createSendPsbt = async ({
     const calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
     let finalFee = fee ? fee : calculatedFee
 
-    if (!gatheredUtxos) {
-      const { accountSpendableTotalUtxos } = await accountUtxos({
-        account,
-        provider,
-      })
-      gatheredUtxos = findXAmountOfSats(
-        accountSpendableTotalUtxos,
-        Number(finalFee) + Number(inscriptionSats)
-      )
-    }
-
     gatheredUtxos = findXAmountOfSats(
       gatheredUtxos.utxos,
       Number(finalFee) + Number(inscriptionSats)
     )
+
+    if (gatheredUtxos.utxos.length > 1) {
+      const txSize = minimumFee({
+        taprootInputCount: gatheredUtxos.utxos.length,
+        nonTaprootInputCount: 0,
+        outputCount: 2,
+      })
+
+      finalFee = Math.max(txSize * feeRate, 250)
+      gatheredUtxos = findXAmountOfSats(
+        gatheredUtxos.utxos,
+        Number(finalFee) + Number(amount)
+      )
+    }
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
     const { runeUtxos, runeTotalSatoshis, divisibility } = await findRuneUtxos({
@@ -1137,7 +1138,7 @@ export const send = async ({
     toAddress,
     inscriptionAddress,
     feeRate,
-    fee: fee,
+    fee,
   })
 
   const { signedPsbt } = await signer.signAllInputs({

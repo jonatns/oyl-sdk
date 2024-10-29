@@ -211,10 +211,10 @@ export const commit = async ({
 
     gatheredUtxos = findXAmountOfSats(
       gatheredUtxos.utxos,
-      finalFee + finalTransferFee
+      Number(finalFee) + Number(finalTransferFee)
     )
 
-    if (!fee && gatheredUtxos.utxos.length > 1) {
+    if (gatheredUtxos.utxos.length > 1) {
       const txSize = minimumFee({
         taprootInputCount: gatheredUtxos.utxos.length,
         nonTaprootInputCount: 0,
