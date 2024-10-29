@@ -36,6 +36,8 @@ export const transferEstimate = async ({
   fee?: number
 }) => {
   try {
+    const originalGatheredUtxos = gatheredUtxos;
+
     if (!feeRate) {
       feeRate = (await provider.esplora.getFeeEstimates())['1']
     }
@@ -49,7 +51,7 @@ export const transferEstimate = async ({
     let finalFee = fee ? fee : calculatedFee
 
     gatheredUtxos = findXAmountOfSats(
-      gatheredUtxos.utxos,
+      originalGatheredUtxos.utxos,
       Number(finalFee) + 546
     )
 
@@ -62,7 +64,7 @@ export const transferEstimate = async ({
 
       finalFee = Math.max(txSize * feeRate, 250)
       gatheredUtxos = findXAmountOfSats(
-        gatheredUtxos.utxos,
+        originalGatheredUtxos.utxos,
         Number(finalFee) + 546
       )
     }
@@ -165,6 +167,8 @@ export const commit = async ({
   finalTransferFee?: number
 }) => {
   try {
+    const originalGatheredUtxos = gatheredUtxos;
+
     const content = `{"p":"brc-20","op":"transfer","tick":"${ticker}","amt":"${amount}"}`
     if (!feeRate) {
       feeRate = (await provider.esplora.getFeeEstimates())['1']
@@ -199,7 +203,7 @@ export const commit = async ({
     })
 
     gatheredUtxos = findXAmountOfSats(
-      gatheredUtxos.utxos,
+      originalGatheredUtxos.utxos,
       Number(finalFee) + Number(finalTransferFee)
     )
 
@@ -211,7 +215,7 @@ export const commit = async ({
       })
       finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
       gatheredUtxos = findXAmountOfSats(
-        gatheredUtxos.utxos,
+        originalGatheredUtxos.utxos,
         Number(finalFee) + Number(finalTransferFee)
       )
     }
@@ -532,6 +536,7 @@ export const send = async ({
     account: account,
     provider: provider,
   })
+  // 1540
   const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
     signer.taprootKeyPair,
     { network: provider.network }
@@ -546,7 +551,7 @@ export const send = async ({
     tweakedTaprootPublicKey,
     account: account,
     provider: provider,
-    finalTransferFee: estimate.fee,
+    finalTransferFee: estimate.fee,  // 1540
   })
 
   const { signedPsbt: commitSigned } = await signer.signAllInputs({
