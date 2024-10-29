@@ -18,7 +18,7 @@ import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
 import { GatheredUtxos } from 'shared/interface'
-import { accountSpendableUtxos, accountUtxos } from '../utxo'
+import { accountUtxos } from '../utxo'
 
 export const transferEstimate = async ({
   gatheredUtxos,
@@ -48,18 +48,23 @@ export const transferEstimate = async ({
     let calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
     let finalFee = fee ? fee : calculatedFee
 
-    let utxosToSend = gatheredUtxos
+    gatheredUtxos = findXAmountOfSats(
+      gatheredUtxos.utxos,
+      Number(finalFee) + 546
+    )
+
     if (!fee && gatheredUtxos.utxos.length > 1) {
       const txSize = minimumFee({
         taprootInputCount: gatheredUtxos.utxos.length,
         nonTaprootInputCount: 0,
         outputCount: 2,
       })
-      finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
-      if (gatheredUtxos.totalAmount < finalFee + 546) {
-        throw new OylTransactionError(Error('Insufficient Balance'))
-      }
+      finalFee = Math.max(txSize * feeRate, 250)
+      gatheredUtxos = findXAmountOfSats(
+        gatheredUtxos.utxos,
+        Number(finalFee) + 546
+      )
     }
 
     if (gatheredUtxos.totalAmount < finalFee + 546) {
@@ -119,7 +124,7 @@ export const transferEstimate = async ({
       value: 546,
     })
 
-    const changeAmount = utxosToSend.totalAmount - (finalFee + 546)
+    const changeAmount = gatheredUtxos.totalAmount - (finalFee + 546)
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
