@@ -61,7 +61,7 @@ export const createSendPsbt = async ({
       const txSize = minimumFee({
         taprootInputCount: gatheredUtxos.utxos.length,
         nonTaprootInputCount: 0,
-        outputCount: 2,
+        outputCount: 3,
       })
 
       finalFee = Math.max(txSize * feeRate, 250)
@@ -128,19 +128,6 @@ export const createSendPsbt = async ({
             ),
           },
         })
-      }
-    }
-
-    if (!fee && gatheredUtxos.utxos.length > 1) {
-      const txSize = minimumFee({
-        taprootInputCount: gatheredUtxos.utxos.length,
-        nonTaprootInputCount: 0,
-        outputCount: 3,
-      })
-      finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
-
-      if (gatheredUtxos.totalAmount < finalFee + inscriptionSats) {
-        throw new OylTransactionError(Error('Insufficient Balance'))
       }
     }
 

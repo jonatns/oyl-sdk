@@ -198,23 +198,12 @@ export const commit = async ({
       address: inscriberInfo.address,
     })
 
-    if (!gatheredUtxos) {
-      const { accountSpendableTotalUtxos } = await accountUtxos({
-        account,
-        provider,
-      })
-      gatheredUtxos = findXAmountOfSats(
-        accountSpendableTotalUtxos,
-        Number(finalFee) + Number(finalTransferFee)
-      )
-    }
-
     gatheredUtxos = findXAmountOfSats(
       gatheredUtxos.utxos,
       Number(finalFee) + Number(finalTransferFee)
     )
 
-    if (gatheredUtxos.utxos.length > 1) {
+    if (!fee && gatheredUtxos.utxos.length > 1) {
       const txSize = minimumFee({
         taprootInputCount: gatheredUtxos.utxos.length,
         nonTaprootInputCount: 0,
@@ -223,11 +212,12 @@ export const commit = async ({
       finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
       gatheredUtxos = findXAmountOfSats(
         gatheredUtxos.utxos,
-        finalFee + finalTransferFee
+        Number(finalFee) + Number(finalTransferFee)
       )
-      if (gatheredUtxos.totalAmount < finalFee) {
-        throw new OylTransactionError(Error('Insufficient Balance'))
-      }
+    }
+
+    if (gatheredUtxos.totalAmount < finalFee) {
+      throw new OylTransactionError(Error('Insufficient Balance'))
     }
 
     for (let i = 0; i < gatheredUtxos.utxos.length; i++) {
@@ -276,10 +266,6 @@ export const commit = async ({
           },
         })
       }
-    }
-
-    if (gatheredUtxos.totalAmount < finalFee) {
-      throw new OylTransactionError(Error('Insufficient Balance'))
     }
 
     const changeAmount = gatheredUtxos.totalAmount - finalFee

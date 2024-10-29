@@ -110,10 +110,11 @@ export const createPsbt = async ({
         outputCount: 2,
       })
       finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
+      gatheredUtxos = findXAmountOfSats(gatheredUtxos.utxos, Number(finalFee))
+    }
 
-      if (gatheredUtxos.totalAmount < finalFee) {
-        new OylTransactionError(Error('Insufficient balance'))
-      }
+    if (gatheredUtxos.totalAmount < finalFee) {
+      new OylTransactionError(Error('Insufficient balance'))
     }
 
     for (let i = 0; i < gatheredUtxos.utxos.length; i++) {
@@ -162,10 +163,6 @@ export const createPsbt = async ({
           },
         })
       }
-    }
-
-    if (gatheredUtxos.totalAmount < finalFee) {
-      throw new OylTransactionError(Error('Insufficient Balance'))
     }
 
     const changeAmount = gatheredUtxos.totalAmount - finalFee
