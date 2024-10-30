@@ -1,7 +1,6 @@
 import { minimumFee } from '../btc/btc'
 import { Provider } from '../provider/provider'
 import * as bitcoin from 'bitcoinjs-lib'
-import { accountSpendableUtxos, accountUtxos } from '../utxo/utxo'
 import { Account } from '../account/account'
 import {
   createRuneMintScript,
@@ -44,6 +43,8 @@ export const createSendPsbt = async ({
   fee?: number
 }) => {
   try {
+    const originalGatheredUtxos = gatheredUtxos;
+
     const minFee = minimumFee({
       taprootInputCount: 2,
       nonTaprootInputCount: 0,
@@ -52,8 +53,10 @@ export const createSendPsbt = async ({
     const calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
     let finalFee = fee ? fee : calculatedFee
 
+    
+
     gatheredUtxos = findXAmountOfSats(
-      gatheredUtxos.utxos,
+      originalGatheredUtxos.utxos,
       Number(finalFee) + Number(inscriptionSats)
     )
 
@@ -66,7 +69,7 @@ export const createSendPsbt = async ({
 
       finalFee = Math.max(txSize * feeRate, 250)
       gatheredUtxos = findXAmountOfSats(
-        gatheredUtxos.utxos,
+        originalGatheredUtxos.utxos,
         Number(finalFee) + Number(amount)
       )
     }
@@ -231,7 +234,7 @@ export const createMintPsbt = async ({
   feeRate,
   fee,
 }: {
-  gatheredUtxos?: GatheredUtxos
+  gatheredUtxos: GatheredUtxos
   account: Account
   runeId: string
   provider: Provider
@@ -239,6 +242,8 @@ export const createMintPsbt = async ({
   fee?: number
 }) => {
   try {
+    const originalGatheredUtxos = gatheredUtxos;
+
     const minTxSize = minimumFee({
       taprootInputCount: 2,
       nonTaprootInputCount: 0,
@@ -248,19 +253,8 @@ export const createMintPsbt = async ({
     let calculatedFee = Math.max(minTxSize * feeRate, 250)
     let finalFee = fee ?? calculatedFee
 
-    if (!gatheredUtxos) {
-      const { accountSpendableTotalUtxos } = await accountUtxos({
-        account,
-        provider,
-      })
-      gatheredUtxos = findXAmountOfSats(
-        accountSpendableTotalUtxos,
-        Number(finalFee) + Number(inscriptionSats)
-      )
-    }
-
     gatheredUtxos = findXAmountOfSats(
-      gatheredUtxos.utxos,
+      originalGatheredUtxos.utxos,
       Number(finalFee) + Number(inscriptionSats)
     )
 
@@ -383,6 +377,8 @@ export const createEtchCommit = async ({
   fee?: number
 }) => {
   try {
+    const originalGatheredUtxos = gatheredUtxos;
+
     const minFee = minimumFee({
       taprootInputCount: 2,
       nonTaprootInputCount: 0,
@@ -425,19 +421,8 @@ export const createEtchCommit = async ({
       address: inscriberInfo.address,
     })
 
-    if (!gatheredUtxos) {
-      const { accountSpendableTotalUtxos } = await accountUtxos({
-        account,
-        provider,
-      })
-      gatheredUtxos = findXAmountOfSats(
-        accountSpendableTotalUtxos,
-        Number(finalFee) + Number(inscriptionSats)
-      )
-    }
-
     gatheredUtxos = findXAmountOfSats(
-      gatheredUtxos.utxos,
+      originalGatheredUtxos.utxos,
       Number(finalFee) + Number(inscriptionSats)
     )
 
@@ -450,11 +435,10 @@ export const createEtchCommit = async ({
       finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
       if (gatheredUtxos.totalAmount < finalFee) {
-        gatheredUtxos = await accountSpendableUtxos({
-          account,
-          provider,
-          spendAmount: finalFee + inscriptionSats,
-        })
+        gatheredUtxos = findXAmountOfSats(
+          originalGatheredUtxos.utxos,
+          Number(finalFee) + Number(inscriptionSats)
+        )
       }
     }
 
