@@ -36,7 +36,7 @@ export const transferEstimate = async ({
   fee?: number
 }) => {
   try {
-    const originalGatheredUtxos = gatheredUtxos
+    const originalGatheredUtxos = gatheredUtxos;
 
     if (!feeRate) {
       feeRate = (await provider.esplora.getFeeEstimates())['1']

@@ -29,6 +29,8 @@ export const createPsbt = async ({
   fee?: number
 }) => {
   try {
+    const originalGatheredUtxos = gatheredUtxos;
+
     const minFee = minimumFee({
       taprootInputCount: 1,
       nonTaprootInputCount: 0,
@@ -90,18 +92,8 @@ export const createPsbt = async ({
       address: toAddress,
       value: data.value,
     })
-    if (!gatheredUtxos) {
-      const { accountSpendableTotalUtxos } = await accountUtxos({
-        account,
-        provider,
-      })
-      gatheredUtxos = findXAmountOfSats(
-        accountSpendableTotalUtxos,
-        Number(finalFee)
-      )
-    }
 
-    gatheredUtxos = findXAmountOfSats(gatheredUtxos.utxos, Number(finalFee))
+    gatheredUtxos = findXAmountOfSats(originalGatheredUtxos.utxos, Number(finalFee))
 
     if (!fee && gatheredUtxos.utxos.length > 1) {
       const txSize = minimumFee({
@@ -110,7 +102,7 @@ export const createPsbt = async ({
         outputCount: 2,
       })
       finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
-      gatheredUtxos = findXAmountOfSats(gatheredUtxos.utxos, Number(finalFee))
+      gatheredUtxos = findXAmountOfSats(originalGatheredUtxos.utxos, Number(finalFee))
     }
 
     if (gatheredUtxos.totalAmount < finalFee) {
