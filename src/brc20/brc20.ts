@@ -555,7 +555,7 @@ export const send = async ({
     tweakedTaprootPublicKey,
     account: account,
     provider: provider,
-    finalTransferFee: estimate.fee, // 1540
+    finalTransferFee: estimate.fee,
   })
 
   const { signedPsbt: commitSigned } = await signer.signAllInputs({
