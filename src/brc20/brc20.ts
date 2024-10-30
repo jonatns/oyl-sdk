@@ -36,7 +36,7 @@ export const transferEstimate = async ({
   fee?: number
 }) => {
   try {
-    const originalGatheredUtxos = gatheredUtxos;
+    const originalGatheredUtxos = gatheredUtxos
 
     if (!feeRate) {
       feeRate = (await provider.esplora.getFeeEstimates())['1']
@@ -167,7 +167,7 @@ export const commit = async ({
   finalTransferFee?: number
 }) => {
   try {
-    const originalGatheredUtxos = gatheredUtxos;
+    const originalGatheredUtxos = gatheredUtxos
 
     const content = `{"p":"brc-20","op":"transfer","tick":"${ticker}","amt":"${amount}"}`
     if (!feeRate) {
@@ -213,7 +213,11 @@ export const commit = async ({
         nonTaprootInputCount: 0,
         outputCount: 2,
       })
-      finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
+      finalFee =
+        txSize * feeRate < 250
+          ? 250
+          : txSize * feeRate + Number(feeForReveal) + 546
+
       gatheredUtxos = findXAmountOfSats(
         originalGatheredUtxos.utxos,
         Number(finalFee) + Number(finalTransferFee)
@@ -551,7 +555,7 @@ export const send = async ({
     tweakedTaprootPublicKey,
     account: account,
     provider: provider,
-    finalTransferFee: estimate.fee,  // 1540
+    finalTransferFee: estimate.fee, // 1540
   })
 
   const { signedPsbt: commitSigned } = await signer.signAllInputs({
