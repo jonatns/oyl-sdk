@@ -18,7 +18,7 @@ import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
 import { GatheredUtxos } from 'shared/interface'
-import { accountSpendableUtxos, accountUtxos } from '../utxo'
+import { accountUtxos } from '../utxo'
 
 export const transferEstimate = async ({
   gatheredUtxos,
@@ -36,6 +36,8 @@ export const transferEstimate = async ({
   fee?: number
 }) => {
   try {
+    const originalGatheredUtxos = gatheredUtxos;
+
     if (!feeRate) {
       feeRate = (await provider.esplora.getFeeEstimates())['1']
     }
@@ -48,18 +50,23 @@ export const transferEstimate = async ({
     let calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
     let finalFee = fee ? fee : calculatedFee
 
-    let utxosToSend = gatheredUtxos
+    gatheredUtxos = findXAmountOfSats(
+      originalGatheredUtxos.utxos,
+      Number(finalFee) + 546
+    )
+
     if (!fee && gatheredUtxos.utxos.length > 1) {
       const txSize = minimumFee({
         taprootInputCount: gatheredUtxos.utxos.length,
         nonTaprootInputCount: 0,
         outputCount: 2,
       })
-      finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
-      if (gatheredUtxos.totalAmount < finalFee + 546) {
-        throw new OylTransactionError(Error('Insufficient Balance'))
-      }
+      finalFee = Math.max(txSize * feeRate, 250)
+      gatheredUtxos = findXAmountOfSats(
+        originalGatheredUtxos.utxos,
+        Number(finalFee) + 546
+      )
     }
 
     if (gatheredUtxos.totalAmount < finalFee + 546) {
@@ -119,7 +126,7 @@ export const transferEstimate = async ({
       value: 546,
     })
 
-    const changeAmount = utxosToSend.totalAmount - (finalFee + 546)
+    const changeAmount = gatheredUtxos.totalAmount - (finalFee + 546)
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
@@ -160,6 +167,8 @@ export const commit = async ({
   finalTransferFee?: number
 }) => {
   try {
+    const originalGatheredUtxos = gatheredUtxos
+
     const content = `{"p":"brc-20","op":"transfer","tick":"${ticker}","amt":"${amount}"}`
     if (!feeRate) {
       feeRate = (await provider.esplora.getFeeEstimates())['1']
@@ -193,20 +202,9 @@ export const commit = async ({
       address: inscriberInfo.address,
     })
 
-    if (!gatheredUtxos) {
-      const { accountSpendableTotalUtxos } = await accountUtxos({
-        account,
-        provider,
-      })
-      gatheredUtxos = findXAmountOfSats(
-        accountSpendableTotalUtxos,
-        Number(finalFee) + Number(finalTransferFee)
-      )
-    }
-
     gatheredUtxos = findXAmountOfSats(
-      gatheredUtxos.utxos,
-      finalFee + finalTransferFee
+      originalGatheredUtxos.utxos,
+      Number(finalFee) + Number(finalTransferFee)
     )
 
     if (!fee && gatheredUtxos.utxos.length > 1) {
@@ -215,14 +213,19 @@ export const commit = async ({
         nonTaprootInputCount: 0,
         outputCount: 2,
       })
-      finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
+      finalFee =
+        txSize * feeRate < 250
+          ? 250
+          : txSize * feeRate + Number(feeForReveal) + 546
+
       gatheredUtxos = findXAmountOfSats(
-        gatheredUtxos.utxos,
-        finalFee + finalTransferFee
+        originalGatheredUtxos.utxos,
+        Number(finalFee) + Number(finalTransferFee)
       )
-      if (gatheredUtxos.totalAmount < finalFee) {
-        throw new OylTransactionError(Error('Insufficient Balance'))
-      }
+    }
+
+    if (gatheredUtxos.totalAmount < finalFee) {
+      throw new OylTransactionError(Error('Insufficient Balance'))
     }
 
     for (let i = 0; i < gatheredUtxos.utxos.length; i++) {
@@ -271,10 +274,6 @@ export const commit = async ({
           },
         })
       }
-    }
-
-    if (gatheredUtxos.totalAmount < finalFee) {
-      throw new OylTransactionError(Error('Insufficient Balance'))
     }
 
     const changeAmount = gatheredUtxos.totalAmount - finalFee
@@ -541,6 +540,7 @@ export const send = async ({
     account: account,
     provider: provider,
   })
+  // 1540
   const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
     signer.taprootKeyPair,
     { network: provider.network }

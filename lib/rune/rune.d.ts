@@ -18,7 +18,7 @@ export declare const createSendPsbt: ({ gatheredUtxos, account, runeId, provider
     psbt: string;
 }>;
 export declare const createMintPsbt: ({ gatheredUtxos, account, runeId, provider, feeRate, fee, }: {
-    gatheredUtxos?: GatheredUtxos;
+    gatheredUtxos: GatheredUtxos;
     account: Account;
     runeId: string;
     provider: Provider;
