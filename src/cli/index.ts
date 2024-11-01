@@ -6,7 +6,13 @@ import * as collectible from '../collectible'
 import * as rune from '../rune'
 
 import 'dotenv/config'
-import { generateMnemonic, getWalletPrivateKeys, mnemonicToAccount } from '..'
+import {
+  generateMnemonic,
+  getHDPaths,
+  getWalletPrivateKeys,
+  HDPaths,
+  mnemonicToAccount,
+} from '..'
 
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '..'
@@ -41,28 +47,6 @@ program
   .description('All functionality for oyl-sdk in a cli-wrapper')
   .version('0.0.1')
 
-const generateCommand = new Command('generate')
-  .description('Creates a new account object')
-  .option(
-    '-m, --mnemonic <mnemonic>',
-    'mnemonic you want to generate an account from'
-  )
-  .option(
-    '-i, --index <index>',
-    'index you want to derive your account keys from'
-  )
-  .option('-n, --network <network>', 'the network you want to derive keys on')
-  .action((options) => {
-    const account = mnemonicToAccount({
-      mnemonic: options.mnemonic,
-      opts: {
-        index: options.index,
-        network: bitcoin.networks[options.network],
-      },
-    })
-    console.log(account)
-  })
-
 const privateKeysCommand = new Command('privateKeys')
   .description('Returns private keys for an account object')
   .requiredOption(
@@ -86,6 +70,40 @@ const privateKeysCommand = new Command('privateKeys')
       },
     })
     console.log(privateKeys)
+  })
+
+/* @dev example call 
+  oyl account mnemonicToAccount \
+  --mnemonic "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about" \
+  --network regtest \
+  --index 1 \
+  --wallet-standard bip44_standard
+*/
+const mnemonicToAccountCommand = new Command('mnemonicToAccount')
+  .description('Returns an account from a mnemonic')
+  .requiredOption('-m, --mnemonic <mnemonic>', 'BIP39 mnemonic')
+  .option('-n, --network <network>', 'The bitcoin network (default: bitcoin)')
+  .option('-i, --index <index>', 'Account index (default: 0)')
+  .option('-w, --wallet-standard <walletStandard>', 'Wallet standard')
+  .action((options) => {
+    let hdPaths: HDPaths
+    if (options.walletStandard) {
+      hdPaths = getHDPaths(
+        options.index,
+        bitcoin.networks[options.network],
+        options.walletStandard
+      )
+    }
+
+    const account = mnemonicToAccount({
+      mnemonic: options.mnemonic,
+      opts: {
+        index: options.index,
+        network: bitcoin.networks[options.network],
+        hdPaths,
+      },
+    })
+    console.log(account)
   })
 
 const generateMnemonicCommand = new Command('generateMnemonic')
@@ -954,7 +972,7 @@ const marketPlaceBuy = new Command('buy')
 
 const accountCommand = new Command('account')
   .description('Manage accounts')
-  .addCommand(generateCommand)
+  .addCommand(mnemonicToAccountCommand)
   .addCommand(signPsbt)
   .addCommand(privateKeysCommand)
   .addCommand(generateMnemonicCommand)
