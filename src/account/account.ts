@@ -104,7 +104,7 @@ export const getDerivationPaths = (
   index = 0,
   network = bitcoin.networks.bitcoin,
   derivationMode?: DerivationMode
-) => {
+): DerivationPaths => {
   const coinType =
     network === bitcoin.networks.testnet || network === bitcoin.networks.regtest
       ? '1'

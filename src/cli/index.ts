@@ -6,7 +6,12 @@ import * as collectible from '../collectible'
 import * as rune from '../rune'
 
 import 'dotenv/config'
-import { generateMnemonic, getWalletPrivateKeys, mnemonicToAccount } from '..'
+import {
+  generateMnemonic,
+  getDerivationPaths,
+  getWalletPrivateKeys,
+  mnemonicToAccount,
+} from '..'
 
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '..'
@@ -73,12 +78,18 @@ const mnemonicToAccountCommand = new Command('mnemonicToAccount')
   .option('-i, --index <index>', 'Account index (default: 0)')
   .option('-d, --derivation-mode <derivationMode>', 'Derivation mode')
   .action((options) => {
+    const derivationPaths = getDerivationPaths(
+      options.index,
+      bitcoin.networks[options.network],
+      options.derivationMode
+    )
+
     const account = mnemonicToAccount({
       mnemonic: options.mnemonic,
       opts: {
         index: options.index,
         network: bitcoin.networks[options.network],
-        derivationMode: options.derivationMode,
+        derivationPaths,
       },
     })
     console.log(account)
