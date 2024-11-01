@@ -4,18 +4,22 @@ export type Account = {
         pubkey: string;
         pubKeyXOnly: string;
         address: string;
+        derivationPath: string;
     };
     nativeSegwit: {
         pubkey: string;
         address: string;
+        derivationPath: string;
     };
     nestedSegwit: {
         pubkey: string;
         address: string;
+        derivationPath: string;
     };
     legacy: {
         pubkey: string;
         address: string;
+        derivationPath: string;
     };
     spendStrategy: SpendStrategy;
     network: bitcoin.Network;
@@ -44,28 +48,8 @@ export declare const validateMnemonic: (mnemonic: string) => boolean;
 export declare const mnemonicToAccount: ({ mnemonic, opts, }: {
     mnemonic?: string;
     opts?: MnemonicToAccountOptions;
-}) => {
-    taproot: {
-        pubkey: string;
-        pubKeyXOnly: string;
-        address: string;
-    };
-    nativeSegwit: {
-        pubkey: string;
-        address: string;
-    };
-    nestedSegwit: {
-        pubkey: string;
-        address: string;
-    };
-    legacy: {
-        pubkey: string;
-        address: string;
-    };
-    spendStrategy: SpendStrategy;
-    network: bitcoin.networks.Network;
-};
-export declare const getDerivationPaths: (index?: number, network?: bitcoin.networks.Network, derivationMode?: DerivationMode) => DerivationPaths;
+}) => Account;
+export declare const getDerivationPaths: (index: number, network?: bitcoin.networks.Network, derivationMode?: DerivationMode) => DerivationPaths;
 export declare const generateWallet: ({ mnemonic, opts, }: {
     mnemonic?: string;
     opts: MnemonicToAccountOptions;
@@ -74,18 +58,22 @@ export declare const generateWallet: ({ mnemonic, opts, }: {
         pubkey: string;
         pubKeyXOnly: string;
         address: string;
+        derivationPath: string;
     };
     nativeSegwit: {
         pubkey: string;
         address: string;
+        derivationPath: string;
     };
     nestedSegwit: {
         pubkey: string;
         address: string;
+        derivationPath: string;
     };
     legacy: {
         pubkey: string;
         address: string;
+        derivationPath: string;
     };
     spendStrategy: SpendStrategy;
     network: bitcoin.networks.Network;
