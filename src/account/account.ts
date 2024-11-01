@@ -31,22 +31,32 @@ export type Account = {
 
 export type AddressKey = 'nativeSegwit' | 'taproot' | 'nestedSegwit' | 'legacy'
 
+export type DerivationMode =
+  | 'bip44_account_last'
+  | 'bip44_standard'
+  | 'bip32_simple'
+
 export interface SpendStrategy {
   addressOrder: AddressKey[]
   utxoSortGreatestToLeast: boolean
   changeAddress: AddressKey
 }
+
 export interface MnemonicToAccountOptions {
   network?: bitcoin.networks.Network
   index?: number
   spendStrategy?: SpendStrategy
+  derivationMode?: DerivationMode
 }
+
 export const generateMnemonic = () => {
   return bip39.generateMnemonic()
 }
+
 export const validateMnemonic = (mnemonic: string) => {
   return bip39.validateMnemonic(mnemonic)
 }
+
 export const mnemonicToAccount = ({
   mnemonic = generateMnemonic(),
   opts,
@@ -74,13 +84,51 @@ export const mnemonicToAccount = ({
         ? opts?.spendStrategy?.changeAddress
         : 'nativeSegwit',
     },
+    derivationMode: opts?.derivationMode,
   }
 
-  const account = generateWallet({
+  return generateWallet({
     mnemonic,
     opts: options,
   })
-  return account as Account
+}
+
+export const getDerivationPaths = (
+  index = 0,
+  network = bitcoin.networks.bitcoin,
+  derivationMode?: DerivationMode
+) => {
+  const coinType =
+    network === bitcoin.networks.testnet || network === bitcoin.networks.regtest
+      ? '1'
+      : '0'
+
+  switch (derivationMode) {
+    case 'bip44_standard':
+      return {
+        legacy: `m/44'/${coinType}'/${index}'/0/0`,
+        nestedSegwit: `m/49'/${coinType}'/${index}'/0/0`,
+        nativeSegwit: `m/84'/${coinType}'/${index}'/0/0`,
+        taproot: `m/86'/${coinType}'/${index}'/0/0`,
+      }
+
+    case 'bip32_simple':
+      return {
+        legacy: `m/44'/${coinType}'/${index}'/0`,
+        nestedSegwit: `m/49'/${coinType}'/${index}'/0`,
+        nativeSegwit: `m/84'/${coinType}'/${index}'/0`,
+        taproot: `m/86'/${coinType}'/${index}'/0`,
+      }
+
+    case 'bip44_account_last':
+    default:
+      return {
+        legacy: `m/44'/${coinType}'/0'/0/${index}`,
+        nestedSegwit: `m/49'/${coinType}'/0'/0/${index}`,
+        nativeSegwit: `m/84'/${coinType}'/0'/0/${index}`,
+        taproot: `m/86'/${coinType}'/0'/0/${index}`,
+      }
+  }
 }
 
 export const generateWallet = ({
@@ -97,23 +145,17 @@ export const generateWallet = ({
     throw Error('mnemonic not given')
   }
 
-  let pathLegacy = `m/44'/0'/0'/0/${opts.index}`
-  let pathSegwitNested = `m/49'/0'/0'/0/${opts.index}`
-  let pathSegwit = `m/84'/0'/0'/0/${opts.index}`
-  let pathTaproot = `m/86'/0'/0'/0/${opts.index}`
-  //unisat accomadation
-  if (opts.network === bitcoin.networks.testnet) {
-    pathLegacy = `m/44'/1'/0'/0/${opts.index}`
-    pathSegwitNested = `m/49'/1'/0'/0/${opts.index}`
-    pathSegwit = `m/84'/1'/0'/0/${opts.index}`
-    pathTaproot = `m/86'/1'/0'/0/${opts.index}`
-  }
+  const paths = getDerivationPaths(
+    opts.index,
+    opts.network,
+    opts.derivationMode
+  )
 
   const seed = bip39.mnemonicToSeedSync(mnemonic)
   const root = bip32.fromSeed(seed)
 
   // Legacy
-  const childLegacy = root.derivePath(pathLegacy)
+  const childLegacy = root.derivePath(paths.legacy)
   const pubkeyLegacy = childLegacy.publicKey
   const addressLegacy = bitcoin.payments.p2pkh({
     pubkey: pubkeyLegacy,
@@ -125,7 +167,7 @@ export const generateWallet = ({
   }
 
   // Nested Segwit
-  const childSegwitNested = root.derivePath(pathSegwitNested)
+  const childSegwitNested = root.derivePath(paths.nestedSegwit)
   const pubkeySegwitNested = childSegwitNested.publicKey
   const addressSegwitNested = bitcoin.payments.p2sh({
     redeem: bitcoin.payments.p2wpkh({
@@ -139,7 +181,7 @@ export const generateWallet = ({
   }
 
   // Native Segwit
-  const childSegwit = root.derivePath(pathSegwit)
+  const childSegwit = root.derivePath(paths.nativeSegwit)
   const pubkeySegwit = childSegwit.publicKey
   const addressSegwit = bitcoin.payments.p2wpkh({
     pubkey: pubkeySegwit,
@@ -151,7 +193,7 @@ export const generateWallet = ({
   }
 
   // Taproot
-  const childTaproot = root.derivePath(pathTaproot)
+  const childTaproot = root.derivePath(paths.taproot)
   const pubkeyTaproot = childTaproot.publicKey
   const pubkeyTaprootXOnly = toXOnly(pubkeyTaproot)
 
@@ -187,37 +229,31 @@ export const getWalletPrivateKeys = ({
     index: opts?.index ? opts.index : 0,
   }
 
-  let pathLegacy = `m/44'/0'/0'/0/${options.index}`
-  let pathSegwitNested = `m/49'/0'/0'/0/${options.index}`
-  let pathSegwit = `m/84'/0'/0'/0/${options.index}`
-  let pathTaproot = `m/86'/0'/0'/0/${options.index}`
-  //unisat accomadation
-  if (options.network === bitcoin.networks.testnet) {
-    pathLegacy = `m/44'/1'/0'/0/${options.index}`
-    pathSegwitNested = `m/49'/1'/0'/0/${options.index}`
-    pathSegwit = `m/84'/1'/0'/0/${options.index}`
-    pathTaproot = `m/86'/1'/0'/0/${options.index}`
-  }
+  const paths = getDerivationPaths(
+    options.index,
+    options.network,
+    opts?.derivationMode
+  )
 
   const seed = bip39.mnemonicToSeedSync(mnemonic)
   const root = bip32.fromSeed(seed)
 
   // Legacy
-  const childLegacy = root.derivePath(pathLegacy)
+  const childLegacy = root.derivePath(paths.legacy)
   const privateKeyLegacy = childLegacy.privateKey!
   const legacy = {
     privateKey: privateKeyLegacy.toString('hex'),
   }
 
   // Nested Segwit
-  const childSegwitNested = root.derivePath(pathSegwitNested)
+  const childSegwitNested = root.derivePath(paths.nestedSegwit)
   const privateKey = childSegwitNested.privateKey!
   const nestedSegwit = {
     privateKey: privateKey.toString('hex'),
   }
 
   // Native Segwit
-  const childSegwit = root.derivePath(pathSegwit)
+  const childSegwit = root.derivePath(paths.nativeSegwit)
   const privateKeySegwit = childSegwit.privateKey!
 
   const nativeSegwit = {
@@ -225,7 +261,7 @@ export const getWalletPrivateKeys = ({
   }
 
   // Taproot
-  const childTaproot = root.derivePath(pathTaproot)
+  const childTaproot = root.derivePath(paths.taproot)
   const privateKeyTaproot = childTaproot.privateKey!
 
   const taproot = {

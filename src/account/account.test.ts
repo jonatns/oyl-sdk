@@ -4,7 +4,10 @@ import {
   generateMnemonic,
   getWalletPrivateKeys,
   validateMnemonic,
+  getDerivationPaths,
+  DerivationMode,
 } from './account'
+import * as bitcoin from 'bitcoinjs-lib'
 
 function isAccount(obj: any): obj is Account {
   return (
@@ -55,6 +58,63 @@ describe('Account Tests', () => {
     const mnemonic = generateMnemonic()
     const words = mnemonic.split(' ')
     expect(words).toHaveLength(12)
+  })
+
+  it('getDerivationPaths returns the correct derivation paths for a given index and network', () => {
+    const network = bitcoin.networks.bitcoin
+    const derivationMode: DerivationMode = 'bip44_account_last'
+
+    const paths = getDerivationPaths(0, network, derivationMode)
+
+    expect(paths.legacy).toBe("m/44'/0'/0'/0/0")
+    expect(paths.nestedSegwit).toBe("m/49'/0'/0'/0/0")
+    expect(paths.nativeSegwit).toBe("m/84'/0'/0'/0/0")
+    expect(paths.taproot).toBe("m/86'/0'/0'/0/0")
+
+    const paths1 = getDerivationPaths(1, network, derivationMode)
+
+    expect(paths1.legacy).toBe("m/44'/0'/0'/0/1")
+    expect(paths1.nestedSegwit).toBe("m/49'/0'/0'/0/1")
+    expect(paths1.nativeSegwit).toBe("m/84'/0'/0'/0/1")
+    expect(paths1.taproot).toBe("m/86'/0'/0'/0/1")
+  })
+
+  it('getDerivationPaths returns the correct derivation paths for a given index and network using the bip32_simple derivation mode', () => {
+    const network = bitcoin.networks.bitcoin
+    const derivationMode: DerivationMode = 'bip32_simple'
+
+    const paths = getDerivationPaths(0, network, derivationMode)
+
+    expect(paths.legacy).toBe("m/44'/0'/0'/0")
+    expect(paths.nestedSegwit).toBe("m/49'/0'/0'/0")
+    expect(paths.nativeSegwit).toBe("m/84'/0'/0'/0")
+    expect(paths.taproot).toBe("m/86'/0'/0'/0")
+
+    const paths1 = getDerivationPaths(1, network, derivationMode)
+
+    expect(paths1.legacy).toBe("m/44'/0'/1'/0")
+    expect(paths1.nestedSegwit).toBe("m/49'/0'/1'/0")
+    expect(paths1.nativeSegwit).toBe("m/84'/0'/1'/0")
+    expect(paths1.taproot).toBe("m/86'/0'/1'/0")
+  })
+
+  it('getDerivationPaths returns the correct derivation paths for a given index and network using the bip44_standard derivation mode', () => {
+    const network = bitcoin.networks.bitcoin
+    const derivationMode: DerivationMode = 'bip44_standard'
+
+    const paths = getDerivationPaths(0, network, derivationMode)
+
+    expect(paths.legacy).toBe("m/44'/0'/0'/0/0")
+    expect(paths.nestedSegwit).toBe("m/49'/0'/0'/0/0")
+    expect(paths.nativeSegwit).toBe("m/84'/0'/0'/0/0")
+    expect(paths.taproot).toBe("m/86'/0'/0'/0/0")
+
+    const paths1 = getDerivationPaths(1, network, derivationMode)
+
+    expect(paths1.legacy).toBe("m/44'/0'/1'/0/0")
+    expect(paths1.nestedSegwit).toBe("m/49'/0'/1'/0/0")
+    expect(paths1.nativeSegwit).toBe("m/84'/0'/1'/0/0")
+    expect(paths1.taproot).toBe("m/86'/0'/1'/0/0")
   })
 
   it('mnemonicToAccount does not throw an error if mnemonic is invalid', () => {
