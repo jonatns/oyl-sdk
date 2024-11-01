@@ -49,7 +49,7 @@ export declare const mnemonicToAccount: ({ mnemonic, opts, }: {
     mnemonic?: string;
     opts?: MnemonicToAccountOptions;
 }) => Account;
-export declare const getDerivationPaths: (index: number, network?: bitcoin.networks.Network, derivationMode?: DerivationMode) => DerivationPaths;
+export declare const getDerivationPaths: (index?: number, network?: bitcoin.networks.Network, derivationMode?: DerivationMode) => DerivationPaths;
 export declare const generateWallet: ({ mnemonic, opts, }: {
     mnemonic?: string;
     opts: MnemonicToAccountOptions;

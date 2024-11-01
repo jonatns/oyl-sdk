@@ -105,7 +105,7 @@ export const mnemonicToAccount = ({
 }
 
 export const getDerivationPaths = (
-  index: number,
+  index: number = 0,
   network = bitcoin.networks.bitcoin,
   derivationMode: DerivationMode = 'bip44_account_last'
 ): DerivationPaths => {

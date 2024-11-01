@@ -217,7 +217,7 @@ describe('Account Tests', () => {
   })
 
   it('getDerivationPaths returns the correct default derivation paths', () => {
-    const paths = getDerivationPaths(0)
+    const paths = getDerivationPaths()
 
     expect(paths.legacy).toBe("m/44'/0'/0'/0/0")
     expect(paths.nestedSegwit).toBe("m/49'/0'/0'/0/0")
