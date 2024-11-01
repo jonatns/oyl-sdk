@@ -10,6 +10,7 @@ import {
   generateMnemonic,
   getHDPaths,
   getWalletPrivateKeys,
+  HDPaths,
   mnemonicToAccount,
 } from '..'
 
@@ -71,18 +72,28 @@ const privateKeysCommand = new Command('privateKeys')
     console.log(privateKeys)
   })
 
+/* @dev example call 
+  oyl account mnemonicToAccount \
+  --mnemonic "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about" \
+  --network regtest \
+  --index 1 \
+  --wallet-standard bip44_standard
+*/
 const mnemonicToAccountCommand = new Command('mnemonicToAccount')
   .description('Returns an account from a mnemonic')
   .requiredOption('-m, --mnemonic <mnemonic>', 'BIP39 mnemonic')
   .option('-n, --network <network>', 'The bitcoin network (default: bitcoin)')
   .option('-i, --index <index>', 'Account index (default: 0)')
-  .option('-d, --wallet-standard <walletStandard>', 'Wallet standard')
+  .option('-w, --wallet-standard <walletStandard>', 'Wallet standard')
   .action((options) => {
-    const hdPaths = getHDPaths(
-      options.index,
-      bitcoin.networks[options.network],
-      options.walletStandard
-    )
+    let hdPaths: HDPaths
+    if (options.walletStandard) {
+      hdPaths = getHDPaths(
+        options.index,
+        bitcoin.networks[options.network],
+        options.walletStandard
+      )
+    }
 
     const account = mnemonicToAccount({
       mnemonic: options.mnemonic,
