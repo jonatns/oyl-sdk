@@ -12,18 +12,22 @@ export type Account = {
     pubkey: string
     pubKeyXOnly: string
     address: string
+    derivationPath: string
   }
   nativeSegwit: {
     pubkey: string
     address: string
+    derivationPath: string
   }
   nestedSegwit: {
     pubkey: string
     address: string
+    derivationPath: string
   }
   legacy: {
     pubkey: string
     address: string
+    derivationPath: string
   }
   spendStrategy: SpendStrategy
   network: bitcoin.Network
@@ -70,7 +74,7 @@ export const mnemonicToAccount = ({
 }: {
   mnemonic?: string
   opts?: MnemonicToAccountOptions
-}) => {
+}): Account => {
   const options = {
     network: opts?.network ? opts.network : bitcoin.networks.bitcoin,
     index: opts?.index ? opts.index : 0,
@@ -101,9 +105,9 @@ export const mnemonicToAccount = ({
 }
 
 export const getDerivationPaths = (
-  index = 0,
+  index: number,
   network = bitcoin.networks.bitcoin,
-  derivationMode?: DerivationMode
+  derivationMode: DerivationMode = 'bip44_account_last'
 ): DerivationPaths => {
   const coinType =
     network === bitcoin.networks.testnet || network === bitcoin.networks.regtest
@@ -170,6 +174,7 @@ export const generateWallet = ({
   const legacy = {
     pubkey: pubkeyLegacy.toString('hex'),
     address: addressLegacy.address,
+    derivationPath: derivationPaths.legacy,
   }
 
   // Nested Segwit
@@ -184,6 +189,7 @@ export const generateWallet = ({
   const nestedSegwit = {
     pubkey: pubkeySegwitNested.toString('hex'),
     address: addressSegwitNested.address,
+    derivationPath: derivationPaths.nestedSegwit,
   }
 
   // Native Segwit
@@ -196,6 +202,7 @@ export const generateWallet = ({
   const nativeSegwit = {
     pubkey: pubkeySegwit.toString('hex'),
     address: addressSegwit.address,
+    derivationPath: derivationPaths.nativeSegwit,
   }
 
   // Taproot
@@ -211,6 +218,7 @@ export const generateWallet = ({
     pubkey: pubkeyTaproot.toString('hex'),
     pubKeyXOnly: pubkeyTaprootXOnly.toString('hex'),
     address: addressTaproot.address,
+    derivationPath: derivationPaths.taproot,
   }
 
   return {
