@@ -3,15 +3,16 @@ import {
   generateMnemonic,
   getWalletPrivateKeys,
   validateMnemonic,
-  getDerivationPaths,
-  DerivationMode,
+  getHDPaths,
+  HDPaths,
+  WalletStandard,
 } from './account'
 import * as bitcoin from 'bitcoinjs-lib'
 
 const TEST_MNEMONIC =
   'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
 
-const TEST_DERIVATION_PATHS = {
+const TEST_HD_PATHS = {
   legacy: "m/44'/0'/0'/0/999",
   nestedSegwit: "m/49'/0'/0'/0/998",
   nativeSegwit: "m/84'/0'/0'/0/997",
@@ -60,7 +61,7 @@ describe('Account Tests', () => {
     expect(account.spendStrategy.changeAddress).toBe('legacy')
   })
 
-  it('mnemonicToAccount should work with default derivationPaths', () => {
+  it('mnemonicToAccount should work with default hdPaths', () => {
     const account = mnemonicToAccount({
       mnemonic: TEST_MNEMONIC,
       opts: {
@@ -68,10 +69,10 @@ describe('Account Tests', () => {
       },
     })
 
-    expect(account.legacy.derivationPath).toBe("m/44'/1'/0'/0/0")
-    expect(account.nestedSegwit.derivationPath).toBe("m/49'/1'/0'/0/0")
-    expect(account.nativeSegwit.derivationPath).toBe("m/84'/1'/0'/0/0")
-    expect(account.taproot.derivationPath).toBe("m/86'/1'/0'/0/0")
+    expect(account.legacy.hdPath).toBe("m/44'/1'/0'/0/0")
+    expect(account.nestedSegwit.hdPath).toBe("m/49'/1'/0'/0/0")
+    expect(account.nativeSegwit.hdPath).toBe("m/84'/1'/0'/0/0")
+    expect(account.taproot.hdPath).toBe("m/86'/1'/0'/0/0")
 
     expect(account.legacy.address).toBe('mkpZhYtJu2r87Js3pDiWJDmPte2NRZ8bJV')
     expect(account.nestedSegwit.address).toBe(
@@ -101,19 +102,19 @@ describe('Account Tests', () => {
     )
   })
 
-  it('mnemonicToAccount should work with custom derivationPaths', () => {
+  it('mnemonicToAccount should work with custom hdPaths', () => {
     const account = mnemonicToAccount({
       mnemonic: TEST_MNEMONIC,
       opts: {
         network: bitcoin.networks.regtest,
-        derivationPaths: TEST_DERIVATION_PATHS,
+        hdPaths: TEST_HD_PATHS,
       },
     })
 
-    expect(account.legacy.derivationPath).toBe("m/44'/0'/0'/0/999")
-    expect(account.nestedSegwit.derivationPath).toBe("m/49'/0'/0'/0/998")
-    expect(account.nativeSegwit.derivationPath).toBe("m/84'/0'/0'/0/997")
-    expect(account.taproot.derivationPath).toBe("m/86'/0'/0'/0/996")
+    expect(account.legacy.hdPath).toBe("m/44'/0'/0'/0/999")
+    expect(account.nestedSegwit.hdPath).toBe("m/49'/0'/0'/0/998")
+    expect(account.nativeSegwit.hdPath).toBe("m/84'/0'/0'/0/997")
+    expect(account.taproot.hdPath).toBe("m/86'/0'/0'/0/996")
 
     expect(account.legacy.address).toBe('n4UB1By7USunM5R4ivdihhYkp1tY84oeuu')
     expect(account.nestedSegwit.address).toBe(
@@ -154,7 +155,7 @@ describe('Account Tests', () => {
     ).not.toThrow(Error)
   })
 
-  it('getWalletPrivateKeys should work with default derivationPaths', () => {
+  it('getWalletPrivateKeys should work with default hdPaths', () => {
     const account = getWalletPrivateKeys({
       mnemonic: TEST_MNEMONIC,
       opts: {
@@ -176,12 +177,17 @@ describe('Account Tests', () => {
     )
   })
 
-  it('getWalletPrivateKeys should work with custom derivationPaths', () => {
+  it('getWalletPrivateKeys should work with custom hdPaths', () => {
     const account = getWalletPrivateKeys({
       mnemonic: TEST_MNEMONIC,
       opts: {
         network: bitcoin.networks.regtest,
-        derivationPaths: TEST_DERIVATION_PATHS,
+        hdPaths: {
+          legacy: "m/44'/0'/0'/0/999",
+          nestedSegwit: "m/49'/0'/0'/0/998",
+          nativeSegwit: "m/84'/0'/0'/0/997",
+          taproot: "m/86'/0'/0'/0/996",
+        },
       },
     })
 
@@ -216,15 +222,15 @@ describe('Account Tests', () => {
     expect(words).toHaveLength(12)
   })
 
-  it('getDerivationPaths returns the correct default derivation paths', () => {
-    const paths = getDerivationPaths()
+  it('getHDPaths returns the correct default HD paths', () => {
+    const paths = getHDPaths()
 
     expect(paths.legacy).toBe("m/44'/0'/0'/0/0")
     expect(paths.nestedSegwit).toBe("m/49'/0'/0'/0/0")
     expect(paths.nativeSegwit).toBe("m/84'/0'/0'/0/0")
     expect(paths.taproot).toBe("m/86'/0'/0'/0/0")
 
-    const paths1 = getDerivationPaths(1)
+    const paths1 = getHDPaths(1)
 
     expect(paths1.legacy).toBe("m/44'/0'/0'/0/1")
     expect(paths1.nestedSegwit).toBe("m/49'/0'/0'/0/1")
@@ -232,18 +238,18 @@ describe('Account Tests', () => {
     expect(paths1.taproot).toBe("m/86'/0'/0'/0/1")
   })
 
-  it('getDerivationPaths returns the right derivation paths using the bip32_simple derivation mode', () => {
+  it('getHDPaths returns the right HD paths using the bip32_simple wallet standard', () => {
     const network = bitcoin.networks.bitcoin
-    const derivationMode: DerivationMode = 'bip32_simple'
+    const walletStandard: WalletStandard = 'bip32_simple'
 
-    const paths = getDerivationPaths(0, network, derivationMode)
+    const paths = getHDPaths(0, network, walletStandard)
 
     expect(paths.legacy).toBe("m/44'/0'/0'/0")
     expect(paths.nestedSegwit).toBe("m/49'/0'/0'/0")
     expect(paths.nativeSegwit).toBe("m/84'/0'/0'/0")
     expect(paths.taproot).toBe("m/86'/0'/0'/0")
 
-    const paths1 = getDerivationPaths(1, network, derivationMode)
+    const paths1 = getHDPaths(1, network, walletStandard)
 
     expect(paths1.legacy).toBe("m/44'/0'/1'/0")
     expect(paths1.nestedSegwit).toBe("m/49'/0'/1'/0")
@@ -251,18 +257,18 @@ describe('Account Tests', () => {
     expect(paths1.taproot).toBe("m/86'/0'/1'/0")
   })
 
-  it('getDerivationPaths returns the right derivation paths using the bip44_standard derivation mode', () => {
+  it('getHDPaths returns the right HD paths using the bip44_standard wallet standard', () => {
     const network = bitcoin.networks.bitcoin
-    const derivationMode: DerivationMode = 'bip44_standard'
+    const walletStandard: WalletStandard = 'bip44_standard'
 
-    const paths = getDerivationPaths(0, network, derivationMode)
+    const paths = getHDPaths(0, network, walletStandard)
 
     expect(paths.legacy).toBe("m/44'/0'/0'/0/0")
     expect(paths.nestedSegwit).toBe("m/49'/0'/0'/0/0")
     expect(paths.nativeSegwit).toBe("m/84'/0'/0'/0/0")
     expect(paths.taproot).toBe("m/86'/0'/0'/0/0")
 
-    const paths1 = getDerivationPaths(1, network, derivationMode)
+    const paths1 = getHDPaths(1, network, walletStandard)
 
     expect(paths1.legacy).toBe("m/44'/0'/1'/0/0")
     expect(paths1.nestedSegwit).toBe("m/49'/0'/1'/0/0")

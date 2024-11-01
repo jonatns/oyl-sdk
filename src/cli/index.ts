@@ -8,7 +8,7 @@ import * as rune from '../rune'
 import 'dotenv/config'
 import {
   generateMnemonic,
-  getDerivationPaths,
+  getHDPaths,
   getWalletPrivateKeys,
   mnemonicToAccount,
 } from '..'
@@ -76,12 +76,12 @@ const mnemonicToAccountCommand = new Command('mnemonicToAccount')
   .requiredOption('-m, --mnemonic <mnemonic>', 'BIP39 mnemonic')
   .option('-n, --network <network>', 'The bitcoin network (default: bitcoin)')
   .option('-i, --index <index>', 'Account index (default: 0)')
-  .option('-d, --derivation-mode <derivationMode>', 'Derivation mode')
+  .option('-d, --wallet-standard <walletStandard>', 'Wallet standard')
   .action((options) => {
-    const derivationPaths = getDerivationPaths(
+    const hdPaths = getHDPaths(
       options.index,
       bitcoin.networks[options.network],
-      options.derivationMode
+      options.walletStandard
     )
 
     const account = mnemonicToAccount({
@@ -89,7 +89,7 @@ const mnemonicToAccountCommand = new Command('mnemonicToAccount')
       opts: {
         index: options.index,
         network: bitcoin.networks[options.network],
-        derivationPaths,
+        hdPaths,
       },
     })
     console.log(account)

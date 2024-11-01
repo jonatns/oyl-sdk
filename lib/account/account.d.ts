@@ -4,29 +4,29 @@ export type Account = {
         pubkey: string;
         pubKeyXOnly: string;
         address: string;
-        derivationPath: string;
+        hdPath: string;
     };
     nativeSegwit: {
         pubkey: string;
         address: string;
-        derivationPath: string;
+        hdPath: string;
     };
     nestedSegwit: {
         pubkey: string;
         address: string;
-        derivationPath: string;
+        hdPath: string;
     };
     legacy: {
         pubkey: string;
         address: string;
-        derivationPath: string;
+        hdPath: string;
     };
     spendStrategy: SpendStrategy;
     network: bitcoin.Network;
 };
 export type AddressKey = 'nativeSegwit' | 'taproot' | 'nestedSegwit' | 'legacy';
-export type DerivationMode = 'bip44_account_last' | 'bip44_standard' | 'bip32_simple';
-export type DerivationPaths = {
+export type WalletStandard = 'bip44_account_last' | 'bip44_standard' | 'bip32_simple';
+export type HDPaths = {
     legacy?: string;
     nestedSegwit?: string;
     nativeSegwit?: string;
@@ -41,7 +41,7 @@ export interface MnemonicToAccountOptions {
     network?: bitcoin.networks.Network;
     index?: number;
     spendStrategy?: SpendStrategy;
-    derivationPaths?: DerivationPaths;
+    hdPaths?: HDPaths;
 }
 export declare const generateMnemonic: () => string;
 export declare const validateMnemonic: (mnemonic: string) => boolean;
@@ -49,7 +49,7 @@ export declare const mnemonicToAccount: ({ mnemonic, opts, }: {
     mnemonic?: string;
     opts?: MnemonicToAccountOptions;
 }) => Account;
-export declare const getDerivationPaths: (index?: number, network?: bitcoin.networks.Network, derivationMode?: DerivationMode) => DerivationPaths;
+export declare const getHDPaths: (index?: number, network?: bitcoin.networks.Network, walletStandard?: WalletStandard) => HDPaths;
 export declare const generateWallet: ({ mnemonic, opts, }: {
     mnemonic?: string;
     opts: MnemonicToAccountOptions;
@@ -58,22 +58,22 @@ export declare const generateWallet: ({ mnemonic, opts, }: {
         pubkey: string;
         pubKeyXOnly: string;
         address: string;
-        derivationPath: string;
+        hdPath: string;
     };
     nativeSegwit: {
         pubkey: string;
         address: string;
-        derivationPath: string;
+        hdPath: string;
     };
     nestedSegwit: {
         pubkey: string;
         address: string;
-        derivationPath: string;
+        hdPath: string;
     };
     legacy: {
         pubkey: string;
         address: string;
-        derivationPath: string;
+        hdPath: string;
     };
     spendStrategy: SpendStrategy;
     network: bitcoin.networks.Network;

@@ -12,22 +12,22 @@ export type Account = {
     pubkey: string
     pubKeyXOnly: string
     address: string
-    derivationPath: string
+    hdPath: string
   }
   nativeSegwit: {
     pubkey: string
     address: string
-    derivationPath: string
+    hdPath: string
   }
   nestedSegwit: {
     pubkey: string
     address: string
-    derivationPath: string
+    hdPath: string
   }
   legacy: {
     pubkey: string
     address: string
-    derivationPath: string
+    hdPath: string
   }
   spendStrategy: SpendStrategy
   network: bitcoin.Network
@@ -35,12 +35,12 @@ export type Account = {
 
 export type AddressKey = 'nativeSegwit' | 'taproot' | 'nestedSegwit' | 'legacy'
 
-export type DerivationMode =
+export type WalletStandard =
   | 'bip44_account_last'
   | 'bip44_standard'
   | 'bip32_simple'
 
-export type DerivationPaths = {
+export type HDPaths = {
   legacy?: string
   nestedSegwit?: string
   nativeSegwit?: string
@@ -57,7 +57,7 @@ export interface MnemonicToAccountOptions {
   network?: bitcoin.networks.Network
   index?: number
   spendStrategy?: SpendStrategy
-  derivationPaths?: DerivationPaths
+  hdPaths?: HDPaths
 }
 
 export const generateMnemonic = () => {
@@ -78,7 +78,7 @@ export const mnemonicToAccount = ({
   const options = {
     network: opts?.network ? opts.network : bitcoin.networks.bitcoin,
     index: opts?.index ? opts.index : 0,
-    derivationPaths: opts?.derivationPaths,
+    hdPaths: opts?.hdPaths,
     spendStrategy: {
       addressOrder: opts?.spendStrategy?.addressOrder
         ? opts.spendStrategy.addressOrder
@@ -104,17 +104,17 @@ export const mnemonicToAccount = ({
   })
 }
 
-export const getDerivationPaths = (
+export const getHDPaths = (
   index: number = 0,
   network = bitcoin.networks.bitcoin,
-  derivationMode: DerivationMode = 'bip44_account_last'
-): DerivationPaths => {
+  walletStandard: WalletStandard = 'bip44_account_last'
+): HDPaths => {
   const coinType =
     network === bitcoin.networks.testnet || network === bitcoin.networks.regtest
       ? '1'
       : '0'
 
-  switch (derivationMode) {
+  switch (walletStandard) {
     case 'bip44_standard':
       return {
         legacy: `m/44'/${coinType}'/${index}'/0/0`,
@@ -156,16 +156,16 @@ export const generateWallet = ({
     throw Error('mnemonic not given')
   }
 
-  const derivationPaths = {
-    ...getDerivationPaths(opts.index, opts.network),
-    ...opts.derivationPaths,
+  const hdPaths = {
+    ...getHDPaths(opts.index, opts.network),
+    ...opts.hdPaths,
   }
 
   const seed = bip39.mnemonicToSeedSync(mnemonic)
   const root = bip32.fromSeed(seed)
 
   // Legacy
-  const childLegacy = root.derivePath(derivationPaths.legacy)
+  const childLegacy = root.derivePath(hdPaths.legacy)
   const pubkeyLegacy = childLegacy.publicKey
   const addressLegacy = bitcoin.payments.p2pkh({
     pubkey: pubkeyLegacy,
@@ -174,11 +174,11 @@ export const generateWallet = ({
   const legacy = {
     pubkey: pubkeyLegacy.toString('hex'),
     address: addressLegacy.address,
-    derivationPath: derivationPaths.legacy,
+    hdPath: hdPaths.legacy,
   }
 
   // Nested Segwit
-  const childSegwitNested = root.derivePath(derivationPaths.nestedSegwit)
+  const childSegwitNested = root.derivePath(hdPaths.nestedSegwit)
   const pubkeySegwitNested = childSegwitNested.publicKey
   const addressSegwitNested = bitcoin.payments.p2sh({
     redeem: bitcoin.payments.p2wpkh({
@@ -189,11 +189,11 @@ export const generateWallet = ({
   const nestedSegwit = {
     pubkey: pubkeySegwitNested.toString('hex'),
     address: addressSegwitNested.address,
-    derivationPath: derivationPaths.nestedSegwit,
+    hdPath: hdPaths.nestedSegwit,
   }
 
   // Native Segwit
-  const childSegwit = root.derivePath(derivationPaths.nativeSegwit)
+  const childSegwit = root.derivePath(hdPaths.nativeSegwit)
   const pubkeySegwit = childSegwit.publicKey
   const addressSegwit = bitcoin.payments.p2wpkh({
     pubkey: pubkeySegwit,
@@ -202,11 +202,11 @@ export const generateWallet = ({
   const nativeSegwit = {
     pubkey: pubkeySegwit.toString('hex'),
     address: addressSegwit.address,
-    derivationPath: derivationPaths.nativeSegwit,
+    hdPath: hdPaths.nativeSegwit,
   }
 
   // Taproot
-  const childTaproot = root.derivePath(derivationPaths.taproot)
+  const childTaproot = root.derivePath(hdPaths.taproot)
   const pubkeyTaproot = childTaproot.publicKey
   const pubkeyTaprootXOnly = toXOnly(pubkeyTaproot)
 
@@ -218,7 +218,7 @@ export const generateWallet = ({
     pubkey: pubkeyTaproot.toString('hex'),
     pubKeyXOnly: pubkeyTaprootXOnly.toString('hex'),
     address: addressTaproot.address,
-    derivationPath: derivationPaths.taproot,
+    hdPath: hdPaths.taproot,
   }
 
   return {
@@ -243,30 +243,30 @@ export const getWalletPrivateKeys = ({
     index: opts?.index ? opts.index : 0,
   }
 
-  const derivationPaths = {
-    ...getDerivationPaths(options.index, options.network),
-    ...opts?.derivationPaths,
+  const hdPaths = {
+    ...getHDPaths(options.index, options.network),
+    ...opts?.hdPaths,
   }
 
   const seed = bip39.mnemonicToSeedSync(mnemonic)
   const root = bip32.fromSeed(seed)
 
   // Legacy
-  const childLegacy = root.derivePath(derivationPaths.legacy)
+  const childLegacy = root.derivePath(hdPaths.legacy)
   const privateKeyLegacy = childLegacy.privateKey!
   const legacy = {
     privateKey: privateKeyLegacy.toString('hex'),
   }
 
   // Nested Segwit
-  const childSegwitNested = root.derivePath(derivationPaths.nestedSegwit)
+  const childSegwitNested = root.derivePath(hdPaths.nestedSegwit)
   const privateKey = childSegwitNested.privateKey!
   const nestedSegwit = {
     privateKey: privateKey.toString('hex'),
   }
 
   // Native Segwit
-  const childSegwit = root.derivePath(derivationPaths.nativeSegwit)
+  const childSegwit = root.derivePath(hdPaths.nativeSegwit)
   const privateKeySegwit = childSegwit.privateKey!
 
   const nativeSegwit = {
@@ -274,7 +274,7 @@ export const getWalletPrivateKeys = ({
   }
 
   // Taproot
-  const childTaproot = root.derivePath(derivationPaths.taproot)
+  const childTaproot = root.derivePath(hdPaths.taproot)
   const privateKeyTaproot = childTaproot.privateKey!
 
   const taproot = {
