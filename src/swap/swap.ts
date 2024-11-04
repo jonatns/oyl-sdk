@@ -1,4 +1,4 @@
-import { processUnisatOffer } from './unisat/unisat'
+import { processUnisatListing, processUnisatOffer } from './unisat/unisat'
 import { processOkxOffer } from './okx/okx'
 import {
   Marketplaces,
@@ -41,7 +41,7 @@ export async function processListing (options: ProcessListingOptions): Promise<P
     let listingResponse: ProcessListingResponse
     switch (options.listing.marketplace){
         case Marketplaces.UNISAT:
-            //swapResponse = await unisatSwap(options);
+            listingResponse = await processUnisatListing(options);
             break;
         case Marketplaces.ORDINALS_WALLET:
             //swapResponse = await ordinalWalletSwap(options);
