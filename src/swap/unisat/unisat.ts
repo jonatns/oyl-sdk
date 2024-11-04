@@ -157,7 +157,7 @@ export async function processUnisatListing({
     const listingPsbt: GetListingPsbtResponse = listingPsbtResponse.data;
     const listingId = listingPsbt.additionalData.auctionId;
     const { signedHexPsbt } = await signer.signAllInputs({
-        rawPsbt: listingPsbt.psbt,
+        rawPsbtHex: listingPsbt.psbt,
         finalize: false,
     })
 
