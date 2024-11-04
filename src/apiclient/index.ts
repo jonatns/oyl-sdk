@@ -12,7 +12,7 @@ import {
   getRuneOutpointsRegtest,
 } from './regtestApi'
 import { Account, SpendStrategy } from '../account'
-import { GetListingPsbtRequest, GetSellerPsbtRequest, SubmitBuyerPsbtRequest, SubmitListingPsbtRequest } from '../swap/types'
+import { GetAddressListingsRequest, GetListingPsbtRequest, GetSellerPsbtRequest, SubmitBuyerPsbtRequest, SubmitListingPsbtRequest } from '../swap/types'
 import { AccountUtxoPortfolio } from '@utxo/utxo'
 
 /**
@@ -148,6 +148,10 @@ export class OylApiClient {
 
   async submitListingPsbt(params: SubmitListingPsbtRequest) {
     return await this._call('/submit-listing-psbt', 'post', params)
+  }
+
+  async getAddressListings(params: GetAddressListingsRequest) {
+    return await this._call('/get-address-listings', 'post', params)
   }
 
   
