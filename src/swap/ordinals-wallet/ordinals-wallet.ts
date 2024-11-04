@@ -1,4 +1,4 @@
-import { ProcessOfferOptions, SwapResponse } from '../types'
+import { ProcessOfferOptions, ProcessOfferResponse } from '../types'
 import { Provider } from '../../provider'
 import { AssetType } from '../../shared/interface'
 import { getAddressType, timeout } from '../..'
@@ -77,7 +77,7 @@ export async function submitPsbt(signedBid: signedOrdinalsWalletBid) {
   }
 }
 
-export async function ordinalWalletSwap({
+export async function processOrdinalsWalletOffer({
   address,
   offer,
   receiveAddress,
@@ -87,7 +87,7 @@ export async function ordinalWalletSwap({
   provider,
   utxos,
   signer,
-}: ProcessOfferOptions): Promise<SwapResponse> {
+}: ProcessOfferOptions): Promise<ProcessOfferResponse> {
   let dummyTxId: string | null = null
   let purchaseTxId: string | null = null
 

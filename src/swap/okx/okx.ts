@@ -1,6 +1,6 @@
 import { OylTransactionError, getAddressType, timeout } from "../.."
 import { AssetType } from "../../shared/interface"
-import { UnsignedOkxBid, SignedOkxBid, UnsignedPsbt, GenOkxRuneUnsignedPsbt, ProcessOfferOptions, SwapResponse, MarketplaceOffer } from "../types"
+import { UnsignedOkxBid, SignedOkxBid, UnsignedPsbt, GenOkxRuneUnsignedPsbt, ProcessOfferOptions, ProcessOfferResponse, MarketplaceOffer } from "../types"
 import { genBrcAndOrdinalUnsignedPsbt, mergeSignedPsbt } from "./nft"
 import { prepareAddressForDummyUtxos, updateUtxos } from "../helpers";
 import { buildOkxRunesPsbt } from "./runes";
@@ -78,7 +78,7 @@ export async function getBuyerPsbt(unsignedPsbt: UnsignedPsbt) {
 
 
 
-export async function okxSwap ({
+export async function processOkxOffer ({
     address, 
     offer,
     receiveAddress,
@@ -89,7 +89,7 @@ export async function okxSwap ({
     utxos,
     signer
 }:ProcessOfferOptions
-): Promise<SwapResponse> {
+): Promise<ProcessOfferResponse> {
 
     let dummyTxId: string | null = null;
     let purchaseTxId: string | null = null;

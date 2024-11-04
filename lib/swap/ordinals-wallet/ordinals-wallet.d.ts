@@ -1,4 +1,4 @@
-import { ProcessOfferOptions, SwapResponse } from '../types';
+import { ProcessOfferOptions, ProcessOfferResponse } from '../types';
 import { Provider } from '../../provider';
 import { AssetType } from '../../shared/interface';
 export interface UnsignedOrdinalsWalletBid {
@@ -19,4 +19,4 @@ export interface signedOrdinalsWalletBid {
 }
 export declare function getSellerPsbt(unsignedBid: UnsignedOrdinalsWalletBid): Promise<any>;
 export declare function submitPsbt(signedBid: signedOrdinalsWalletBid): Promise<any>;
-export declare function ordinalWalletSwap({ address, offer, receiveAddress, feeRate, pubKey, assetType, provider, utxos, signer, }: ProcessOfferOptions): Promise<SwapResponse>;
+export declare function processOrdinalsWalletOffer({ address, offer, receiveAddress, feeRate, pubKey, assetType, provider, utxos, signer, }: ProcessOfferOptions): Promise<ProcessOfferResponse>;

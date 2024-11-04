@@ -12,7 +12,7 @@ import {
   getRuneOutpointsRegtest,
 } from './regtestApi'
 import { Account, SpendStrategy } from '../account'
-import { GetSellerPsbtRequest, SubmitBuyerPsbtRequest } from '../swap/types'
+import { GetListingPsbtRequest, GetSellerPsbtRequest, SubmitBuyerPsbtRequest, SubmitListingPsbtRequest } from '../swap/types'
 import { AccountUtxoPortfolio } from '@utxo/utxo'
 
 /**
@@ -132,6 +132,8 @@ export class OylApiClient {
     })
   }
 
+  /***MARKETPLACE TRADE ENDPOINTS */
+
   async getSellerPsbt(params: GetSellerPsbtRequest) {
     return await this._call('/get-seller-psbt', 'post', params)
   }
@@ -139,6 +141,16 @@ export class OylApiClient {
   async submitBuyerPsbt(params: SubmitBuyerPsbtRequest) {
     return await this._call('/submit-buyer-psbt', 'post', params)
   }
+
+  async getListingPsbt(params: GetListingPsbtRequest) {
+    return await this._call('/get-listing-psbt', 'post', params)
+  }
+
+  async submitListingPsbt(params: SubmitListingPsbtRequest) {
+    return await this._call('/submit-listing-psbt', 'post', params)
+  }
+
+  
 
   /**
    * Get Collection info by id.
