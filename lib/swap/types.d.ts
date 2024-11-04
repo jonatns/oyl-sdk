@@ -240,6 +240,13 @@ export interface SubmitListingResponse {
     marketplaceType: Marketplaces;
     success: boolean;
 }
+export interface GetAddressListingsRequest {
+    marketplaceType: Marketplaces;
+    assetType?: AssetType;
+    address: string;
+    offset?: number;
+    limit?: number;
+}
 export interface ProcessOfferResponse {
     dummyTxId: string;
     purchaseTxId: string;
