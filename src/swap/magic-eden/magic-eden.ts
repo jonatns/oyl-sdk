@@ -1,9 +1,9 @@
 import { AssetType } from "../../shared/interface";
 import { getAddressType, timeout } from "../../shared/utils";
 import { prepareAddressForDummyUtxos, updateUtxos } from "../helpers";
-import { GetSellerPsbtRequest, GetSellerPsbtResponse, marketplaceName, Marketplaces, ProcessOfferOptions, SubmitBuyerPsbtRequest, SubmitBuyerPsbtResponse, SwapResponse } from "../types";
+import { GetSellerPsbtRequest, GetSellerPsbtResponse, marketplaceName, Marketplaces, ProcessOfferOptions, SubmitBuyerPsbtRequest, SubmitBuyerPsbtResponse, ProcessOfferResponse } from "../types";
 
-export async function magicEdenSwap({
+export async function processMagicEdenOffer({
     address,
     offer,
     receiveAddress,
@@ -15,7 +15,7 @@ export async function magicEdenSwap({
     receivePublicKey,
     signer
 }: ProcessOfferOptions
-): Promise<SwapResponse> {
+): Promise<ProcessOfferResponse> {
     let dummyTxId: string | null = null;
     let purchaseTxId: string | null = null;
     const addressType = getAddressType(address);

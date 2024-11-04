@@ -190,6 +190,26 @@ export interface GetSellerPsbtRequest {
   //additionalParams?: Omit<T, keyof GetSellerPsbtRequest<T>>;
 }
 
+export interface GetListingPsbtRequest{
+//<T extends GetListingPsbtSchemas = GetListingPsbtSchemas> {
+  marketplaceType: Marketplaces;
+  assetType: AssetType;
+  sellerAddress: string;
+  sellerPublicKey: string;
+  listings: GetListingPsbtInfo[];
+  //additionalParams?: Omit<T, keyof GetListingPsbtRequest<T>>;
+}
+
+
+export interface GetListingPsbtInfo {
+  inscriptionId?: string;
+  price?: number;
+  unitPrice?: number;
+  totalPrice?: number;
+  sellerReceiveAddress?: string;
+  utxo?: string;
+}
+
 export interface BuyOrder {
   orderId?: string | number
   price?: number
@@ -208,6 +228,14 @@ export interface GetSellerPsbtResponse {
   }
 }
 
+export interface GetListingPsbtResponse {
+  marketplaceType: Marketplaces;
+  psbt: string;
+  additionalData?: {
+      [key: string]: any;
+  };
+}
+
 export interface SubmitBuyerPsbtRequest {
   //<T extends SubmitBuyerPsbtSchemas = SubmitBuyerPsbtSchemas> {
   marketplaceType: Marketplaces
@@ -220,6 +248,17 @@ export interface SubmitBuyerPsbtRequest {
   //additionalParams?: Omit<T, keyof SubmitBuyerPsbtRequest<T>>;
 }
 
+export interface SubmitListingPsbtRequest{
+//<T extends SubmitListingPsbtSchemas = SubmitListingPsbtSchemas> {
+  marketplaceType: Marketplaces;
+  assetType: AssetType;
+  sellerAddress: string;
+  sellerPublicKey: string;
+  signedPsbt: string;
+  orderId?: string;
+  //additionalParams?: Omit<T, keyof SubmitListingRequest<T>>;
+}
+
 export interface SubmitBuyerPsbtResponse {
   marketplaceType: Marketplaces
   txid: string
@@ -228,7 +267,12 @@ export interface SubmitBuyerPsbtResponse {
   }
 }
 
-export interface SwapResponse {
+export interface SubmitListingResponse {
+  marketplaceType: Marketplaces;
+  success: boolean;
+}
+
+export interface ProcessOfferResponse {
   dummyTxId: string
   purchaseTxId: string
 }
@@ -312,4 +356,31 @@ export interface ProcessOfferOptions {
   assetType: AssetType
   provider: Provider
   signer: Signer
+}
+
+export interface ProcessListingOptions {
+  address: string
+  listing: MarketplaceListing
+  receiveBtcAddress: string
+  pubKey: string
+  receiveBtcPubKey?: string;
+  assetType: AssetType
+  provider: Provider
+  signer: Signer
+}
+
+export interface MarketplaceListing {
+  ticker: string
+  amount?: string
+  marketplace: Marketplaces
+  price?: number
+  unitPrice?: number
+  totalPrice?: number
+  outpoint?: string
+  inscriptionId?: string
+}
+
+export interface ProcessListingResponse {
+  success: boolean
+  listingId: string
 }

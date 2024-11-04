@@ -3,7 +3,7 @@ import { Signer } from '../../signer'
 import { Provider } from "../../provider"
 import { OylTransactionError, getAddressType } from "../.."
 import { signBip322Message } from "./BIP322"
-import { ProcessOfferOptions, SwapResponse } from "../types"
+import { GetListingPsbtRequest, ProcessListingOptions, ProcessListingResponse, ProcessOfferOptions, ProcessOfferResponse, Marketplaces, GetListingPsbtInfo, GetListingPsbtResponse, SubmitListingPsbtRequest, SubmitListingResponse } from "../types"
 
 export interface UnsignedUnisatBid {
   address: string
@@ -25,7 +25,7 @@ export interface SignedUnisatBid {
   assetType: AssetType
 }
 
-export async function getPsbt(unsignedBid: UnsignedUnisatBid) {
+export async function getSellerPsbt(unsignedBid: UnsignedUnisatBid) {
   switch (unsignedBid.assetType) {
     case AssetType.BRC20:
       return await unsignedBid.provider.api.initSwapBid(unsignedBid)
@@ -38,7 +38,7 @@ export async function getPsbt(unsignedBid: UnsignedUnisatBid) {
   }
 }
 
-export async function submitPsbt(signedBid: SignedUnisatBid) {
+export async function submitBuyerPsbt(signedBid: SignedUnisatBid) {
   switch (signedBid.assetType) {
     case AssetType.BRC20:
       return await signedBid.provider.api.submitSignedBid({ ...signedBid, psbtBid: signedBid.psbtHex })
@@ -52,7 +52,7 @@ export async function submitPsbt(signedBid: SignedUnisatBid) {
   }
 }
 
-export async function unisatSwap({
+export async function processUnisatOffer({
   address,
   offer,
   receiveAddress,
@@ -63,7 +63,7 @@ export async function unisatSwap({
   utxos,
   signer
 }: ProcessOfferOptions
-): Promise<SwapResponse> {
+): Promise<ProcessOfferResponse> {
   let dummyTxId: string | null = null;
   let purchaseTxId: string | null = null;
   const unsignedBid: UnsignedUnisatBid = {
@@ -82,7 +82,7 @@ export async function unisatSwap({
     const signature = await getMessageSignature({ address, provider, receiveAddress, signer })
     unsignedBid['signature'] = signature
   }
-  const psbt_ = await getPsbt(unsignedBid)
+  const psbt_ = await getSellerPsbt(unsignedBid)
 
   if (psbt_?.error) {
     throw new OylTransactionError(psbt_?.error)
@@ -100,7 +100,7 @@ export async function unisatSwap({
     rawPsbtHex: unsignedPsbt,
     finalize: false,
   })
-  const data = await submitPsbt({
+  const data = await submitBuyerPsbt({
     psbtHex: signedPsbt.signedHexPsbt,
     auctionId: offer.offerId,
     bidId: psbt_.bidId,
@@ -114,6 +114,74 @@ export async function unisatSwap({
   return {
     dummyTxId,
     purchaseTxId
+  }
+}
+
+
+export async function processUnisatListing({
+  address,
+  listing,
+  receiveBtcAddress,
+  pubKey,
+  receiveBtcPubKey,
+  assetType,
+  provider,
+  signer,
+}: ProcessListingOptions): Promise<ProcessListingResponse> {
+
+  const listings: GetListingPsbtInfo[] = []
+  const marketplaceType = listing.marketplace;
+
+  listings.push({
+    inscriptionId: listing?.inscriptionId,
+    price: listing?.price,
+    unitPrice: listing?.unitPrice,
+    totalPrice: listing?.totalPrice,
+    sellerReceiveAddress: receiveBtcAddress,
+    utxo: listing?.outpoint
+  })
+
+  const unisatGetListingPsbt: GetListingPsbtRequest =  {
+    marketplaceType,
+    assetType,
+    sellerAddress: address,
+    sellerPublicKey: pubKey,
+    listings
+  }
+
+  const listingPsbtResponse = await provider.api.getListingPsbt(unisatGetListingPsbt);
+    if (listingPsbtResponse.statusCode != 200) {
+        throw new Error(`Failed to get listing psbt: ${listingPsbtResponse.error}`)
+    }
+
+    const listingPsbt: GetListingPsbtResponse = listingPsbtResponse.data;
+    const listingId = listingPsbt.additionalData.auctionId;
+    const { signedHexPsbt } = await signer.signAllInputs({
+        rawPsbt: listingPsbt.psbt,
+        finalize: false,
+    })
+
+    const unisatSubmitListingPsbt: SubmitListingPsbtRequest = {
+      marketplaceType,
+      assetType,
+      sellerAddress: address,
+      sellerPublicKey: pubKey,
+      signedPsbt: signedHexPsbt,
+      orderId: listingId
+    }
+
+
+  const submitListingPsbtResponse = await provider.api.submitListingPsbt(unisatSubmitListingPsbt);
+  if (submitListingPsbtResponse.statusCode != 200) {
+      throw new Error(`Failed to submit listing psbt: ${submitListingPsbtResponse.error}`)
+  }
+
+  const submitListingPsbt: SubmitListingResponse = submitListingPsbtResponse.data
+
+
+  return {
+    success: submitListingPsbt.success,
+    listingId
   }
 }
 
