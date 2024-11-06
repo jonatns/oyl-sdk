@@ -1039,15 +1039,18 @@ export class OylApiClient {
     buyerAddress,
     psbt,
     collectionId,
+    listingId,
   }: {
     buyerAddress: string
     psbt: string
     collectionId: string
+    listingId: string
   }) {
     return await this._call('/submit-airhead-claim', 'post', {
       buyerAddress,
       psbt,
       collectionId,
+      listingId,
     })
   }
 }
