@@ -428,9 +428,10 @@ export declare class OylApiClient {
      * @param psbt - the psbt to submit.
      * @returns tx id and psbt hex.
      */
-    submitAirheadClaim({ buyerAddress, psbt, collectionId, }: {
+    submitAirheadClaim({ buyerAddress, psbt, collectionId, listingId, }: {
         buyerAddress: string;
         psbt: string;
         collectionId: string;
+        listingId: string;
     }): Promise<any>;
 }
