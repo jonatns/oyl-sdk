@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { payments, Psbt } from 'bitcoinjs-lib';
 import * as bitcoin from 'bitcoinjs-lib';
 import { Provider } from '../provider';

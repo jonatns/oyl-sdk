@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { FormattedUtxo } from '../shared/interface';
 import { Provider } from '../provider';
 import { BidAffordabilityCheck, BidAffordabilityCheckResponse, BuiltPsbt, ConditionalInput, DummyUtxoOptions, MarketplaceBatchOffer, MarketplaceOffer, Marketplaces, OutputTxCheck, PrepareAddressForDummyUtxos, PsbtBuilder, SelectSpendAddress, SelectSpendAddressResponse, TxAddressTypes, UtxosToCoverAmount } from './types';

@@ -86,7 +86,8 @@ export class OrdRpc {
     return await this._call('ord_r:children', [inscriptionId, page])
   }
   async getInscriptionMetaData(inscriptionId: string) {
-    return await this._call('ord_r:metadata', [inscriptionId])
+    const hex = await this._call('ord_r:metadata', [inscriptionId])
+    return (await import('cbor2')).decode(hex)
   }
   async getTxOutput(txIdVout: string): Promise<OrdOutput> {
     return await this._call('ord_output', [txIdVout])
