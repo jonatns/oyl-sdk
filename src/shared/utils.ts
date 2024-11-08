@@ -759,5 +759,5 @@ export function findXAmountOfSats(utxos: FormattedUtxo[], target: number) {
 export function decodeCBOR(hex: string) {
   const buffer = Buffer.from(hex, 'hex')
   const decoded = decode(buffer)
-  return Object.entries(decoded).map(([key, value]) => ({ key, value }))
+  return Object.entries(decoded).map(([label, value]) => ({ label, value }))
 }

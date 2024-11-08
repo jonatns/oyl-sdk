@@ -128,6 +128,6 @@ export declare function findXAmountOfSats(utxos: FormattedUtxo[], target: number
     totalAmount: number;
 };
 export declare function decodeCBOR(hex: string): {
-    key: string;
+    label: string;
     value: unknown;
 }[];

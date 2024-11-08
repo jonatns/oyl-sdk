@@ -27,7 +27,7 @@ export declare class OrdRpc {
     getInscriptionBySatWithIndex(satNumber: string, index?: string): Promise<any>;
     getInscriptionChildren(inscriptionId: string, page?: string): Promise<any>;
     getInscriptionMetaData(inscriptionId: string): Promise<{
-        key: string;
+        label: string;
         value: unknown;
     }[]>;
     getTxOutput(txIdVout: string): Promise<OrdOutput>;
