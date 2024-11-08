@@ -671,3 +671,16 @@ export type HistoryTxInscriptionDetails =
   | HistoryTxCollectibleInscription[]
 
 export type HistoryTx = HistoryBrc20Tx | HistoryCollectibleTx
+
+export type DecodedCBORValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | DecodedCBOR
+  | DecodedCBORValue[]
+
+export interface DecodedCBOR {
+  [key: string]: DecodedCBORValue
+}

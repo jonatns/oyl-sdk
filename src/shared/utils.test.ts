@@ -1,6 +1,6 @@
 import { mnemonicToAccount } from '../account/account'
 import { AddressType } from './interface'
-import { getAddressKey, getAddressType } from './utils'
+import { decodeCBOR, getAddressKey, getAddressType } from './utils'
 import * as bitcoin from 'bitcoinjs-lib'
 
 describe('Shared utils', () => {
@@ -34,5 +34,16 @@ describe('Shared utils', () => {
     expect(getAddressKey(account.taproot.address)).toBe('taproot')
     expect(getAddressKey(account.legacy.address)).toBe('legacy')
     expect(getAddressKey('Not an address')).toBeNull()
+  })
+
+  it('decodeCBOR decodes a hex correctly', () => {
+    const hex = 'b90002646e616d65646a6f686e63616765181e'
+    const decoded = decodeCBOR(hex)
+    expect(decoded).toEqual({ age: 30, name: 'john' })
+  })
+
+  it('decodeCBOR throws an error for invalid hex', () => {
+    const hex = 'b90016765181e'
+    expect(() => decodeCBOR(hex)).toThrow('Unexpected end of CBOR data')
   })
 })

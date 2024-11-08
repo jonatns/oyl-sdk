@@ -1,3 +1,5 @@
+import { decodeCBOR } from '../shared/utils'
+
 export type OrdOutputRune = {
   amount: number
   divisibility: number
@@ -86,7 +88,12 @@ export class OrdRpc {
     return await this._call('ord_r:children', [inscriptionId, page])
   }
   async getInscriptionMetaData(inscriptionId: string) {
-    return await this._call('ord_r:metadata', [inscriptionId])
+    const hex: string = await this._call('ord_r:metadata', [inscriptionId])
+    if (hex.includes('not found')) {
+      throw new Error('Inscription metadata not found') // TODO: Move this to the _call method
+    }
+
+    return decodeCBOR(hex)
   }
   async getTxOutput(txIdVout: string): Promise<OrdOutput> {
     return await this._call('ord_output', [txIdVout])
