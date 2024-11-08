@@ -3,6 +3,7 @@ import ECPairFactory from 'ecpair'
 import ecc from '@bitcoinerlab/secp256k1'
 import {
   AddressType,
+  DecodedCBORObject,
   FormattedUtxo,
   IBlockchainInfoUTXO,
   Network,
@@ -756,8 +757,7 @@ export function findXAmountOfSats(utxos: FormattedUtxo[], target: number) {
   }
 }
 
-export function decodeCBOR(hex: string) {
+export function decodeCBOR(hex: string): DecodedCBORObject {
   const buffer = Buffer.from(hex, 'hex')
-  const decoded = decode(buffer)
-  return Object.entries(decoded).map(([label, value]) => ({ label, value }))
+  return decode(buffer)
 }

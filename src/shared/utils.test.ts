@@ -39,10 +39,7 @@ describe('Shared utils', () => {
   it('decodeCBOR decodes hex correctly', () => {
     const hex = 'b90002646e616d65646a6f686e63616765181e'
     const decoded = decodeCBOR(hex)
-    expect(decoded).toEqual([
-      { label: 'name', value: 'john' },
-      { label: 'age', value: 30 },
-    ])
+    expect(decoded).toEqual({ age: 30, name: 'john' })
   })
 
   it('decodeCBOR decodes hex correctly2', () => {
