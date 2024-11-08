@@ -89,7 +89,10 @@ export class OrdRpc {
   }
   async getInscriptionMetaData(inscriptionId: string) {
     const hex: string = await this._call('ord_r:metadata', [inscriptionId])
-    if (hex.includes('not found')) throw new Error('Inscription not found')
+    if (hex.includes('not found')) {
+      throw new Error('Inscription metadata not found')
+    }
+
     return decodeCBOR(hex)
   }
   async getTxOutput(txIdVout: string): Promise<OrdOutput> {
