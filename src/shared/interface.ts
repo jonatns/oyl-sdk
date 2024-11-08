@@ -678,9 +678,9 @@ export type DecodedCBORValue =
   | boolean
   | null
   | undefined
-  | DecodedCBORObject
+  | DecodedCBOR
   | DecodedCBORValue[]
 
-export interface DecodedCBORObject {
+export interface DecodedCBOR {
   [key: string]: DecodedCBORValue
 }

@@ -26,7 +26,7 @@ export declare class OrdRpc {
     getInscriptionBySat(satNumber: string): Promise<any>;
     getInscriptionBySatWithIndex(satNumber: string, index?: string): Promise<any>;
     getInscriptionChildren(inscriptionId: string, page?: string): Promise<any>;
-    getInscriptionMetaData(inscriptionId: string): Promise<import("..").DecodedCBORObject>;
+    getInscriptionMetaData(inscriptionId: string): Promise<import("..").DecodedCBOR>;
     getTxOutput(txIdVout: string): Promise<OrdOutput>;
     getSatByNumber(number: string): Promise<any>;
     getSatByDecimal(decimal: string): Promise<any>;

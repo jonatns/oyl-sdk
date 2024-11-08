@@ -1,5 +1,5 @@
 import * as bitcoin from 'bitcoinjs-lib';
-import { AddressType, DecodedCBORObject, FormattedUtxo, IBlockchainInfoUTXO, Network, RuneUtxo, ToSignInput, TxInput, UnspentOutput, Utxo } from './interface';
+import { AddressType, DecodedCBOR, FormattedUtxo, IBlockchainInfoUTXO, Network, RuneUtxo, ToSignInput, TxInput, UnspentOutput, Utxo } from './interface';
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew';
 import { EsploraRpc } from '../rpclient/esplora';
 import { Provider } from '../provider/provider';
@@ -127,4 +127,4 @@ export declare function findXAmountOfSats(utxos: FormattedUtxo[], target: number
     utxos: FormattedUtxo[];
     totalAmount: number;
 };
-export declare function decodeCBOR(hex: string): DecodedCBORObject;
+export declare function decodeCBOR(hex: string): DecodedCBOR;
