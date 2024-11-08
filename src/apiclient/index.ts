@@ -12,7 +12,13 @@ import {
   getRuneOutpointsRegtest,
 } from './regtestApi'
 import { Account, SpendStrategy } from '../account'
-import { GetAddressListingsRequest, GetListingPsbtRequest, GetSellerPsbtRequest, SubmitBuyerPsbtRequest, SubmitListingPsbtRequest } from '../swap/types'
+import {
+  GetAddressListingsRequest,
+  GetListingPsbtRequest,
+  GetSellerPsbtRequest,
+  SubmitBuyerPsbtRequest,
+  SubmitListingPsbtRequest,
+} from '../swap/types'
 import { AccountUtxoPortfolio } from '@utxo/utxo'
 
 /**
@@ -153,8 +159,6 @@ export class OylApiClient {
   async getAddressListings(params: GetAddressListingsRequest) {
     return await this._call('/get-address-listings', 'post', params)
   }
-
-  
 
   /**
    * Get Collection info by id.
@@ -987,19 +991,11 @@ export class OylApiClient {
   /**
    * Get Airheads mint status.
    * @param buyerAddress - the address requesting the mint status.
-   * @param collectionId - the collection id.
    * @returns information on the current mint.
    */
-  async getAirheadsMintStatus({
-    buyerAddress,
-    collectionId,
-  }: {
-    buyerAddress: string
-    collectionId: string
-  }) {
+  async getAirheadsMintStatus({ buyerAddress }: { buyerAddress: string }) {
     return await this._call('/airhead-mint-status', 'post', {
       buyerAddress,
-      collectionId,
     })
   }
 
@@ -1008,24 +1004,20 @@ export class OylApiClient {
    * @param account - the account submitting the claim.
    * @param feeRate - the fee rate to use.
    * @param gatheredUtxos - the gathered utxos for spendable account.
-   * @param collectionId - the collection id.
    */
   async claimAirhead({
     account,
     feeRate,
     gatheredUtxos,
-    collectionId,
   }: {
     account: Account
     feeRate: number
     gatheredUtxos: any
-    collectionId: string
   }) {
     return await this._call('/claim-airhead', 'post', {
       account,
       feeRate,
       gatheredUtxos,
-      collectionId,
     })
   }
 
@@ -1033,23 +1025,21 @@ export class OylApiClient {
    * Submit Airhead claim.
    * @param buyerAddress - the address submitting the claim.
    * @param psbt - the psbt to submit.
+   * @param listingId - the listing id.
    * @returns tx id and psbt hex.
    */
   async submitAirheadClaim({
     buyerAddress,
     psbt,
-    collectionId,
     listingId,
   }: {
     buyerAddress: string
     psbt: string
-    collectionId: string
     listingId: string
   }) {
     return await this._call('/submit-airhead-claim', 'post', {
       buyerAddress,
       psbt,
-      collectionId,
       listingId,
     })
   }

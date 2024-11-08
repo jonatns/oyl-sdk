@@ -402,36 +402,32 @@ export declare class OylApiClient {
     /**
      * Get Airheads mint status.
      * @param buyerAddress - the address requesting the mint status.
-     * @param collectionId - the collection id.
      * @returns information on the current mint.
      */
-    getAirheadsMintStatus({ buyerAddress, collectionId, }: {
+    getAirheadsMintStatus({ buyerAddress }: {
         buyerAddress: string;
-        collectionId: string;
     }): Promise<any>;
     /**
      * Claim Airhead.
      * @param account - the account submitting the claim.
      * @param feeRate - the fee rate to use.
      * @param gatheredUtxos - the gathered utxos for spendable account.
-     * @param collectionId - the collection id.
      */
-    claimAirhead({ account, feeRate, gatheredUtxos, collectionId, }: {
+    claimAirhead({ account, feeRate, gatheredUtxos, }: {
         account: Account;
         feeRate: number;
         gatheredUtxos: any;
-        collectionId: string;
     }): Promise<any>;
     /**
      * Submit Airhead claim.
      * @param buyerAddress - the address submitting the claim.
      * @param psbt - the psbt to submit.
+     * @param listingId - the listing id.
      * @returns tx id and psbt hex.
      */
-    submitAirheadClaim({ buyerAddress, psbt, collectionId, listingId, }: {
+    submitAirheadClaim({ buyerAddress, psbt, listingId, }: {
         buyerAddress: string;
         psbt: string;
-        collectionId: string;
         listingId: string;
     }): Promise<any>;
 }
