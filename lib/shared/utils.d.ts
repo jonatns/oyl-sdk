@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import * as bitcoin from 'bitcoinjs-lib';
 import { AddressType, DecodedCBOR, FormattedUtxo, IBlockchainInfoUTXO, Network, RuneUtxo, ToSignInput, TxInput, UnspentOutput, Utxo } from './interface';
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew';
@@ -67,7 +68,7 @@ export declare const formatInputsToSign: ({ _psbt, senderPublicKey, network, }: 
 }) => Promise<bitcoin.Psbt>;
 export declare const timeout: (n: any) => Promise<unknown>;
 export declare const signInputs: (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], taprootPubkey: string, segwitPubKey: string, segwitSigner: any, taprootSigner: any) => Promise<bitcoin.Psbt>;
-export declare const createInscriptionScript: (pubKey: Buffer, content: string) => bitcoin.Stack;
+export declare const createInscriptionScript: (pubKey: Buffer, content: string) => bitcoin.payments.Stack;
 export declare function encodeToBase26(inputString: string): string;
 export declare function runeFromStr(s: string): bigint;
 export declare function hexToLittleEndian(hex: string): string;
