@@ -36,13 +36,13 @@ describe('Shared utils', () => {
     expect(getAddressKey('Not an address')).toBeNull()
   })
 
-  it('decodeCBOR decodes hex correctly', () => {
+  it('decodeCBOR decodes a hex correctly', () => {
     const hex = 'b90002646e616d65646a6f686e63616765181e'
     const decoded = decodeCBOR(hex)
     expect(decoded).toEqual({ age: 30, name: 'john' })
   })
 
-  it('decodeCBOR decodes hex correctly2', () => {
+  it('decodeCBOR throws an error for invalid hex', () => {
     const hex = 'b90016765181e'
     expect(() => decodeCBOR(hex)).toThrow('Unexpected end of CBOR data')
   })
