@@ -122,4 +122,7 @@ export class OrdRpc {
   async getRunes() {
     return await this._call('ord_runes', [])
   }
+  async getOrdData(address: string) {
+    return await this._call('ord_address', [address])
+  }
 }

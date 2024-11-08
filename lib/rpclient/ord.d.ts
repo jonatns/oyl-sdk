@@ -36,4 +36,5 @@ export declare class OrdRpc {
     getRuneByName(runeName: string): Promise<any>;
     getRuneById(runeId: string): Promise<any>;
     getRunes(): Promise<any>;
+    getOrdData(address: string): Promise<any>;
 }
