@@ -43,7 +43,7 @@ export const createSendPsbt = async ({
   fee?: number
 }) => {
   try {
-    const originalGatheredUtxos = gatheredUtxos;
+    const originalGatheredUtxos = gatheredUtxos
 
     const minFee = minimumFee({
       taprootInputCount: 2,
@@ -52,8 +52,6 @@ export const createSendPsbt = async ({
     })
     const calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
     let finalFee = fee ? fee : calculatedFee
-
-    
 
     gatheredUtxos = findXAmountOfSats(
       originalGatheredUtxos.utxos,
@@ -118,17 +116,12 @@ export const createSendPsbt = async ({
         getAddressType(utxo.address) === 1 ||
         getAddressType(utxo.address) === 3
       ) {
-        const previousTxInfo = await provider.esplora.getTxInfo(utxo.txId)
-
         psbt.addInput({
           hash: utxo.txId,
           index: parseInt(utxo.txIndex),
           witnessUtxo: {
             value: utxo.satoshis,
-            script: Buffer.from(
-              previousTxInfo.vout[utxo.txIndex].scriptpubkey,
-              'hex'
-            ),
+            script: Buffer.from(utxo.script, 'hex'),
           },
         })
       }
@@ -242,7 +235,7 @@ export const createMintPsbt = async ({
   fee?: number
 }) => {
   try {
-    const originalGatheredUtxos = gatheredUtxos;
+    const originalGatheredUtxos = gatheredUtxos
 
     const minTxSize = minimumFee({
       taprootInputCount: 2,
@@ -377,7 +370,7 @@ export const createEtchCommit = async ({
   fee?: number
 }) => {
   try {
-    const originalGatheredUtxos = gatheredUtxos;
+    const originalGatheredUtxos = gatheredUtxos
 
     const minFee = minimumFee({
       taprootInputCount: 2,

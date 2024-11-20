@@ -1,4 +1,4 @@
-import { walletInit } from '@signer/signer'
+import { walletInit } from '../signer/signer'
 import {
   Account,
   GatheredUtxos,
@@ -79,7 +79,7 @@ const testFormattedUtxos: GatheredUtxos = {
       outputIndex: 0,
       satoshis: 100000,
       confirmations: 3,
-      scriptPk: output.toString('hex'),
+      scriptPk: output!.toString('hex'),
       address: account.taproot.address,
       inscriptions: [],
     },
