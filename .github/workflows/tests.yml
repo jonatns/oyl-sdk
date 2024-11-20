@@ -22,11 +22,11 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-      - name: Give GitHub Actions access to Oyl-Wallet private repos
+      - name: Give GitHub Actions access to Oyl-Sdk
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: |
-            ${{ secrets.OYL_SDK_SSH_KEY }}
+            ${{ secrets.OYL_TEST_ACCESS }}
       - name: Install dependencies
         run: npm install
       - name: Run Jest tests
