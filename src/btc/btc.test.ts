@@ -25,7 +25,7 @@ const { output } = bitcoin.payments.p2wpkh({
   address,
   network: bitcoin.networks.regtest,
 })
-const scriptPk = output.toString('hex')
+const scriptPk = output!.toString('hex')
 
 const testFormattedUtxos: FormattedUtxo[] = [
   {
@@ -52,7 +52,7 @@ describe('btc sendTx', () => {
   it('construct psbt', async () => {
     const result = await createPsbt({
       utxos: testFormattedUtxos,
-      toAddress: address,
+      toAddress: address!,
       amount: 3000,
       feeRate: 10,
       account: account,
