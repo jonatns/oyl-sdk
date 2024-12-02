@@ -40,7 +40,7 @@ export declare const createEtchCommit: ({ gatheredUtxos, taprootKeyPair, tweaked
     psbt: string;
     script: Buffer;
 }>;
-export declare const createEtchReveal: ({ symbol, cap, premine, perMintAmount, turbo, divisibility, runeName, receiverAddress, script, feeRate, tweakedTaprootKeyPair, taprootKeyPair, provider, fee, commitTxId, }: {
+export declare const createEtchReveal: ({ symbol, cap, premine, perMintAmount, turbo, divisibility, runeName, receiverAddress, script, feeRate, tweakedTaprootKeyPair, provider, fee, commitTxId, }: {
     symbol: string;
     cap: bigint;
     premine: bigint;
@@ -52,7 +52,6 @@ export declare const createEtchReveal: ({ symbol, cap, premine, perMintAmount, t
     script: Buffer;
     feeRate: number;
     tweakedTaprootKeyPair: bitcoin.Signer;
-    taprootKeyPair: bitcoin.Signer;
     provider: Provider;
     fee?: number;
     commitTxId: string;

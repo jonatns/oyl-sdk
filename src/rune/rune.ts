@@ -519,7 +519,6 @@ export const createEtchReveal = async ({
   script,
   feeRate,
   tweakedTaprootKeyPair,
-  taprootKeyPair,
   provider,
   fee = 0,
   commitTxId,
@@ -535,7 +534,6 @@ export const createEtchReveal = async ({
   script: Buffer
   feeRate: number
   tweakedTaprootKeyPair: bitcoin.Signer
-  taprootKeyPair: bitcoin.Signer
   provider: Provider
   fee?: number
   commitTxId: string
@@ -692,7 +690,7 @@ export const findRuneUtxos = async ({
           script: rune.pkscript,
           address: holderAddress,
           amountOfRunes: rune.balances[index],
-          satoshis: satoshis,
+          satoshis,
         })
         runeTotalSatoshis += satoshis
         runeTotalAmount += rune.balances[index] / 10 ** rune.decimals[index]
@@ -987,7 +985,6 @@ export const actualEtchRevealFee = async ({
   }
 
   const { psbt } = await createEtchReveal({
-    taprootKeyPair,
     commitTxId,
     receiverAddress,
     script,
@@ -1020,7 +1017,6 @@ export const actualEtchRevealFee = async ({
   const correctFee = vsize * feeRate
 
   const { psbt: finalPsbt } = await createEtchReveal({
-    taprootKeyPair,
     commitTxId,
     receiverAddress,
     script,
@@ -1273,7 +1269,6 @@ export const etchReveal = async ({
   })
 
   const { psbt: finalRevealPsbt } = await createEtchReveal({
-    taprootKeyPair: signer.taprootKeyPair,
     tweakedTaprootKeyPair,
     receiverAddress: account.taproot.address,
     commitTxId,

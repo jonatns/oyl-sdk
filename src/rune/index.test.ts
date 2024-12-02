@@ -1,9 +1,19 @@
 import * as bitcoin from 'bitcoinjs-lib'
-import { createMintPsbt, createSendPsbt } from '../rune'
-import { Account, mnemonicToAccount } from '../account/account'
+import {
+  createEtchCommit,
+  createEtchReveal,
+  createMintPsbt,
+  createSendPsbt,
+} from '../rune'
+import {
+  Account,
+  getWalletPrivateKeys,
+  mnemonicToAccount,
+} from '../account/account'
 import { Provider } from '../provider/provider'
 import { FormattedUtxo } from '../utxo/utxo'
-import { RuneUTXO } from '..'
+import { RuneUTXO, tweakSigner } from '..'
+import { Signer, walletInit } from '../signer/signer'
 
 const provider = new Provider({
   url: '',
@@ -17,6 +27,25 @@ const account: Account = mnemonicToAccount({
     'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
   opts: { index: 0, network: bitcoin.networks.regtest },
 })
+
+const privateKeys = getWalletPrivateKeys({
+  mnemonic:
+    'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
+  opts: { index: 0, network: bitcoin.networks.regtest },
+})
+
+const keys: walletInit = {
+  legacyPrivateKey: privateKeys.legacy.privateKey,
+  segwitPrivateKey: privateKeys.nativeSegwit.privateKey,
+  nestedSegwitPrivateKey: privateKeys.nestedSegwit.privateKey,
+  taprootPrivateKey: privateKeys.taproot.privateKey,
+}
+
+const signer: Signer = new Signer(bitcoin.networks.regtest, keys)
+const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
+  signer.taprootKeyPair,
+  { network: provider.network }
+)
 
 const { address } = bitcoin.payments.p2wpkh({
   pubkey: Buffer.from(account.nativeSegwit.pubkey, 'hex'),
@@ -74,6 +103,15 @@ jest.spyOn(require('../rune/rune'), 'findRuneUtxos').mockResolvedValue({
   divisibility: 3,
 })
 
+jest
+  .spyOn(require('../shared/utils'), 'getOutputValueByVOutIndex')
+  .mockResolvedValue({
+    value: 100000,
+    script: account.taproot.pubkey,
+  })
+
+let revealScript: Buffer
+
 describe('rune txs', () => {
   it('rune send tx', async () => {
     const { psbt } = await createSendPsbt({
@@ -96,10 +134,63 @@ describe('rune txs', () => {
   })
 
   it('rune mint tx', async () => {
-    expect(true).toBeTruthy()
+    const { psbt } = await createMintPsbt({
+      gatheredUtxos: {
+        utxos: testFormattedUtxos,
+        totalAmount: 200000,
+      },
+      feeRate: 10,
+      account,
+      provider: provider,
+      runeId: '30003:1',
+    })
+
+    expect(psbt).toEqual(
+      'cHNidP8BAJECAAAAAXSylcOFQbI1nskmceQS35wMCSdXaqjQywF8WPolLuJyAAAAAAD/////AwAAAAAAAAAAC2pdCBSz6gEUARYBIgIAAAAAAAAiUSA7grKyqRhTFdpvgNpfBtBEDYpeFFf6kzh8LZGchuyHhvp7AQAAAAAAFgAU0MSj7wnpl7bpnjl+UY/j5BoRjKEAAAAAAAEBH6CGAQAAAAAAFgAU0MSj7wnpl7bpnjl+UY/j5BoRjKEAAAAA'
+    )
   })
 
-  it('rune send tx', async () => {
-    expect(true).toBeTruthy()
+  it('rune etch commit', async () => {
+    const { psbt, script } = await createEtchCommit({
+      gatheredUtxos: {
+        utxos: testFormattedUtxos,
+        totalAmount: 200000,
+      },
+      taprootKeyPair: signer.taprootKeyPair,
+      tweakedTaprootKeyPair,
+      feeRate: 10,
+      account,
+      provider: provider,
+      runeName: 'TESTRUNE',
+    })
+
+    revealScript = script
+
+    expect(psbt).toEqual(
+      'cHNidP8BAH0CAAAAAXSylcOFQbI1nskmceQS35wMCSdXaqjQywF8WPolLuJyAAAAAAD/////AqYKAAAAAAAAIlEganNH+i1A9c9P7Hl2TvixDdTFXETi2jBJdCjQdhUnKKx2cwEAAAAAABYAFNDEo+8J6Ze26Z45flGP4+QaEYyhAAAAAAABAR+ghgEAAAAAABYAFNDEo+8J6Ze26Z45flGP4+QaEYyhAAAA'
+    )
+  })
+
+  it('rune etch reveal', async () => {
+    const { psbt } = await createEtchReveal({
+      symbol: 'T',
+      cap: BigInt(1000),
+      premine: BigInt(3),
+      perMintAmount: BigInt(10),
+      turbo: false,
+      divisibility: 3,
+      runeName: 'TESTRUNE',
+      receiverAddress: account.taproot.address,
+      script: revealScript,
+      tweakedTaprootKeyPair,
+      provider,
+      commitTxId:
+        '9704ae7884958e6dcc621d227937816098713669396c65215e9bfa58301fcb75',
+      feeRate: 10,
+    })
+
+    expect(psbt).toEqual(
+      'cHNidP8BAIACAAAAAXXLHzBY+pteIWVsOWk2cZhggTd5Ih1izG2OlYR4rgSXAAAAAAD/////AgAAAAAAAAAAGWpdFgIDBJTw/YXdBAEDBVQGAwoKCOgHFgEiAgAAAAAAACJRIDuCsrKpGFMV2m+A2l8G0EQNil4UV/qTOHwtkZyG7IeGAAAAAAABASughgEAAAAAACJRIGpzR/otQPXPT+x5dk74sQ3UxVxE4towSXQo0HYVJyisAQiQA0AgxDmzoBmdWH7p8VcQoskQDUXpV6IolhemSMnZeLi3EIbkydciq0igX24W4hDF+bo/4YtbUfTRcZg59eaDETKNKyA7grKyqRhTFdpvgNpfBtBEDYpeFFf6kzh8LZGchuyHhqwAYwUUeL/QJWghwTuCsrKpGFMV2m+A2l8G0EQNil4UV/qTOHwtkZyG7IeGAAAA'
+    )
   })
 })

@@ -26,7 +26,7 @@ const { output } = bitcoin.payments.p2tr({
   address,
   network: bitcoin.networks.regtest,
 })
-const scriptPk = output.toString('hex')
+const scriptPk = output!.toString('hex')
 
 const testFormattedUtxos: GatheredUtxos = {
   utxos: [
