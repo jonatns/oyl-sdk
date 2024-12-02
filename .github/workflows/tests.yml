@@ -4,9 +4,9 @@ on:
   pull_request:
     branches:
       - main
-timeout-minutes: 3
 jobs:
   test:
+    timeout-minutes: 3
     name: Run Tests
     runs-on: ubuntu-latest
     steps:
