@@ -4,18 +4,14 @@ on:
   pull_request:
     branches:
       - main
-
+timeout-minutes: 3
 jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
 
       - name: Using Node.js v20
         uses: actions/setup-node@v4

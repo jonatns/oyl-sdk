@@ -1,8 +1,8 @@
-curl -s 'https://mainnet.sandshrew.io/v1/6e3bc3c289591bb447c116fda149b094' \
+curl -s 'https://mainnet.sandshrew.io/v2/6e3bc3c289591bb447c116fda149b094' \
 --header 'Content-Type: application/json' \
 --data '{
     "jsonrpc": "2.0",
     "id": 1,
-    "method": "ord_address",
-    "params": ["b25dfaeea88930616332bc97b9bde3bbfcfbe62e35e763a07cc4706a2be1ed17i0"]
+    "method": "ord_outputs",
+    "params": ["bc1ppkyawqh6lsgq4w82azgvht6qkd286mc599tyeaw4lr230ax25wgqdcldtm?type=runic"]
 }' | jq .
