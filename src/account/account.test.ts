@@ -69,36 +69,36 @@ describe('Account Tests', () => {
       },
     })
 
-    expect(account.legacy.hdPath).toBe("m/44'/1'/0'/0/0")
-    expect(account.nestedSegwit.hdPath).toBe("m/49'/1'/0'/0/0")
-    expect(account.nativeSegwit.hdPath).toBe("m/84'/1'/0'/0/0")
-    expect(account.taproot.hdPath).toBe("m/86'/1'/0'/0/0")
+    expect(account.legacy.hdPath).toBe("m/44'/0'/0'/0/0")
+    expect(account.nestedSegwit.hdPath).toBe("m/49'/0'/0'/0/0")
+    expect(account.nativeSegwit.hdPath).toBe("m/84'/0'/0'/0/0")
+    expect(account.taproot.hdPath).toBe("m/86'/0'/0'/0/0")
 
-    expect(account.legacy.address).toBe('mkpZhYtJu2r87Js3pDiWJDmPte2NRZ8bJV')
+    expect(account.legacy.address).toBe('n1M8ZVQtL7QoFvGMg24D6b2ojWvFXCGpoS')
     expect(account.nestedSegwit.address).toBe(
-      '2Mww8dCYPUpKHofjgcXcBCEGmniw9CoaiD2'
+      '2My47gHNc8nhX5kBWqXHU4f8uuQvQKEgwMd'
     )
     expect(account.nativeSegwit.address).toBe(
-      'bcrt1q6rz28mcfaxtmd6v789l9rrlrusdprr9pz3cppk'
+      'bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx'
     )
     expect(account.taproot.address).toBe(
-      'bcrt1p8wpt9v4frpf3tkn0srd97pksgsxc5hs52lafxwru9kgeephvs7rqjeprhg'
+      'bcrt1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqvg32hk'
     )
 
     expect(account.legacy.pubkey).toBe(
-      '02a7451395735369f2ecdfc829c0f774e88ef1303dfe5b2f04dbaab30a535dfdd6'
+      '03aaeb52dd7494c361049de67cc680e83ebcbbbdbeb13637d92cd845f70308af5e'
     )
     expect(account.nestedSegwit.pubkey).toBe(
-      '03a1af804ac108a8a51782198c2d034b28bf90c8803f5a53f76276fa69a4eae77f'
+      '039b3b694b8fc5b5e07fb069c783cac754f5d38c3e08bed1960e31fdb1dda35c24'
     )
     expect(account.nativeSegwit.pubkey).toBe(
-      '02e7ab2537b5d49e970309aae06e9e49f36ce1c9febbd44ec8e0d1cca0b4f9c319'
+      '0330d54fd0dd420a6e5f8d3624f5f3482cae350f79d5f0753bf5beef9c2d91af3c'
     )
     expect(account.taproot.pubkey).toBe(
-      '0255355ca83c973f1d97ce0e3843c85d78905af16b4dc531bc488e57212d230116'
+      '03cc8a4bc64d897bddc5fbc2f670f7a8ba0b386779106cf1223c6fc5d7cd6fc115'
     )
     expect(account.taproot.pubKeyXOnly).toBe(
-      '55355ca83c973f1d97ce0e3843c85d78905af16b4dc531bc488e57212d230116'
+      'cc8a4bc64d897bddc5fbc2f670f7a8ba0b386779106cf1223c6fc5d7cd6fc115'
     )
   })
 
@@ -164,16 +164,16 @@ describe('Account Tests', () => {
     })
 
     expect(account.legacy.privateKey).toBe(
-      'e01fea8a48e2854fdd0255c12b1d704967d9401f11c3f4980006ced8977574dc'
+      'e284129cc0922579a535bbf4d1a3b25773090d28c909bc0fed73b5e0222cc372'
     )
     expect(account.nestedSegwit.privateKey).toBe(
-      'c9bdb49cfbaedca21c4b1f3a7803c34636b1d7dc55a717132443fc3f4c5867e8'
+      '508c73a06f6b6c817238ba61be232f5080ea4616c54f94771156934666d38ee3'
     )
     expect(account.nativeSegwit.privateKey).toBe(
-      'a9c4134b73560f43fc5c081e5c1daa7ce068adc806d80e1f37cb658e0fea4c8d'
+      '4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3'
     )
     expect(account.taproot.privateKey).toBe(
-      'dff1c8c2c016a572914b4c5adb8791d62b4768ae9d0a61be8ab94cf5038d7d90'
+      '41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361'
     )
   })
 
