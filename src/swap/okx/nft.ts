@@ -1,11 +1,12 @@
 import { ESTIMATE_TX_SIZE, getAllUTXOsWorthASpecificValue, getUTXOsToCoverAmount } from "../helpers"
-import { GenOkxBrcAndCollectibleUnsignedPsbt, PaymentUtxoOptions } from "../types"
+import { GenOkxBrcAndCollectibleUnsignedPsbt, OkxInscriptionListingData, PaymentUtxoOptions } from "../types"
 import {
     generateUnsignedBuyingPsbt,
     mergeSignedBuyingPsbt,
     BuyingData,
+    generateUnsignedListingPsbt
 } from '@okxweb3/coin-bitcoin'
-
+import * as bitcoin from 'bitcoinjs-lib'
 
 export function genBrcAndOrdinalUnsignedPsbt({
     address,
@@ -84,4 +85,23 @@ export function buildDummyAndPaymentUtxos({ utxos, feeRate, orderPrice, address,
     data['sellerPsbts'] = [sellerPsbt]
 
     return data
+}
+
+
+export async function generateInscriptionListingUnsignedPsbt(inscriptionListingData: OkxInscriptionListingData, network: bitcoin.Network, pubKey: string) {
+    const listingData = {
+        nftAddress: inscriptionListingData.nftAddress,
+        nftUtxo: {
+            txHash: inscriptionListingData.nftUtxo.txId,
+            vout: inscriptionListingData.nftUtxo.outputIndex,
+            coinAmount: inscriptionListingData.nftUtxo.satoshis,
+            rawTransation: ""
+        },
+        receiveBtcAddress: inscriptionListingData.receiveBtcAddress,
+        price: inscriptionListingData.price
+    }
+
+    const psbtBase64 = generateUnsignedListingPsbt(listingData, network, pubKey);
+    const unsignedPsbtHex = (bitcoin.Psbt.fromBase64(psbtBase64, { network })).toHex()
+    return unsignedPsbtHex
 }

@@ -392,3 +392,17 @@ export interface ProcessListingResponse {
   success: boolean
   listingId: string
 }
+
+export interface OkxRuneListingData {
+  runeAddress: string;
+  runeUtxo: FormattedUtxo
+  receiveBtcAddress: string;
+  price: number;
+}
+
+export interface OkxInscriptionListingData {
+  nftAddress: string;
+  nftUtxo: FormattedUtxo
+  receiveBtcAddress: string;
+  price: number;
+}
