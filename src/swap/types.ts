@@ -206,6 +206,8 @@ export interface GetListingPsbtInfo {
   price?: number;
   unitPrice?: number;
   totalPrice?: number;
+  nftId?: string;
+  runesId?: string;
   sellerReceiveAddress?: string;
   utxo?: string;
 }
@@ -256,6 +258,7 @@ export interface SubmitListingPsbtRequest{
   sellerPublicKey: string;
   signedPsbt: string;
   orderId?: string;
+  listings?: GetListingPsbtInfo[];
   //additionalParams?: Omit<T, keyof SubmitListingRequest<T>>;
 }
 
@@ -384,7 +387,7 @@ export interface MarketplaceListing {
   price?: number
   unitPrice?: number
   totalPrice?: number
-  outpoint?: string
+  utxo: FormattedUtxo
   inscriptionId?: string
 }
 
