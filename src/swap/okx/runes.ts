@@ -1,5 +1,6 @@
+import { getAddressType } from "../../shared/utils";
 import { ESTIMATE_TX_SIZE, addInputConditionally, buildPsbtWithFee, calculateAmountGathered, getAllUTXOsWorthASpecificValue, getUTXOsToCoverAmount } from "../helpers"
-import { ConditionalInput, GenOkxRuneUnsignedPsbt, OutputTxTemplate } from "../types"
+import { ConditionalInput, GenOkxRuneUnsignedPsbt, OkxRuneListingData, OutputTxTemplate } from "../types"
 import * as bitcoin from 'bitcoinjs-lib'
 
 
@@ -127,19 +128,46 @@ export async function buildOkxRunesPsbt({
 }
 
 
-export function simulateRunesBuy(sellerAddress, receieveAddress, utxos, orderPrice) {
-    const txInputs: ConditionalInput[] = []
-    const txOutputs: OutputTxTemplate[] = []
+export async function generateRuneListingUnsignedPsbt(listingData: OkxRuneListingData, network: bitcoin.Network, pubKey: string) {
+    const placeholderObj = {
+        publicKey: '616e27323840ee0c2ae434d998267f81170988ba9477f78dcd00fc247a27db40',
+        address: 'bc1pcyj5mt2q4t4py8jnur8vpxvxxchke4pzy7tdr9yvj3u3kdfgrj6sw3rzmr',
+        utxo: '0000000000000000000000000000000000000000000000000000000000000000'
+      }
+    
+    const psbtTx = new bitcoin.Psbt({ network })
 
-
-    const sellerDummyInput = {
-        hash: "000000000000000000000000000000000000",
-        index: 2,
+    psbtTx.addInput({
+        hash: placeholderObj.utxo,
+        index: 0,
         witnessUtxo: {
-            value: 546,
-            script: "0000000000000000000000000000000",
-        }
-    }
+            value: 0,
+            script: Buffer.from(placeholderObj.address, 'hex'),
+        },
+    })
 
+    psbtTx.addOutput({
+        address: placeholderObj.address,
+        value: 0
+    })
 
+    const addressType = getAddressType(listingData.runeAddress)
+
+    psbtTx.addInput(
+        addInputConditionally({
+            hash: listingData.runeUtxo.txId,
+            index: listingData.runeUtxo.outputIndex,
+            witnessUtxo: {
+                value: listingData.runeUtxo.satoshis,
+                script: Buffer.from(listingData.runeUtxo.scriptPk, 'hex'),
+            },
+        }, addressType, pubKey)
+    )
+
+    psbtTx.addOutput({
+        address: listingData.receiveBtcAddress,
+        value: listingData.price
+    })
+
+    return psbtTx.toHex()
 }

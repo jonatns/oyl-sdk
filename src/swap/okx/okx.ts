@@ -1,7 +1,7 @@
 import { OylTransactionError, getAddressType, timeout } from "../.."
 import { AssetType } from "../../shared/interface"
-import { UnsignedOkxBid, SignedOkxBid, UnsignedPsbt, GenOkxRuneUnsignedPsbt, ProcessOfferOptions, ProcessOfferResponse, MarketplaceOffer } from "../types"
-import { genBrcAndOrdinalUnsignedPsbt, mergeSignedPsbt } from "./nft"
+import { UnsignedOkxBid, SignedOkxBid, UnsignedPsbt, GenOkxRuneUnsignedPsbt, ProcessOfferOptions, ProcessOfferResponse, MarketplaceOffer, ProcessListingOptions, ProcessListingResponse, OkxInscriptionListingData, SubmitListingPsbtRequest, GetListingPsbtRequest, GetListingPsbtResponse, SubmitListingResponse } from "../types"
+import { genBrcAndOrdinalUnsignedPsbt, generateInscriptionListingUnsignedPsbt, mergeSignedPsbt } from "./nft"
 import { prepareAddressForDummyUtxos, updateUtxos } from "../helpers";
 import { buildOkxRunesPsbt } from "./runes";
 
@@ -72,14 +72,14 @@ export async function getBuyerPsbt(unsignedPsbt: UnsignedPsbt) {
             return await buildOkxRunesPsbt(unsignedPsbt as GenOkxRuneUnsignedPsbt)
         case AssetType.COLLECTIBLE:
             return genBrcAndOrdinalUnsignedPsbt(unsignedPsbt)
-            
+
     }
 }
 
 
 
-export async function processOkxOffer ({
-    address, 
+export async function processOkxOffer({
+    address,
     offer,
     receiveAddress,
     feeRate,
@@ -88,7 +88,7 @@ export async function processOkxOffer ({
     provider,
     utxos,
     signer
-}:ProcessOfferOptions
+}: ProcessOfferOptions
 ): Promise<ProcessOfferResponse> {
 
     let dummyTxId: string | null = null;
@@ -98,26 +98,26 @@ export async function processOkxOffer ({
     const network = provider.network
 
     const psbtForDummyUtxos =
-    (assetType != AssetType.RUNES) 
-    ?
-    await prepareAddressForDummyUtxos({address, utxos, network, pubKey, feeRate, addressType})
-    :
-    null
-    if (psbtForDummyUtxos != null){
-        const { psbtBase64, inputTemplate, outputTemplate} = psbtForDummyUtxos
-        const {signedPsbt} = await signer.signAllInputs({
+        (assetType != AssetType.RUNES)
+            ?
+            await prepareAddressForDummyUtxos({ address, utxos, network, pubKey, feeRate, addressType })
+            :
+            null
+    if (psbtForDummyUtxos != null) {
+        const { psbtBase64, inputTemplate, outputTemplate } = psbtForDummyUtxos
+        const { signedPsbt } = await signer.signAllInputs({
             rawPsbt: psbtBase64,
             finalize: true,
         })
 
-        const {txId} = await provider.pushPsbt({psbtBase64: signedPsbt})
+        const { txId } = await provider.pushPsbt({ psbtBase64: signedPsbt })
         dummyTxId = txId;
         await timeout(30000)
         utxos = await updateUtxos({
             originalUtxos: utxos,
-            txId, 
+            txId,
             spendAddress: address,
-            provider    
+            provider
         })
     }
     const unsignedBid: UnsignedOkxBid = {
@@ -125,7 +125,7 @@ export async function processOkxOffer ({
         provider,
         assetType
     }
-    
+
     const sellerData = await getSellerPsbt(unsignedBid);
     const sellerPsbt = sellerData.data.sellerPsbt;
     const decodedPsbt = await provider.sandshrew.bitcoindRpc.decodePSBT(sellerPsbt)
@@ -146,12 +146,12 @@ export async function processOkxOffer ({
     })
 
 
-   const {signedPsbt} = await signer.signAllInputs({
+    const { signedPsbt } = await signer.signAllInputs({
         rawPsbt: buyerPsbt,
         finalize: false
     })
     let finalPsbt = signedPsbt
-    if (assetType != AssetType.RUNES) finalPsbt = mergeSignedPsbt(signedPsbt, [sellerPsbt]) 
+    if (assetType != AssetType.RUNES) finalPsbt = mergeSignedPsbt(signedPsbt, [sellerPsbt])
     const transaction = await submitSignedPsbt({
         fromAddress: address,
         psbt: finalPsbt,
@@ -159,8 +159,8 @@ export async function processOkxOffer ({
         provider,
         offer: offer as MarketplaceOffer
     })
-    
-    if (transaction?.statusCode == 200 || transaction?.data){
+
+    if (transaction?.statusCode == 200 || transaction?.data) {
 
         purchaseTxId = transaction.data
         return {
@@ -168,7 +168,87 @@ export async function processOkxOffer ({
             purchaseTxId
         }
     } else {
-        throw new OylTransactionError (new Error(JSON.stringify(transaction)))
+        throw new OylTransactionError(new Error(JSON.stringify(transaction)))
     }
 
 }
+
+export async function processOkxListing({
+    address,
+    listing,
+    receiveBtcAddress,
+    pubKey,
+    receiveBtcPubKey,
+    assetType,
+    provider,
+    signer,
+}: ProcessListingOptions): Promise<ProcessListingResponse> {
+    const marketplaceType = listing.marketplace;
+
+    if (assetType == AssetType.COLLECTIBLE) {
+        const listingDataRequest = {
+            inscriptionId: listing.inscriptionId,
+        }
+
+        const listings = [listingDataRequest]
+
+        const okxGetListingPsbt: GetListingPsbtRequest = {
+            marketplaceType,
+            assetType,
+            sellerAddress: address,
+            sellerPublicKey: pubKey,
+            listings
+        }
+
+        const listingPsbtResponse = await provider.api.getListingPsbt(okxGetListingPsbt);
+        if (listingPsbtResponse.statusCode != 200) {
+            throw new Error(`Failed to get listing psbt: ${listingPsbtResponse.error}`)
+        }
+
+        const listingPsbt: GetListingPsbtResponse = listingPsbtResponse.data;
+
+
+        const listingData: OkxInscriptionListingData = {
+            nftAddress: address,
+            nftUtxo: listing.utxo,
+            receiveBtcAddress,
+            price: listing.price
+        }
+        const unsignedPsbtHex = await generateInscriptionListingUnsignedPsbt(listingData, provider.network, pubKey)
+        const { signedHexPsbt } = await signer.signAllInputs({
+            rawPsbtHex: unsignedPsbtHex,
+            finalize: false
+        })
+
+        const listingPsbtData = {
+            nftId: listingPsbt.additionalData.nftId,
+            inscriptionId: listing.inscriptionId,
+            unitPrice: listing.unitPrice,
+            totalPrice: listing.totalPrice
+        }
+
+        const okxSubmitListingPsbt: SubmitListingPsbtRequest = {
+            marketplaceType,
+            assetType,
+            sellerAddress: address,
+            sellerPublicKey: pubKey,
+            signedPsbt: signedHexPsbt,
+            listings: [listingPsbtData]
+        }
+
+        const submitListingPsbtResponse = await provider.api.submitListingPsbt(okxSubmitListingPsbt);
+        if (submitListingPsbtResponse.statusCode != 200) {
+            throw new Error(`Failed to submit listing psbt: ${submitListingPsbtResponse.error}`)
+        }
+
+        const submitListingPsbt: SubmitListingResponse = submitListingPsbtResponse.data
+
+
+        return {
+            success: submitListingPsbt.success,
+            listingId: listing.inscriptionId
+        }
+    }
+}
+
+

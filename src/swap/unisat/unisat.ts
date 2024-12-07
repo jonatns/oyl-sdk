@@ -138,7 +138,7 @@ export async function processUnisatListing({
     unitPrice: listing?.unitPrice,
     totalPrice: listing?.totalPrice,
     sellerReceiveAddress: receiveBtcAddress,
-    utxo: listing?.outpoint
+    utxo: listing?.utxo.txId
   })
 
   const unisatGetListingPsbt: GetListingPsbtRequest =  {
