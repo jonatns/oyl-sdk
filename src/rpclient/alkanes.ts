@@ -1,6 +1,27 @@
 import fetch from 'node-fetch'
 
-interface AlkanesResponse {}
+interface Rune {
+  rune: {
+    id: { block: string; tx: string }
+    name: string
+    spacedName: string
+    divisibility: number
+    spacers: number
+    symbol: string
+  }
+  balance: string
+}
+interface Outpoint {
+  runes: Rune[]
+  outpoint: { txid: string; vout: number }
+  output: { value: string; script: string }
+  txindex: number
+  height: 2
+}
+interface AlkanesResponse {
+  outpoints: Outpoint[]
+  balanceSheet: []
+}
 interface AlkaneSimulateRequest {
   alkanes: any[]
   transaction: string
@@ -78,17 +99,20 @@ export class AlkanesRpc {
   }: {
     address: string
     protocolTag?: string
-  }) {
-    return (await this._call('alkanes_protorunesbyaddress', [
+  }): Promise<AlkanesResponse> {
+    return await this._call('alkanes_protorunesbyaddress', [
       {
         address,
         protocolTag,
       },
-    ])) as AlkanesResponse
+    ])
   }
 
   async simulate(request: AlkaneSimulateRequest) {
-    return await this._call('alkanes_simulate', [request])
+    const ret = await this._call('alkanes_simulate', [request])
+    const parsed = await this.parseSimulateReturn(ret.execution.data)
+    ret.parsed = parsed
+    return ret
   }
   async getAlkanesByOutpoint({
     txid,
@@ -102,5 +126,33 @@ export class AlkanesRpc {
     return await this._call('alkanes_protorunesbyoutpoint', [
       { txid: '0x' + txid, vout, protocolTag },
     ])
+  }
+
+  async parseSimulateReturn(v: any) {
+    const stripHexPrefix = (v: string) => (v.startsWith('0x') ? v.slice(2) : v)
+    const addHexPrefix = (v: string) => '0x' + stripHexPrefix(v)
+
+    let decodedString: string
+    try {
+      decodedString = Buffer.from(stripHexPrefix(v), 'hex').toString('utf8')
+      if (/[\uFFFD]/.test(decodedString)) {
+        throw new Error('Invalid UTF-8 string')
+      }
+    } catch (err) {
+      decodedString = addHexPrefix(v)
+    }
+
+    return {
+      string: decodedString,
+      bytes: addHexPrefix(v),
+      le: BigInt(
+        addHexPrefix(
+          Buffer.from(
+            Array.from(Buffer.from(stripHexPrefix(v), 'hex')).reverse()
+          ).toString('hex')
+        )
+      ).toString(),
+      be: BigInt(addHexPrefix(v)).toString(),
+    }
   }
 }

@@ -1,4 +1,33 @@
+interface Rune {
+    rune: {
+        id: {
+            block: string;
+            tx: string;
+        };
+        name: string;
+        spacedName: string;
+        divisibility: number;
+        spacers: number;
+        symbol: string;
+    };
+    balance: string;
+}
+interface Outpoint {
+    runes: Rune[];
+    outpoint: {
+        txid: string;
+        vout: number;
+    };
+    output: {
+        value: string;
+        script: string;
+    };
+    txindex: number;
+    height: 2;
+}
 interface AlkanesResponse {
+    outpoints: Outpoint[];
+    balanceSheet: [];
 }
 interface AlkaneSimulateRequest {
     alkanes: any[];
@@ -33,5 +62,11 @@ export declare class AlkanesRpc {
         vout: number;
         protocolTag?: string;
     }): Promise<any>;
+    parseSimulateReturn(v: any): Promise<{
+        string: string;
+        bytes: string;
+        le: string;
+        be: string;
+    }>;
 }
 export {};

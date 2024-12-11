@@ -4,6 +4,7 @@ import * as btc from '../btc'
 import * as brc20 from '../brc20'
 import * as collectible from '../collectible'
 import * as rune from '../rune'
+import * as alkanes from '../alkanes'
 
 import 'dotenv/config'
 import {
@@ -736,6 +737,89 @@ oyl rune etch -m 'abandon abandon abandon abandon abandon abandon abandon abando
     )
   })
 
+const alkaneFactoryDeploy = new Command('factoryDeploy')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+  .requiredOption(
+    '-m, --mnemonic <mnemonic>',
+    'mnemonic you want to get private keys from'
+  )
+
+  .option('-legacy, --legacy <legacy>', 'legacy private key')
+  .option('-taproot, --taproot <taproot>', 'taproot private key')
+  .option(
+    '-nested, --nested-segwit <nestedSegwit>',
+    'nested segwit private key'
+  )
+  .option(
+    '-native, --native-segwit <nativeSegwit>',
+    'native segwit private key'
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .requiredOption('-address, --address <address>', 'address you want to fund')
+
+  /* @dev example call 
+oyl alkane factoryDeploy -address  -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2
+*/
+
+  .action(async (options) => {
+    const provider = defaultProvider[options.provider]
+    const signer = new Signer(provider.network, {
+      segwitPrivateKey: options.nativeSegwit,
+      taprootPrivateKey: options.taproot,
+      nestedSegwitPrivateKey: options.nestedSegwit,
+      legacyPrivateKey: options.legacy,
+    })
+
+    const waitFiveSeconds = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 5000))
+    }
+
+    const account = mnemonicToAccount({
+      mnemonic: options.mnemonic,
+      opts: {
+        network: provider.network,
+      },
+    })
+    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
+      await utxo.accountUtxos({ account, provider })
+
+    const commit = await alkanes.deployCommit({
+      gatheredUtxos: {
+        utxos: accountSpendableTotalUtxos,
+        totalAmount: accountSpendableTotalBalance,
+      },
+      feeRate: options.feeRate,
+      account,
+      signer,
+      provider,
+    })
+
+    const mempool = await provider.sandshrew.bitcoindRpc.getRawMemPool(true)
+    const mempoolTxs = Object.keys(mempool)
+    console.log('mempool transactions: ', mempoolTxs)
+    const blockHash = await provider.sandshrew.bitcoindRpc.generateBlock(
+      options.address,
+      mempoolTxs
+    )
+    console.log('Processed block: ', blockHash)
+    console.log({ mempoolTxs, blockHash })
+    waitFiveSeconds()
+
+    const reveal = await alkanes.deployReveal({
+      commitTxId: commit.txId,
+      script: commit.script,
+      account,
+      provider,
+      feeRate: options.feeRate,
+      signer,
+    })
+
+    console.log({ commit: commit, reveal: reveal })
+  })
+
 const getRuneByName = new Command('getRuneByName')
   .description('Returns rune details based on name provided')
   .requiredOption(
@@ -811,6 +895,39 @@ const apiProviderCall = new Command('api')
       console.log(await provider.api[options.method](isJson))
     } catch (error) {
       console.log(await provider.api[options.method](options.parameters))
+    }
+  })
+
+const alkanesProvider = new Command('alkanes')
+  .description('Returns data based on alkanes method invoked')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use to access the network.'
+  )
+  .requiredOption(
+    '-method, --method <method>',
+    'name of the method you want to call for the api.'
+  )
+  .option(
+    '-params, --parameters <parameters>',
+    'parameters for the api method you are calling.'
+  )
+  /* @dev example call
+    oyl provider alkanes -method getAlkanesByAddress -params '{"address":"brct21...", protocolTag:"1"}' -p regtest
+    please note the json format if you need to pass an object.
+
+       oyl provider alkanes -method simulate -params '{ "alkanes": [],"transaction": "0x", "block": "0x", "height": "20000", "txindex": 0, "target": {"block": "2", "tx": "1"}, "inputs": ["101"],"pointer": 0, "refundPointer": 0, "vout": 0}' -p regtest
+  */
+  .action(async (options) => {
+    const provider: Provider = defaultProvider[options.provider]
+    let isJson: object
+    try {
+      isJson = JSON.parse(options.parameters)
+      console.log(
+        JSON.stringify(await provider.alkanes[options.method](isJson), null, 2)
+      )
+    } catch (error) {
+      console.log(await provider.alkanes[options.method](options.parameters))
     }
   })
 
@@ -970,6 +1087,54 @@ const marketPlaceBuy = new Command('buy')
     // console.log(signedTxs)
   })
 
+const fundAddress = new Command('fund')
+  .description('Funds regtest address')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+  .requiredOption('-address, --address <address>', 'address you want to fund')
+  /* @dev example call
+    oyl regtest fund -address "bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx" -p regtest
+  */
+  .action(async (options) => {
+    const provider: Provider = defaultProvider[options.provider]
+    console.log(
+      await provider.sandshrew.bitcoindRpc.generateToAddress(
+        200,
+        options.address
+      )
+    )
+  })
+
+const genBlock = new Command('genBlock')
+  .description('Blocks to generate')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+  .requiredOption('-address, --address <address>', 'address you want to fund')
+  /* @dev example call
+    oyl regtest genBlock -address "bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx" -p regtest
+  */
+  .action(async (options) => {
+    const provider: Provider = defaultProvider[options.provider]
+    const mempool = await provider.sandshrew.bitcoindRpc.getRawMemPool(true)
+    const mempoolTxs = Object.keys(mempool)
+    console.log('mempool transactions: ', mempoolTxs)
+    const blockHash = await provider.sandshrew.bitcoindRpc.generateBlock(
+      options.address,
+      mempoolTxs
+    )
+    console.log('Processed block: ', blockHash)
+    console.log({ mempoolTxs, blockHash })
+  })
+
+const regtestCommand = new Command('regtest')
+  .description('Regtest commands')
+  .addCommand(fundAddress)
+  .addCommand(genBlock)
+
 const accountCommand = new Command('account')
   .description('Manage accounts')
   .addCommand(mnemonicToAccountCommand)
@@ -1001,17 +1166,25 @@ const runeCommand = new Command('rune')
   .addCommand(runeEtchReveal)
   .addCommand(getRuneByName)
 
+const alkaneCommand = new Command('alkane')
+  .description('Functions for alkanes')
+  .addCommand(alkaneFactoryDeploy)
+  .addCommand(runeMint)
+
 const providerCommand = new Command('provider')
   .description('Functions avaialble for all provider services')
   .addCommand(apiProviderCall)
   .addCommand(ordProviderCall)
   .addCommand(opiProviderCall)
   .addCommand(multiCallSandshrewProviderCall)
+  .addCommand(alkanesProvider)
 
 const marketPlaceCommand = new Command('marketplace')
   .description('Functions for marketplace')
   .addCommand(marketPlaceBuy)
 
+program.addCommand(regtestCommand)
+program.addCommand(alkaneCommand)
 program.addCommand(utxosCommand)
 program.addCommand(accountCommand)
 program.addCommand(btcCommand)
