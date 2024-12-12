@@ -236,6 +236,8 @@ export async function processOkxListing({
             listings: [listingPsbtData]
         }
 
+        console.log("okxSubmitListingPsbt", okxSubmitListingPsbt)
+
         const submitListingPsbtResponse = await provider.api.submitListingPsbt(okxSubmitListingPsbt);
         if (submitListingPsbtResponse.statusCode != 200) {
             throw new Error(`Failed to submit listing psbt: ${submitListingPsbtResponse.error}`)
