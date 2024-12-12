@@ -4,15 +4,16 @@ import * as bitcoin from 'bitcoinjs-lib';
 import { Account } from '../account/account';
 import { GatheredUtxos } from '../shared/interface';
 import { Signer } from '../signer';
-export declare const createMintPsbt: ({ gatheredUtxos, account, runeId, provider, feeRate, fee, }: {
+export declare const createExecutePsbt: ({ gatheredUtxos, account, calldata, provider, feeRate, fee, }: {
     gatheredUtxos: GatheredUtxos;
     account: Account;
-    runeId: string;
+    calldata: bigint[];
     provider: Provider;
     feeRate?: number;
     fee?: number;
 }) => Promise<{
     psbt: string;
+    psbtHex: string;
 }>;
 export declare const createDeployCommit: ({ gatheredUtxos, tweakedTaprootKeyPair, account, provider, feeRate, fee, }: {
     gatheredUtxos: GatheredUtxos;
@@ -61,6 +62,15 @@ export declare const actualDeployRevealFee: ({ tweakedTaprootKeyPair, commitTxId
 }) => Promise<{
     fee: number;
 }>;
+export declare const actualExecuteFee: ({ gatheredUtxos, account, calldata, provider, feeRate, }: {
+    gatheredUtxos: GatheredUtxos;
+    account: Account;
+    calldata: bigint[];
+    provider: Provider;
+    feeRate: number;
+}) => Promise<{
+    fee: number;
+}>;
 export declare const deployCommit: ({ gatheredUtxos, account, provider, feeRate, signer, }: {
     gatheredUtxos: GatheredUtxos;
     account: Account;
@@ -80,6 +90,21 @@ export declare const deployReveal: ({ commitTxId, script, account, provider, fee
     commitTxId: string;
     script: string;
     account: Account;
+    provider: Provider;
+    feeRate?: number;
+    signer: Signer;
+}) => Promise<{
+    txId: string;
+    rawTx: string;
+    size: any;
+    weight: any;
+    fee: number;
+    satsPerVByte: string;
+}>;
+export declare const execute: ({ gatheredUtxos, account, calldata, provider, feeRate, signer, }: {
+    gatheredUtxos: GatheredUtxos;
+    account: Account;
+    calldata: bigint[];
     provider: Provider;
     feeRate?: number;
     signer: Signer;

@@ -226,17 +226,17 @@ import { encodeRunestoneProtostone } from 'alkanes/lib/index.js'
 //   }
 // }
 
-export const createMintPsbt = async ({
+export const createExecutePsbt = async ({
   gatheredUtxos,
   account,
-  runeId,
+  calldata,
   provider,
   feeRate,
   fee,
 }: {
   gatheredUtxos: GatheredUtxos
   account: Account
-  runeId: string
+  calldata: bigint[]
   provider: Provider
   feeRate?: number
   fee?: number
@@ -255,7 +255,7 @@ export const createMintPsbt = async ({
 
     gatheredUtxos = findXAmountOfSats(
       originalGatheredUtxos.utxos,
-      Number(finalFee) + Number(inscriptionSats)
+      Number(finalFee)
     )
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
@@ -331,7 +331,7 @@ export const createMintPsbt = async ({
           edicts: [],
           pointer: 1,
           refundPointer: 0,
-          calldata: envelope.encipher([1n, 0n, 0n]),
+          calldata: envelope.encipher(calldata),
         }),
       ],
     }).encodedRunestone
@@ -339,13 +339,7 @@ export const createMintPsbt = async ({
     const output = { script, value: 0 }
     psbt.addOutput(output)
 
-    const changeAmount =
-      gatheredUtxos.totalAmount - (finalFee + inscriptionSats)
-
-    psbt.addOutput({
-      value: inscriptionSats,
-      address: account.taproot.address,
-    })
+    const changeAmount = gatheredUtxos.totalAmount - finalFee
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
@@ -358,7 +352,10 @@ export const createMintPsbt = async ({
       network: provider.network,
     })
 
-    return { psbt: formattedPsbtTx.toBase64() }
+    return {
+      psbt: formattedPsbtTx.toBase64(),
+      psbtHex: formattedPsbtTx.toHex(),
+    }
   } catch (error) {
     throw new OylTransactionError(error)
   }
@@ -420,13 +417,13 @@ export const createDeployCommit = async ({
     })
 
     psbt.addOutput({
-      value: 30000 + 546,
+      value: 20000 + 546,
       address: inscriberInfo.address,
     })
 
     gatheredUtxos = findXAmountOfSats(
       originalGatheredUtxos.utxos,
-      3000 + Number(inscriptionSats)
+      20000 + Number(inscriptionSats)
     )
 
     if (!fee && gatheredUtxos.utxos.length > 1) {
@@ -440,7 +437,7 @@ export const createDeployCommit = async ({
       if (gatheredUtxos.totalAmount < finalFee) {
         gatheredUtxos = findXAmountOfSats(
           originalGatheredUtxos.utxos,
-          3000 + Number(inscriptionSats)
+          20000 + Number(inscriptionSats)
         )
       }
     }
@@ -498,7 +495,7 @@ export const createDeployCommit = async ({
     }
 
     const changeAmount =
-      gatheredUtxos.totalAmount - (finalFee + 30000 + inscriptionSats)
+      gatheredUtxos.totalAmount - (finalFee + 20000 + inscriptionSats)
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
@@ -992,6 +989,55 @@ export const actualDeployRevealFee = async ({
   return { fee: finalFee }
 }
 
+export const actualExecuteFee = async ({
+  gatheredUtxos,
+  account,
+  calldata,
+  provider,
+  feeRate,
+}: {
+  gatheredUtxos: GatheredUtxos
+  account: Account
+  calldata: bigint[]
+  provider: Provider
+  feeRate: number
+}) => {
+  if (!feeRate) {
+    feeRate = (await provider.esplora.getFeeEstimates())['1']
+  }
+
+  const { psbtHex } = await createExecutePsbt({
+    gatheredUtxos,
+    account,
+    calldata,
+    provider,
+    feeRate,
+  })
+
+  const vsize = (
+    await provider.sandshrew.bitcoindRpc.testMemPoolAccept([psbtHex])
+  )[0].vsize
+
+  const correctFee = vsize * feeRate
+
+  const { psbtHex: finalPsbtHex } = await createExecutePsbt({
+    gatheredUtxos,
+    account,
+    calldata,
+    provider,
+    feeRate,
+    fee: correctFee,
+  })
+
+  const finalVsize = (
+    await provider.sandshrew.bitcoindRpc.testMemPoolAccept([finalPsbtHex])
+  )[0].vsize
+
+  const finalFee = finalVsize * feeRate
+
+  return { fee: finalFee }
+}
+
 // export const send = async ({
 //   gatheredUtxos,
 //   toAddress,
@@ -1192,6 +1238,50 @@ export const deployReveal = async ({
 
   const revealResult = await provider.pushPsbt({
     psbtBase64: finalRevealPsbt,
+  })
+
+  return revealResult
+}
+
+export const execute = async ({
+  gatheredUtxos,
+  account,
+  calldata,
+  provider,
+  feeRate,
+  signer,
+}: {
+  gatheredUtxos: GatheredUtxos
+  account: Account
+  calldata: bigint[]
+  provider: Provider
+  feeRate?: number
+  signer: Signer
+}) => {
+  const { fee } = await actualExecuteFee({
+    gatheredUtxos,
+    account,
+    calldata,
+    provider,
+    feeRate,
+  })
+
+  const { psbt: finalPsbt } = await createExecutePsbt({
+    gatheredUtxos,
+    account,
+    calldata,
+    provider,
+    feeRate,
+    fee,
+  })
+
+  const { signedPsbt } = await signer.signAllInputs({
+    rawPsbt: finalPsbt,
+    finalize: true,
+  })
+
+  const revealResult = await provider.pushPsbt({
+    psbtBase64: signedPsbt,
   })
 
   return revealResult

@@ -761,7 +761,7 @@ const alkaneFactoryDeploy = new Command('factoryDeploy')
   .requiredOption('-address, --address <address>', 'address you want to fund')
 
   /* @dev example call 
-oyl alkane factoryDeploy -address  -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2
+oyl alkane factoryDeploy -address -address bcrt1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqvg32hk -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2
 */
 
   .action(async (options) => {
@@ -818,6 +818,75 @@ oyl alkane factoryDeploy -address  -m 'abandon abandon abandon abandon abandon a
     })
 
     console.log({ commit: commit, reveal: reveal })
+  })
+
+const alkaneExecute = new Command('execute')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+  .requiredOption(
+    '-m, --mnemonic <mnemonic>',
+    'mnemonic you want to get private keys from'
+  )
+
+  .option('-legacy, --legacy <legacy>', 'legacy private key')
+  .option('-taproot, --taproot <taproot>', 'taproot private key')
+  .option(
+    '-nested, --nested-segwit <nestedSegwit>',
+    'nested segwit private key'
+  )
+  .option(
+    '-native, --native-segwit <nativeSegwit>',
+    'native segwit private key'
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .requiredOption('-address, --address <address>', 'address you want to fund')
+
+  /* @dev example call 
+oyl alkane execute -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2
+*/
+
+  .action(async (options) => {
+    const provider = defaultProvider[options.provider]
+    const signer = new Signer(provider.network, {
+      segwitPrivateKey: options.nativeSegwit,
+      taprootPrivateKey: options.taproot,
+      nestedSegwitPrivateKey: options.nestedSegwit,
+      legacyPrivateKey: options.legacy,
+    })
+
+    const account = mnemonicToAccount({
+      mnemonic: options.mnemonic,
+      opts: {
+        network: provider.network,
+      },
+    })
+    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
+      await utxo.accountUtxos({ account, provider })
+
+    console.log(
+      await alkanes.execute({
+        gatheredUtxos: {
+          utxos: accountSpendableTotalUtxos,
+          totalAmount: accountSpendableTotalBalance,
+        },
+        feeRate: options.feeRate,
+        calldata: [
+          BigInt(6),
+          BigInt(0x0ffe),
+          0n,
+          100000000n,
+          100000n,
+          200000000n,
+          BigInt(0x414243),
+          BigInt(0x414243),
+        ],
+        account,
+        signer,
+        provider,
+      })
+    )
   })
 
 const getRuneByName = new Command('getRuneByName')
@@ -1169,7 +1238,7 @@ const runeCommand = new Command('rune')
 const alkaneCommand = new Command('alkane')
   .description('Functions for alkanes')
   .addCommand(alkaneFactoryDeploy)
-  .addCommand(runeMint)
+  .addCommand(alkaneExecute)
 
 const providerCommand = new Command('provider')
   .description('Functions avaialble for all provider services')

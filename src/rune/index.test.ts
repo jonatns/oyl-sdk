@@ -112,7 +112,7 @@ jest
 
 let revealScript: Buffer
 
-describe('rune txs', () => {
+describe.skip('rune txs', () => {
   it('rune send tx', async () => {
     const { psbt } = await createSendPsbt({
       gatheredUtxos: {

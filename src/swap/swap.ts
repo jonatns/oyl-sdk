@@ -1,5 +1,5 @@
 import { processUnisatListing, processUnisatOffer } from './unisat/unisat'
-import { processOkxOffer } from './okx/okx'
+import { processOkxListing, processOkxOffer } from './okx/okx'
 import {
   Marketplaces,
   ProcessOfferOptions,
@@ -47,7 +47,7 @@ export async function processListing (options: ProcessListingOptions): Promise<P
             //swapResponse = await ordinalWalletSwap(options);
             break
         case Marketplaces.OKX:
-            //swapResponse = await okxSwap(options);
+            listingResponse = await processOkxListing(options);
             break;
         case Marketplaces.MAGISAT:
             //swapResponse = await magisatSwap(options);
