@@ -232,7 +232,7 @@ export const createExecutePsbt = async ({
   calldata,
   provider,
   feeRate,
-  fee,
+  fee = 0,
 }: {
   gatheredUtxos: GatheredUtxos
   account: Account
@@ -251,7 +251,7 @@ export const createExecutePsbt = async ({
     })
 
     let calculatedFee = Math.max(minTxSize * feeRate, 250)
-    let finalFee = fee ?? calculatedFee
+    let finalFee = fee === 0 ? calculatedFee : fee
 
     gatheredUtxos = findXAmountOfSats(
       originalGatheredUtxos.utxos,
@@ -268,12 +268,12 @@ export const createExecutePsbt = async ({
       })
       finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
 
-      if (gatheredUtxos.totalAmount < finalFee + inscriptionSats) {
+      if (gatheredUtxos.totalAmount < finalFee) {
         throw new OylTransactionError(Error('Insufficient Balance'))
       }
     }
 
-    if (gatheredUtxos.totalAmount < finalFee + inscriptionSats) {
+    if (gatheredUtxos.totalAmount < finalFee) {
       throw new OylTransactionError(Error('Insufficient Balance'))
     }
     for (let i = 0; i < gatheredUtxos.utxos.length; i++) {

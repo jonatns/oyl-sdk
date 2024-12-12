@@ -841,7 +841,6 @@ const alkaneExecute = new Command('execute')
     'native segwit private key'
   )
   .option('-feeRate, --feeRate <feeRate>', 'fee rate')
-  .requiredOption('-address, --address <address>', 'address you want to fund')
 
   /* @dev example call 
 oyl alkane execute -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2
