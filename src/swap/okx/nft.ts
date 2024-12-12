@@ -89,6 +89,8 @@ export function buildDummyAndPaymentUtxos({ utxos, feeRate, orderPrice, address,
 
 
 export async function generateInscriptionListingUnsignedPsbt(inscriptionListingData: OkxInscriptionListingData, network: bitcoin.Network, pubKey: string) {
+
+    console.log("inscriptionListingData", inscriptionListingData)
     const listingData = {
         nftAddress: inscriptionListingData.nftAddress,
         nftUtxo: {
