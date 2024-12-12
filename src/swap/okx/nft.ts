@@ -94,14 +94,16 @@ export async function generateInscriptionListingUnsignedPsbt(inscriptionListingD
     const listingData = {
         nftAddress: inscriptionListingData.nftAddress,
         nftUtxo: {
-            txHash: inscriptionListingData.nftUtxo.txId,
-            vout: inscriptionListingData.nftUtxo.outputIndex,
-            coinAmount: inscriptionListingData.nftUtxo.satoshis,
+            txHash: "e7e023d1acab9eadc51c68100ec50230167c6b9d1dc5bb7b6ab98ad9cca90401",//inscriptionListingData.nftUtxo.txId,
+            vout: 0,//inscriptionListingData.nftUtxo.outputIndex,
+            coinAmount: 331,//inscriptionListingData.nftUtxo.satoshis,
             rawTransation: ""
         },
         receiveBtcAddress: inscriptionListingData.receiveBtcAddress,
         price: inscriptionListingData.price
     }
+
+    console.log("listingData", listingData)
 
     const psbtBase64 = generateUnsignedListingPsbt(listingData, network, pubKey);
     const unsignedPsbtHex = (bitcoin.Psbt.fromBase64(psbtBase64, { network })).toHex()
