@@ -215,7 +215,7 @@ export async function processOkxListing({
             price: listing.price
         }
         const unsignedPsbtHex = await generateInscriptionListingUnsignedPsbt(listingData, provider.network, pubKey)
-        const { signedHexPsbt } = await signer.signAllInputs({
+        const { signedPsbt } = await signer.signAllInputs({
             rawPsbtHex: unsignedPsbtHex,
             finalize: false
         })
@@ -232,7 +232,7 @@ export async function processOkxListing({
             assetType,
             sellerAddress: address,
             sellerPublicKey: pubKey,
-            signedPsbt: signedHexPsbt,
+            signedPsbt: signedPsbt,
             listings: [listingPsbtData]
         }
 
