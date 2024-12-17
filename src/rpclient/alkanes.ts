@@ -22,6 +22,7 @@ interface AlkanesResponse {
   outpoints: Outpoint[]
   balanceSheet: []
 }
+
 interface AlkaneSimulateRequest {
   alkanes: any[]
   transaction: string
@@ -106,6 +107,14 @@ export class AlkanesRpc {
         protocolTag,
       },
     ])
+  }
+
+  async trace(request: { vout: number; txid: string }) {
+    request.txid = Buffer.from(
+      Array.from(Buffer.from(request.txid, 'hex')).reverse()
+    ).toString('hex')
+    const ret = await this._call('alkanes_trace', [request])
+    return await ret
   }
 
   async simulate(request: AlkaneSimulateRequest) {

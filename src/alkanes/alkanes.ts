@@ -515,6 +515,7 @@ export const createDeployCommit = async ({
 }
 
 export const createDeployReveal = async ({
+  createReserveNumber,
   receiverAddress,
   script,
   feeRate,
@@ -523,6 +524,7 @@ export const createDeployReveal = async ({
   fee = 0,
   commitTxId,
 }: {
+  createReserveNumber: string
   receiverAddress: string
   script: Buffer
   feeRate: number
@@ -563,7 +565,11 @@ export const createDeployReveal = async ({
           edicts: [],
           pointer: 1,
           refundPointer: 0,
-          calldata: envelope.encipher([1n, 0n, 100n]),
+          calldata: envelope.encipher([
+            BigInt(3),
+            BigInt(createReserveNumber),
+            BigInt(100),
+          ]),
         }),
       ],
     }).encodedRunestone
@@ -928,30 +934,28 @@ export const actualDeployCommitFee = async ({
 }
 
 export const actualDeployRevealFee = async ({
+  createReserveNumber,
   tweakedTaprootKeyPair,
   commitTxId,
   receiverAddress,
   script,
-  account,
   provider,
   feeRate,
-  signer,
 }: {
+  createReserveNumber: string
   tweakedTaprootKeyPair: bitcoin.Signer
-  taprootKeyPair: bitcoin.Signer
   commitTxId: string
   receiverAddress: string
   script: Buffer
-  account: Account
   provider: Provider
   feeRate?: number
-  signer: Signer
 }) => {
   if (!feeRate) {
     feeRate = (await provider.esplora.getFeeEstimates())['1']
   }
 
   const { psbtHex } = await createDeployReveal({
+    createReserveNumber,
     commitTxId,
     receiverAddress,
     script,
@@ -971,6 +975,7 @@ export const actualDeployRevealFee = async ({
   console.log(correctFee)
 
   const { psbtHex: finalPsbtHex } = await createDeployReveal({
+    createReserveNumber,
     commitTxId,
     receiverAddress,
     script,
@@ -1217,6 +1222,7 @@ export const deployCommit = async ({
 }
 
 export const deployReveal = async ({
+  createReserveNumber,
   commitTxId,
   script,
   account,
@@ -1224,6 +1230,7 @@ export const deployReveal = async ({
   feeRate,
   signer,
 }: {
+  createReserveNumber: string
   commitTxId: string
   script: string
   account: Account
@@ -1239,18 +1246,17 @@ export const deployReveal = async ({
   )
 
   const { fee } = await actualDeployRevealFee({
-    taprootKeyPair: signer.taprootKeyPair,
+    createReserveNumber,
     tweakedTaprootKeyPair,
     receiverAddress: account.taproot.address,
     commitTxId,
     script: Buffer.from(script, 'hex'),
-    account,
     provider,
     feeRate,
-    signer,
   })
 
   const { psbt: finalRevealPsbt } = await createDeployReveal({
+    createReserveNumber,
     tweakedTaprootKeyPair,
     receiverAddress: account.taproot.address,
     commitTxId,

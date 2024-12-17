@@ -26,7 +26,8 @@ export declare const createDeployCommit: ({ gatheredUtxos, tweakedTaprootKeyPair
     psbt: string;
     script: Buffer;
 }>;
-export declare const createDeployReveal: ({ receiverAddress, script, feeRate, tweakedTaprootKeyPair, provider, fee, commitTxId, }: {
+export declare const createDeployReveal: ({ createReserveNumber, receiverAddress, script, feeRate, tweakedTaprootKeyPair, provider, fee, commitTxId, }: {
+    createReserveNumber: string;
     receiverAddress: string;
     script: Buffer;
     feeRate: number;
@@ -49,16 +50,14 @@ export declare const actualDeployCommitFee: ({ tweakedTaprootKeyPair, gatheredUt
 }) => Promise<{
     fee: number;
 }>;
-export declare const actualDeployRevealFee: ({ tweakedTaprootKeyPair, commitTxId, receiverAddress, script, account, provider, feeRate, signer, }: {
+export declare const actualDeployRevealFee: ({ createReserveNumber, tweakedTaprootKeyPair, commitTxId, receiverAddress, script, provider, feeRate, }: {
+    createReserveNumber: string;
     tweakedTaprootKeyPair: bitcoin.Signer;
-    taprootKeyPair: bitcoin.Signer;
     commitTxId: string;
     receiverAddress: string;
     script: Buffer;
-    account: Account;
     provider: Provider;
     feeRate?: number;
-    signer: Signer;
 }) => Promise<{
     fee: number;
 }>;
@@ -87,7 +86,8 @@ export declare const deployCommit: ({ gatheredUtxos, account, provider, feeRate,
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const deployReveal: ({ commitTxId, script, account, provider, feeRate, signer, }: {
+export declare const deployReveal: ({ createReserveNumber, commitTxId, script, account, provider, feeRate, signer, }: {
+    createReserveNumber: string;
     commitTxId: string;
     script: string;
     account: Account;
