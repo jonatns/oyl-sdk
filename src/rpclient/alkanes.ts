@@ -119,7 +119,7 @@ export class AlkanesRpc {
 
   async simulate(request: AlkaneSimulateRequest) {
     const ret = await this._call('alkanes_simulate', [request])
-    const parsed = await this.parseSimulateReturn(ret.execution.data)
+    const parsed = this.parseSimulateReturn(ret.execution.data)
     ret.parsed = parsed
     return ret
   }
@@ -137,7 +137,7 @@ export class AlkanesRpc {
     ])
   }
 
-  async parseSimulateReturn(v: any) {
+  parseSimulateReturn(v: any) {
     const stripHexPrefix = (v: string) => (v.startsWith('0x') ? v.slice(2) : v)
     const addHexPrefix = (v: string) => '0x' + stripHexPrefix(v)
 

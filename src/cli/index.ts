@@ -760,7 +760,7 @@ const alkaneFactoryDeploy = new Command('factoryDeploy')
   .option('-feeRate, --feeRate <feeRate>', 'fee rate')
   .requiredOption('-address, --address <address>', 'address you want to fund')
   .requiredOption(
-    '-resNumber, --reserveNumber <resNumber>',
+    '-resNumber, --reserveNumber <reserveNumber>',
     'number to reserve for factory id'
   )
 
@@ -812,10 +812,8 @@ oyl alkane factoryDeploy -res-number "0x0ffe" -address bcrt1p5cyxnuxmeuwuvkwfem9
     console.log({ mempoolTxs, blockHash })
     waitFiveSeconds()
 
-    console.log(options.resNumber)
-
     const reveal = await alkanes.deployReveal({
-      createReserveNumber: options.resNumber,
+      createReserveNumber: options.reserveNumber,
       commitTxId: commit.txId,
       script: commit.script,
       account,

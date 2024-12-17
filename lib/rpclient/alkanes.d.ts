@@ -66,11 +66,11 @@ export declare class AlkanesRpc {
         vout: number;
         protocolTag?: string;
     }): Promise<any>;
-    parseSimulateReturn(v: any): Promise<{
+    parseSimulateReturn(v: any): {
         string: string;
         bytes: string;
         le: string;
         be: string;
-    }>;
+    };
 }
 export {};
