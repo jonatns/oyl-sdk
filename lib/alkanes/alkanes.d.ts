@@ -62,12 +62,13 @@ export declare const actualDeployRevealFee: ({ tweakedTaprootKeyPair, commitTxId
 }) => Promise<{
     fee: number;
 }>;
-export declare const actualExecuteFee: ({ gatheredUtxos, account, calldata, provider, feeRate, }: {
+export declare const actualExecuteFee: ({ gatheredUtxos, account, calldata, provider, feeRate, signer, }: {
     gatheredUtxos: GatheredUtxos;
     account: Account;
     calldata: bigint[];
     provider: Provider;
     feeRate: number;
+    signer: Signer;
 }) => Promise<{
     fee: number;
 }>;

@@ -742,7 +742,6 @@ export function findRuneUtxosToSpend(utxos: RuneUtxo[], target: number) {
 }
 
 export function findXAmountOfSats(utxos: FormattedUtxo[], target: number) {
-  console.log(utxos)
   let totalAmount = 0
   const selectedUtxos: FormattedUtxo[] = []
 

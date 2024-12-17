@@ -260,7 +260,7 @@ export const createExecutePsbt = async ({
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
 
-    if (!fee && gatheredUtxos.utxos.length > 1) {
+    if (fee === 0 && gatheredUtxos.utxos.length > 1) {
       const txSize = minimumFee({
         taprootInputCount: gatheredUtxos.utxos.length,
         nonTaprootInputCount: 0,
@@ -995,18 +995,20 @@ export const actualExecuteFee = async ({
   calldata,
   provider,
   feeRate,
+  signer,
 }: {
   gatheredUtxos: GatheredUtxos
   account: Account
   calldata: bigint[]
   provider: Provider
   feeRate: number
+  signer: Signer
 }) => {
   if (!feeRate) {
     feeRate = (await provider.esplora.getFeeEstimates())['1']
   }
 
-  const { psbtHex } = await createExecutePsbt({
+  const { psbt } = await createExecutePsbt({
     gatheredUtxos,
     account,
     calldata,
@@ -1014,13 +1016,24 @@ export const actualExecuteFee = async ({
     feeRate,
   })
 
+  const { signedPsbt } = await signer.signAllInputs({
+    rawPsbt: psbt,
+    finalize: true,
+  })
+
+  let rawPsbt = bitcoin.Psbt.fromBase64(signedPsbt, {
+    network: account.network,
+  })
+    .extractTransaction()
+    .toHex()
+
   const vsize = (
-    await provider.sandshrew.bitcoindRpc.testMemPoolAccept([psbtHex])
+    await provider.sandshrew.bitcoindRpc.testMemPoolAccept([rawPsbt])
   )[0].vsize
 
   const correctFee = vsize * feeRate
 
-  const { psbtHex: finalPsbtHex } = await createExecutePsbt({
+  const { psbt: finalPsbt } = await createExecutePsbt({
     gatheredUtxos,
     account,
     calldata,
@@ -1029,8 +1042,19 @@ export const actualExecuteFee = async ({
     fee: correctFee,
   })
 
+  const { signedPsbt: finalSignedPsbt } = await signer.signAllInputs({
+    rawPsbt: finalPsbt,
+    finalize: true,
+  })
+
+  let finalRawPsbt = bitcoin.Psbt.fromBase64(finalSignedPsbt, {
+    network: account.network,
+  })
+    .extractTransaction()
+    .toHex()
+
   const finalVsize = (
-    await provider.sandshrew.bitcoindRpc.testMemPoolAccept([finalPsbtHex])
+    await provider.sandshrew.bitcoindRpc.testMemPoolAccept([finalRawPsbt])
   )[0].vsize
 
   const finalFee = finalVsize * feeRate
@@ -1264,6 +1288,7 @@ export const execute = async ({
     calldata,
     provider,
     feeRate,
+    signer,
   })
 
   const { psbt: finalPsbt } = await createExecutePsbt({

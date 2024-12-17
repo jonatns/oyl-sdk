@@ -995,6 +995,7 @@ const alkanesProvider = new Command('alkanes')
         JSON.stringify(await provider.alkanes[options.method](isJson), null, 2)
       )
     } catch (error) {
+      console.log(error)
       console.log(await provider.alkanes[options.method](options.parameters))
     }
   })
