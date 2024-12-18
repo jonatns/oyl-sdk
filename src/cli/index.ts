@@ -825,6 +825,90 @@ oyl alkane factoryDeploy -res-number "0x0ffe" -address bcrt1p5cyxnuxmeuwuvkwfem9
     console.log({ commit: commit, reveal: reveal })
   })
 
+const alkaneToken = new Command('new-token')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+  .requiredOption(
+    '-m, --mnemonic <mnemonic>',
+    'mnemonic you want to get private keys from'
+  )
+
+  .requiredOption(
+    '-resNumber, --reserveNumber <reserveNumber>',
+    'number to reserve for factory id'
+  )
+
+  .requiredOption('-supply, --total-supply <total-supply>', 'the token supply')
+
+  .requiredOption('-cap, --capacity <cap>', 'the token cap')
+  .requiredOption('-name, --token-name <name>', 'the token name')
+  .requiredOption('-symbol, --token-symbol <symbol>', 'the token symbol')
+  .requiredOption(
+    '-amount, --amount-per-mint <amount-per-mint>',
+    'amount of tokens minted each time mint is called'
+  )
+  .option('-legacy, --legacy <legacy>', 'legacy private key')
+  .option('-taproot, --taproot <taproot>', 'taproot private key')
+  .option(
+    '-nested, --nested-segwit <nestedSegwit>',
+    'nested segwit private key'
+  )
+  .option(
+    '-native, --native-segwit <nativeSegwit>',
+    'native segwit private key'
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+
+  /* @dev example call 
+oyl alkane new-token -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2 -amount 1000 -name "OYL" -symbol "OL" -cap 100000 -total-supply 5000
+*/
+
+  .action(async (options) => {
+    const provider = defaultProvider[options.provider]
+    const signer = new Signer(provider.network, {
+      segwitPrivateKey: options.nativeSegwit,
+      taprootPrivateKey: options.taproot,
+      nestedSegwitPrivateKey: options.nestedSegwit,
+      legacyPrivateKey: options.legacy,
+    })
+
+    const account = mnemonicToAccount({
+      mnemonic: options.mnemonic,
+      opts: {
+        network: provider.network,
+      },
+    })
+    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
+      await utxo.accountUtxos({ account, provider })
+
+    const calldata = [
+      BigInt(6),
+      BigInt(options.resNumber),
+      BigInt(0),
+      BigInt(options['total-supply']),
+      BigInt(options['amount-per-mint']),
+      BigInt(options.cap),
+      BigInt(options.name),
+      BigInt(options.symbol),
+    ]
+
+    console.log(
+      await alkanes.execute({
+        gatheredUtxos: {
+          utxos: accountSpendableTotalUtxos,
+          totalAmount: accountSpendableTotalBalance,
+        },
+        feeRate: options.feeRate,
+        calldata,
+        account,
+        signer,
+        provider,
+      })
+    )
+  })
+
 const alkaneExecute = new Command('execute')
   .requiredOption(
     '-p, --provider <provider>',
@@ -846,9 +930,18 @@ const alkaneExecute = new Command('execute')
     'native segwit private key'
   )
   .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .requiredOption(
+    '-data, --calldata <calldata>',
+    'op code + params to be called on a contract',
+    (value, previous) => {
+      const items = value.split(',')
+      return previous ? previous.concat(items) : items
+    },
+    []
+  )
 
   /* @dev example call 
-oyl alkane execute -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2
+oyl alkane execute -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2 -calldata '101'
 */
 
   .action(async (options) => {
@@ -876,16 +969,7 @@ oyl alkane execute -m 'abandon abandon abandon abandon abandon abandon abandon a
           totalAmount: accountSpendableTotalBalance,
         },
         feeRate: options.feeRate,
-        calldata: [
-          BigInt(6),
-          BigInt(0x0ffe),
-          0n,
-          100000000n,
-          100000n,
-          200000000n,
-          BigInt(0x414243),
-          BigInt(0x414243),
-        ],
+        calldata: options.calldata,
         account,
         signer,
         provider,
