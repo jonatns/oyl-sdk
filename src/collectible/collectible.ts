@@ -7,7 +7,6 @@ import { OylTransactionError } from '../errors'
 import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
 import { GatheredUtxos, OrdCollectibleData } from '../shared/interface'
-import { accountSpendableUtxos, accountUtxos } from '../utxo'
 
 export const createPsbt = async ({
   gatheredUtxos,
@@ -29,7 +28,7 @@ export const createPsbt = async ({
   fee?: number
 }) => {
   try {
-    const originalGatheredUtxos = gatheredUtxos;
+    const originalGatheredUtxos = gatheredUtxos
 
     const minFee = minimumFee({
       taprootInputCount: 1,
@@ -93,7 +92,10 @@ export const createPsbt = async ({
       value: data.value,
     })
 
-    gatheredUtxos = findXAmountOfSats(originalGatheredUtxos.utxos, Number(finalFee))
+    gatheredUtxos = findXAmountOfSats(
+      originalGatheredUtxos.utxos,
+      Number(finalFee)
+    )
 
     if (!fee && gatheredUtxos.utxos.length > 1) {
       const txSize = minimumFee({
@@ -102,11 +104,14 @@ export const createPsbt = async ({
         outputCount: 2,
       })
       finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
-      gatheredUtxos = findXAmountOfSats(originalGatheredUtxos.utxos, Number(finalFee))
+      gatheredUtxos = findXAmountOfSats(
+        originalGatheredUtxos.utxos,
+        Number(finalFee)
+      )
     }
 
     if (gatheredUtxos.totalAmount < finalFee) {
-      new OylTransactionError(Error('Insufficient balance'))
+      throw new OylTransactionError(Error('Insufficient balance'))
     }
 
     for (let i = 0; i < gatheredUtxos.utxos.length; i++) {
