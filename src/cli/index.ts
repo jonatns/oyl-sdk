@@ -862,7 +862,7 @@ const alkaneToken = new Command('new-token')
   .option('-feeRate, --feeRate <feeRate>', 'fee rate')
 
   /* @dev example call 
-oyl alkane new-token -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2 -amount 1000 -name "OYL" -symbol "OL" -cap 100000 -total-supply 5000
+oyl alkane new-token -resNumber 0x7 -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2 -amount 1000 -name "OYL" -symbol "OL" -cap 100000 -total-supply 5000
 */
 
   .action(async (options) => {
@@ -1328,6 +1328,9 @@ const alkaneCommand = new Command('alkane')
   .description('Functions for alkanes')
   .addCommand(alkaneFactoryDeploy)
   .addCommand(alkaneExecute)
+  .addCommand(alkaneToken)
+// .addCommand(alkaneMint)
+// .addCommand(alkaneTransfer)
 
 const providerCommand = new Command('provider')
   .description('Functions avaialble for all provider services')
