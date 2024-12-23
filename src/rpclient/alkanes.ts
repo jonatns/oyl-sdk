@@ -138,6 +138,7 @@ export class AlkanesRpc {
   }
 
   parseSimulateReturn(v: any) {
+    console.log(v)
     const stripHexPrefix = (v: string) => (v.startsWith('0x') ? v.slice(2) : v)
     const addHexPrefix = (v: string) => '0x' + stripHexPrefix(v)
 

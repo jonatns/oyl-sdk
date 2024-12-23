@@ -737,6 +737,36 @@ oyl rune etch -m 'abandon abandon abandon abandon abandon abandon abandon abando
     )
   })
 
+const alkanesTrace = new Command('trace')
+  .description('Returns data based on txid and vout of deployed alkane')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use to access the network.'
+  )
+  .option(
+    '-params, --parameters <parameters>',
+    'parameters for the ord method you are calling.'
+  )
+  /* @dev example call
+    oyl alkanes trace -params '{"txid":"abc123...","vout":0}' -p regtest
+
+    please note the json format if you need to pass an object.
+  */
+  .action(async (options) => {
+    const provider: Provider = defaultProvider[options.provider]
+    let isJson: { vout: number; txid: string }
+    try {
+      isJson = JSON.parse(options.parameters)
+      const { vout, txid } = isJson
+      console.log(
+        (await provider.alkanes.trace({ vout, txid }))[1].data.response
+      )
+    } catch (error) {
+      const { vout, txid } = isJson
+      console.log(await provider.alkanes.trace({ vout, txid }))
+    }
+  })
+
 const alkaneFactoryDeploy = new Command('factoryDeploy')
   .requiredOption(
     '-p, --provider <provider>',
@@ -890,8 +920,8 @@ oyl alkane new-token -resNumber 0x7 -m 'abandon abandon abandon abandon abandon 
       BigInt(options.totalSupply),
       BigInt(options.amountPerMint),
       BigInt(options.capacity),
-      BigInt('0x' + Buffer.from(options.tokenName).toString('hex')),
-      BigInt('0x' + Buffer.from(options.tokenSymbol).toString('hex')),
+      BigInt('0x' + Buffer.from(options.tokenName.reverse()).toString('hex')),
+      BigInt('0x' + Buffer.from(options.tokenSymbol.reverse()).toString('hex')),
     ]
 
     console.log(
@@ -941,7 +971,7 @@ const alkaneExecute = new Command('execute')
   )
 
   /* @dev example call 
-oyl alkane execute -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2 -calldata '101'
+oyl alkane execute -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2 -data '101'
 */
 
   .action(async (options) => {
@@ -961,7 +991,10 @@ oyl alkane execute -m 'abandon abandon abandon abandon abandon abandon abandon a
     })
     const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
       await utxo.accountUtxos({ account, provider })
-
+    const calldata: bigint[] = []
+    for (let i = 0; i < options.calldata.length; i++) {
+      calldata.push(BigInt(options.calldata[i]))
+    }
     console.log(
       await alkanes.execute({
         gatheredUtxos: {
@@ -969,7 +1002,7 @@ oyl alkane execute -m 'abandon abandon abandon abandon abandon abandon abandon a
           totalAmount: accountSpendableTotalBalance,
         },
         feeRate: options.feeRate,
-        calldata: options.calldata,
+        calldata,
         account,
         signer,
         provider,
@@ -1329,6 +1362,7 @@ const alkaneCommand = new Command('alkane')
   .addCommand(alkaneFactoryDeploy)
   .addCommand(alkaneExecute)
   .addCommand(alkaneToken)
+  .addCommand(alkanesTrace)
 // .addCommand(alkaneMint)
 // .addCommand(alkaneTransfer)
 
