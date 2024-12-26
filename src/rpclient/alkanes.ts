@@ -166,10 +166,3 @@ export class AlkanesRpc {
     }
   }
 }
-
-new AlkanesRpc('http://localhost:3000/v1/regtest')
-  .getAlkanesByHeight({
-    blockHeight: 665,
-    protocolTag: '1',
-  })
-  .then((res) => console.log(res))
