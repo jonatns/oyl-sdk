@@ -758,9 +758,7 @@ const alkanesTrace = new Command('trace')
     try {
       isJson = JSON.parse(options.parameters)
       const { vout, txid } = isJson
-      console.log(
-        (await provider.alkanes.trace({ vout, txid }))[1].data.response
-      )
+      console.log(await provider.alkanes.trace({ vout, txid }))
     } catch (error) {
       const { vout, txid } = isJson
       console.log(await provider.alkanes.trace({ vout, txid }))
@@ -920,8 +918,18 @@ oyl alkane new-token -resNumber 0x7 -m 'abandon abandon abandon abandon abandon 
       BigInt(options.totalSupply),
       BigInt(options.amountPerMint),
       BigInt(options.capacity),
-      BigInt('0x' + Buffer.from(options.tokenName.reverse()).toString('hex')),
-      BigInt('0x' + Buffer.from(options.tokenSymbol.reverse()).toString('hex')),
+      BigInt(
+        '0x' +
+          Buffer.from(options.tokenName.split('').reverse().join('')).toString(
+            'hex'
+          )
+      ),
+      BigInt(
+        '0x' +
+          Buffer.from(
+            options.tokenSymbol.split('').reverse().join('')
+          ).toString('hex')
+      ),
     ]
 
     console.log(
