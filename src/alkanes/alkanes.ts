@@ -317,13 +317,18 @@ export const createExecutePsbt = async ({
         })
       }
     }
+    
+    psbt.addOutput({
+      value: 546,
+        address: account.taproot.address,
+    });
 
     const script = encodeRunestoneProtostone({
       protostones: [
         envelope.ProtoStone.message({
           protocolTag: 1n,
           edicts: [],
-          pointer: 1,
+          pointer: 0,
           refundPointer: 0,
           calldata: envelope.encipher(calldata),
         }),
@@ -385,7 +390,7 @@ export const createDeployCommit = async ({
 
     const binary = new Uint8Array(
       Array.from(
-        await fs.readFile(path.join(__dirname, './', 'alkanes_std_genesis_alkane.wasm'))
+        await fs.readFile(path.join(__dirname, './', 'free_mint.wasm'))
       )
     )
     const gzip = promisify(_gzip)
@@ -560,9 +565,9 @@ export const createDeployReveal = async ({
           pointer: 0,
           refundPointer: 0,
           calldata: envelope.encipher([
-            BigInt(1),
-            BigInt(0),
-            BigInt(0),
+            BigInt(3),
+            BigInt(createReserveNumber),
+            BigInt(100),
           ]),
         }),
       ],
@@ -603,13 +608,12 @@ export const createDeployReveal = async ({
       script: protostone,
     })
 
-
-    // if (revealTxChange > 546) {
-    //   psbt.addOutput({
-    //     value: revealTxChange,
-    //     address: receiverAddress,
-    //   })
-    // }
+    if (revealTxChange > 546) {
+      psbt.addOutput({
+        value: revealTxChange,
+        address: receiverAddress,
+      })
+    }
 
     psbt.signInput(0, tweakedTaprootKeyPair)
     psbt.finalizeInput(0)
