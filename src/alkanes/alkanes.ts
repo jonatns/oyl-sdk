@@ -385,7 +385,7 @@ export const createDeployCommit = async ({
 
     const binary = new Uint8Array(
       Array.from(
-        await fs.readFile(path.join(__dirname, './', 'free_mint.wasm'))
+        await fs.readFile(path.join(__dirname, './', 'alkanes_std_genesis_alkane.wasm'))
       )
     )
     const gzip = promisify(_gzip)
@@ -557,12 +557,12 @@ export const createDeployReveal = async ({
         envelope.ProtoStone.message({
           protocolTag: 1n,
           edicts: [],
-          pointer: 1,
+          pointer: 0,
           refundPointer: 0,
           calldata: envelope.encipher([
-            BigInt(3),
-            BigInt(createReserveNumber),
-            BigInt(100),
+            BigInt(1),
+            BigInt(0),
+            BigInt(0),
           ]),
         }),
       ],
@@ -594,20 +594,22 @@ export const createDeployReveal = async ({
     })
 
     psbt.addOutput({
+      value: 546,
+      address: receiverAddress,
+    })
+
+    psbt.addOutput({
       value: 0,
       script: protostone,
     })
 
-    psbt.addOutput({
-      value: 546,
-      address: receiverAddress,
-    })
-    if (revealTxChange > 546) {
-      psbt.addOutput({
-        value: revealTxChange,
-        address: receiverAddress,
-      })
-    }
+
+    // if (revealTxChange > 546) {
+    //   psbt.addOutput({
+    //     value: revealTxChange,
+    //     address: receiverAddress,
+    //   })
+    // }
 
     psbt.signInput(0, tweakedTaprootKeyPair)
     psbt.finalizeInput(0)
