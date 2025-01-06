@@ -12,13 +12,13 @@ import {
   getRuneOutpointsRegtest,
 } from './regtestApi'
 import { Account, SpendStrategy } from '../account'
-import {
-  GetAddressListingsRequest,
-  GetListingPsbtRequest,
-  GetSellerPsbtRequest,
-  SubmitBuyerPsbtRequest,
-  SubmitListingPsbtRequest,
-} from '../swap/types'
+// import {
+//   GetAddressListingsRequest,
+//   GetListingPsbtRequest,
+//   GetSellerPsbtRequest,
+//   SubmitBuyerPsbtRequest,
+//   SubmitListingPsbtRequest,
+// } from '../swap/types'
 import { AccountUtxoPortfolio } from '@utxo/utxo'
 
 /**
@@ -140,25 +140,25 @@ export class OylApiClient {
 
   /***MARKETPLACE TRADE ENDPOINTS */
 
-  async getSellerPsbt(params: GetSellerPsbtRequest) {
-    return await this._call('/get-seller-psbt', 'post', params)
-  }
+  // async getSellerPsbt(params: GetSellerPsbtRequest) {
+  //   return await this._call('/get-seller-psbt', 'post', params)
+  // }
 
-  async submitBuyerPsbt(params: SubmitBuyerPsbtRequest) {
-    return await this._call('/submit-buyer-psbt', 'post', params)
-  }
+  // async submitBuyerPsbt(params: SubmitBuyerPsbtRequest) {
+  //   return await this._call('/submit-buyer-psbt', 'post', params)
+  // }
 
-  async getListingPsbt(params: GetListingPsbtRequest) {
-    return await this._call('/get-listing-psbt', 'post', params)
-  }
+  // async getListingPsbt(params: GetListingPsbtRequest) {
+  //   return await this._call('/get-listing-psbt', 'post', params)
+  // }
 
-  async submitListingPsbt(params: SubmitListingPsbtRequest) {
-    return await this._call('/submit-listing-psbt', 'post', params)
-  }
+  // async submitListingPsbt(params: SubmitListingPsbtRequest) {
+  //   return await this._call('/submit-listing-psbt', 'post', params)
+  // }
 
-  async getAddressListings(params: GetAddressListingsRequest) {
-    return await this._call('/get-address-listings', 'post', params)
-  }
+  // async getAddressListings(params: GetAddressListingsRequest) {
+  //   return await this._call('/get-address-listings', 'post', params)
+  // }
 
   /**
    * Get Collection info by id.

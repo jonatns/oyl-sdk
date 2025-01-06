@@ -1,6 +1,5 @@
 import { SwapBrcBid, SignedBid, OkxBid, GetOffersParams, GetCollectionOffersParams } from '../shared/interface';
 import { Account, SpendStrategy } from '../account';
-import { GetAddressListingsRequest, GetListingPsbtRequest, GetSellerPsbtRequest, SubmitBuyerPsbtRequest, SubmitListingPsbtRequest } from '../swap/types';
 import { AccountUtxoPortfolio } from '@utxo/utxo';
 /**
  * Represents the client for interacting with the Oyl API.
@@ -65,11 +64,6 @@ export declare class OylApiClient {
      */
     getRuneTokenInfo(ticker: string): Promise<any>;
     /***MARKETPLACE TRADE ENDPOINTS */
-    getSellerPsbt(params: GetSellerPsbtRequest): Promise<any>;
-    submitBuyerPsbt(params: SubmitBuyerPsbtRequest): Promise<any>;
-    getListingPsbt(params: GetListingPsbtRequest): Promise<any>;
-    submitListingPsbt(params: SubmitListingPsbtRequest): Promise<any>;
-    getAddressListings(params: GetAddressListingsRequest): Promise<any>;
     /**
      * Get Collection info by id.
      * @param collectionId - The collectionId to query.
