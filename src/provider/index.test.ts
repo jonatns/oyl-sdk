@@ -11,7 +11,6 @@ describe('Provider', () => {
       projectId: process.env.SANDSHREW_PROJECT_ID!,
       network: networks.bitcoin,
       networkType: 'mainnet',
-      apiUrl: 'http://localhost:9000',
     })
     expect(provider).toBeDefined()
     expect(provider.api.toObject().host).toBe('http://localhost:9000')
