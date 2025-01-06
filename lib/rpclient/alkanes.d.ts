@@ -1,4 +1,4 @@
-interface Rune {
+export interface Rune {
     rune: {
         id: {
             block: string;
@@ -12,7 +12,7 @@ interface Rune {
     };
     balance: string;
 }
-interface Outpoint {
+export interface Outpoint {
     runes: Rune[];
     outpoint: {
         txid: string;
@@ -25,7 +25,7 @@ interface Outpoint {
     txindex: number;
     height: 2;
 }
-interface AlkanesResponse {
+export interface AlkanesResponse {
     outpoints: Outpoint[];
     balanceSheet: [];
 }
@@ -48,13 +48,14 @@ export declare class AlkanesRpc {
     alkanesUrl: string;
     constructor(url: string);
     _call(method: any, params?: any[]): Promise<any>;
-    getAlkanesByHeight({ blockHeight, protocolTag, }: {
-        blockHeight: number;
+    getAlkanesByHeight({ height, protocolTag, }: {
+        height: number;
         protocolTag: string;
     }): Promise<AlkanesResponse>;
-    getAlkanesByAddress({ address, protocolTag, }: {
+    getAlkanesByAddress({ address, protocolTag, name, }: {
         address: string;
         protocolTag?: string;
+        name?: string;
     }): Promise<AlkanesResponse>;
     trace(request: {
         vout: number;

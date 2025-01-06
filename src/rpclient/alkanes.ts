@@ -1,6 +1,6 @@
 import fetch from 'node-fetch'
 
-interface Rune {
+export interface Rune {
   rune: {
     id: { block: string; tx: string }
     name: string
@@ -11,14 +11,14 @@ interface Rune {
   }
   balance: string
 }
-interface Outpoint {
+export interface Outpoint {
   runes: Rune[]
   outpoint: { txid: string; vout: number }
   output: { value: string; script: string }
   txindex: number
   height: 2
 }
-interface AlkanesResponse {
+export interface AlkanesResponse {
   outpoints: Outpoint[]
   balanceSheet: []
 }
@@ -80,15 +80,15 @@ export class AlkanesRpc {
   }
 
   async getAlkanesByHeight({
-    blockHeight,
+    height,
     protocolTag = '1',
   }: {
-    blockHeight: number
+    height: number
     protocolTag: string
   }) {
     return (await this._call('alkanes_protorunesbyheight', [
       {
-        blockHeight,
+        height,
         protocolTag,
       },
     ])) as AlkanesResponse
@@ -97,16 +97,27 @@ export class AlkanesRpc {
   async getAlkanesByAddress({
     address,
     protocolTag = '1',
+    name,
   }: {
     address: string
     protocolTag?: string
-  }): Promise<AlkanesResponse> {
-    return await this._call('alkanes_protorunesbyaddress', [
+    name?: string
+  }): Promise<Outpoint[]> {
+    const ret = await this._call('alkanes_protorunesbyaddress', [
       {
         address,
         protocolTag,
       },
     ])
+    const alkanesList = ret.outpoints.filter(
+      (outpoint) => outpoint.runes.length > 0
+    )
+    if (name) {
+      return alkanesList.flatMap((outpoints) =>
+        outpoints.runes.filter((item) => item.rune.name === name)
+      )
+    }
+    return alkanesList
   }
 
   async trace(request: { vout: number; txid: string }) {
@@ -133,7 +144,15 @@ export class AlkanesRpc {
     protocolTag?: string
   }): Promise<any> {
     return await this._call('alkanes_protorunesbyoutpoint', [
-      { txid: '0x' + txid, vout, protocolTag },
+      {
+        txid:
+          '0x' +
+          Buffer.from(Array.from(Buffer.from(txid, 'hex')).reverse()).toString(
+            'hex'
+          ),
+        vout,
+        protocolTag,
+      },
     ])
   }
 
