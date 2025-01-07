@@ -650,7 +650,11 @@ export const findRuneUtxos = async ({
     address: address,
   })
 
-  console.log(runeUtxoOutpoints)
+  const addressOutpoints = await provider.ord.getOrdData(address);
+
+  console.log(addressOutpoints)
+
+  //console.log(runeUtxoOutpoints)
   throw new Error('test')
   if (greatestToLeast) {
     runeUtxoOutpoints?.sort((a, b) => b.satoshis - a.satoshis)
