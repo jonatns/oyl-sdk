@@ -2,6 +2,7 @@ import { SandshrewBitcoinClient } from '../rpclient/sandshrew';
 import { EsploraRpc } from '../rpclient/esplora';
 import { OrdRpc } from '../rpclient/ord';
 import * as bitcoin from 'bitcoinjs-lib';
+import { AlkanesRpc } from '../rpclient/alkanes';
 export type ProviderConstructorArgs = {
     url: string;
     projectId: string;
@@ -15,6 +16,7 @@ export declare class Provider {
     esplora: EsploraRpc;
     ord: OrdRpc;
     api: any;
+    alkanes: AlkanesRpc;
     network: bitcoin.networks.Network;
     networkType: string;
     url: string;
