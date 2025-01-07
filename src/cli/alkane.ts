@@ -16,21 +16,21 @@ import { timeout } from '../shared/utils'
 export const factoryWasmDeploy = new Command('factoryWasmDeploy')
   .requiredOption(
     '-r, --reserveNumber <reserveNumber>',
-    'number to reserve for factory id'
+    'Number to reserve for factory id'
   )
   .requiredOption(
     '-c, --contract <contract>',
-    'contract wasm fileto deploy'
+    'Contract wasm file to deploy'
   )
   .option(
     '-n, --networkType <networkType>',
-    'network type: regtest | mainnet'
+    '(optional) Network type: regtest | mainnet (default = regtest)'
   )
   .option(
     '-m, --mnemonic <mnemonic>',
-    'mnemonic used for signing transactions'
+    '(optional) Mnemonic used for signing transactions (default = abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about)'
   )
-  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .option('-feeRate, --feeRate <feeRate>', '(optional) Fee rate')
 
   .action(async (options) => {
     console.log(`Deploying contract ${options.contract}`)

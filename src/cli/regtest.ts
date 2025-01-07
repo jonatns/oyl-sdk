@@ -14,14 +14,14 @@ const RANDOM_ADDRESS = 'bcrt1qz3y37epk6hqlul2pt09hrwgj0s09u5g6kzrkm2'
   oyl regtest init
 */
 export const init = new Command('init')
-  .description('Generate blocks to initialize regtest chain')
+  .description('Generate 260 blocks to initialize regtest chain (funds faucet address and an optional user address)')
   .option(
     '-m, --mnemonic <mnemonic>',
-    'mnemonic used for signing transactions (default = abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about)'
+    '(optional) Mnemonic used for signing transactions (default = abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about)'
   )
   .option(
     '-a, --address <address>',
-    'address that will receive initial funds (default = bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx)'
+    '(optional) Address that will receive initial funds (default = bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx)'
   )
   .action(async (options) => {
     const totalBlockCount = 260
@@ -67,9 +67,9 @@ export const init = new Command('init')
     oyl regtest genBlocks -c 2
   */
   export const genBlocks = new Command('genBlocks')
-  .description('Generate blocks with transactions in mempool')
-  .option('-a, --address <address>', 'address you want to recieve block funding (optional)')
-  .option('-c, --count <count>', 'number of blocks (default = 1)', parseInt)
+  .description('Generate blocks with transactions from mempool')
+  .option('-a, --address <address>', '(optional) Address to recieve block reward.')
+  .option('-c, --count <count>', '(optional)Number of blocks (default = 1)', parseInt)
   .action(async (options) => {
     const count = options.count || 1
     const address = options.address || RANDOM_ADDRESS
