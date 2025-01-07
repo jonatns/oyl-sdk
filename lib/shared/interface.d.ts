@@ -224,23 +224,11 @@ export interface MarketplaceOffers {
     marketplace: string;
     ticker: string;
 }
-export interface ProviderOptions {
-    network: String;
-    host: String;
-    port: Number;
-    provider?: Providers;
-    auth?: String;
-}
 export interface RecoverAccountOptions {
     mnemonic?: string;
     activeIndexes?: number[];
     customPath?: 'xverse' | 'leather' | 'unisat' | 'testnet';
     network: bitcoin.Network;
-}
-export declare enum Providers {
-    bcoin = 0,
-    oyl = 1,
-    electrum = 2
 }
 export interface oylAccounts {
     taproot: {
@@ -356,25 +344,6 @@ export type AddressFormats = (typeof addressTypeToName)[AddressTypes];
 export interface BitcoinPaymentType {
     type: AddressTypes;
     payload: false | payments.Payment;
-}
-export interface NetworkOptions {
-    /**
-     * Base URL of the network, may include port. Defaults to sandshrew.io "mainnet" URL.
-     * Example: 'https://mainnet.sandshrew.io' or 'http://localhost:3000'
-     */
-    baseUrl?: string;
-    /**
-     * RPC version, allows for future upgrades. Defaults to "v1"
-     * Example: 'v1'
-     */
-    version?: string;
-    /**
-     * ProjectId is used as an API key for local test servers. Defaults to mainnet API key
-     */
-    projectId?: string;
-    apiUrl?: string;
-    opiUrl?: string;
-    network: Network;
 }
 export interface SwapBrc {
     address: String;
