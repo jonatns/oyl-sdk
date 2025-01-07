@@ -134,7 +134,7 @@ export const createSendPsbt = async ({
       }
     }
 
-    if (gatheredUtxos.totalAmount < finalFee + inscriptionSats) {
+    if (gatheredUtxos.totalAmount < finalFee + inscriptionSats * 2) {
       throw new OylTransactionError(Error('Insufficient Balance'))
     }
 
@@ -213,7 +213,7 @@ export const createSendPsbt = async ({
     })
 
     psbt.addOutput({
-      value: totalSatoshis,
+      value: inscriptionSats,
       address: toAddress,
     })
 
@@ -221,7 +221,9 @@ export const createSendPsbt = async ({
     psbt.addOutput(output)
 
     const changeAmount =
-      gatheredUtxos.totalAmount - (finalFee + inscriptionSats)
+      gatheredUtxos.totalAmount +
+      totalSatoshis -
+      (finalFee + inscriptionSats * 2)
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
@@ -410,20 +412,7 @@ export const createDeployCommit = async ({
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
 
-    const binary = new Uint8Array(
-      Array.from(
-        await fs.readFile(path.join(__dirname, './', 'free_mint.wasm'))
-      )
-    )
-    const gzip = promisify(_gzip)
-
-    // const payload = {
-    //   body: await gzip(binary, { level: 9 }),
-    //   cursed: false,
-    //   tags: { contentType: '' },
-    // }
-
-    if (!payload) { 
+    if (!payload) {
       const binary = new Uint8Array(
         Array.from(
           await fs.readFile(path.join(__dirname, './', 'free_mint.wasm'))
@@ -436,7 +425,7 @@ export const createDeployCommit = async ({
         tags: { contentType: '' },
       }
     }
-    
+
     const script = Buffer.from(
       envelope.p2tr_ord_reveal(toXOnly(tweakedTaprootKeyPair.publicKey), [
         payload,
@@ -706,7 +695,11 @@ export const findAlkaneUtxos = async ({
     if (totalBalanceBeingSent < targetNumberOfAlkanes) {
       const satoshis = Number(alkane.outpoint.output.value)
       alkaneUtxos.push({
-        txId: alkane.outpoint.outpoint.txid,
+        txId: Buffer.from(
+          Array.from(
+            Buffer.from(alkane.outpoint.outpoint.txid, 'hex')
+          ).reverse()
+        ).toString('hex'),
         txIndex: alkane.outpoint.outpoint.vout,
         script: alkane.outpoint.output.script,
         address,
