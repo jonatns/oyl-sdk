@@ -49,7 +49,6 @@ export class Provider {
     this.esplora = new EsploraRpc(masterUrl)
     this.ord = new OrdRpc(masterUrl)
     this.api = apiProvider
-    this.api.setAuthToken(process.env.API_TOKEN)
     this.network = network
     this.networkType = networkType
     this.url = masterUrl
