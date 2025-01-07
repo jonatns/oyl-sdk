@@ -221,7 +221,9 @@ export const createSendPsbt = async ({
     psbt.addOutput(output)
 
     const changeAmount =
-      gatheredUtxos.totalAmount + 0 - (finalFee + inscriptionSats * 2)
+      gatheredUtxos.totalAmount +
+      totalSatoshis -
+      (finalFee + inscriptionSats * 2)
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
@@ -410,20 +412,7 @@ export const createDeployCommit = async ({
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
 
-    const binary = new Uint8Array(
-      Array.from(
-        await fs.readFile(path.join(__dirname, './', 'free_mint.wasm'))
-      )
-    )
-    const gzip = promisify(_gzip)
-
-    // const payload = {
-    //   body: await gzip(binary, { level: 9 }),
-    //   cursed: false,
-    //   tags: { contentType: '' },
-    // }
-
-    if (!payload) { 
+    if (!payload) {
       const binary = new Uint8Array(
         Array.from(
           await fs.readFile(path.join(__dirname, './', 'free_mint.wasm'))
@@ -436,7 +425,7 @@ export const createDeployCommit = async ({
         tags: { contentType: '' },
       }
     }
-    
+
     const script = Buffer.from(
       envelope.p2tr_ord_reveal(toXOnly(tweakedTaprootKeyPair.publicKey), [
         payload,
