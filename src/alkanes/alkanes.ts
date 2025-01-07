@@ -134,7 +134,7 @@ export const createSendPsbt = async ({
       }
     }
 
-    if (gatheredUtxos.totalAmount < finalFee + inscriptionSats) {
+    if (gatheredUtxos.totalAmount < finalFee + inscriptionSats * 2) {
       throw new OylTransactionError(Error('Insufficient Balance'))
     }
 
@@ -213,7 +213,7 @@ export const createSendPsbt = async ({
     })
 
     psbt.addOutput({
-      value: totalSatoshis,
+      value: inscriptionSats,
       address: toAddress,
     })
 
@@ -221,7 +221,7 @@ export const createSendPsbt = async ({
     psbt.addOutput(output)
 
     const changeAmount =
-      gatheredUtxos.totalAmount - (finalFee + inscriptionSats)
+      gatheredUtxos.totalAmount + 0 - (finalFee + inscriptionSats * 2)
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
@@ -690,7 +690,11 @@ export const findAlkaneUtxos = async ({
     if (totalBalanceBeingSent < targetNumberOfAlkanes) {
       const satoshis = Number(alkane.outpoint.output.value)
       alkaneUtxos.push({
-        txId: alkane.outpoint.outpoint.txid,
+        txId: Buffer.from(
+          Array.from(
+            Buffer.from(alkane.outpoint.outpoint.txid, 'hex')
+          ).reverse()
+        ).toString('hex'),
         txIndex: alkane.outpoint.outpoint.vout,
         script: alkane.outpoint.output.script,
         address,
