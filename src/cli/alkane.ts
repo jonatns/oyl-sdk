@@ -10,7 +10,7 @@ import * as utxo from '../utxo'
 import { timeout } from '../shared/utils'
 
 /* @dev example calls
-  oyl alkane factoryWasmDeploy -r "0x0ffe" -c ~/contracts/free_mint.wasm
+  oyl alkane factoryWasmDeploy -r "0x0ffe" -c ~/git/oyl-sdk/src/alkanes/free_mint.wasm
 */
 
 export const factoryWasmDeploy = new Command('factoryWasmDeploy')
@@ -41,7 +41,7 @@ export const factoryWasmDeploy = new Command('factoryWasmDeploy')
 
     const contract = new Uint8Array(
       Array.from(
-        await fs.readFile(path.join(__dirname, './', options.contract))
+        await fs.readFile(options.contract)
       )
     )
     const gzip = promisify(_gzip)
