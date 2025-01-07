@@ -1018,6 +1018,70 @@ oyl alkane execute -m 'abandon abandon abandon abandon abandon abandon abandon a
     )
   })
 
+const alkaneSend = new Command('send')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+  .requiredOption(
+    '-m, --mnemonic <mnemonic>',
+    'mnemonic you want to get private keys from'
+  )
+
+  .option('-legacy, --legacy <legacy>', 'legacy private key')
+  .option('-taproot, --taproot <taproot>', 'taproot private key')
+  .option(
+    '-nested, --nested-segwit <nestedSegwit>',
+    'nested segwit private key'
+  )
+  .option(
+    '-native, --native-segwit <nativeSegwit>',
+    'native segwit private key'
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .requiredOption('-to, --to <to>')
+  .requiredOption('-amt, --amount <amount>')
+  .requiredOption('-blk, --block <block>')
+  .requiredOption('-tx, --txNum <txNum>')
+
+  /* @dev example call 
+oyl alkane send -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2 -tx '1' -blk '2' -amt 1000 -to bcrt1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqvg32hk
+*/
+
+  .action(async (options) => {
+    const provider = defaultProvider[options.provider]
+    const signer = new Signer(provider.network, {
+      segwitPrivateKey: options.nativeSegwit,
+      taprootPrivateKey: options.taproot,
+      nestedSegwitPrivateKey: options.nestedSegwit,
+      legacyPrivateKey: options.legacy,
+    })
+
+    const account = mnemonicToAccount({
+      mnemonic: options.mnemonic,
+      opts: {
+        network: provider.network,
+      },
+    })
+    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
+      await utxo.accountUtxos({ account, provider })
+
+    console.log(
+      await alkanes.send({
+        gatheredUtxos: {
+          utxos: accountSpendableTotalUtxos,
+          totalAmount: accountSpendableTotalBalance,
+        },
+        feeRate: options.feeRate,
+        alkaneId: { block: options.block, tx: options.tx },
+        toAddress: options.to,
+        amount: Number(options.amount),
+        account,
+        signer,
+        provider,
+      })
+    )
+  })
 const getRuneByName = new Command('getRuneByName')
   .description('Returns rune details based on name provided')
   .requiredOption(
@@ -1371,8 +1435,8 @@ const alkaneCommand = new Command('alkane')
   .addCommand(alkaneExecute)
   .addCommand(alkaneToken)
   .addCommand(alkanesTrace)
+  .addCommand(alkaneSend)
 // .addCommand(alkaneMint)
-// .addCommand(alkaneTransfer)
 
 const providerCommand = new Command('provider')
   .description('Functions avaialble for all provider services')

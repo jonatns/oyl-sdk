@@ -56,7 +56,7 @@ export declare class AlkanesRpc {
         address: string;
         protocolTag?: string;
         name?: string;
-    }): Promise<AlkanesResponse>;
+    }): Promise<Outpoint[]>;
     trace(request: {
         vout: number;
         txid: string;

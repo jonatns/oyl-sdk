@@ -11,7 +11,7 @@ import {
   tweakSigner,
 } from '../shared/utils'
 import { OylTransactionError } from '../errors'
-import { GatheredUtxos, RuneUTXO } from '../shared/interface'
+import { GatheredUtxos } from '../shared/interface'
 import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
@@ -20,8 +20,10 @@ import path from 'path'
 import fs from 'fs-extra'
 import { gzip as _gzip } from 'node:zlib'
 import { promisify } from 'util'
-import { encodeRunestoneProtostone } from 'alkanes/lib/index.js'
+import { ProtoStone, encodeRunestoneProtostone } from 'alkanes/lib/index.js'
+import { u32, u128 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 import { Outpoint } from 'rpclient/alkanes'
+import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 
 interface AlkaneId {
   block: string
@@ -186,13 +188,16 @@ export const createSendPsbt = async ({
 
     const protostone = encodeRunestoneProtostone({
       protostones: [
-        envelope.ProtoStone.message({
+        ProtoStone.message({
           protocolTag: 1n,
           edicts: [
             {
-              id: { block: BigInt(alkaneId.block), tx: BigInt(alkaneId.tx) },
-              amount,
-              output: 1,
+              id: new ProtoruneRuneId(
+                u128(BigInt(alkaneId.block)),
+                u128(BigInt(alkaneId.tx))
+              ),
+              amount: u128(BigInt(amount)),
+              output: u32(BigInt(1)),
             },
           ],
           pointer: 0,
@@ -995,7 +1000,6 @@ export const send = async ({
   toAddress,
   amount,
   alkaneId,
-  inscriptionAddress,
   feeRate,
   account,
   provider,
@@ -1005,15 +1009,11 @@ export const send = async ({
   toAddress: string
   amount: number
   alkaneId: AlkaneId
-  inscriptionAddress?: string
   feeRate?: number
   account: Account
   provider: Provider
   signer: Signer
 }) => {
-  if (!inscriptionAddress) {
-    inscriptionAddress = account.taproot.address
-  }
   const { fee } = await actualSendFee({
     gatheredUtxos,
     account,
@@ -1192,24 +1192,4 @@ export const execute = async ({
   })
 
   return revealResult
-}
-
-const defaultProvider = {
-  bitcoin: new Provider({
-    url: 'https://mainnet.sandshrew.io',
-    version: 'v2',
-    projectId: process.env.SANDSHREW_PROJECT_ID!,
-    network: bitcoin.networks.bitcoin,
-    networkType: 'mainnet',
-    apiUrl: 'https://staging-api.oyl.gg',
-    //opiUrl: 'https://mainnet-opi.sandshrew.io/v1'
-  }),
-  regtest: new Provider({
-    url: 'http://localhost:3000',
-    projectId: 'regtest',
-    network: bitcoin.networks.regtest,
-    networkType: 'regtest',
-    apiUrl: 'https://staging-api.oyl.gg',
-    //opiUrl: 'https://mainnet-opi.sandshrew.io/v1'
-  }),
 }
