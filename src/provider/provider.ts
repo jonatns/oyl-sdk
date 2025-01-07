@@ -1,8 +1,6 @@
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew'
 import { EsploraRpc } from '../rpclient/esplora'
 import { OrdRpc } from '../rpclient/ord'
-import { Opi } from '../rpclient/opi'
-import { OylApiClient } from '../apiclient'
 import * as bitcoin from 'bitcoinjs-lib'
 import { waitForTransaction } from '..'
 import { AlkanesRpc } from '../rpclient/alkanes'
@@ -13,50 +11,16 @@ export type ProviderConstructorArgs = {
   network: bitcoin.networks.Network
   networkType: 'signet' | 'mainnet' | 'testnet' | 'regtest'
   version?: string
-  apiUrl?: string
-  opiUrl?: string
+  apiProvider?: any
 }
 
-export const defaultNetworkOptions = (networkType: string) => {
-  switch (networkType) {
-    case 'mainnet':
-      return {
-        baseUrl: 'https://mainnet.sandshrew.io',
-        version: 'v2',
-        projectId: process.env.SANDSHREW_PROJECT_ID,
-        network: 'mainnet',
-        apiUrl: 'https://mainnet-api.oyl.gg',
-        opiUrl: 'https://mainnet-opi.sandshrew.io/v1',
-      }
-    case 'regtest':
-      return {
-        baseUrl: 'http://localhost:3000',
-        version: 'v2',
-        projectId: 'regtest',
-        network: 'regtest',
-        apiUrl: 'https://mainnet-api.oyl.gg',
-        opiUrl: 'http://localhost:3000',
-      }
-    case 'signet':
-      return {
-        baseUrl: 'https://signet.sandshrew.io',
-        version: 'v2',
-        projectId: process.env.SANDSHREW_PROJECT_ID,
-        network: 'signet',
-        apiUrl: 'https://signet-api.oyl.gg',
-        opiUrl: 'https://testnet-opi.sandshrew.io/v1',
-      }
-    default:
-      throw new Error(`Invalid network specified ${networkType}`)
-  }
-}
+
 
 export class Provider {
   public sandshrew: SandshrewBitcoinClient
   public esplora: EsploraRpc
   public ord: OrdRpc
-  public opi: Opi
-  public api: OylApiClient
+  public api: any
   public alkanes: AlkanesRpc
   public network: bitcoin.networks.Network
   public networkType: string
@@ -68,8 +32,7 @@ export class Provider {
     network,
     networkType,
     version = 'v1',
-    apiUrl,
-    opiUrl,
+    apiProvider,
   }: ProviderConstructorArgs) {
     let isTestnet: boolean
     let isRegtest: boolean
@@ -85,17 +48,7 @@ export class Provider {
     this.sandshrew = new SandshrewBitcoinClient(masterUrl)
     this.esplora = new EsploraRpc(masterUrl)
     this.ord = new OrdRpc(masterUrl)
-    this.opi = new Opi(
-      opiUrl ? opiUrl : defaultNetworkOptions(networkType).opiUrl
-    )
-    this.api = new OylApiClient({
-      network: networkType,
-      host: apiUrl ? apiUrl : defaultNetworkOptions(networkType).apiUrl,
-      testnet: isTestnet ? true : null,
-      regtest: isRegtest ? true : null,
-      apiKey: projectId,
-    })
-    this.api.setAuthToken(process.env.API_TOKEN)
+    this.api = apiProvider
     this.network = network
     this.networkType = networkType
     this.url = masterUrl
