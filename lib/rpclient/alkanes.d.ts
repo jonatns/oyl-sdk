@@ -67,7 +67,8 @@ export declare class AlkanesRpc {
         vout: number;
         protocolTag?: string;
     }): Promise<any>;
-    parseSimulateReturn(v: any): {
+    getAlkanes(amount: number): Promise<any[]>;
+    parseSimulateReturn(v: any): "invalid" | {
         string: string;
         bytes: string;
         le: string;
