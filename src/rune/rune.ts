@@ -632,6 +632,83 @@ export const createEtchReveal = async ({
   }
 }
 
+const getRuneOutpoints = async ({
+  address,
+  provider,
+  runeId,
+}: {
+  address: string
+  provider: Provider
+  runeId: string
+}) => {
+  const addressOutpoints = await provider.ord.getOrdData(address);
+
+  //const runeNameIdMap = 
+  const spacedRuneName = await provider.ord.getRuneById(runeId);
+  const runeByName = await provider.ord.getRuneByName(spacedRuneName.entry.spaced_rune);
+
+  console.log("addressOutpoints", addressOutpoints)
+  const ordOutputs = await batchOrdOutput({
+    outpoints: addressOutpoints.outputs,
+    provider: provider,
+  })
+
+  await mapRuneBalances({
+    ordOutputs: ordOutputs,
+    provider: provider,
+  })
+  console.log("ordOutputs", ordOutputs)
+  console.log("spacedRuneName", spacedRuneName.entry.spaced_rune)
+  console.log("runeByName", runeByName)
+}
+
+const mapRuneBalances = async ({
+  ordOutputs,
+  provider,
+}: {
+  ordOutputs: any[]
+  provider: Provider
+}) => {
+  const runeUtxosOutpoints: any[] = [];
+  const singleRuneOutpoint: any = {};
+  for (let i = 0; i < ordOutputs.length; i++) {
+    singleRuneOutpoint["output"] = ordOutputs[i].result.output;
+    singleRuneOutpoint["wallet_addr"] = ordOutputs[i].result.address;
+    console.log("ordOutputs[i].result.script_pubkey", ordOutputs[i].result.script_pubkey);
+    const pkscript = bitcoin.script.fromASM(ordOutputs[i].result.script_pubkey);
+    const pkScriptHex = Buffer.from(pkscript).toString('hex');
+    console.log("pkScriptHex", pkScriptHex);
+    for (const rune in ordOutputs[i].result.runes) {
+       //runeUtxosOutpoints[i].balances[rune] = ordOutputs[i].result.runes[rune];
+    }
+  }
+}
+
+const batchOrdOutput = async ({
+  outpoints,
+  provider,
+}: {
+  outpoints: []
+  provider: Provider
+}) => {
+  const MAX_OUTPOINTS_PER_CALL = 1000;
+  const ordOutputs = [];
+  for (let i = 0; i < outpoints.length; i += MAX_OUTPOINTS_PER_CALL) {
+    const batch = outpoints.slice(i, i + MAX_OUTPOINTS_PER_CALL);
+    const multiCall = batch.map((outpoint) => {
+      return ["ord_output", [outpoint]];
+    });
+    const results = await provider.sandshrew.multiCall(multiCall);
+    for (let i = 0; i < results.length; i++) {
+      results[i].result["output"] = batch[i];
+    }
+    const filteredResult = results.filter((output) => Object.keys(output.result.runes).length > 0);
+
+    ordOutputs.push(...filteredResult);
+  }
+  return ordOutputs;
+}
+
 export const findRuneUtxos = async ({
   address,
   greatestToLeast,
@@ -650,11 +727,12 @@ export const findRuneUtxos = async ({
     address: address,
   })
 
-  const addressOutpoints = await provider.ord.getOrdData(address);
-
-  console.log(addressOutpoints)
-
-  //console.log(runeUtxoOutpoints)
+  await getRuneOutpoints({
+    address: address,
+    provider: provider,
+    runeId: runeId,
+  })
+  console.log("runeUtxoOutpoints (from api)", runeUtxoOutpoints)
   throw new Error('test')
   if (greatestToLeast) {
     runeUtxoOutpoints?.sort((a, b) => b.satoshis - a.satoshis)
