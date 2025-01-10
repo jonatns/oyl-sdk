@@ -840,8 +840,6 @@ oyl alkane factoryDeploy -resNumber "0x0ffe" -m 'abandon abandon abandon abandon
     console.log({ mempoolTxs, blockHash })
     waitFiveSeconds()
 
-    console.log('Reserve number: ', options.reserveNumber)
-    console.log('type of reserve number: ', typeof options.reserveNumber )
     const reveal = await alkanes.deployReveal({
       createReserveNumber: options.reserveNumber,
       commitTxId: commit.txId,
