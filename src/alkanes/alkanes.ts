@@ -11,7 +11,7 @@ import {
   tweakSigner,
 } from '../shared/utils'
 import { OylTransactionError } from '../errors'
-import { GatheredUtxos } from '../shared/interface'
+import { GatheredUtxos, AlkanesPayload } from '../shared/interface'
 import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
@@ -134,7 +134,7 @@ export const createSendPsbt = async ({
       }
     }
 
-    if (gatheredUtxos.totalAmount < finalFee + inscriptionSats) {
+    if (gatheredUtxos.totalAmount < finalFee + inscriptionSats * 2) {
       throw new OylTransactionError(Error('Insufficient Balance'))
     }
 
@@ -213,7 +213,7 @@ export const createSendPsbt = async ({
     })
 
     psbt.addOutput({
-      value: totalSatoshis,
+      value: inscriptionSats,
       address: toAddress,
     })
 
@@ -221,7 +221,9 @@ export const createSendPsbt = async ({
     psbt.addOutput(output)
 
     const changeAmount =
-      gatheredUtxos.totalAmount - (finalFee + inscriptionSats)
+      gatheredUtxos.totalAmount +
+      totalSatoshis -
+      (finalFee + inscriptionSats * 2)
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
@@ -381,6 +383,7 @@ export const createExecutePsbt = async ({
 }
 
 export const createDeployCommit = async ({
+  payload,
   gatheredUtxos,
   tweakedTaprootKeyPair,
   account,
@@ -388,6 +391,7 @@ export const createDeployCommit = async ({
   feeRate,
   fee,
 }: {
+  payload?: AlkanesPayload
   gatheredUtxos: GatheredUtxos
   tweakedTaprootKeyPair: bitcoin.Signer
   account: Account
@@ -408,17 +412,18 @@ export const createDeployCommit = async ({
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
 
-    const binary = new Uint8Array(
-      Array.from(
-        await fs.readFile(path.join(__dirname, './', 'free_mint.wasm'))
+    if (!payload) {
+      const binary = new Uint8Array(
+        Array.from(
+          await fs.readFile(path.join(__dirname, './', 'free_mint.wasm'))
+        )
       )
-    )
-    const gzip = promisify(_gzip)
-
-    const payload = {
-      body: await gzip(binary, { level: 9 }),
-      cursed: false,
-      tags: { contentType: '' },
+      const gzip = promisify(_gzip)
+      payload = {
+        body: await gzip(binary, { level: 9 }),
+        cursed: false,
+        tags: { contentType: '' },
+      }
     }
 
     const script = Buffer.from(
@@ -690,7 +695,11 @@ export const findAlkaneUtxos = async ({
     if (totalBalanceBeingSent < targetNumberOfAlkanes) {
       const satoshis = Number(alkane.outpoint.output.value)
       alkaneUtxos.push({
-        txId: alkane.outpoint.outpoint.txid,
+        txId: Buffer.from(
+          Array.from(
+            Buffer.from(alkane.outpoint.outpoint.txid, 'hex')
+          ).reverse()
+        ).toString('hex'),
         txIndex: alkane.outpoint.outpoint.vout,
         script: alkane.outpoint.output.script,
         address,
@@ -790,6 +799,7 @@ export const actualSendFee = async ({
 }
 
 export const actualDeployCommitFee = async ({
+  payload,
   tweakedTaprootKeyPair,
   gatheredUtxos,
   account,
@@ -797,6 +807,7 @@ export const actualDeployCommitFee = async ({
   feeRate,
   signer,
 }: {
+  payload?: AlkanesPayload
   tweakedTaprootKeyPair: bitcoin.Signer
   gatheredUtxos: GatheredUtxos
   account: Account
@@ -809,6 +820,7 @@ export const actualDeployCommitFee = async ({
   }
 
   const { psbt } = await createDeployCommit({
+    payload,
     gatheredUtxos,
     tweakedTaprootKeyPair,
     account,
@@ -833,6 +845,7 @@ export const actualDeployCommitFee = async ({
   const correctFee = vsize * feeRate
 
   const { psbt: finalPsbt } = await createDeployCommit({
+    payload,
     gatheredUtxos,
     tweakedTaprootKeyPair,
     account,
@@ -1049,12 +1062,14 @@ export const send = async ({
 }
 
 export const deployCommit = async ({
+  payload,
   gatheredUtxos,
   account,
   provider,
   feeRate,
   signer,
 }: {
+  payload?: AlkanesPayload
   gatheredUtxos: GatheredUtxos
   account: Account
   provider: Provider
@@ -1068,6 +1083,7 @@ export const deployCommit = async ({
     }
   )
   const { fee: commitFee } = await actualDeployCommitFee({
+    payload,
     gatheredUtxos,
     tweakedTaprootKeyPair,
     account,
@@ -1077,6 +1093,7 @@ export const deployCommit = async ({
   })
 
   const { psbt: finalPsbt, script } = await createDeployCommit({
+    payload,
     gatheredUtxos,
     tweakedTaprootKeyPair,
     account,

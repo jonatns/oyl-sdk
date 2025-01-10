@@ -18,6 +18,10 @@ import {
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '..'
 import { Signer } from '..'
+import { OylTransactionError } from '../errors'
+import { factoryWasmDeploy } from './alkane'
+import { init, genBlocks } from './regtest'
+
 
 const defaultProvider = {
   bitcoin: new Provider({
@@ -784,14 +788,13 @@ const alkaneFactoryDeploy = new Command('factoryDeploy')
     'native segwit private key'
   )
   .option('-feeRate, --feeRate <feeRate>', 'fee rate')
-  .requiredOption('-address, --address <address>', 'address you want to fund')
   .requiredOption(
     '-resNumber, --reserveNumber <reserveNumber>',
     'number to reserve for factory id'
   )
 
   /* @dev example call 
-oyl alkane factoryDeploy -res-number "0x0ffe" -address bcrt1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqvg32hk -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2
+oyl alkane factoryDeploy -res-number "0x0ffe" -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2
 */
 
   .action(async (options) => {
@@ -831,7 +834,7 @@ oyl alkane factoryDeploy -res-number "0x0ffe" -address bcrt1p5cyxnuxmeuwuvkwfem9
     const mempoolTxs = Object.keys(mempool)
     console.log('mempool transactions: ', mempoolTxs)
     const blockHash = await provider.sandshrew.bitcoindRpc.generateBlock(
-      options.address,
+      account.taproot.address,
       mempoolTxs
     )
     console.log('Processed block: ', blockHash)
@@ -1071,7 +1074,7 @@ oyl alkane send -m 'abandon abandon abandon abandon abandon abandon abandon aban
           totalAmount: accountSpendableTotalBalance,
         },
         feeRate: options.feeRate,
-        alkaneId: { block: options.block, tx: options.tx },
+        alkaneId: { block: options.block, tx: options.txNum },
         toAddress: options.to,
         amount: Number(options.amount),
         account,
@@ -1239,6 +1242,8 @@ const regtestCommand = new Command('regtest')
   .description('Regtest commands')
   .addCommand(fundAddress)
   .addCommand(genBlock)
+  .addCommand(genBlocks)
+  .addCommand(init)
 
 const accountCommand = new Command('account')
   .description('Manage accounts')
@@ -1278,6 +1283,7 @@ const alkaneCommand = new Command('alkane')
   .addCommand(alkaneToken)
   .addCommand(alkanesTrace)
   .addCommand(alkaneSend)
+  .addCommand(factoryWasmDeploy)
 // .addCommand(alkaneMint)
 
 const providerCommand = new Command('provider')

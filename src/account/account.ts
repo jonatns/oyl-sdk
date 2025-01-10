@@ -109,10 +109,7 @@ export const getHDPaths = (
   network = bitcoin.networks.bitcoin,
   walletStandard: WalletStandard = 'bip44_account_last'
 ): HDPaths => {
-  const coinType =
-    network === bitcoin.networks.testnet
-      ? '1'
-      : '0'
+  const coinType = network === bitcoin.networks.testnet ? '1' : '0'
 
   switch (walletStandard) {
     case 'bip44_standard':
