@@ -44,6 +44,15 @@ interface AlkaneSimulateRequest {
     refundPointer: number;
     vout: number;
 }
+interface AlkaneToken {
+    name: string;
+    symbol: string;
+    totalSupply: number;
+    cap: number;
+    minted: number;
+    mintActive: boolean;
+    percentageMinted: number;
+}
 export declare class AlkanesRpc {
     alkanesUrl: string;
     constructor(url: string);
@@ -67,7 +76,15 @@ export declare class AlkanesRpc {
         vout: number;
         protocolTag?: string;
     }): Promise<any>;
-    parseSimulateReturn(v: any): {
+    getAlkaneById({ block, tx, }: {
+        block: string;
+        tx: string;
+    }): Promise<AlkaneToken>;
+    getAlkanes({ limit, offset, }: {
+        limit: number;
+        offset?: number;
+    }): Promise<AlkaneToken[]>;
+    parseSimulateReturn(v: any): "invalid" | {
         string: string;
         bytes: string;
         le: string;

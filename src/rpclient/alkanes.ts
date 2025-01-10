@@ -39,6 +39,19 @@ interface AlkaneSimulateRequest {
   vout: number
 }
 
+interface AlkaneToken {
+  name: string
+  symbol: string
+  totalSupply: number
+  cap: number
+  minted: number
+  mintActive: boolean
+  percentageMinted: number
+}
+
+const opcodes: string[] = ['99', '100', '101', '102', '103']
+const opcodesHRV: string[] = ['name', 'symbol', 'totalSupply', 'cap', 'minted']
+
 export class AlkanesRpc {
   public alkanesUrl: string
 
@@ -156,8 +169,113 @@ export class AlkanesRpc {
     ])
   }
 
+  async getAlkaneById({
+    block,
+    tx,
+  }: {
+    block: string
+    tx: string
+  }): Promise<AlkaneToken> {
+    const alkaneData: AlkaneToken = {
+      name: '',
+      symbol: '',
+      totalSupply: 0,
+      cap: 0,
+      minted: 0,
+      mintActive: false,
+      percentageMinted: 0,
+    }
+
+    for (let j = 0; j < opcodes.length; j++) {
+      try {
+        const result = await this.simulate({
+          target: { block, tx },
+          alkanes: [],
+          transaction: '0x',
+          block: '0x',
+          height: '20000',
+          txindex: 0,
+          inputs: [opcodes[j]],
+          pointer: 0,
+          refundPointer: 0,
+          vout: 0,
+        })
+        if (result.status === 0) {
+          alkaneData[opcodesHRV[j]] = Number(result.parsed.le)
+          if (opcodesHRV[j] === 'name' || opcodesHRV[j] === 'symbol') {
+            alkaneData[opcodesHRV[j]] = result.parsed.string
+          }
+          alkaneData.mintActive =
+            Number(alkaneData.minted) < Number(alkaneData.cap)
+          alkaneData.percentageMinted = Math.floor(
+            (alkaneData.minted / alkaneData.cap) * 100
+          )
+        }
+      } catch (error) {
+        console.log(error)
+      }
+    }
+    return alkaneData
+  }
+
+  async getAlkanes({
+    limit,
+    offset = 1,
+  }: {
+    limit: number
+    offset?: number
+  }): Promise<AlkaneToken[]> {
+    if (limit > 1000) {
+      throw new Error(
+        'Max limit reached. Request fewer than 1000 alkanes per call'
+      )
+    }
+    const alkaneResults: AlkaneToken[] = []
+    for (let i = offset; i <= limit; i++) {
+      const alkaneData: any = {}
+      let hasValidResult = false
+
+      for (let j = 0; j < opcodes.length; j++) {
+        try {
+          const result = await this.simulate({
+            target: { block: '2', tx: i.toString() },
+            alkanes: [],
+            transaction: '0x',
+            block: '0x',
+            height: '20000',
+            txindex: 0,
+            inputs: [opcodes[j]],
+            pointer: 0,
+            refundPointer: 0,
+            vout: 0,
+          })
+          if (result.status === 0) {
+            alkaneData[opcodesHRV[j]] = Number(result.parsed.le)
+            if (opcodesHRV[j] === 'name' || opcodesHRV[j] === 'symbol') {
+              alkaneData[opcodesHRV[j]] = result.parsed.string
+            }
+            hasValidResult = true
+            alkaneData.mintActive =
+              Number(alkaneData.minted) < Number(alkaneData.cap)
+            alkaneData.percentageMinted = Math.floor(
+              (alkaneData.minted / alkaneData.cap) * 100
+            )
+          }
+        } catch (error) {
+          console.log(error)
+        }
+      }
+      if (hasValidResult) {
+        alkaneResults.push(alkaneData)
+      }
+    }
+    return alkaneResults
+  }
+
   parseSimulateReturn(v: any) {
-    console.log(v)
+    if (v === '0x') {
+      return 'invalid'
+    }
     const stripHexPrefix = (v: string) => (v.startsWith('0x') ? v.slice(2) : v)
     const addHexPrefix = (v: string) => '0x' + stripHexPrefix(v)
 

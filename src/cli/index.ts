@@ -22,7 +22,6 @@ import { OylTransactionError } from '../errors'
 import { factoryWasmDeploy } from './alkane'
 import { init, genBlocks } from './regtest'
 
-
 const defaultProvider = {
   bitcoin: new Provider({
     url: 'https://mainnet.sandshrew.io',
@@ -588,10 +587,10 @@ const runeMint = new Command('mint')
       },
     })
     const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
-    await utxo.accountUtxos({
-      account,
-      provider,
-    })
+      await utxo.accountUtxos({
+        account,
+        provider,
+      })
     console.log(
       await rune.mint({
         gatheredUtxos: {
@@ -869,7 +868,7 @@ const alkaneToken = new Command('new-token')
     'number to reserve for factory id'
   )
 
-  .requiredOption('-supply, --total-supply <total-supply>', 'the token supply')
+  .requiredOption('-pre, --premine <premine>', 'amount to premine')
 
   .requiredOption('-cap, --capacity <cap>', 'the token cap')
   .requiredOption('-name, --token-name <name>', 'the token name')
@@ -891,7 +890,7 @@ const alkaneToken = new Command('new-token')
   .option('-feeRate, --feeRate <feeRate>', 'fee rate')
 
   /* @dev example call 
-oyl alkane new-token -resNumber 0x7 -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2 -amount 1000 -name "OYL" -symbol "OL" -cap 100000 -supply 5000
+oyl alkane new-token -resNumber 0x7 -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2 -amount 1000 -name "OYL" -symbol "OL" -cap 100000 -pre 5000
 */
 
   .action(async (options) => {
@@ -916,7 +915,7 @@ oyl alkane new-token -resNumber 0x7 -m 'abandon abandon abandon abandon abandon 
       BigInt(6),
       BigInt(options.reserveNumber),
       BigInt(0),
-      BigInt(options.totalSupply),
+      BigInt(options.premine),
       BigInt(options.amountPerMint),
       BigInt(options.capacity),
       BigInt(
@@ -1292,7 +1291,6 @@ const providerCommand = new Command('provider')
   .addCommand(multiCallSandshrewProviderCall)
   .addCommand(alkanesProvider)
 
-
 program.addCommand(regtestCommand)
 program.addCommand(alkaneCommand)
 program.addCommand(utxosCommand)
@@ -1302,6 +1300,5 @@ program.addCommand(brc20Command)
 program.addCommand(collectibleCommand)
 program.addCommand(runeCommand)
 program.addCommand(providerCommand)
-
 
 program.parse(process.argv)
