@@ -45,7 +45,12 @@ interface AlkaneToken {
   totalSupply: number
   cap: number
   minted: number
+  mintActive: boolean
+  percentageMinted: number
 }
+
+const opcodes: string[] = ['99', '100', '101', '102', '103']
+const opcodesHRV: string[] = ['name', 'symbol', 'totalSupply', 'cap', 'minted']
 
 export class AlkanesRpc {
   public alkanesUrl: string
@@ -171,20 +176,14 @@ export class AlkanesRpc {
     block: string
     tx: string
   }): Promise<AlkaneToken> {
-    const opcodes: string[] = ['99', '100', '101', '102', '103']
-    const opcodesHRV: string[] = [
-      'name',
-      'symbol',
-      'totalSupply',
-      'cap',
-      'minted',
-    ]
     const alkaneData: AlkaneToken = {
       name: '',
       symbol: '',
       totalSupply: 0,
       cap: 0,
       minted: 0,
+      mintActive: false,
+      percentageMinted: 0,
     }
 
     for (let j = 0; j < opcodes.length; j++) {
@@ -202,10 +201,15 @@ export class AlkanesRpc {
           vout: 0,
         })
         if (result.status === 0) {
-          alkaneData[opcodesHRV[j]] = result.parsed.le
+          alkaneData[opcodesHRV[j]] = Number(result.parsed.le)
           if (opcodesHRV[j] === 'name' || opcodesHRV[j] === 'symbol') {
             alkaneData[opcodesHRV[j]] = result.parsed.string
           }
+          alkaneData.mintActive =
+            Number(alkaneData.totalSupply) < Number(alkaneData.cap)
+          alkaneData.percentageMinted = Math.floor(
+            (alkaneData.totalSupply / alkaneData.cap) * 100
+          )
         }
       } catch (error) {
         console.log(error)
@@ -221,14 +225,6 @@ export class AlkanesRpc {
     amount: number
     startIndex?: number
   }): Promise<AlkaneToken[]> {
-    const opcodes: string[] = ['99', '100', '101', '102', '103']
-    const opcodesHRV: string[] = [
-      'name',
-      'symbol',
-      'totalSupply',
-      'cap',
-      'minted',
-    ]
     const alkaneResults: AlkaneToken[] = []
 
     for (let i = startIndex; i <= amount; i++) {
@@ -250,11 +246,16 @@ export class AlkanesRpc {
             vout: 0,
           })
           if (result.status === 0) {
-            alkaneData[opcodesHRV[j]] = result.parsed.le
+            alkaneData[opcodesHRV[j]] = Number(result.parsed.le)
             if (opcodesHRV[j] === 'name' || opcodesHRV[j] === 'symbol') {
               alkaneData[opcodesHRV[j]] = result.parsed.string
             }
             hasValidResult = true
+            alkaneData.mintActive =
+              Number(alkaneData.totalSupply) < Number(alkaneData.cap)
+            alkaneData.percentageMinted = Math.floor(
+              (alkaneData.totalSupply / alkaneData.cap) * 100
+            )
           }
         } catch (error) {
           console.log(error)
