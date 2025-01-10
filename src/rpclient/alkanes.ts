@@ -206,9 +206,9 @@ export class AlkanesRpc {
             alkaneData[opcodesHRV[j]] = result.parsed.string
           }
           alkaneData.mintActive =
-            Number(alkaneData.totalSupply) < Number(alkaneData.cap)
+            Number(alkaneData.minted) < Number(alkaneData.cap)
           alkaneData.percentageMinted = Math.floor(
-            (alkaneData.totalSupply / alkaneData.cap) * 100
+            (alkaneData.minted / alkaneData.cap) * 100
           )
         }
       } catch (error) {
@@ -219,15 +219,19 @@ export class AlkanesRpc {
   }
 
   async getAlkanes({
-    amount,
-    startIndex = 1,
+    limit,
+    offset = 1,
   }: {
-    amount: number
-    startIndex?: number
+    limit: number
+    offset?: number
   }): Promise<AlkaneToken[]> {
+    if (limit > 1000) {
+      throw new Error(
+        'Max limit reached. Request fewer than 1000 alkanes per call'
+      )
+    }
     const alkaneResults: AlkaneToken[] = []
-
-    for (let i = startIndex; i <= amount; i++) {
+    for (let i = offset; i <= limit; i++) {
       const alkaneData: any = {}
       let hasValidResult = false
 
@@ -252,9 +256,9 @@ export class AlkanesRpc {
             }
             hasValidResult = true
             alkaneData.mintActive =
-              Number(alkaneData.totalSupply) < Number(alkaneData.cap)
+              Number(alkaneData.minted) < Number(alkaneData.cap)
             alkaneData.percentageMinted = Math.floor(
-              (alkaneData.totalSupply / alkaneData.cap) * 100
+              (alkaneData.minted / alkaneData.cap) * 100
             )
           }
         } catch (error) {

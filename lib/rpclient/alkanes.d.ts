@@ -80,9 +80,9 @@ export declare class AlkanesRpc {
         block: string;
         tx: string;
     }): Promise<AlkaneToken>;
-    getAlkanes({ amount, startIndex, }: {
-        amount: number;
-        startIndex?: number;
+    getAlkanes({ limit, offset, }: {
+        limit: number;
+        offset?: number;
     }): Promise<AlkaneToken[]>;
     parseSimulateReturn(v: any): "invalid" | {
         string: string;
