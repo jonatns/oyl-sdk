@@ -2,7 +2,7 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { createPsbt, findCollectible } from './collectible'
 import { Account, mnemonicToAccount } from '../account/account'
 import { Provider } from '../provider/provider'
-import { GatheredUtxos } from 'shared/interface'
+import { GatheredUtxos } from '../shared/interface'
 
 const provider = new Provider({
   url: '',

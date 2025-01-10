@@ -18,7 +18,6 @@ import {
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '..'
 import { Signer } from '..'
-import { AssetType, MarketplaceOffers } from '..'
 import { OylTransactionError } from '../errors'
 import { factoryWasmDeploy } from './alkane'
 import { init, genBlocks } from './regtest'
@@ -30,16 +29,12 @@ const defaultProvider = {
     projectId: process.env.SANDSHREW_PROJECT_ID!,
     network: bitcoin.networks.bitcoin,
     networkType: 'mainnet',
-    //apiUrl: 'https://staging-api.oyl.gg',
-    //opiUrl: 'https://mainnet-opi.sandshrew.io/v1'
   }),
   regtest: new Provider({
     url: 'http://localhost:3000',
     projectId: 'regtest',
     network: bitcoin.networks.regtest,
     networkType: 'regtest',
-    //apiUrl: 'https://staging-api.oyl.gg',
-    //opiUrl: 'https://mainnet-opi.sandshrew.io/v1'
   }),
 }
 
@@ -1135,36 +1130,6 @@ const multiCallSandshrewProviderCall = new Command('sandShrewMulticall')
     }
   })
 
-const apiProviderCall = new Command('api')
-  .description('Returns data based on api method invoked')
-  .requiredOption(
-    '-p, --provider <provider>',
-    'provider to use to access the network.'
-  )
-  .requiredOption(
-    '-method, --method <method>',
-    'name of the method you want to call for the api.'
-  )
-  .option(
-    '-params, --parameters <parameters>',
-    'parameters for the api method you are calling.'
-  )
-  /* @dev example call
-    oyl provider api -method getUnisatTickerOffers -params '{"ticker":"ordi"}' -p bitcoin
-
-    please note the json format if you need to pass an object.
-  */
-  .action(async (options) => {
-    const provider: Provider = defaultProvider[options.provider]
-    let isJson: object
-    try {
-      isJson = JSON.parse(options.parameters)
-      console.log(await provider.api[options.method](isJson))
-    } catch (error) {
-      console.log(await provider.api[options.method](options.parameters))
-    }
-  })
-
 const alkanesProvider = new Command('alkanes')
   .description('Returns data based on alkanes method invoked')
   .requiredOption(
@@ -1227,102 +1192,6 @@ const ordProviderCall = new Command('ord')
     } catch (error) {
       console.log(await provider.ord[options.method](options.parameters))
     }
-  })
-
-const marketPlaceBuy = new Command('buy')
-
-  .description('Returns rune details based on name provided')
-  .requiredOption(
-    '-p, --provider <provider>',
-    'provider to use to access the network.'
-  )
-  .requiredOption(
-    '-m, --mnemonic <mnemonic>',
-    'mnemonic you want to get private keys from'
-  )
-  .requiredOption(
-    '-type, --asset-type <assetType>',
-    'pass BRC20, COLLECTIBLE or RUNE'
-  )
-  .requiredOption('-feeRate, --feeRate <feeRate>', 'fee rate')
-  .requiredOption(
-    '-tick --ticker <ticker>',
-    'Asset ticker to fetch quotes for.'
-  )
-  .option('-legacy, --legacy <legacy>', 'legacy private key')
-  .option('-taproot, --taproot <taproot>', 'taproot private key')
-  .option(
-    '-nested, --nested-segwit <nestedSegwit>',
-    'nested segwit private key'
-  )
-  .option(
-    '-native, --native-segwit <nativeSegwit>',
-    'native segwit private key'
-  )
-  .option(
-    '-receive, --receive-address <receiveAddress>',
-    'address to receieve the assets.'
-  )
-
-  /* @dev example call
-    oyl marketplace buy -type BRC20 -tick ordi -feeRate 30 -native <nativePrivateKey> -p bitcoin
-
-    please note the json format if you need to pass an object.
-  */
-  .action(async (options) => {
-    const provider: Provider = defaultProvider[options.provider]
-    const signer = new Signer(provider.network, {
-      segwitPrivateKey: options.nativeSegwit,
-      taprootPrivateKey: options.taproot,
-      nestedSegwitPrivateKey: options.nestedSegwit,
-      legacyPrivateKey: options.legacy,
-    })
-    const account = mnemonicToAccount({
-      mnemonic: options.mnemonic,
-      opts: {
-        network: provider.network,
-        spendStrategy: {
-          addressOrder: ['taproot', 'nativeSegwit'],
-          utxoSortGreatestToLeast: true,
-          changeAddress: 'taproot',
-        },
-      },
-    })
-    let quotes: MarketplaceOffers[]
-    switch (options.assetType) {
-      case 'BRC20':
-        options.assetType = AssetType.BRC20
-        quotes = await provider.api.getBrc20Offers({
-          ticker: options.ticker,
-        })
-
-        break
-      case 'RUNES':
-        options.assetType = AssetType.RUNES
-        quotes = await provider.api.getRuneOffers({
-          ticker: options.ticker,
-        })
-        break
-      case 'COLLECTIBLE':
-        options.assetType = AssetType.COLLECTIBLE
-        break
-      default:
-        throw new OylTransactionError(Error('Incorrect asset type'))
-    }
-    // const marketplace: Trade = new Trade({
-    //   provider: provider,
-    //   receiveAddress:
-    //     options.receiveAddress === undefined
-    //       ? account.taproot.address
-    //       : options.receiveAddress,
-    //   account: account,
-    //   assetType: options.assetType,
-    //   signer,
-    //   feeRate: Number(options.feeRate),
-    // })
-    // const offersToBuy = await marketplace.processAllOffers(quotes)
-    // const signedTxs = await marketplace.buyMarketPlaceOffers(offersToBuy)
-    // console.log(signedTxs)
   })
 
 const fundAddress = new Command('fund')
@@ -1418,14 +1287,9 @@ const alkaneCommand = new Command('alkane')
 
 const providerCommand = new Command('provider')
   .description('Functions avaialble for all provider services')
-  .addCommand(apiProviderCall)
   .addCommand(ordProviderCall)
   .addCommand(multiCallSandshrewProviderCall)
   .addCommand(alkanesProvider)
-
-const marketPlaceCommand = new Command('marketplace')
-  .description('Functions for marketplace')
-  .addCommand(marketPlaceBuy)
 
 program.addCommand(regtestCommand)
 program.addCommand(alkaneCommand)
@@ -1436,6 +1300,5 @@ program.addCommand(brc20Command)
 program.addCommand(collectibleCommand)
 program.addCommand(runeCommand)
 program.addCommand(providerCommand)
-program.addCommand(marketPlaceCommand)
 
 program.parse(process.argv)

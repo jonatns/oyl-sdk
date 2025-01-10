@@ -12,6 +12,7 @@ export interface OrdOutput {
     spent: boolean;
     transaction: string;
     value: number;
+    output?: string;
 }
 export declare class OrdRpc {
     ordUrl: string;

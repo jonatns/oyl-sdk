@@ -540,7 +540,7 @@ export const send = async ({
     account: account,
     provider: provider,
   })
-  // 1540
+
   const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
     signer.taprootKeyPair,
     { network: provider.network }
