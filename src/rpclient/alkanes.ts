@@ -39,6 +39,14 @@ interface AlkaneSimulateRequest {
   vout: number
 }
 
+interface AlkaneToken {
+  name: string
+  symbol: string
+  totalSupply: number
+  cap: number
+  minted: number
+}
+
 export class AlkanesRpc {
   public alkanesUrl: string
 
@@ -156,18 +164,74 @@ export class AlkanesRpc {
     ])
   }
 
-  async getAlkanes(amount: number) {
+  async getAlkaneById({
+    block,
+    tx,
+  }: {
+    block: string
+    tx: string
+  }): Promise<AlkaneToken> {
     const opcodes: string[] = ['99', '100', '101', '102', '103']
     const opcodesHRV: string[] = [
       'name',
       'symbol',
-      'total_supply',
+      'totalSupply',
       'cap',
       'minted',
     ]
-    const alkaneResults: any[] = []
+    const alkaneData: AlkaneToken = {
+      name: '',
+      symbol: '',
+      totalSupply: 0,
+      cap: 0,
+      minted: 0,
+    }
 
-    for (let i = 1; i < amount; i++) {
+    for (let j = 0; j < opcodes.length; j++) {
+      try {
+        const result = await this.simulate({
+          target: { block, tx },
+          alkanes: [],
+          transaction: '0x',
+          block: '0x',
+          height: '20000',
+          txindex: 0,
+          inputs: [opcodes[j]],
+          pointer: 0,
+          refundPointer: 0,
+          vout: 0,
+        })
+        if (result.status === 0) {
+          alkaneData[opcodesHRV[j]] = result.parsed.le
+          if (opcodesHRV[j] === 'name' || opcodesHRV[j] === 'symbol') {
+            alkaneData[opcodesHRV[j]] = result.parsed.string
+          }
+        }
+      } catch (error) {
+        console.log(error)
+      }
+    }
+    return alkaneData
+  }
+
+  async getAlkanes({
+    amount,
+    startIndex = 1,
+  }: {
+    amount: number
+    startIndex?: number
+  }): Promise<AlkaneToken[]> {
+    const opcodes: string[] = ['99', '100', '101', '102', '103']
+    const opcodesHRV: string[] = [
+      'name',
+      'symbol',
+      'totalSupply',
+      'cap',
+      'minted',
+    ]
+    const alkaneResults: AlkaneToken[] = []
+
+    for (let i = startIndex; i <= amount; i++) {
       const alkaneData: any = {}
       let hasValidResult = false
 
