@@ -20,6 +20,20 @@ import { Signer } from '../signer'
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import { encodeRunestone } from '@magiceden-oss/runestone-lib'
+import { OrdOutput } from 'rpclient/ord'
+
+interface OrdOutputs {
+  result: OrdOutput;
+}
+interface SingleRuneOutpoint {
+  output: string;
+  wallet_addr: string;
+  pkscript: string;
+  balances: number[];
+  decimals: number[];
+  rune_ids: string[];
+  satoshis?: number;
+};
 
 export const createSendPsbt = async ({
   gatheredUtxos,
@@ -640,59 +654,63 @@ const getRuneOutpoints = async ({
   address: string
   provider: Provider
   runeId: string
-}) => {
+}): Promise<SingleRuneOutpoint[]> => {
   const addressOutpoints = await provider.ord.getOrdData(address);
-
-  //const runeNameIdMap = 
   const spacedRuneName = await provider.ord.getRuneById(runeId);
-  const runeByName = await provider.ord.getRuneByName(spacedRuneName.entry.spaced_rune);
+  const runeName = spacedRuneName.entry.spaced_rune;
 
-  console.log("addressOutpoints", addressOutpoints)
   const ordOutputs = await batchOrdOutput({
     outpoints: addressOutpoints.outputs,
     provider: provider,
+    rune_name: runeName
   })
 
-  await mapRuneBalances({
+  const runeUtxosOutpoints = await mapRuneBalances({
     ordOutputs: ordOutputs,
     provider: provider,
   })
-  console.log("ordOutputs", ordOutputs)
-  console.log("spacedRuneName", spacedRuneName.entry.spaced_rune)
-  console.log("runeByName", runeByName)
+
+  return runeUtxosOutpoints;
 }
 
 const mapRuneBalances = async ({
   ordOutputs,
   provider,
 }: {
-  ordOutputs: any[]
+  ordOutputs: OrdOutputs[]
   provider: Provider
-}) => {
-  const runeUtxosOutpoints: any[] = [];
-  const singleRuneOutpoint: any = {};
+}): Promise<SingleRuneOutpoint[]> => {
+  const runeOutpoints: SingleRuneOutpoint[] = [];
   for (let i = 0; i < ordOutputs.length; i++) {
+    const singleRuneOutpoint:any = {};
     singleRuneOutpoint["output"] = ordOutputs[i].result.output;
     singleRuneOutpoint["wallet_addr"] = ordOutputs[i].result.address;
-    console.log("ordOutputs[i].result.script_pubkey", ordOutputs[i].result.script_pubkey);
-    const pkscript = bitcoin.script.fromASM(ordOutputs[i].result.script_pubkey);
-    const pkScriptHex = Buffer.from(pkscript).toString('hex');
-    console.log("pkScriptHex", pkScriptHex);
+    const [txId, txIndex] = ordOutputs[i].result.output.split(':');
+    singleRuneOutpoint["pkscript"] = (await provider.esplora.getTxInfo(txId)).vout[txIndex].scriptpubkey;
+    singleRuneOutpoint["balances"] = [];
+    singleRuneOutpoint["decimals"] = [];
+    singleRuneOutpoint["rune_ids"] = [];
     for (const rune in ordOutputs[i].result.runes) {
-       //runeUtxosOutpoints[i].balances[rune] = ordOutputs[i].result.runes[rune];
+      singleRuneOutpoint["balances"].push(ordOutputs[i].result.runes[rune].amount);
+      singleRuneOutpoint["decimals"].push(ordOutputs[i].result.runes[rune].divisibility);
+      singleRuneOutpoint["rune_ids"].push((await provider.ord.getRuneByName(rune)).id);
     }
+    runeOutpoints.push(singleRuneOutpoint);
   }
+  return runeOutpoints;
 }
 
 const batchOrdOutput = async ({
   outpoints,
   provider,
+  rune_name
 }: {
-  outpoints: []
+  outpoints: string[]
   provider: Provider
-}) => {
+  rune_name: string
+}): Promise<OrdOutputs[]> => {
   const MAX_OUTPOINTS_PER_CALL = 1000;
-  const ordOutputs = [];
+  const ordOutputs: OrdOutputs[] = [];
   for (let i = 0; i < outpoints.length; i += MAX_OUTPOINTS_PER_CALL) {
     const batch = outpoints.slice(i, i + MAX_OUTPOINTS_PER_CALL);
     const multiCall = batch.map((outpoint) => {
@@ -702,7 +720,7 @@ const batchOrdOutput = async ({
     for (let i = 0; i < results.length; i++) {
       results[i].result["output"] = batch[i];
     }
-    const filteredResult = results.filter((output) => Object.keys(output.result.runes).length > 0);
+    const filteredResult = results.filter((output) => Object.keys(output.result.runes).includes(rune_name));
 
     ordOutputs.push(...filteredResult);
   }
@@ -723,17 +741,14 @@ export const findRuneUtxos = async ({
   targetNumberOfRunes: number
 }) => {
   const runeUtxos: RuneUTXO[] = []
-  const runeUtxoOutpoints: any[] = await provider.api.getRuneOutpoints({
-    address: address,
-  })
+ 
 
-  await getRuneOutpoints({
+  const runeUtxoOutpoints: SingleRuneOutpoint[] = await getRuneOutpoints({
     address: address,
     provider: provider,
     runeId: runeId,
   })
-  console.log("runeUtxoOutpoints (from api)", runeUtxoOutpoints)
-  throw new Error('test')
+  
   if (greatestToLeast) {
     runeUtxoOutpoints?.sort((a, b) => b.satoshis - a.satoshis)
   } else {
@@ -788,6 +803,7 @@ export const findRuneUtxos = async ({
       break
     }
   }
+  
 
   return { runeUtxos, runeTotalSatoshis, divisibility }
 }
