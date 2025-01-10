@@ -234,7 +234,10 @@ export class AlkanesRpc {
     for (let i = offset; i <= limit; i++) {
       const alkaneData: any = {}
       let hasValidResult = false
-
+      alkaneData.id = {
+        block: '2',
+        tx: i.toString(),
+      }
       for (let j = 0; j < opcodes.length; j++) {
         try {
           const result = await this.simulate({
