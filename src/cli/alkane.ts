@@ -9,18 +9,20 @@ import * as alkanes from '../alkanes'
 import * as utxo from '../utxo'
 import { timeout } from '../shared/utils'
 
+const DEFAULT_RESERVE_NUMBER = '0x7'
+
 /* @dev example calls
-  oyl alkane factoryWasmDeploy -r "0x0ffe" -c ~/git/oyl-sdk/src/alkanes/free_mint.wasm
+  oyl alkane factoryWasmDeploy -c ./src/alkanes/free_mint.wasm -r "0x7" 
 */
 
 export const factoryWasmDeploy = new Command('factoryWasmDeploy')
   .requiredOption(
-    '-r, --reserveNumber <reserveNumber>',
-    'Number to reserve for factory id'
-  )
-  .requiredOption(
     '-c, --contract <contract>',
-    'Contract wasm file to deploy'
+    'Relative path to contract wasm file to deploy (e.g., "../alkanes/free_mint.wasm")'
+  )
+  .option(
+    '-r, --reserveNumber <reserveNumber>',
+    `Number (in hex) to reserve for factory id `
   )
   .option(
     '-n, --networkType <networkType>',
@@ -41,7 +43,7 @@ export const factoryWasmDeploy = new Command('factoryWasmDeploy')
 
     const contract = new Uint8Array(
       Array.from(
-        await fs.readFile(options.contract)
+        await fs.readFile(path.resolve(process.cwd(), options.contract))
       )
     )
     const gzip = promisify(_gzip)
@@ -79,10 +81,12 @@ export const factoryWasmDeploy = new Command('factoryWasmDeploy')
       mempoolTxs
     )
 
+    console.log('Block hash: ', blockHash)
+
     await timeout(5000)
 
     const { txId: revealTxId } = await alkanes.deployReveal({
-      createReserveNumber: options.reserveNumber,
+      createReserveNumber: options.reserveNumber || DEFAULT_RESERVE_NUMBER,
       commitTxId: commitTxId,
       script: script,
       account: wallet.account,
@@ -92,4 +96,21 @@ export const factoryWasmDeploy = new Command('factoryWasmDeploy')
     })
 
     console.log('Reveal txid: ', revealTxId)
+
+    const mempool2 = await wallet.provider.sandshrew.bitcoindRpc.getRawMemPool(true)
+    const mempoolTxs2 = Object.keys(mempool2)
+    console.log('mempool transactions: ', mempoolTxs2)
+    const blockHash2 = await wallet.provider.sandshrew.bitcoindRpc.generateBlock(
+      wallet.account.nativeSegwit.address,
+      mempoolTxs2
+    )
+    console.log('Block hash: ', blockHash2)
+    await timeout(5000)
+
+    const contractTrace = await wallet.provider.alkanes.trace({
+      txid: revealTxId,
+      vout: 3
+    });
+
+    console.log('Contract trace: ', contractTrace)
   })
