@@ -164,7 +164,6 @@ export const addressUtxos = async ({
       return {
         utxo,
         txOutput,
-        // We might be able to derive this from txOutput without making an extra call.
         scriptPk: txDetails.vout[utxo.vout].scriptpubkey,
       }
     } catch (error) {
