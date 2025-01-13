@@ -100,6 +100,7 @@ export class EsploraRpc {
   async getBlockTxids(hash: string): Promise<any> {
     return await this._call('esplora_block::txids', [hash])
   }
+
   async getTxHex(txid: string) {
     return await this._call('esplora_tx::hex', [txid])
   }
