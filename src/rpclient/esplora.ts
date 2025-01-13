@@ -57,7 +57,10 @@ export class EsploraRpc {
     this.esploraUrl = url
   }
 
-  async _call(method, params = []) {
+  async _call(method, params = [], timeout = 5000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
     const requestData = {
       jsonrpc: '2.0',
       method: method,
@@ -72,10 +75,12 @@ export class EsploraRpc {
       },
       body: JSON.stringify(requestData),
       cache: 'no-cache',
+      signal: controller.signal,
     }
 
     try {
       const response = await fetch(this.esploraUrl, requestOptions)
+      clearTimeout(timeoutId)
       const responseData = await response.json()
 
       if (responseData.error) {
@@ -85,8 +90,13 @@ export class EsploraRpc {
 
       return responseData.result
     } catch (error) {
-      console.error('Request Error:', error)
-      throw error
+      if (error.name === 'AbortError') {
+        console.error('Request Timeout:', error);
+        throw new Error('Request timed out');
+      } else {
+        console.error('Request Error:', error)
+        throw error
+      }
     }
   }
 
