@@ -32,22 +32,22 @@ describe('Signer', () => {
     expect(signer.network).toEqual(network)
     expect(signer.segwitKeyPair.publicKey.toString('hex')).toBe(
       ECPair.fromPrivateKey(
-        Buffer.from(keys.segwitPrivateKey, 'hex')
+        Buffer.from(keys.segwitPrivateKey!, 'hex')
       ).publicKey.toString('hex')
     )
     expect(signer.taprootKeyPair.publicKey.toString('hex')).toBe(
       ECPair.fromPrivateKey(
-        Buffer.from(keys.taprootPrivateKey, 'hex')
+        Buffer.from(keys.taprootPrivateKey!, 'hex')
       ).publicKey.toString('hex')
     )
     expect(signer.legacyKeyPair.publicKey.toString('hex')).toBe(
       ECPair.fromPrivateKey(
-        Buffer.from(keys.legacyPrivateKey, 'hex')
+        Buffer.from(keys.legacyPrivateKey!, 'hex')
       ).publicKey.toString('hex')
     )
     expect(signer.nestedSegwitKeyPair.publicKey.toString('hex')).toBe(
       ECPair.fromPrivateKey(
-        Buffer.from(keys.nestedSegwitPrivateKey, 'hex')
+        Buffer.from(keys.nestedSegwitPrivateKey!, 'hex')
       ).publicKey.toString('hex')
     )
   })
@@ -122,9 +122,9 @@ describe('Signer', () => {
     })
 
     const verifySignature: boolean = Verifier.verifySignature(
-      address,
+      address!,
       message,
-      signedMessage
+      signedMessage!
     )
 
     expect(signedMessage).toEqual(signtaure)
@@ -149,9 +149,9 @@ describe('Signer', () => {
     })
 
     const verifySignature: boolean = Verifier.verifySignature(
-      address,
+      address!,
       message,
-      signedMessage
+      signedMessage!
     )
 
     expect(signedMessage).toEqual(signtaure)
@@ -176,9 +176,9 @@ describe('Signer', () => {
     })
 
     const verifySignature: boolean = Verifier.verifySignature(
-      address,
+      address!,
       message,
-      signedMessage
+      signedMessage!
     )
 
     expect(signedMessage).toEqual(signtaure)
@@ -203,9 +203,9 @@ describe('Signer', () => {
     })
 
     const verifySignature: boolean = Verifier.verifySignature(
-      address,
+      address!,
       message,
-      signedMessage
+      signedMessage!
     )
 
     expect(signedMessage).toEqual(signtaure)
@@ -225,7 +225,7 @@ describe('Signer', () => {
 
     const verifySignature: boolean = signer.segwitKeyPair.verify(
       Buffer.from(hashedMessage, 'base64'),
-      Buffer.from(signedMessage, 'base64')
+      Buffer.from(signedMessage!, 'base64')
     )
 
     expect(signedMessage).toEqual(signtaure)
