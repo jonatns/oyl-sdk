@@ -5,6 +5,10 @@ import * as brc20 from '../brc20'
 import * as collectible from '../collectible'
 import * as rune from '../rune'
 import * as alkanes from '../alkanes'
+import fs from 'fs-extra'
+import { gzip as _gzip } from 'node:zlib'
+import { promisify } from 'util'
+import path from 'path'
 
 import 'dotenv/config'
 import {
@@ -18,7 +22,6 @@ import {
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '..'
 import { Signer } from '..'
-import { OylTransactionError } from '../errors'
 import { factoryWasmDeploy } from './alkane'
 import { init, genBlocks } from './regtest'
 
@@ -867,6 +870,10 @@ const alkaneToken = new Command('new-token')
     '-resNumber, --reserveNumber <reserveNumber>',
     'number to reserve for factory id'
   )
+  .requiredOption(
+    '-i, --image <image>',
+    'Relative path to image file to deploy (e.g., "../alkanes/free_mint.wasm")'
+  )
 
   .requiredOption('-pre, --premine <premine>', 'amount to premine')
 
@@ -890,7 +897,7 @@ const alkaneToken = new Command('new-token')
   .option('-feeRate, --feeRate <feeRate>', 'fee rate')
 
   /* @dev example call 
-oyl alkane new-token -resNumber 0x7 -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2 -amount 1000 -name "OYL" -symbol "OL" -cap 100000 -pre 5000
+oyl alkane new-token -i ./player1.png -resNumber 0x7 -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2 -amount 1000 -name "OYL" -symbol "OL" -cap 100000 -pre 5000
 */
 
   .action(async (options) => {
@@ -910,6 +917,17 @@ oyl alkane new-token -resNumber 0x7 -m 'abandon abandon abandon abandon abandon 
     })
     const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
       await utxo.accountUtxos({ account, provider })
+
+    const image = new Uint8Array(
+      Array.from(await fs.readFile(path.resolve(process.cwd(), options.image)))
+    )
+    const gzip = promisify(_gzip)
+
+    const payload = {
+      body: await gzip(image, { level: 9 }),
+      cursed: false,
+      tags: { contentType: '' },
+    }
 
     const calldata = [
       BigInt(6),
@@ -933,7 +951,8 @@ oyl alkane new-token -resNumber 0x7 -m 'abandon abandon abandon abandon abandon 
     ]
 
     console.log(
-      await alkanes.execute({
+      await alkanes.transactReveal({
+        payload,
         gatheredUtxos: {
           utxos: accountSpendableTotalUtxos,
           totalAmount: accountSpendableTotalBalance,

@@ -110,6 +110,17 @@ export declare const actualDeployRevealFee: ({ createReserveNumber, tweakedTapro
 }) => Promise<{
     fee: number;
 }>;
+export declare const actualTransactRevealFee: ({ calldata, tweakedTaprootKeyPair, commitTxId, receiverAddress, script, provider, feeRate, }: {
+    calldata: bigint[];
+    tweakedTaprootKeyPair: bitcoin.Signer;
+    commitTxId: string;
+    receiverAddress: string;
+    script: Buffer;
+    provider: Provider;
+    feeRate?: number;
+}) => Promise<{
+    fee: number;
+}>;
 export declare const actualExecuteFee: ({ gatheredUtxos, account, calldata, provider, feeRate, signer, }: {
     gatheredUtxos: GatheredUtxos;
     account: Account;
@@ -169,7 +180,53 @@ export declare const deployReveal: ({ createReserveNumber, commitTxId, script, a
     fee: number;
     satsPerVByte: string;
 }>;
+export declare const executeReveal: ({ calldata, commitTxId, script, account, provider, feeRate, signer, }: {
+    calldata: bigint[];
+    commitTxId: string;
+    script: string;
+    account: Account;
+    provider: Provider;
+    feeRate?: number;
+    signer: Signer;
+}) => Promise<{
+    txId: string;
+    rawTx: string;
+    size: any;
+    weight: any;
+    fee: number;
+    satsPerVByte: string;
+}>;
 export declare const execute: ({ gatheredUtxos, account, calldata, provider, feeRate, signer, }: {
+    gatheredUtxos: GatheredUtxos;
+    account: Account;
+    calldata: bigint[];
+    provider: Provider;
+    feeRate?: number;
+    signer: Signer;
+}) => Promise<{
+    txId: string;
+    rawTx: string;
+    size: any;
+    weight: any;
+    fee: number;
+    satsPerVByte: string;
+}>;
+export declare const createTransactReveal: ({ calldata, receiverAddress, script, feeRate, tweakedTaprootKeyPair, provider, fee, commitTxId, }: {
+    calldata: bigint[];
+    receiverAddress: string;
+    script: Buffer;
+    feeRate: number;
+    tweakedTaprootKeyPair: bitcoin.Signer;
+    provider: Provider;
+    fee?: number;
+    commitTxId: string;
+}) => Promise<{
+    psbt: string;
+    psbtHex: string;
+    fee: number;
+}>;
+export declare const transactReveal: ({ payload, gatheredUtxos, account, calldata, provider, feeRate, signer, }: {
+    payload?: AlkanesPayload;
     gatheredUtxos: GatheredUtxos;
     account: Account;
     calldata: bigint[];
