@@ -306,3 +306,9 @@ export class AlkanesRpc {
     }
   }
 }
+
+new AlkanesRpc('http://localhost:3000/v1/regtest')
+  .getAlkanes({
+    limit: 100,
+  })
+  .then((ret) => console.log(ret))
