@@ -52,6 +52,12 @@ export class SandshrewBitcoinClient {
     }
   }
 
+  async getBlockTimeByHeight(blockHeight: number) {
+    const blockData = await this._call('getblockhash', [blockHeight])
+    const block = await this._call('getblock', [blockData])
+    return block.time
+  }
+
   async multiCall(parameters: (string | string[])[][]) {
     return await this._call('sandshrew_multicall', parameters)
   }

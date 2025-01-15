@@ -404,6 +404,7 @@ export interface IRpcMethods {
     getBlock?(arg1: string, arg2?: number): Promise<any>;
     getBlockchainInfo?(): Promise<any>;
     getBlockCount?(): Promise<any>;
+    getBlockHash?(arg1: number): Promise<any>;
     getBlockFilter?(arg: string): Promise<any>;
     getBlockHeader?(arg: string): Promise<any>;
     getBlockStats?(arg: string): Promise<any>;
