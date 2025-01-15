@@ -52,6 +52,7 @@ interface AlkaneToken {
     minted: number;
     mintActive: boolean;
     percentageMinted: number;
+    mintAmount: number;
 }
 export declare class AlkanesRpc {
     alkanesUrl: string;

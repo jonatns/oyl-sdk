@@ -201,26 +201,25 @@ export const createSendPsbt = async ({
               output: u32(BigInt(1)),
             },
           ],
-          pointer: 0,
-          refundPointer: 0,
+          pointer: 2,
+          refundPointer: 2,
           calldata: Buffer.from([]),
         }),
       ],
     }).encodedRunestone
 
-    psbt.addOutput({
-      value: inscriptionSats,
-      address: account.taproot.address,
-    })
+    const output = { script: protostone, value: 0 }
+    psbt.addOutput(output)
 
     psbt.addOutput({
       value: inscriptionSats,
       address: toAddress,
     })
 
-    const output = { script: protostone, value: 0 }
-    psbt.addOutput(output)
-
+    psbt.addOutput({
+      value: inscriptionSats,
+      address: account.taproot.address,
+    })
     const changeAmount =
       gatheredUtxos.totalAmount +
       totalSatoshis -
@@ -1416,7 +1415,48 @@ export const createTransactReveal = async ({
   }
 }
 
-export const transactReveal = async ({
+export const contractDeployment = async ({
+  payload,
+  gatheredUtxos,
+  account,
+  reserveNumber,
+  provider,
+  feeRate,
+  signer,
+}: {
+  payload: AlkanesPayload
+  gatheredUtxos: GatheredUtxos
+  account: Account
+  reserveNumber: string
+  provider: Provider
+  feeRate?: number
+  signer: Signer
+}) => {
+  const { script, txId } = await deployCommit({
+    payload,
+    gatheredUtxos,
+    account,
+    provider,
+    feeRate,
+    signer,
+  })
+
+  await timeout(3000)
+
+  const reveal = await deployReveal({
+    commitTxId: txId,
+    script,
+    createReserveNumber: reserveNumber,
+    account,
+    provider,
+    feeRate,
+    signer,
+  })
+
+  return { ...reveal, commitTx: txId }
+}
+
+export const tokenDeployment = async ({
   payload,
   gatheredUtxos,
   account,
@@ -1442,9 +1482,9 @@ export const transactReveal = async ({
     signer,
   })
 
-  await timeout(2000)
+  await timeout(3000)
 
-  const revealResult = await executeReveal({
+  const reveal = await executeReveal({
     calldata,
     script,
     commitTxId: txId,
@@ -1454,5 +1494,5 @@ export const transactReveal = async ({
     signer,
   })
 
-  return revealResult
+  return { ...reveal, commitTx: txId }
 }

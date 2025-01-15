@@ -42,7 +42,7 @@ $ oyl utxo --help
 - brc20
 - rune
 - provider
-- marketplace
+- alkane
 
 The available namespaces list will grow as new protocols are implemented.
 
@@ -70,8 +70,12 @@ The available namespaces list will grow as new protocols are implemented.
 - provider
   - api
   - ord
-- marketplace
-  - buy
+- alkane
+  - new-contract
+  - new-token
+  - execute
+  - trace
+  - send
 
 Recommended usage of this CLI is as follows:
 

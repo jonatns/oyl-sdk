@@ -4,42 +4,66 @@ import { gzip as _gzip } from 'node:zlib'
 import { promisify } from 'util'
 import path from 'path'
 
-import { Wallet } from './wallet'
 import * as alkanes from '../alkanes'
 import * as utxo from '../utxo'
-import { timeout } from '../shared/utils'
+import { Wallet } from './wallet'
 
-const DEFAULT_RESERVE_NUMBER = '0x7'
+export const alkanesTrace = new Command('trace')
+  .description('Returns data based on txid and vout of deployed alkane')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use to access the network.'
+  )
+  .option(
+    '-params, --parameters <parameters>',
+    'parameters for the ord method you are calling.'
+  )
+  /* @dev example call
+    oyl alkanes trace -params '{"txid":"abc123...","vout":0}' -p regtest
 
-/* @dev example calls
-  oyl alkane factoryWasmDeploy -c ./src/alkanes/free_mint.wasm -r "0x7" 
-*/
+    please note the json format if you need to pass an object.
+  */
+  .action(async (options) => {
+    const wallet: Wallet = new Wallet({ networkType: options.provider })
+    const provider = wallet.provider
+    let isJson: { vout: number; txid: string }
+    try {
+      isJson = JSON.parse(options.parameters)
+      const { vout, txid } = isJson
+      console.log(await provider.alkanes.trace({ vout, txid }))
+    } catch (error) {
+      const { vout, txid } = isJson
+      console.log(await provider.alkanes.trace({ vout, txid }))
+    }
+  })
 
-export const factoryWasmDeploy = new Command('factoryWasmDeploy')
+export const alkaneContractDeploy = new Command('new-contract')
   .requiredOption(
     '-c, --contract <contract>',
     'Relative path to contract wasm file to deploy (e.g., "../alkanes/free_mint.wasm")'
   )
-  .option(
-    '-r, --reserveNumber <reserveNumber>',
-    `Number (in hex) to reserve for factory id `
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
   )
-  .option(
-    '-n, --networkType <networkType>',
-    '(optional) Network type: regtest | mainnet (default = regtest)'
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .requiredOption(
+    '-resNumber, --reserveNumber <reserveNumber>',
+    'number to reserve for factory id'
   )
-  .option(
-    '-m, --mnemonic <mnemonic>',
-    '(optional) Mnemonic used for signing transactions (default = abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about)'
-  )
-  .option('-feeRate, --feeRate <feeRate>', '(optional) Fee rate')
+
+  /* @dev example call 
+oyl alkane factory-deploy -c ./src/alkanes/free_mint.wasm -resNumber 777 -p regtest -feeRate 2
+*/
 
   .action(async (options) => {
-    console.log(`Deploying contract ${options.contract}`)
-    const wallet = new Wallet({
-      mnemonic: options.mnemonic,
-      feeRate: options.feeRate,
-    });
+    const wallet: Wallet = new Wallet({ networkType: options.provider })
+    const account = wallet.account
+    const provider = wallet.provider
+    const signer = wallet.signer
+
+    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
+      await utxo.accountUtxos({ account, provider })
 
     const contract = new Uint8Array(
       Array.from(
@@ -54,63 +78,207 @@ export const factoryWasmDeploy = new Command('factoryWasmDeploy')
       tags: { contentType: '' },
     }
 
+    console.log(
+      await alkanes.contractDeployment({
+        reserveNumber: options.reserveNumber,
+        payload,
+        gatheredUtxos: {
+          utxos: accountSpendableTotalUtxos,
+          totalAmount: accountSpendableTotalBalance,
+        },
+        feeRate: options.feeRate,
+        account,
+        signer,
+        provider,
+      })
+    )
+  })
+
+export const alkaneTokenDeploy = new Command('new-token')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+  .requiredOption(
+    '-resNumber, --reserveNumber <reserveNumber>',
+    'number to reserve for factory id'
+  )
+  .requiredOption('-cap, --capacity <cap>', 'the token cap')
+  .requiredOption('-name, --token-name <name>', 'the token name')
+  .requiredOption('-symbol, --token-symbol <symbol>', 'the token symbol')
+  .requiredOption(
+    '-amount, --amount-per-mint <amount-per-mint>',
+    'amount of tokens minted each time mint is called'
+  )
+  .option('-pre, --premine <premine>', 'amount to premine')
+  .option(
+    '-i, --image <image>',
+    'Relative path to image file to deploy (e.g., "../alkanes/free_mint.wasm")'
+  )
+
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+
+  /* @dev example call 
+oyl alkane new-token -i ./player1.png -resNumber 10 -p regtest -feeRate 2 -amount 1000 -name "OYL" -symbol "OL" -cap 100000 -pre 5000
+*/
+
+  .action(async (options) => {
+    const wallet: Wallet = new Wallet({ networkType: options.provider })
+    const account = wallet.account
+    const provider = wallet.provider
+    const signer = wallet.signer
     const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
-      await utxo.accountUtxos({ account: wallet.account, provider: wallet. provider })
+      await utxo.accountUtxos({ account, provider })
 
-    const { txId: commitTxId, script } = await alkanes.deployCommit({
-      payload,
-      gatheredUtxos: {
-        utxos: accountSpendableTotalUtxos,
-        totalAmount: accountSpendableTotalBalance,
-      },
-      feeRate: wallet.feeRate,
-      account: wallet.account,
-      signer: wallet.signer,
-      provider: wallet.provider,
-    })
+    const calldata = [
+      BigInt(6),
+      BigInt(options.reserveNumber),
+      BigInt(0),
+      BigInt(options.premine ?? 0),
+      BigInt(options.amountPerMint),
+      BigInt(options.capacity),
+      BigInt(
+        '0x' +
+          Buffer.from(options.tokenName.split('').reverse().join('')).toString(
+            'hex'
+          )
+      ),
+      BigInt(
+        '0x' +
+          Buffer.from(
+            options.tokenSymbol.split('').reverse().join('')
+          ).toString('hex')
+      ),
+    ]
 
-    console.log('Commit txid: ', commitTxId);
+    if (options.image) {
+      const image = new Uint8Array(
+        Array.from(
+          await fs.readFile(path.resolve(process.cwd(), options.image))
+        )
+      )
+      const gzip = promisify(_gzip)
 
+      const payload = {
+        body: await gzip(image, { level: 9 }),
+        cursed: false,
+        tags: { contentType: '' },
+      }
 
-    const mempool = await wallet.provider.sandshrew.bitcoindRpc.getRawMemPool(true)
-    const mempoolTxs = Object.keys(mempool)
-    console.log('mempool transactions: ', mempoolTxs)
+      console.log(
+        await alkanes.tokenDeployment({
+          payload,
+          gatheredUtxos: {
+            utxos: accountSpendableTotalUtxos,
+            totalAmount: accountSpendableTotalBalance,
+          },
+          feeRate: options.feeRate,
+          calldata,
+          account,
+          signer,
+          provider,
+        })
+      )
+      return
+    }
 
-    const blockHash = await wallet.provider.sandshrew.bitcoindRpc.generateBlock(
-      wallet.account.nativeSegwit.address,
-      mempoolTxs
+    console.log(
+      await alkanes.execute({
+        gatheredUtxos: {
+          utxos: accountSpendableTotalUtxos,
+          totalAmount: accountSpendableTotalBalance,
+        },
+        feeRate: options.feeRate,
+        calldata,
+        account,
+        signer,
+        provider,
+      })
     )
+    return
+  })
 
-    console.log('Block hash: ', blockHash)
+export const alkaneExecute = new Command('execute')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+  .requiredOption(
+    '-data, --calldata <calldata>',
+    'op code + params to be called on a contract',
+    (value, previous) => {
+      const items = value.split(',')
+      return previous ? previous.concat(items) : items
+    },
+    []
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  /* @dev example call 
+oyl alkane execute -p regtest -feeRate 2 -data '101'
+*/
 
-    await timeout(5000)
-
-    const { txId: revealTxId } = await alkanes.deployReveal({
-      createReserveNumber: options.reserveNumber || DEFAULT_RESERVE_NUMBER,
-      commitTxId: commitTxId,
-      script: script,
-      account: wallet.account,
-      provider: wallet.provider,
-      feeRate: wallet.feeRate,
-      signer: wallet.signer,
-    })
-
-    console.log('Reveal txid: ', revealTxId)
-
-    const mempool2 = await wallet.provider.sandshrew.bitcoindRpc.getRawMemPool(true)
-    const mempoolTxs2 = Object.keys(mempool2)
-    console.log('mempool transactions: ', mempoolTxs2)
-    const blockHash2 = await wallet.provider.sandshrew.bitcoindRpc.generateBlock(
-      wallet.account.nativeSegwit.address,
-      mempoolTxs2
+  .action(async (options) => {
+    const wallet: Wallet = new Wallet({ networkType: options.provider })
+    const account = wallet.account
+    const provider = wallet.provider
+    const signer = wallet.signer
+    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
+      await utxo.accountUtxos({ account, provider })
+    const calldata: bigint[] = []
+    for (let i = 0; i < options.calldata.length; i++) {
+      calldata.push(BigInt(options.calldata[i]))
+    }
+    console.log(
+      await alkanes.execute({
+        gatheredUtxos: {
+          utxos: accountSpendableTotalUtxos,
+          totalAmount: accountSpendableTotalBalance,
+        },
+        feeRate: options.feeRate,
+        calldata,
+        account,
+        signer,
+        provider,
+      })
     )
-    console.log('Block hash: ', blockHash2)
-    await timeout(5000)
+  })
 
-    const contractTrace = await wallet.provider.alkanes.trace({
-      txid: revealTxId,
-      vout: 3
-    });
+export const alkaneSend = new Command('send')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network for utxos'
+  )
+  .requiredOption('-to, --to <to>')
+  .requiredOption('-amt, --amount <amount>')
+  .requiredOption('-blk, --block <block>')
+  .requiredOption('-tx, --txNum <txNum>')
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
 
-    console.log('Contract trace: ', contractTrace)
+  /* @dev example call 
+oyl alkane send -p regtest -feeRate 2 -tx '1' -blk '2' -amt 1000 -to bcrt1pkq6ayylfpe5hn05550ry25pkakuf72x9qkjc2sl06dfcet8sg25ql4dm73
+*/
+
+  .action(async (options) => {
+    const wallet: Wallet = new Wallet({ networkType: options.provider })
+    const account = wallet.account
+    const provider = wallet.provider
+    const signer = wallet.signer
+    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
+      await utxo.accountUtxos({ account, provider })
+
+    console.log(
+      await alkanes.send({
+        gatheredUtxos: {
+          utxos: accountSpendableTotalUtxos,
+          totalAmount: accountSpendableTotalBalance,
+        },
+        feeRate: options.feeRate,
+        alkaneId: { block: options.block, tx: options.txNum },
+        toAddress: options.to,
+        amount: Number(options.amount),
+        account,
+        signer,
+        provider,
+      })
+    )
   })

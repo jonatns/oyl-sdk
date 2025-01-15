@@ -315,10 +315,3 @@ export class AlkanesRpc {
     }
   }
 }
-
-// new AlkanesRpc('http://localhost:3000/v1/regtest')
-//   .getAlkaneById({
-//     tx: '1',
-//     block: '2',
-//   })
-//   .then((ret) => console.log(ret))

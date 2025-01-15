@@ -225,7 +225,24 @@ export declare const createTransactReveal: ({ calldata, receiverAddress, script,
     psbtHex: string;
     fee: number;
 }>;
-export declare const transactReveal: ({ payload, gatheredUtxos, account, calldata, provider, feeRate, signer, }: {
+export declare const contractDeployment: ({ payload, gatheredUtxos, account, reserveNumber, provider, feeRate, signer, }: {
+    payload: AlkanesPayload;
+    gatheredUtxos: GatheredUtxos;
+    account: Account;
+    reserveNumber: string;
+    provider: Provider;
+    feeRate?: number;
+    signer: Signer;
+}) => Promise<{
+    commitTx: string;
+    txId: string;
+    rawTx: string;
+    size: any;
+    weight: any;
+    fee: number;
+    satsPerVByte: string;
+}>;
+export declare const tokenDeployment: ({ payload, gatheredUtxos, account, calldata, provider, feeRate, signer, }: {
     payload: AlkanesPayload;
     gatheredUtxos: GatheredUtxos;
     account: Account;
@@ -234,6 +251,7 @@ export declare const transactReveal: ({ payload, gatheredUtxos, account, calldat
     feeRate?: number;
     signer: Signer;
 }) => Promise<{
+    commitTx: string;
     txId: string;
     rawTx: string;
     size: any;

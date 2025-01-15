@@ -72,9 +72,9 @@ export const accountBalance = async ({
     amount += btcBalance + pendingAmount
   }
   return {
-    confirmedAmount: confirmedAmount / 10 ** 8,
-    pendingAmount: pendingAmount / 10 ** 8,
-    amount: amount / 10 ** 8,
+    confirmedAmount: Math.floor(confirmedAmount / 10 ** 8),
+    pendingAmount: Math.floor(pendingAmount / 10 ** 8),
+    amount: Math.floor(amount / 10 ** 8),
   }
 }
 
@@ -180,7 +180,9 @@ export const addressUtxos = async ({
 
   const utxoSortGreatestToLeast = spendStrategy?.utxoSortGreatestToLeast ?? true
   processedUtxos.sort((a, b) =>
-    utxoSortGreatestToLeast ? b.utxo.value - a.utxo.value : a.utxo.value - b.utxo.value
+    utxoSortGreatestToLeast
+      ? b.utxo.value - a.utxo.value
+      : a.utxo.value - b.utxo.value
   )
 
   for (const { utxo, txOutput, scriptPk } of processedUtxos) {

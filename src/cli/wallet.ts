@@ -1,17 +1,14 @@
-import {  
+import 'dotenv/config'
+import {
   mnemonicToAccount,
   getWalletPrivateKeys,
   Provider,
   Account,
-  Signer
+  Signer,
 } from '..'
-import { 
-  TEST_WALLET,
-  DEFAULT_PROVIDER
-} from './constants'
+import { DEFAULT_PROVIDER } from './constants'
 
-
-export type NetworkType = 'mainnet' | 'regtest'
+export type NetworkType = 'mainnet' | 'regtest' | 'oylnet'
 
 export interface WalletOptions {
   mnemonic?: string
@@ -28,33 +25,31 @@ export class Wallet {
   feeRate: number
 
   constructor(options?: WalletOptions) {
-
-    this.mnemonic = options?.mnemonic || TEST_WALLET.mnemonic;
-    this.networkType = options?.networkType || 'regtest';
-    this.provider = DEFAULT_PROVIDER[this.networkType];
+    this.mnemonic = options?.mnemonic || process.env.MNEMONIC
+    this.networkType = options?.networkType || 'regtest'
+    this.provider = DEFAULT_PROVIDER[this.networkType]
 
     this.account = mnemonicToAccount({
       mnemonic: this.mnemonic,
       opts: {
-        network: this.provider.network
-      }
+        network: this.provider.network,
+      },
     })
 
     const privateKeys = getWalletPrivateKeys({
       mnemonic: this.mnemonic,
       opts: {
-        network: this.account.network
-      }
+        network: this.account.network,
+      },
     })
 
     this.signer = new Signer(this.account.network, {
-        taprootPrivateKey: privateKeys.taproot.privateKey,
-        segwitPrivateKey: privateKeys.nativeSegwit.privateKey,
-        nestedSegwitPrivateKey: privateKeys.nestedSegwit.privateKey,
-        legacyPrivateKey: privateKeys.legacy.privateKey
-      })
+      taprootPrivateKey: privateKeys.taproot.privateKey,
+      segwitPrivateKey: privateKeys.nativeSegwit.privateKey,
+      nestedSegwitPrivateKey: privateKeys.nestedSegwit.privateKey,
+      legacyPrivateKey: privateKeys.legacy.privateKey,
+    })
 
-      this.feeRate = options?.feeRate ? options?.feeRate : 2
-
+    this.feeRate = options?.feeRate ? options?.feeRate : 2
   }
 }
