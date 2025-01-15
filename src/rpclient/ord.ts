@@ -25,7 +25,9 @@ export class OrdRpc {
     this.ordUrl = url
   }
 
-  async _call(method: string, params = []) {
+  async _call(method: string, params = [], timeout = 5000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
     const requestData = {
       jsonrpc: '2.0',
       method: method,
@@ -39,10 +41,12 @@ export class OrdRpc {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestData),
+      signal: controller.signal,
     }
 
     try {
       const response = await fetch(this.ordUrl, requestOptions)
+      clearTimeout(timeoutId)
       const responseData = await response.json()
 
       if (responseData.error) {
@@ -52,8 +56,13 @@ export class OrdRpc {
 
       return responseData.result
     } catch (error) {
-      console.error('Request Error:', error)
-      throw error
+      if (error.name === 'AbortError') {
+        console.error('Request Timeout:', error);
+        throw new Error('Request timed out');
+      } else {
+        console.error('Request Error:', error)
+        throw error
+      }
     }
   }
   async getInscriptionById(inscriptionId: string) {
