@@ -771,6 +771,10 @@ const alkanesTrace = new Command('trace')
 
 const alkaneFactoryDeploy = new Command('factoryDeploy')
   .requiredOption(
+    '-c, --contract <contract>',
+    'Relative path to contract wasm file to deploy (e.g., "../alkanes/free_mint.wasm")'
+  )
+  .requiredOption(
     '-p, --provider <provider>',
     'provider to use when querying the network for utxos'
   )
@@ -796,7 +800,7 @@ const alkaneFactoryDeploy = new Command('factoryDeploy')
   )
 
   /* @dev example call 
-oyl alkane factoryDeploy -resNumber "0x0ffe" -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2
+oyl alkane factoryDeploy -c ./src/alkanes/free_mint.wasm -resNumber "0x0ffe" -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2
 */
 
   .action(async (options) => {
@@ -821,7 +825,21 @@ oyl alkane factoryDeploy -resNumber "0x0ffe" -m 'abandon abandon abandon abandon
     const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
       await utxo.accountUtxos({ account, provider })
 
+    const contract = new Uint8Array(
+      Array.from(
+        await fs.readFile(path.resolve(process.cwd(), options.contract))
+      )
+    )
+    const gzip = promisify(_gzip)
+
+    const payload = {
+      body: await gzip(contract, { level: 9 }),
+      cursed: false,
+      tags: { contentType: '' },
+    }
+
     const commit = await alkanes.deployCommit({
+      payload,
       gatheredUtxos: {
         utxos: accountSpendableTotalUtxos,
         totalAmount: accountSpendableTotalBalance,
@@ -870,11 +888,6 @@ const alkaneToken = new Command('new-token')
     '-resNumber, --reserveNumber <reserveNumber>',
     'number to reserve for factory id'
   )
-  .requiredOption(
-    '-i, --image <image>',
-    'Relative path to image file to deploy (e.g., "../alkanes/free_mint.wasm")'
-  )
-
   .requiredOption('-pre, --premine <premine>', 'amount to premine')
 
   .requiredOption('-cap, --capacity <cap>', 'the token cap')
@@ -884,6 +897,11 @@ const alkaneToken = new Command('new-token')
     '-amount, --amount-per-mint <amount-per-mint>',
     'amount of tokens minted each time mint is called'
   )
+  .option(
+    '-i, --image <image>',
+    'Relative path to image file to deploy (e.g., "../alkanes/free_mint.wasm")'
+  )
+
   .option('-legacy, --legacy <legacy>', 'legacy private key')
   .option('-taproot, --taproot <taproot>', 'taproot private key')
   .option(
@@ -897,7 +915,7 @@ const alkaneToken = new Command('new-token')
   .option('-feeRate, --feeRate <feeRate>', 'fee rate')
 
   /* @dev example call 
-oyl alkane new-token -i ./player1.png -resNumber 0x7 -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2 -amount 1000 -name "OYL" -symbol "OL" -cap 100000 -pre 5000
+oyl alkane new-token -i ./player1.png -resNumber 10 -m 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' -native 4604b4b710fe91f584fff084e1a9159fe4f8408fff380596a604948474ce4fa3 -taproot 41f41d69260df4cf277826a9b65a3717e4eeddbeedf637f212ca096576479361 -p regtest -feeRate 2 -amount 1000 -name "OYL" -symbol "OL" -cap 100000 -pre 5000
 */
 
   .action(async (options) => {
@@ -917,17 +935,6 @@ oyl alkane new-token -i ./player1.png -resNumber 0x7 -m 'abandon abandon abandon
     })
     const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
       await utxo.accountUtxos({ account, provider })
-
-    const image = new Uint8Array(
-      Array.from(await fs.readFile(path.resolve(process.cwd(), options.image)))
-    )
-    const gzip = promisify(_gzip)
-
-    const payload = {
-      body: await gzip(image, { level: 9 }),
-      cursed: false,
-      tags: { contentType: '' },
-    }
 
     const calldata = [
       BigInt(6),
@@ -950,9 +957,39 @@ oyl alkane new-token -i ./player1.png -resNumber 0x7 -m 'abandon abandon abandon
       ),
     ]
 
+    if (options.image) {
+      const image = new Uint8Array(
+        Array.from(
+          await fs.readFile(path.resolve(process.cwd(), options.image))
+        )
+      )
+      const gzip = promisify(_gzip)
+
+      const payload = {
+        body: await gzip(image, { level: 9 }),
+        cursed: false,
+        tags: { contentType: '' },
+      }
+
+      console.log(
+        await alkanes.transactReveal({
+          payload,
+          gatheredUtxos: {
+            utxos: accountSpendableTotalUtxos,
+            totalAmount: accountSpendableTotalBalance,
+          },
+          feeRate: options.feeRate,
+          calldata,
+          account,
+          signer,
+          provider,
+        })
+      )
+      return
+    }
+
     console.log(
-      await alkanes.transactReveal({
-        payload,
+      await alkanes.execute({
         gatheredUtxos: {
           utxos: accountSpendableTotalUtxos,
           totalAmount: accountSpendableTotalBalance,
@@ -964,6 +1001,7 @@ oyl alkane new-token -i ./player1.png -resNumber 0x7 -m 'abandon abandon abandon
         provider,
       })
     )
+    return
   })
 
 const alkaneExecute = new Command('execute')

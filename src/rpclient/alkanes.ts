@@ -47,10 +47,18 @@ interface AlkaneToken {
   minted: number
   mintActive: boolean
   percentageMinted: number
+  mintAmount: number
 }
 
-const opcodes: string[] = ['99', '100', '101', '102', '103']
-const opcodesHRV: string[] = ['name', 'symbol', 'totalSupply', 'cap', 'minted']
+const opcodes: string[] = ['99', '100', '101', '102', '103', '104']
+const opcodesHRV: string[] = [
+  'name',
+  'symbol',
+  'totalSupply',
+  'cap',
+  'minted',
+  'mintAmount',
+]
 
 export class AlkanesRpc {
   public alkanesUrl: string
@@ -178,12 +186,13 @@ export class AlkanesRpc {
   }): Promise<AlkaneToken> {
     const alkaneData: AlkaneToken = {
       name: '',
+      mintActive: false,
+      percentageMinted: 0,
       symbol: '',
       totalSupply: 0,
       cap: 0,
       minted: 0,
-      mintActive: false,
-      percentageMinted: 0,
+      mintAmount: 0,
     }
 
     for (let j = 0; j < opcodes.length; j++) {
@@ -307,8 +316,9 @@ export class AlkanesRpc {
   }
 }
 
-new AlkanesRpc('http://localhost:3000/v1/regtest')
-  .getAlkanes({
-    limit: 100,
-  })
-  .then((ret) => console.log(ret))
+// new AlkanesRpc('http://localhost:3000/v1/regtest')
+//   .getAlkaneById({
+//     tx: '1',
+//     block: '2',
+//   })
+//   .then((ret) => console.log(ret))

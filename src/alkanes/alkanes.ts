@@ -392,7 +392,7 @@ export const createDeployCommit = async ({
   feeRate,
   fee,
 }: {
-  payload?: AlkanesPayload
+  payload: AlkanesPayload
   gatheredUtxos: GatheredUtxos
   tweakedTaprootKeyPair: bitcoin.Signer
   account: Account
@@ -413,20 +413,6 @@ export const createDeployCommit = async ({
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
 
-    if (!payload) {
-      const binary = new Uint8Array(
-        Array.from(
-          await fs.readFile(path.join(__dirname, './', 'free_mint.wasm'))
-        )
-      )
-      const gzip = promisify(_gzip)
-      payload = {
-        body: await gzip(binary, { level: 9 }),
-        cursed: false,
-        tags: { contentType: '' },
-      }
-    }
-
     const script = Buffer.from(
       envelope.p2tr_ord_reveal(toXOnly(tweakedTaprootKeyPair.publicKey), [
         payload,
@@ -440,6 +426,8 @@ export const createDeployCommit = async ({
       },
       network: provider.network,
     })
+
+    //read byte size of payload body to estimate fee
 
     psbt.addOutput({
       value: 40000 + 546,
@@ -808,7 +796,7 @@ export const actualDeployCommitFee = async ({
   feeRate,
   signer,
 }: {
-  payload?: AlkanesPayload
+  payload: AlkanesPayload
   tweakedTaprootKeyPair: bitcoin.Signer
   gatheredUtxos: GatheredUtxos
   account: Account
@@ -1123,7 +1111,7 @@ export const deployCommit = async ({
   feeRate,
   signer,
 }: {
-  payload?: AlkanesPayload
+  payload: AlkanesPayload
   gatheredUtxos: GatheredUtxos
   account: Account
   provider: Provider
@@ -1437,7 +1425,7 @@ export const transactReveal = async ({
   feeRate,
   signer,
 }: {
-  payload?: AlkanesPayload
+  payload: AlkanesPayload
   gatheredUtxos: GatheredUtxos
   account: Account
   calldata: bigint[]

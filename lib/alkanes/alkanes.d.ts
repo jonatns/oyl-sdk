@@ -35,7 +35,7 @@ export declare const createExecutePsbt: ({ gatheredUtxos, account, calldata, pro
     psbtHex: string;
 }>;
 export declare const createDeployCommit: ({ payload, gatheredUtxos, tweakedTaprootKeyPair, account, provider, feeRate, fee, }: {
-    payload?: AlkanesPayload;
+    payload: AlkanesPayload;
     gatheredUtxos: GatheredUtxos;
     tweakedTaprootKeyPair: bitcoin.Signer;
     account: Account;
@@ -89,7 +89,7 @@ export declare const actualSendFee: ({ gatheredUtxos, account, alkaneId, provide
     fee: number;
 }>;
 export declare const actualDeployCommitFee: ({ payload, tweakedTaprootKeyPair, gatheredUtxos, account, provider, feeRate, signer, }: {
-    payload?: AlkanesPayload;
+    payload: AlkanesPayload;
     tweakedTaprootKeyPair: bitcoin.Signer;
     gatheredUtxos: GatheredUtxos;
     account: Account;
@@ -149,7 +149,7 @@ export declare const send: ({ gatheredUtxos, toAddress, amount, alkaneId, feeRat
     satsPerVByte: string;
 }>;
 export declare const deployCommit: ({ payload, gatheredUtxos, account, provider, feeRate, signer, }: {
-    payload?: AlkanesPayload;
+    payload: AlkanesPayload;
     gatheredUtxos: GatheredUtxos;
     account: Account;
     provider: Provider;
@@ -226,7 +226,7 @@ export declare const createTransactReveal: ({ calldata, receiverAddress, script,
     fee: number;
 }>;
 export declare const transactReveal: ({ payload, gatheredUtxos, account, calldata, provider, feeRate, signer, }: {
-    payload?: AlkanesPayload;
+    payload: AlkanesPayload;
     gatheredUtxos: GatheredUtxos;
     account: Account;
     calldata: bigint[];
