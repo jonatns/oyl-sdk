@@ -2,6 +2,7 @@ import { Provider } from '..';
 export declare const DEFAULT_PROVIDER: {
     bitcoin: Provider;
     regtest: Provider;
+    alkanes: Provider;
 };
 export declare const REGTEST_FAUCET: {
     mnemonic: string;

@@ -16,6 +16,13 @@ export const DEFAULT_PROVIDER = {
     network: bitcoin.networks.regtest,
     networkType: 'regtest',
   }),
+  alkanes: new Provider({
+    url: 'http://localhost:18888',
+    projectId: '',
+    version: '',
+    network: bitcoin.networks.regtest,
+    networkType: 'regtest'
+  })
 }
 
 export const REGTEST_FAUCET = {
