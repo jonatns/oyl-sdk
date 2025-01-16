@@ -201,25 +201,26 @@ export const createSendPsbt = async ({
               output: u32(BigInt(1)),
             },
           ],
-          pointer: 2,
-          refundPointer: 2,
+          pointer: 0,
+          refundPointer: 0,
           calldata: Buffer.from([]),
         }),
       ],
     }).encodedRunestone
 
-    const output = { script: protostone, value: 0 }
-    psbt.addOutput(output)
+    psbt.addOutput({
+      value: inscriptionSats,
+      address: account.taproot.address,
+    })
 
     psbt.addOutput({
       value: inscriptionSats,
       address: toAddress,
     })
 
-    psbt.addOutput({
-      value: inscriptionSats,
-      address: account.taproot.address,
-    })
+    const output = { script: protostone, value: 0 }
+
+    psbt.addOutput(output)
     const changeAmount =
       gatheredUtxos.totalAmount +
       totalSatoshis -
