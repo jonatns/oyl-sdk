@@ -67,7 +67,10 @@ export class AlkanesRpc {
     this.alkanesUrl = url
   }
 
-  async _call(method, params = []) {
+  async _call(method, params = [], timeout = 5000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
     const requestData = {
       jsonrpc: '2.0',
       method: method,
@@ -82,10 +85,14 @@ export class AlkanesRpc {
       },
       body: JSON.stringify(requestData),
       cache: 'no-cache',
+      signal: controller.signal,
     }
 
     try {
       const response = await fetch(this.alkanesUrl, requestOptions)
+      clearTimeout(timeoutId)
+
+
       const responseData = await response.json()
 
       if (responseData.error) {
@@ -95,8 +102,13 @@ export class AlkanesRpc {
 
       return responseData.result
     } catch (error) {
-      console.error('Request Error:', error)
-      throw error
+      if (error.name === 'AbortError') {
+        console.error('Request Timeout:', error);
+        throw new Error('Request timed out');
+      } else {
+        console.error('Request Error:', error)
+        throw error
+      }
     }
   }
 
