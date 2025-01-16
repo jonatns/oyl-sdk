@@ -1,5 +1,6 @@
+import 'dotenv/config';
 import { Provider, Account, Signer } from '..';
-export type NetworkType = 'mainnet' | 'regtest';
+export type NetworkType = 'mainnet' | 'regtest' | 'oylnet';
 export interface WalletOptions {
     mnemonic?: string;
     networkType?: NetworkType;

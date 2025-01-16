@@ -8,6 +8,7 @@ import {
   formatInputsToSign,
   getOutputValueByVOutIndex,
   inscriptionSats,
+  timeout,
   tweakSigner,
 } from '../shared/utils'
 import { OylTransactionError } from '../errors'
@@ -16,8 +17,6 @@ import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
-import path from 'path'
-import fs from 'fs-extra'
 import { gzip as _gzip } from 'node:zlib'
 import { promisify } from 'util'
 import { ProtoStone, encodeRunestoneProtostone } from 'alkanes/lib/index.js'
@@ -218,8 +217,8 @@ export const createSendPsbt = async ({
     })
 
     const output = { script: protostone, value: 0 }
-    psbt.addOutput(output)
 
+    psbt.addOutput(output)
     const changeAmount =
       gatheredUtxos.totalAmount +
       totalSatoshis -
@@ -391,7 +390,7 @@ export const createDeployCommit = async ({
   feeRate,
   fee,
 }: {
-  payload?: AlkanesPayload
+  payload: AlkanesPayload
   gatheredUtxos: GatheredUtxos
   tweakedTaprootKeyPair: bitcoin.Signer
   account: Account
@@ -412,20 +411,6 @@ export const createDeployCommit = async ({
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
 
-    if (!payload) {
-      const binary = new Uint8Array(
-        Array.from(
-          await fs.readFile(path.join(__dirname, './', 'free_mint.wasm'))
-        )
-      )
-      const gzip = promisify(_gzip)
-      payload = {
-        body: await gzip(binary, { level: 9 }),
-        cursed: false,
-        tags: { contentType: '' },
-      }
-    }
-
     const script = Buffer.from(
       envelope.p2tr_ord_reveal(toXOnly(tweakedTaprootKeyPair.publicKey), [
         payload,
@@ -440,14 +425,16 @@ export const createDeployCommit = async ({
       network: provider.network,
     })
 
+    //read byte size of payload body to estimate fee
+
     psbt.addOutput({
-      value: 20000 + 546,
+      value: 40000 + 546,
       address: inscriberInfo.address,
     })
 
     gatheredUtxos = findXAmountOfSats(
       originalGatheredUtxos.utxos,
-      20000 + Number(inscriptionSats)
+      40000 + Number(inscriptionSats)
     )
 
     if (!fee && gatheredUtxos.utxos.length > 1) {
@@ -461,7 +448,7 @@ export const createDeployCommit = async ({
       if (gatheredUtxos.totalAmount < finalFee) {
         gatheredUtxos = findXAmountOfSats(
           originalGatheredUtxos.utxos,
-          20000 + Number(inscriptionSats)
+          40000 + Number(inscriptionSats)
         )
       }
     }
@@ -519,7 +506,7 @@ export const createDeployCommit = async ({
     }
 
     const changeAmount =
-      gatheredUtxos.totalAmount - (finalFee + 20000 + inscriptionSats)
+      gatheredUtxos.totalAmount - (finalFee + 40000 + inscriptionSats)
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
@@ -807,7 +794,7 @@ export const actualDeployCommitFee = async ({
   feeRate,
   signer,
 }: {
-  payload?: AlkanesPayload
+  payload: AlkanesPayload
   tweakedTaprootKeyPair: bitcoin.Signer
   gatheredUtxos: GatheredUtxos
   account: Account
@@ -909,14 +896,67 @@ export const actualDeployRevealFee = async ({
     await provider.sandshrew.bitcoindRpc.testMemPoolAccept([psbtHex])
   )[0].vsize
 
-  console.log(await provider.sandshrew.bitcoindRpc.testMemPoolAccept([psbtHex]))
-
   const correctFee = vsize * feeRate
-
-  console.log(correctFee)
 
   const { psbtHex: finalPsbtHex } = await createDeployReveal({
     createReserveNumber,
+    commitTxId,
+    receiverAddress,
+    script,
+    tweakedTaprootKeyPair,
+    provider,
+    feeRate,
+    fee: correctFee,
+  })
+
+  const finalVsize = (
+    await provider.sandshrew.bitcoindRpc.testMemPoolAccept([finalPsbtHex])
+  )[0].vsize
+
+  const finalFee = finalVsize * feeRate
+
+  return { fee: finalFee }
+}
+
+export const actualTransactRevealFee = async ({
+  calldata,
+  tweakedTaprootKeyPair,
+  commitTxId,
+  receiverAddress,
+  script,
+  provider,
+  feeRate,
+}: {
+  calldata: bigint[]
+  tweakedTaprootKeyPair: bitcoin.Signer
+  commitTxId: string
+  receiverAddress: string
+  script: Buffer
+  provider: Provider
+  feeRate?: number
+}) => {
+  if (!feeRate) {
+    feeRate = (await provider.esplora.getFeeEstimates())['1']
+  }
+
+  const { psbtHex } = await createTransactReveal({
+    calldata,
+    commitTxId,
+    receiverAddress,
+    script,
+    tweakedTaprootKeyPair,
+    provider,
+    feeRate,
+  })
+
+  const vsize = (
+    await provider.sandshrew.bitcoindRpc.testMemPoolAccept([psbtHex])
+  )[0].vsize
+
+  const correctFee = vsize * feeRate
+
+  const { psbtHex: finalPsbtHex } = await createTransactReveal({
+    calldata,
     commitTxId,
     receiverAddress,
     script,
@@ -1069,7 +1109,7 @@ export const deployCommit = async ({
   feeRate,
   signer,
 }: {
-  payload?: AlkanesPayload
+  payload: AlkanesPayload
   gatheredUtxos: GatheredUtxos
   account: Account
   provider: Provider
@@ -1166,6 +1206,58 @@ export const deployReveal = async ({
   return revealResult
 }
 
+export const executeReveal = async ({
+  calldata,
+  commitTxId,
+  script,
+  account,
+  provider,
+  feeRate,
+  signer,
+}: {
+  calldata: bigint[]
+  commitTxId: string
+  script: string
+  account: Account
+  provider: Provider
+  feeRate?: number
+  signer: Signer
+}) => {
+  const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
+    signer.taprootKeyPair,
+    {
+      network: provider.network,
+    }
+  )
+
+  const { fee } = await actualTransactRevealFee({
+    calldata,
+    tweakedTaprootKeyPair,
+    receiverAddress: account.taproot.address,
+    commitTxId,
+    script: Buffer.from(script, 'hex'),
+    provider,
+    feeRate,
+  })
+
+  const { psbt: finalRevealPsbt } = await createTransactReveal({
+    calldata,
+    tweakedTaprootKeyPair,
+    receiverAddress: account.taproot.address,
+    commitTxId,
+    script: Buffer.from(script, 'hex'),
+    provider,
+    feeRate,
+    fee,
+  })
+
+  const revealResult = await provider.pushPsbt({
+    psbtBase64: finalRevealPsbt,
+  })
+
+  return revealResult
+}
+
 export const execute = async ({
   gatheredUtxos,
   account,
@@ -1209,4 +1301,197 @@ export const execute = async ({
   })
 
   return revealResult
+}
+
+export const createTransactReveal = async ({
+  calldata,
+  receiverAddress,
+  script,
+  feeRate,
+  tweakedTaprootKeyPair,
+  provider,
+  fee = 0,
+  commitTxId,
+}: {
+  calldata: bigint[]
+  receiverAddress: string
+  script: Buffer
+  feeRate: number
+  tweakedTaprootKeyPair: bitcoin.Signer
+  provider: Provider
+  fee?: number
+  commitTxId: string
+}) => {
+  try {
+    if (!feeRate) {
+      feeRate = (await provider.esplora.getFeeEstimates())['1']
+    }
+
+    const psbt: bitcoin.Psbt = new bitcoin.Psbt({ network: provider.network })
+    const minFee = minimumFee({
+      taprootInputCount: 1,
+      nonTaprootInputCount: 0,
+      outputCount: 2,
+    })
+
+    const revealTxBaseFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
+    const revealTxChange = fee === 0 ? 0 : Number(revealTxBaseFee) - fee
+
+    const commitTxOutput = await getOutputValueByVOutIndex({
+      txId: commitTxId,
+      vOut: 0,
+      esploraRpc: provider.esplora,
+    })
+
+    if (!commitTxOutput) {
+      throw new Error('Error getting vin #0 value')
+    }
+
+    const protostone = encodeRunestoneProtostone({
+      protostones: [
+        envelope.ProtoStone.message({
+          protocolTag: 1n,
+          edicts: [],
+          pointer: 0,
+          refundPointer: 0,
+          calldata: envelope.encipher(calldata),
+        }),
+      ],
+    }).encodedRunestone
+
+    const p2pk_redeem = { output: script }
+
+    const { output, witness } = bitcoin.payments.p2tr({
+      internalPubkey: toXOnly(tweakedTaprootKeyPair.publicKey),
+      scriptTree: p2pk_redeem,
+      redeem: p2pk_redeem,
+      network: provider.network,
+    })
+
+    psbt.addInput({
+      hash: commitTxId,
+      index: 0,
+      witnessUtxo: {
+        value: commitTxOutput.value,
+        script: output,
+      },
+      tapLeafScript: [
+        {
+          leafVersion: LEAF_VERSION_TAPSCRIPT,
+          script: p2pk_redeem.output,
+          controlBlock: witness![witness!.length - 1],
+        },
+      ],
+    })
+
+    psbt.addOutput({
+      value: 546,
+      address: receiverAddress,
+    })
+
+    psbt.addOutput({
+      value: 0,
+      script: protostone,
+    })
+
+    if (revealTxChange > 546) {
+      psbt.addOutput({
+        value: revealTxChange,
+        address: receiverAddress,
+      })
+    }
+
+    psbt.signInput(0, tweakedTaprootKeyPair)
+    psbt.finalizeInput(0)
+
+    return {
+      psbt: psbt.toBase64(),
+      psbtHex: psbt.extractTransaction().toHex(),
+      fee: revealTxChange,
+    }
+  } catch (error) {
+    throw new OylTransactionError(error)
+  }
+}
+
+export const contractDeployment = async ({
+  payload,
+  gatheredUtxos,
+  account,
+  reserveNumber,
+  provider,
+  feeRate,
+  signer,
+}: {
+  payload: AlkanesPayload
+  gatheredUtxos: GatheredUtxos
+  account: Account
+  reserveNumber: string
+  provider: Provider
+  feeRate?: number
+  signer: Signer
+}) => {
+  const { script, txId } = await deployCommit({
+    payload,
+    gatheredUtxos,
+    account,
+    provider,
+    feeRate,
+    signer,
+  })
+
+  await timeout(3000)
+
+  const reveal = await deployReveal({
+    commitTxId: txId,
+    script,
+    createReserveNumber: reserveNumber,
+    account,
+    provider,
+    feeRate,
+    signer,
+  })
+
+  return { ...reveal, commitTx: txId }
+}
+
+export const tokenDeployment = async ({
+  payload,
+  gatheredUtxos,
+  account,
+  calldata,
+  provider,
+  feeRate,
+  signer,
+}: {
+  payload: AlkanesPayload
+  gatheredUtxos: GatheredUtxos
+  account: Account
+  calldata: bigint[]
+  provider: Provider
+  feeRate?: number
+  signer: Signer
+}) => {
+  const { script, txId } = await deployCommit({
+    payload,
+    gatheredUtxos,
+    account,
+    provider,
+    feeRate,
+    signer,
+  })
+
+  await timeout(3000)
+
+  const reveal = await executeReveal({
+    calldata,
+    script,
+    commitTxId: txId,
+    account,
+    provider,
+    feeRate,
+    signer,
+  })
+
+  return { ...reveal, commitTx: txId }
 }

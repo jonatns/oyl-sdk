@@ -1,5 +1,4 @@
 /// <reference types="node" />
-/// <reference types="node" />
 import { Provider } from '../provider/provider';
 import * as bitcoin from 'bitcoinjs-lib';
 import { Account } from '../account/account';
@@ -36,7 +35,7 @@ export declare const createExecutePsbt: ({ gatheredUtxos, account, calldata, pro
     psbtHex: string;
 }>;
 export declare const createDeployCommit: ({ payload, gatheredUtxos, tweakedTaprootKeyPair, account, provider, feeRate, fee, }: {
-    payload?: AlkanesPayload;
+    payload: AlkanesPayload;
     gatheredUtxos: GatheredUtxos;
     tweakedTaprootKeyPair: bitcoin.Signer;
     account: Account;
@@ -90,7 +89,7 @@ export declare const actualSendFee: ({ gatheredUtxos, account, alkaneId, provide
     fee: number;
 }>;
 export declare const actualDeployCommitFee: ({ payload, tweakedTaprootKeyPair, gatheredUtxos, account, provider, feeRate, signer, }: {
-    payload?: AlkanesPayload;
+    payload: AlkanesPayload;
     tweakedTaprootKeyPair: bitcoin.Signer;
     gatheredUtxos: GatheredUtxos;
     account: Account;
@@ -102,6 +101,17 @@ export declare const actualDeployCommitFee: ({ payload, tweakedTaprootKeyPair, g
 }>;
 export declare const actualDeployRevealFee: ({ createReserveNumber, tweakedTaprootKeyPair, commitTxId, receiverAddress, script, provider, feeRate, }: {
     createReserveNumber: string;
+    tweakedTaprootKeyPair: bitcoin.Signer;
+    commitTxId: string;
+    receiverAddress: string;
+    script: Buffer;
+    provider: Provider;
+    feeRate?: number;
+}) => Promise<{
+    fee: number;
+}>;
+export declare const actualTransactRevealFee: ({ calldata, tweakedTaprootKeyPair, commitTxId, receiverAddress, script, provider, feeRate, }: {
+    calldata: bigint[];
     tweakedTaprootKeyPair: bitcoin.Signer;
     commitTxId: string;
     receiverAddress: string;
@@ -139,7 +149,7 @@ export declare const send: ({ gatheredUtxos, toAddress, amount, alkaneId, feeRat
     satsPerVByte: string;
 }>;
 export declare const deployCommit: ({ payload, gatheredUtxos, account, provider, feeRate, signer, }: {
-    payload?: AlkanesPayload;
+    payload: AlkanesPayload;
     gatheredUtxos: GatheredUtxos;
     account: Account;
     provider: Provider;
@@ -170,6 +180,22 @@ export declare const deployReveal: ({ createReserveNumber, commitTxId, script, a
     fee: number;
     satsPerVByte: string;
 }>;
+export declare const executeReveal: ({ calldata, commitTxId, script, account, provider, feeRate, signer, }: {
+    calldata: bigint[];
+    commitTxId: string;
+    script: string;
+    account: Account;
+    provider: Provider;
+    feeRate?: number;
+    signer: Signer;
+}) => Promise<{
+    txId: string;
+    rawTx: string;
+    size: any;
+    weight: any;
+    fee: number;
+    satsPerVByte: string;
+}>;
 export declare const execute: ({ gatheredUtxos, account, calldata, provider, feeRate, signer, }: {
     gatheredUtxos: GatheredUtxos;
     account: Account;
@@ -178,6 +204,54 @@ export declare const execute: ({ gatheredUtxos, account, calldata, provider, fee
     feeRate?: number;
     signer: Signer;
 }) => Promise<{
+    txId: string;
+    rawTx: string;
+    size: any;
+    weight: any;
+    fee: number;
+    satsPerVByte: string;
+}>;
+export declare const createTransactReveal: ({ calldata, receiverAddress, script, feeRate, tweakedTaprootKeyPair, provider, fee, commitTxId, }: {
+    calldata: bigint[];
+    receiverAddress: string;
+    script: Buffer;
+    feeRate: number;
+    tweakedTaprootKeyPair: bitcoin.Signer;
+    provider: Provider;
+    fee?: number;
+    commitTxId: string;
+}) => Promise<{
+    psbt: string;
+    psbtHex: string;
+    fee: number;
+}>;
+export declare const contractDeployment: ({ payload, gatheredUtxos, account, reserveNumber, provider, feeRate, signer, }: {
+    payload: AlkanesPayload;
+    gatheredUtxos: GatheredUtxos;
+    account: Account;
+    reserveNumber: string;
+    provider: Provider;
+    feeRate?: number;
+    signer: Signer;
+}) => Promise<{
+    commitTx: string;
+    txId: string;
+    rawTx: string;
+    size: any;
+    weight: any;
+    fee: number;
+    satsPerVByte: string;
+}>;
+export declare const tokenDeployment: ({ payload, gatheredUtxos, account, calldata, provider, feeRate, signer, }: {
+    payload: AlkanesPayload;
+    gatheredUtxos: GatheredUtxos;
+    account: Account;
+    calldata: bigint[];
+    provider: Provider;
+    feeRate?: number;
+    signer: Signer;
+}) => Promise<{
+    commitTx: string;
     txId: string;
     rawTx: string;
     size: any;
