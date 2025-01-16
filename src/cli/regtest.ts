@@ -88,10 +88,14 @@ export const genBlocks = new Command('genBlocks')
     '(optional)Number of blocks (default = 1)',
     parseInt
   )
+  .option(
+    '-p, --provider <provider>',
+    '(optional) provider to use to access the network.'
+  )
   .action(async (options) => {
     const count = options.count || 1
     const address = options.address || RANDOM_ADDRESS
-    const provider: Provider = DEFAULT_PROVIDER['regtest']
+    const provider: Provider = DEFAULT_PROVIDER[options.provider || 'regtest'];
     const genBlock = await provider.sandshrew.bitcoindRpc.generateToAddress(
       count,
       address

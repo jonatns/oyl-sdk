@@ -11,10 +11,10 @@ export const REGTEST_PARAMS = {
   wif: 128,
 };
 
-export function getAddress(node) {
+export function getAddress(node, network) {
   return bitcoin.payments.p2wpkh({
     pubkey: node.publicKey,
-    network: bitcoin.networks.regtest,
+    network: bitcoin.networks[network]
   }).address;
 };
 
@@ -31,6 +31,14 @@ export const ADDRESS_COMMANDS = mapValues({
     .action((options) => {
       (async () => {
         console.log(Buffer.from((await getPrivate(options.mnemonic || process.env.MNEMONIC || (() => { throw Error("must supply mnemonic via -m flag or the MNEMONIC environment variable"); })())).privateKey).toString('hex'));
+      })().catch((err) => console.error(err))
+    }),
+  getaddress: (command) => command.description("get private key in hex associated with mnemonic")
+    .option("-m, --mnemonic <mnemonic>", "mnemonic for wallet")
+    .option("-n, --network <network>", "network to target")
+    .action((options) => {
+      (async () => {
+        console.log(getAddress((await getPrivate(options.mnemonic || process.env.MNEMONIC || (() => { throw Error("must supply mnemonic via -m flag or the MNEMONIC environment variable"); })())), options.network || 'regtest'));
       })().catch((err) => console.error(err))
     })
 }, (v, k) => v(new Command(k)))
