@@ -43,7 +43,7 @@ export class Provider {
       case bitcoin.networks.regtest:
         isRegtest = true
     }
-    const masterUrl = `${url}/${version}/${projectId}`
+    const masterUrl = [url, version, projectId].filter(Boolean).join('/');
     this.alkanes = new AlkanesRpc(masterUrl)
     this.sandshrew = new SandshrewBitcoinClient(masterUrl)
     this.esplora = new EsploraRpc(masterUrl)
