@@ -22,6 +22,13 @@ export const DEFAULT_PROVIDER = {
     network: bitcoin.networks.regtest,
     networkType: 'regtest',
   }),
+  oylnet: new Provider({
+    url: 'https://oylnet.oyl.gg',
+    projectId: 'regtest',
+    version: 'v2',
+    network: bitcoin.networks.regtest,
+    networkType: 'regtest',
+  }),
 }
 
 export const REGTEST_FAUCET = {

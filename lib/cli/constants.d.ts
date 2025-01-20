@@ -3,6 +3,7 @@ export declare const DEFAULT_PROVIDER: {
     alkanes: Provider;
     bitcoin: Provider;
     regtest: Provider;
+    oylnet: Provider;
 };
 export declare const REGTEST_FAUCET: {
     mnemonic: string;

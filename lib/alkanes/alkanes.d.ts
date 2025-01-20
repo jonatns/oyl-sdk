@@ -53,7 +53,7 @@ export declare const findAlkaneUtxos: ({ address, greatestToLeast, provider, alk
     alkaneUtxos: any[];
     totalSatoshis: number;
 }>;
-export declare const actualTransactRevealFee: ({ calldata, tweakedTaprootKeyPair, commitTxId, receiverAddress, script, provider, feeRate, signer, }: {
+export declare const actualTransactRevealFee: ({ calldata, tweakedTaprootKeyPair, commitTxId, receiverAddress, script, provider, feeRate, }: {
     calldata: bigint[];
     tweakedTaprootKeyPair: bitcoin.Signer;
     commitTxId: string;
@@ -61,7 +61,6 @@ export declare const actualTransactRevealFee: ({ calldata, tweakedTaprootKeyPair
     script: Buffer;
     provider: Provider;
     feeRate?: number;
-    signer: Signer;
 }) => Promise<{
     fee: number;
 }>;
