@@ -1,5 +1,8 @@
 import fetch from 'node-fetch'
 
+export const stripHexPrefix = (s: string): string =>
+  s.substr(0, 2) === "0x" ? s.substr(2) : s;
+
 export interface Rune {
   rune: {
     id: { block: string; tx: string }
@@ -141,14 +144,31 @@ export class AlkanesRpc {
         protocolTag,
       },
     ])
-    const alkanesList = ret.outpoints.filter(
-      (outpoint) => outpoint.runes.length > 0
-    )
+   
+    const alkanesList = ret.outpoints
+    .filter((outpoint) => outpoint.runes.length > 0)
+    .map((outpoint) => ({
+      ...outpoint,
+      runes: outpoint.runes.map((rune) => ({
+        ...rune,
+        balance: stripHexPrefix(rune.balance),
+        rune: {
+          ...rune.rune,
+          id: {
+            block: stripHexPrefix(rune.rune.id.block),
+            tx: stripHexPrefix(rune.rune.id.tx),
+          },
+        },
+      })),
+    }));
+    
+
     if (name) {
       return alkanesList.flatMap((outpoints) =>
         outpoints.runes.filter((item) => item.rune.name === name)
       )
     }
+
     return alkanesList
   }
 

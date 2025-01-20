@@ -457,7 +457,10 @@ export const findAlkaneUtxos = async ({
   const alkaneUtxos = []
 
   for (const alkane of sortedRunesWithOutpoints) {
-    if (totalBalanceBeingSent < targetNumberOfAlkanes) {
+    if (
+      totalBalanceBeingSent < targetNumberOfAlkanes &&
+      Number(alkane.rune.balance) > 0
+    ) {
       const satoshis = Number(alkane.outpoint.output.value)
       alkaneUtxos.push({
         txId: Buffer.from(
@@ -478,6 +481,8 @@ export const findAlkaneUtxos = async ({
       break
     }
   }
+
+  console.log('alkaneUtxos', alkaneUtxos)
 
   return { alkaneUtxos, totalSatoshis }
 }

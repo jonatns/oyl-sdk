@@ -1,4 +1,5 @@
 /// <reference types="node" />
+/// <reference types="node" />
 import { Account, Signer, Provider } from '..';
 import * as bitcoin from 'bitcoinjs-lib';
 import { AlkanesPayload, GatheredUtxos } from '../shared/interface';

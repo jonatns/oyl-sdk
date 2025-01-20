@@ -1,4 +1,3 @@
-import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider'
 import { Account, AddressKey, SpendStrategy } from '../account'
 import asyncPool from 'tiny-async-pool'

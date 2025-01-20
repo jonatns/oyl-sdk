@@ -25,12 +25,16 @@ export const init = new Command('init')
     '-a, --address <address>',
     '(optional) Address that will receive initial funds (default = bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx)'
   )
+  .option(
+    '-p, --provider <provider>',
+    '(optional) provider to use to access the network.'
+  )
   .action(async (options) => {
     const totalBlockCount = 260
     const faucetBlockCount = 60
     const addressBlockCount = 5
 
-    const provider: Provider = DEFAULT_PROVIDER[options.provider]
+    const provider: Provider = DEFAULT_PROVIDER[options.provider || 'regtest']
 
     const wallet = new Wallet({
       mnemonic: options.mnemonic,
@@ -92,10 +96,14 @@ export const genBlocks = new Command('genBlocks')
     '(optional)Number of blocks (default = 1)',
     parseInt
   )
+  .option(
+    '-p, --provider <provider>',
+    '(optional) provider to use to access the network.'
+  )
   .action(async (options) => {
     const count = options.count || 1
     const address = options.address || RANDOM_ADDRESS
-    const provider: Provider = DEFAULT_PROVIDER[options.provider]
+    const provider: Provider = DEFAULT_PROVIDER[options.provider || 'regtest']
     const genBlock = await provider.sandshrew.bitcoindRpc.generateToAddress(
       count,
       address
