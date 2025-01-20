@@ -134,10 +134,15 @@ export const createExecutePsbt = async ({
       ],
     }).encodedRunestone
 
+    psbt.addOutput({
+      address: account.taproot.address,
+      value: 546,
+    })
+
     const output = { script, value: 0 }
     psbt.addOutput(output)
 
-    const changeAmount = gatheredUtxos.totalAmount - finalFee
+    const changeAmount = gatheredUtxos.totalAmount - finalFee - 546
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
@@ -807,6 +812,8 @@ export const createTransactReveal = async ({
         },
       ],
     })
+
+    console.log(receiverAddress)
 
     psbt.addOutput({
       value: 546,
