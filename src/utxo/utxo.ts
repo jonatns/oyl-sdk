@@ -1,4 +1,3 @@
-import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider'
 import { Account, AddressKey, SpendStrategy } from '../account'
 import asyncPool from 'tiny-async-pool'
@@ -55,7 +54,6 @@ export const accountBalance = async ({
   let confirmedAmount: number = 0
   let pendingAmount: number = 0
   let amount: number = 0
-
 
   for (let i = 0; i < account.spendStrategy.addressOrder.length; i++) {
     const address = account[account.spendStrategy.addressOrder[i]].address
