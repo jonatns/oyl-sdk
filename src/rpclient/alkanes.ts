@@ -1,7 +1,7 @@
 import fetch from 'node-fetch'
 
 export const stripHexPrefix = (s: string): string =>
-  s.substr(0, 2) === "0x" ? s.substr(2) : s;
+  s.substr(0, 2) === '0x' ? s.substr(2) : s
 
 export interface Rune {
   rune: {
@@ -144,24 +144,23 @@ export class AlkanesRpc {
         protocolTag,
       },
     ])
-   
+
     const alkanesList = ret.outpoints
-    .filter((outpoint) => outpoint.runes.length > 0)
-    .map((outpoint) => ({
-      ...outpoint,
-      runes: outpoint.runes.map((rune) => ({
-        ...rune,
-        balance: stripHexPrefix(rune.balance),
-        rune: {
-          ...rune.rune,
-          id: {
-            block: stripHexPrefix(rune.rune.id.block),
-            tx: stripHexPrefix(rune.rune.id.tx),
+      .filter((outpoint) => outpoint.runes.length > 0)
+      .map((outpoint) => ({
+        ...outpoint,
+        runes: outpoint.runes.map((rune) => ({
+          ...rune,
+          balance: stripHexPrefix(rune.balance),
+          rune: {
+            ...rune.rune,
+            id: {
+              block: stripHexPrefix(rune.rune.id.block),
+              tx: stripHexPrefix(rune.rune.id.tx),
+            },
           },
-        },
-      })),
-    }));
-    
+        })),
+      }))
 
     if (name) {
       return alkanesList.flatMap((outpoints) =>
@@ -186,28 +185,31 @@ export class AlkanesRpc {
     ret.parsed = parsed
     return ret
   }
-  async getAlkanesByOutpoint({
-    txid,
-    vout,
-    protocolTag = '1',
-  }: {
-    txid: string
-    vout: number
-    protocolTag?: string
-  }): Promise<any> {
-    return await this._call('alkanes_protorunesbyoutpoint', [
-      {
-        txid:
-          '0x' +
-          Buffer.from(Array.from(Buffer.from(txid, 'hex')).reverse()).toString(
-            'hex'
-          ),
-        vout,
-        protocolTag,
-      },
-    ])
-  }
 
+  /* @dev wip 
+    async getAlkanesByOutpoint({
+     txid,
+     vout,
+     protocolTag = '1',
+   }: {
+     txid: string
+     vout: number
+     protocolTag?: string
+   }): Promise<any> {
+     console.log(txid, vout, protocolTag)
+     return await this._call('alkanes_protorunesbyoutpoint', [
+       {
+         txid:
+           '0x' +
+           Buffer.from(Array.from(Buffer.from(txid, 'hex')).reverse()).toString(
+             'hex'
+           ),
+         vout,
+         protocolTag,
+       },
+     ])
+   }
+*/
   async getAlkaneById({
     block,
     tx,
@@ -260,7 +262,7 @@ export class AlkanesRpc {
 
   async getAlkanes({
     limit,
-    offset = 1,
+    offset = 0,
   }: {
     limit: number
     offset?: number
