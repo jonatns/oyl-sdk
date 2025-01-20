@@ -481,9 +481,6 @@ export const findAlkaneUtxos = async ({
       break
     }
   }
-
-  console.log('alkaneUtxos', alkaneUtxos)
-
   return { alkaneUtxos, totalSatoshis }
 }
 
@@ -819,8 +816,6 @@ export const createTransactReveal = async ({
         },
       ],
     })
-
-    console.log(receiverAddress)
 
     psbt.addOutput({
       value: 546,

@@ -58,7 +58,7 @@ interface AlkaneToken {
 export declare class AlkanesRpc {
     alkanesUrl: string;
     constructor(url: string);
-    _call(method: any, params?: any[], timeout?: number): Promise<any>;
+    _call(method: string, params?: any[]): Promise<any>;
     getAlkanesByHeight({ height, protocolTag, }: {
         height: number;
         protocolTag: string;
