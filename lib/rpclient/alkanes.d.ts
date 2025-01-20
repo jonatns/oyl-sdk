@@ -1,3 +1,4 @@
+export declare const stripHexPrefix: (s: string) => string;
 export interface Rune {
     rune: {
         id: {

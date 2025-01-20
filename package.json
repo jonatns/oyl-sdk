@@ -9,7 +9,9 @@
     "url": "git+https://github.com/oyl-wallet/oyl-sdk.git"
   },
   "scripts": {
-    "build": "tsc && cp src/**/*.wasm lib/alkanes",
+    "build": "run-s build:tsc build:copywasm",
+    "build:tsc": "tsc",
+    "build:copywasm": "cross-env cp src/alkanes/*.wasm lib/alkanes/",
     "dev": "tsc -w",
     "prettier": "prettier --write ./src.ts/**/*.ts",
     "test": "jest",
@@ -32,7 +34,9 @@
     "@types/node": "20.17.12",
     "@types/tiny-async-pool": "2.0.3",
     "@types/yargs": "17.0.33",
+    "cross-env": "^7.0.3",
     "jest": "29.7.0",
+    "npm-run-all": "^4.1.5",
     "ts-jest": "29.2.5",
     "typescript": "4.9.5",
     "yarn-audit-fix": "10.1.1"

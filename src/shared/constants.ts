@@ -13,6 +13,11 @@ export const MAXIMUM_FEE = 5000000
 export const regtestOpts: MnemonicToAccountOptions = {
   network: bitcoin.networks.regtest,
   index: 0,
+  spendStrategy: {
+    changeAddress: 'nativeSegwit',
+    addressOrder: ['nativeSegwit', 'nestedSegwit', 'taproot', 'legacy'],
+    utxoSortGreatestToLeast: true,
+  },
 }
 
 export const Opts: MnemonicToAccountOptions = {
