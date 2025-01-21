@@ -5,6 +5,7 @@ export interface WalletOptions {
     mnemonic?: string;
     networkType?: NetworkType;
     feeRate?: number;
+    provider?: Provider;
 }
 export declare class Wallet {
     mnemonic: string;

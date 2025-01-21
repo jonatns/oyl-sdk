@@ -6,7 +6,7 @@ import { Wallet } from './wallet'
 export const brc20Send = new Command('send')
   .requiredOption(
     '-p, --provider <provider>',
-    'provider to use when querying the network for utxos'
+    'Network provider type (regtest, bitcoin)'
   )
   .requiredOption('-amt, --amount <amount>', 'amount you want to send')
   .requiredOption('-t, --to <to>', 'address you want to send to')

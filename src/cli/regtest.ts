@@ -2,7 +2,9 @@ import { Command } from 'commander'
 import { Provider } from '..'
 import { timeout } from '../shared/utils'
 import { Wallet } from './wallet'
-import { REGTEST_FAUCET, DEFAULT_PROVIDER } from './constants'
+import * as utxo from '../utxo'
+import * as btc from '../btc'
+import { REGTEST_FAUCET, DEFAULT_PROVIDER, TEST_WALLET } from './constants'
 
 const RANDOM_ADDRESS = 'bcrt1qz3y37epk6hqlul2pt09hrwgj0s09u5g6kzrkm2'
 
@@ -13,30 +15,26 @@ export const init = new Command('init')
   .description(
     'Generate 260 blocks to initialize regtest chain (funds faucet address and an optional user address)'
   )
-  .requiredOption(
+  .option(
     '-p, --provider <provider>',
-    'provider to use when querying the network for utxos'
+    'Network provider type (regtest, bitcoin)'
   )
   .option(
     '-m, --mnemonic <mnemonic>',
-    '(optional) Mnemonic used for signing transactions (default = abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about)'
+    '(optional) Mnemonic used for signing transactions (default = TEST_WALLET)'
   )
   .option(
     '-a, --address <address>',
     '(optional) Address that will receive initial funds (default = bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx)'
   )
   .action(async (options) => {
-    const totalBlockCount = 260
-    const faucetBlockCount = 60
+    const totalBlockCount = 350
+    const faucetBlockCount = 100
     const addressBlockCount = 5
 
     const provider: Provider = DEFAULT_PROVIDER[options.provider || 'regtest']
 
-    const wallet = new Wallet({
-      mnemonic: options.mnemonic,
-    })
-
-    const address = options.address || wallet.account.nativeSegwit.address
+    const address = options.address || TEST_WALLET.nativeSegwit.address
 
     const currentBlockCount =
       await provider.sandshrew.bitcoindRpc.getBlockCount()
@@ -49,7 +47,7 @@ export const init = new Command('init')
 
     console.log('Generating blocks...')
 
-    // Generate the first block utxo payments to the faucet. If you send too many to the address you can't query the utxos for funding.
+    // Generate the first block utxo payments to the faucet.
     await provider.sandshrew.bitcoindRpc.generateToAddress(
       faucetBlockCount,
       REGTEST_FAUCET.nativeSegwit.address
@@ -60,7 +58,7 @@ export const init = new Command('init')
       address
     )
 
-    // Generate the remaining blocks to a random address
+    // Generate the remaining (at least 100) blocks to a random address to avoid coinbase spend issues
     const transaction = await provider.sandshrew.bitcoindRpc.generateToAddress(
       totalBlockCount - faucetBlockCount - addressBlockCount,
       RANDOM_ADDRESS
@@ -74,18 +72,19 @@ export const init = new Command('init')
     console.log(`${address} has been funded with ${addressBlockCount} utxos`)
   })
 
+
 /* @dev example call
     oyl regtest genBlocks -c 2
   */
 export const genBlocks = new Command('genBlocks')
   .description('Generate blocks with transactions from mempool')
-  .requiredOption(
+  .option(
     '-p, --provider <provider>',
-    'provider to use when querying the network for utxos'
+    'Network provider type (regtest, bitcoin)'
   )
   .option(
     '-a, --address <address>',
-    '(optional) Address to recieve block reward.'
+    '(optional) Address to recieve block reward'
   )
   .option(
     '-c, --count <count>',
@@ -102,3 +101,45 @@ export const genBlocks = new Command('genBlocks')
     )
     console.log('Processed blocks: ', genBlock)
   })
+  
+
+  /* @dev example call
+    oyl regtest sendFromFaucet --to "bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx" -s 1000000 
+  */
+export const sendFromFaucet = new Command('sendFromFaucet')
+.description('Send funds from regtest faucet to an address')
+.option('-p, --provider <provider>', 'Network provider type (regtest, bitcoin)')
+.requiredOption(
+  '-t, --to <to>',
+  '(optional) Address to recieve block reward.'
+)
+.option(
+  '-s, --sats <sats>',
+  '(optional) Number of sats to send (default = 1000000)',
+  parseInt
+)
+.action(async (options) => {
+  options.mnemonic = REGTEST_FAUCET.mnemonic
+  const faucet: Wallet = new Wallet(options)
+
+  const { accountSpendableTotalUtxos } = await utxo.accountUtxos({
+    account: faucet.account,
+    provider: faucet.provider,
+  })
+  const utxos = utxo.selectUtxos(
+    accountSpendableTotalUtxos,
+    faucet.account.spendStrategy
+  )
+
+  console.log(
+    await btc.send({
+      utxos,
+      toAddress: options.to,
+      feeRate: faucet.feeRate,
+      account: faucet.account,
+      signer: faucet.signer,
+      provider: faucet.provider,
+      amount: options.sats || 1000000,
+    })
+  )
+})
