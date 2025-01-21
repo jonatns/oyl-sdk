@@ -5,6 +5,7 @@ export * from './errors';
 export * from './account';
 export * from './signer';
 export * from './provider';
+export * as alkanes from './alkanes';
 export * as rune from './rune';
 export * as btc from './btc';
 export * as brc20 from './brc20';
