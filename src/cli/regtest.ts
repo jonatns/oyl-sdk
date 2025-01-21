@@ -74,8 +74,8 @@ export const init = new Command('init')
 
 
 /* @dev example call
-    oyl regtest genBlocks -c 2
-  */
+  oyl regtest genBlocks -c 2
+*/
 export const genBlocks = new Command('genBlocks')
   .description('Generate blocks with transactions from mempool')
   .option(
@@ -103,9 +103,9 @@ export const genBlocks = new Command('genBlocks')
   })
   
 
-  /* @dev example call
-    oyl regtest sendFromFaucet --to "bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx" -s 1000000 
-  */
+/* @dev example call
+  oyl regtest sendFromFaucet --to "bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx" -s 1000000 
+*/
 export const sendFromFaucet = new Command('sendFromFaucet')
 .description('Send funds from regtest faucet to an address')
 .option('-p, --provider <provider>', 'Network provider type (regtest, bitcoin)')
