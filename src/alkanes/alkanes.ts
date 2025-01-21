@@ -6,7 +6,7 @@ import {
   encipher,
   encodeRunestoneProtostone,
   p2tr_ord_reveal,
-} from 'alkanes/lib'
+} from 'alkanes/lib/index'
 import { Account, Signer } from '..'
 import {
   findXAmountOfSats,
