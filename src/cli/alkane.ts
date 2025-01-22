@@ -105,7 +105,7 @@ export const alkaneContractDeploy = new Command('new-contract')
 
 
 /* @dev example call 
-  oyl alkane new-token -pre 5000 -amount 1000 -c 100000 -name "OYL" -symbol "OL" -resNumber 777
+  oyl alkane new-token -pre 5000 -amount 1000 -c 100000 -name "OYL" -symbol "OL" -resNumber 777 -i ./src/cli/contracts/image.png
   
   The resNumber must be a resNumber for a deployed contract. In this case 777 is the resNumber for 
   the free_mint.wasm contract and the options supplied are for the free_mint.wasm contract.
@@ -130,10 +130,10 @@ export const alkaneTokenDeploy = new Command('new-token')
     'Amount of tokens minted each time mint is called'
   )
   .option('-pre, --premine <premine>', 'amount to premine')
-  // .option(
-  //   '-i, --image <image>',
-  //   'Relative path to image file to deploy (e.g., "../alkanes/free_mint.wasm")'
-  // )
+  .option(
+    '-i, --image <image>',
+    'Relative path to image file to deploy (e.g., "../alkanes/free_mint.wasm")'
+  )
   .option(
     '-p, --provider <provider>',
     'Network provider type (regtest, bitcoin)'
@@ -169,36 +169,36 @@ export const alkaneTokenDeploy = new Command('new-token')
       ),
     ]
 
-    // if (options.image) {
-    //   const image = new Uint8Array(
-    //     Array.from(
-    //       await fs.readFile(path.resolve(process.cwd(), options.image))
-    //     )
-    //   )
-    //   const gzip = promisify(_gzip)
+    if (options.image) {
+      const image = new Uint8Array(
+        Array.from(
+          await fs.readFile(path.resolve(process.cwd(), options.image))
+        )
+      )
+      const gzip = promisify(_gzip)
 
-    //   const payload = {
-    //     body: await gzip(image, { level: 9 }),
-    //     cursed: false,
-    //     tags: { contentType: '' },
-    //   }
+      const payload = {
+        body: await gzip(image, { level: 9 }),
+        cursed: false,
+        tags: { contentType: '' },
+      }
 
-    //   console.log(
-    //     await tokenDeployment({
-    //       payload,
-    //       calldata,
-    //       gatheredUtxos: {
-    //         utxos: accountSpendableTotalUtxos,
-    //         totalAmount: accountSpendableTotalBalance,
-    //       },
-    //       feeRate: wallet.feeRate,
-    //       account: wallet.account,
-    //       signer: wallet.signer,
-    //       provider: wallet.provider,
-    //     })
-    //   )
-    //   return
-    // }
+      console.log(
+        await tokenDeployment({
+          payload,
+          calldata,
+          gatheredUtxos: {
+            utxos: accountSpendableTotalUtxos,
+            totalAmount: accountSpendableTotalBalance,
+          },
+          feeRate: wallet.feeRate,
+          account: wallet.account,
+          signer: wallet.signer,
+          provider: wallet.provider,
+        })
+      )
+      return
+    }
 
     console.log(
       await alkanes.execute({
