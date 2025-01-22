@@ -17,7 +17,7 @@ export const DEFAULT_PROVIDER = {
     networkType: 'mainnet',
   }),
   regtest: new Provider({
-    url: 'http://localhost:3000',
+    url: 'http://localhost:18888',
     projectId: 'regtest',
     network: bitcoin.networks.regtest,
     networkType: 'regtest',

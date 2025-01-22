@@ -8,7 +8,7 @@ import {
   alkanesTrace,
   alkaneTokenDeploy,
 } from './alkane'
-import { init, genBlocks } from './regtest'
+import { init, genBlocks, sendFromFaucet } from './regtest'
 import { runeSend, runeMint, runeEtchCommit, runeEtchReveal } from './rune'
 import { brc20Send } from './brc20'
 import { btcSend } from './btc'
@@ -39,8 +39,9 @@ program
 
 const regtestCommand = new Command('regtest')
   .description('Regtest commands')
-  .addCommand(genBlocks)
   .addCommand(init)
+  .addCommand(genBlocks)
+  .addCommand(sendFromFaucet)
 
 const accountCommand = new Command('account')
   .description('Manage accounts')
@@ -62,9 +63,11 @@ const brc20Command = new Command('brc20')
   .description('Functions for brc20')
   .addCommand(brc20Send)
   .addCommand(addressBRC20Balance)
+
 const collectibleCommand = new Command('collectible')
   .description('Functions for collectibles')
   .addCommand(collectibleSend)
+
 const runeCommand = new Command('rune')
   .description('Functions for runes')
   .addCommand(runeSend)

@@ -6,7 +6,7 @@ export const accountUtxosToSpend = new Command('accountUtxos')
   .description('Returns available utxos to spend')
   .requiredOption(
     '-p, --provider <provider>',
-    'provider to use when querying the network for utxos'
+    'Network provider type (regtest, bitcoin)'
   )
   /* @dev example call
     oyl utxo accountUtxos -p regtest
@@ -26,7 +26,7 @@ export const accountAvailableBalance = new Command('balance')
   .description('Returns amount of sats available to spend')
   .requiredOption(
     '-p, --provider <provider>',
-    'provider to use when querying the network for utxos'
+    'Network provider type (regtest, bitcoin)'
   )
   /* @dev example call
     oyl utxo balance -p regtest
@@ -45,7 +45,7 @@ export const addressBRC20Balance = new Command('addressBRC20Balance')
   .description('Returns all BRC20 balances')
   .requiredOption(
     '-p, --provider <provider>',
-    'provider to use when querying the network for utxos'
+    'Network provider type (regtest, bitcoin)'
   )
   .requiredOption(
     '-a, --address <address>',
@@ -63,7 +63,7 @@ export const addressUtxosToSpend = new Command('addressUtxos')
   .description('Returns available utxos to spend')
   .requiredOption(
     '-p, --provider <provider>',
-    'provider to use when querying the network for utxos'
+    'Network provider type (regtest, bitcoin)'
   )
   .requiredOption(
     '-a, --address <address>',

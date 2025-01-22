@@ -6,7 +6,7 @@ import { Wallet } from './wallet'
 export const runeSend = new Command('send')
   .requiredOption(
     '-p, --provider <provider>',
-    'provider to use when querying the network for utxos'
+    'Network provider type (regtest, bitcoin)'
   )
   .requiredOption('-t, --to <to>', 'address you want to send to')
   .requiredOption('-runeId, --runeId <runeId>', 'runeId to send')
@@ -58,7 +58,7 @@ export const runeSend = new Command('send')
 export const runeMint = new Command('mint')
   .requiredOption(
     '-p, --provider <provider>',
-    'provider to use when querying the network for utxos'
+    'Network provider type (regtest, bitcoin)'
   )
   .requiredOption('-runeId, --runeId <runeId>', 'runeId to send')
   .option('-feeRate, --feeRate <feeRate>', 'fee rate')
@@ -95,7 +95,7 @@ export const runeMint = new Command('mint')
 export const runeEtchCommit = new Command('etchCommit')
   .requiredOption(
     '-p, --provider <provider>',
-    'provider to use when querying the network for utxos'
+    'Network provider type (regtest, bitcoin)'
   )
   .requiredOption('-rune-name, --rune-name <runeName>', 'name of rune to etch')
   .option('-feeRate, --feeRate <feeRate>', 'fee rate')
@@ -130,7 +130,7 @@ oyl rune etchCommit -p regtest -feeRate 2 -divisibility 3 -cap 100000 -pre 1000 
 export const runeEtchReveal = new Command('etchReveal')
   .requiredOption(
     '-p, --provider <provider>',
-    'provider to use when querying the network for utxos'
+    'Network provider type (regtest, bitcoin)'
   )
   .requiredOption('-commitId, --commitId <commitId>', 'commitId')
   .requiredOption('-scrp, --script <script>', 'commit script to spend')
