@@ -87,6 +87,14 @@ Full documentation is available at https://alkanes.build/
 
 We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/oyl-wallet/oyl-sdk/tags).
 
+## Publishing to NPM
+
+From root of oyl-sdk repo:
+
+```sh
+$ npm publish --access public
+```
+
 ## Authors
 
 - **Oyl Dynamics**
