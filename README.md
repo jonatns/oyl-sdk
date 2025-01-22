@@ -89,6 +89,8 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 
 ## Publishing to NPM
 
+From root of oyl-sdk repo:
+
 ```sh
 $ npm publish --access public
 ```
