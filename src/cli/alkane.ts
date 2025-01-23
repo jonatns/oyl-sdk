@@ -9,7 +9,6 @@ import { Wallet } from './wallet'
 import { contractDeployment } from '../alkanes/contract'
 import { send, tokenDeployment } from '../alkanes/token'
 
-
 /* @dev example call
   oyl alkane trace -params '{"txid":"0322c3a2ce665485c8125cd0334675f0ddbd7d5b278936144efb108ff59c49b5","vout":0}'
 
@@ -17,10 +16,7 @@ import { send, tokenDeployment } from '../alkanes/token'
 */
 export const alkanesTrace = new Command('trace')
   .description('Returns data based on txid and vout of deployed alkane')
-  .option(
-    '-p, --provider <provider>',
-    'provider to use to access the network.'
-  )
+  .option('-p, --provider <provider>', 'provider to use to access the network.')
   .option(
     '-params, --parameters <parameters>',
     'parameters for the ord method you are calling.'
@@ -29,16 +25,15 @@ export const alkanesTrace = new Command('trace')
     const wallet: Wallet = new Wallet(options)
     const provider = wallet.provider
     let isJson: { vout: number; txid: string }
-    try {
-      isJson = JSON.parse(options.parameters)
-      const { vout, txid } = isJson
-      console.log(await provider.alkanes.trace({ vout, txid }))
-    } catch (error) {
-      const { vout, txid } = isJson
-      console.log(await provider.alkanes.trace({ vout, txid }))
-    }
+    isJson = JSON.parse(options.parameters)
+    const { vout, txid } = isJson
+    console.log(
+      await provider.alkanes.trace({
+        vout,
+        txid,
+      })
+    )
   })
-
 
 /* @dev example call 
   oyl alkane new-contract -c ./src/cli/contracts/free_mint.wasm -resNumber 777
@@ -67,11 +62,10 @@ export const alkaneContractDeploy = new Command('new-contract')
 
   .action(async (options) => {
     const wallet: Wallet = new Wallet(options)
-
     const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
-      await utxo.accountUtxos({ 
-        account: wallet.account, 
-        provider: wallet.provider 
+      await utxo.accountUtxos({
+        account: wallet.account,
+        provider: wallet.provider,
       })
 
     const contract = new Uint8Array(
@@ -102,7 +96,6 @@ export const alkaneContractDeploy = new Command('new-contract')
       })
     )
   })
-
 
 /* @dev example call 
   oyl alkane new-token -pre 5000 -amount 1000 -c 100000 -name "OYL" -symbol "OL" -resNumber 777 -i ./src/cli/contracts/image.png
@@ -142,10 +135,10 @@ export const alkaneTokenDeploy = new Command('new-token')
   .action(async (options) => {
     const wallet: Wallet = new Wallet(options)
 
-    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } = 
-      await utxo.accountUtxos({ 
-        account: wallet.account, 
-        provider: wallet.provider 
+    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
+      await utxo.accountUtxos({
+        account: wallet.account,
+        provider: wallet.provider,
       })
 
     const calldata = [
@@ -215,7 +208,6 @@ export const alkaneTokenDeploy = new Command('new-token')
     )
   })
 
-
 /* @dev example call 
   oyl alkane execute -data 2,1,77
 
@@ -248,16 +240,16 @@ export const alkaneExecute = new Command('execute')
     const wallet: Wallet = new Wallet(options)
 
     const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
-      await utxo.accountUtxos({ 
-        account: wallet.account, 
-        provider: wallet.provider 
+      await utxo.accountUtxos({
+        account: wallet.account,
+        provider: wallet.provider,
       })
 
     const calldata: bigint[] = []
     for (let i = 0; i < options.calldata.length; i++) {
       calldata.push(BigInt(options.calldata[i]))
     }
-    
+
     console.log(
       await alkanes.execute({
         calldata,
@@ -272,7 +264,6 @@ export const alkaneExecute = new Command('execute')
       })
     )
   })
-
 
 /* @dev example call 
   oyl alkane send -blk 2 -tx 1 -amt 200 -to bcrt1pkq6ayylfpe5hn05550ry25pkakuf72x9qkjc2sl06dfcet8sg25ql4dm73
@@ -297,9 +288,9 @@ export const alkaneSend = new Command('send')
     const wallet: Wallet = new Wallet(options)
 
     const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
-      await utxo.accountUtxos({ 
-        account: wallet.account, 
-        provider: wallet.provider 
+      await utxo.accountUtxos({
+        account: wallet.account,
+        provider: wallet.provider,
       })
 
     console.log(

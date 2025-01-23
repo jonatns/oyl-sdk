@@ -166,9 +166,7 @@ export class AlkanesRpc {
   }
 
   async trace(request: { vout: number; txid: string }) {
-    request.txid = Buffer.from(
-      Array.from(Buffer.from(request.txid, 'hex')).reverse()
-    ).toString('hex')
+    request.txid = Buffer.from(request.txid, 'hex').reverse().toString('hex')
     const ret = await this._call('alkanes_trace', [request])
     return await ret
   }
