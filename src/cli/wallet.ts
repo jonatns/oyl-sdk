@@ -26,10 +26,13 @@ export class Wallet {
   feeRate: number
 
   constructor(options?: WalletOptions) {
-    this.mnemonic = options?.mnemonic || process.env.MNEMONIC || TEST_WALLET.mnemonic
+    this.mnemonic =
+      options?.mnemonic || process.env.MNEMONIC || TEST_WALLET.mnemonic
     this.networkType = options?.networkType || 'regtest'
-    this.provider = options?.provider || DEFAULT_PROVIDER[this.networkType]
-
+    if (options.provider && typeof options.provider == 'string')
+      this.provider = DEFAULT_PROVIDER[options?.provider]
+    else if (options.provider) this.provider = options.provider
+    else this.provider = DEFAULT_PROVIDER[this.networkType]
     this.account = mnemonicToAccount({
       mnemonic: this.mnemonic,
       opts: {
