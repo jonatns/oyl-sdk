@@ -178,7 +178,7 @@ export class AlkanesRpc {
     return ret
   }
 
-  /* @dev wip 
+ 
     async getAlkanesByOutpoint({
      txid,
      vout,
@@ -188,20 +188,28 @@ export class AlkanesRpc {
      vout: number
      protocolTag?: string
    }): Promise<any> {
-     console.log(txid, vout, protocolTag)
-     return await this._call('alkanes_protorunesbyoutpoint', [
+     const alkaneList = await this._call('alkanes_protorunesbyoutpoint', [
        {
-         txid:
-           '0x' +
-           Buffer.from(Array.from(Buffer.from(txid, 'hex')).reverse()).toString(
-             'hex'
-           ),
+         txid,
          vout,
          protocolTag,
        },
      ])
+
+     return alkaneList.map((outpoint) => ({
+      ...outpoint,
+      token: {
+        ...outpoint.token,
+        id: {
+          block: stripHexPrefix(outpoint.token.id.block),
+          tx: stripHexPrefix(outpoint.token.id.tx),
+        },
+      },
+      value: Number(outpoint.value),
+    }))
+
    }
-*/
+
   async getAlkaneById({
     block,
     tx,
