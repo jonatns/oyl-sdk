@@ -53,7 +53,7 @@ interface AlkaneToken {
   mintAmount: number
 }
 
-const opcodes: string[] = ['99', '100', '101', '102', '103', '104']
+const opcodes: string[] = ['99', '100', '101', '102', '103', '104', '1000']
 const opcodesHRV: string[] = [
   'name',
   'symbol',
@@ -61,6 +61,7 @@ const opcodesHRV: string[] = [
   'cap',
   'minted',
   'mintAmount',
+  'data',
 ]
 
 export class AlkanesRpc {
@@ -236,7 +237,11 @@ export class AlkanesRpc {
         })
         if (result.status === 0) {
           alkaneData[opcodesHRV[j]] = Number(result.parsed.le)
-          if (opcodesHRV[j] === 'name' || opcodesHRV[j] === 'symbol') {
+          if (
+            opcodesHRV[j] === 'name' ||
+            opcodesHRV[j] === 'symbol' ||
+            opcodesHRV[j] === 'data'
+          ) {
             alkaneData[opcodesHRV[j]] = result.parsed.string
           }
           alkaneData.mintActive =
@@ -288,7 +293,11 @@ export class AlkanesRpc {
           })
           if (result.status === 0) {
             alkaneData[opcodesHRV[j]] = Number(result.parsed.le)
-            if (opcodesHRV[j] === 'name' || opcodesHRV[j] === 'symbol') {
+            if (
+              opcodesHRV[j] === 'name' ||
+              opcodesHRV[j] === 'symbol' ||
+              opcodesHRV[j] === 'data'
+            ) {
               alkaneData[opcodesHRV[j]] = result.parsed.string
             }
             hasValidResult = true
