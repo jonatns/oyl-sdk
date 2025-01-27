@@ -73,6 +73,11 @@ export declare class AlkanesRpc {
         txid: string;
     }): Promise<any>;
     simulate(request: AlkaneSimulateRequest): Promise<any>;
+    getAlkanesByOutpoint({ txid, vout, protocolTag, }: {
+        txid: string;
+        vout: number;
+        protocolTag?: string;
+    }): Promise<any>;
     getAlkaneById({ block, tx, }: {
         block: string;
         tx: string;
