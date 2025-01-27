@@ -145,7 +145,7 @@ export class AlkanesRpc {
         ...outpoint,
         runes: outpoint.runes.map((rune) => ({
           ...rune,
-          balance: stripHexPrefix(rune.balance),
+          balance: Number(rune.balance),
           rune: {
             ...rune.rune,
             id: {
