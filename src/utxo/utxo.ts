@@ -3,6 +3,8 @@ import { Account, AddressKey, SpendStrategy } from '../account'
 import asyncPool from 'tiny-async-pool'
 import { OrdOutput } from 'rpclient/ord'
 import { getAddressKey } from '../shared/utils'
+import { DEFAULT_PROVIDER } from 'cli/constants'
+import { Outpoint } from 'rpclient/alkanes'
 
 export interface EsploraUtxo {
   txid: string
@@ -177,14 +179,25 @@ export const addressUtxos = async ({
     }
   }
 
+  const alkanes: Outpoint[] = await provider.alkanes.getAlkanesByAddress({
+    address,
+  })
+
+  const filteredProcessedUtxos = processedUtxos.filter(({ utxo }) => {
+    return !alkanes.some(
+      (alkane) =>
+        alkane.outpoint.txid === utxo.txid && alkane.outpoint.vout === utxo.vout
+    )
+  })
+
   const utxoSortGreatestToLeast = spendStrategy?.utxoSortGreatestToLeast ?? true
-  processedUtxos.sort((a, b) =>
+  filteredProcessedUtxos.sort((a, b) =>
     utxoSortGreatestToLeast
       ? b.utxo.value - a.utxo.value
       : a.utxo.value - b.utxo.value
   )
 
-  for (const { utxo, txOutput, scriptPk } of processedUtxos) {
+  for (const { utxo, txOutput, scriptPk } of filteredProcessedUtxos) {
     totalBalance += utxo.value
 
     if (txOutput.indexed) {
@@ -256,6 +269,11 @@ export const addressUtxos = async ({
     totalBalance,
   }
 }
+
+addressUtxos({
+  address: 'bcrt1ptrnfpu46tsxhuyfecs2z9fudkdf9dch8j09jg05y0avdsacfx6ysarfvep',
+  provider: DEFAULT_PROVIDER.oylnet,
+}).then((ret) => console.log(ret))
 
 export const accountUtxos = async ({
   account,
