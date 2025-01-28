@@ -270,11 +270,6 @@ export const addressUtxos = async ({
   }
 }
 
-addressUtxos({
-  address: 'bcrt1ptrnfpu46tsxhuyfecs2z9fudkdf9dch8j09jg05y0avdsacfx6ysarfvep',
-  provider: DEFAULT_PROVIDER.oylnet,
-}).then((ret) => console.log(ret))
-
 export const accountUtxos = async ({
   account,
   provider,
