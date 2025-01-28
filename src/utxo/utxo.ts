@@ -3,7 +3,6 @@ import { Account, AddressKey, SpendStrategy } from '../account'
 import asyncPool from 'tiny-async-pool'
 import { OrdOutput } from 'rpclient/ord'
 import { getAddressKey } from '../shared/utils'
-import { DEFAULT_PROVIDER } from 'cli/constants'
 import { Outpoint } from 'rpclient/alkanes'
 
 export interface EsploraUtxo {
