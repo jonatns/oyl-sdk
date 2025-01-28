@@ -150,8 +150,8 @@ export class AlkanesRpc {
           rune: {
             ...rune.rune,
             id: {
-              block: stripHexPrefix(rune.rune.id.block),
-              tx: stripHexPrefix(rune.rune.id.tx),
+              block: Number(rune.rune.id.block),
+              tx: Number(rune.rune.id.tx),
             },
           },
         })),
@@ -202,8 +202,8 @@ export class AlkanesRpc {
       token: {
         ...outpoint.token,
         id: {
-          block: stripHexPrefix(outpoint.token.id.block),
-          tx: stripHexPrefix(outpoint.token.id.tx),
+          block: Number(outpoint.token.id.block),
+          tx: Number(outpoint.token.id.tx),
         },
       },
       value: Number(outpoint.value),
