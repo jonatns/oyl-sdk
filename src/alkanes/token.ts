@@ -113,6 +113,10 @@ export const createSendPsbt = async ({
       targetNumberOfAlkanes: amount,
     })
 
+    if (alkaneUtxos.length === 0) {
+      throw new OylTransactionError(Error('No Alkane Utxos Found'))
+    }
+
     for await (const utxo of alkaneUtxos) {
       if (getAddressType(utxo.address) === 0) {
         const previousTxHex: string = await provider.esplora.getTxHex(utxo.txId)
