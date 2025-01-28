@@ -292,7 +292,7 @@ export class AlkanesRpc {
       try {
         const opcodeResults = await Promise.all(
           validOpcodes.map(async (opcode, opcodeIndex) => {
-            if (!opcode) return null // Extra safety check
+            if (!opcode) return null
 
             try {
               const result = await this.simulate({
@@ -322,8 +322,6 @@ export class AlkanesRpc {
             return null
           })
         )
-
-        // Only process valid results
         const validResults = opcodeResults.filter(
           (
             item
@@ -342,7 +340,7 @@ export class AlkanesRpc {
         )
 
         validResults.forEach(({ result, opcodeHRV }) => {
-          if (!opcodeHRV) return // Skip if no HRV mapping
+          if (!opcodeHRV) return
 
           if (['name', 'symbol', 'data'].includes(opcodeHRV)) {
             alkaneData[opcodeHRV] = result.parsed?.string || ''

@@ -86,7 +86,7 @@ export declare class AlkanesRpc {
         limit: number;
         offset?: number;
     }): Promise<AlkaneToken[]>;
-    parseSimulateReturn(v: any): "invalid" | {
+    parseSimulateReturn(v: any): {
         string: string;
         bytes: string;
         le: string;
