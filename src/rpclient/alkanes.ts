@@ -93,11 +93,6 @@ export class AlkanesRpc {
       const response = await fetch(this.alkanesUrl, requestOptions)
       const responseData = await response.json()
 
-      if (responseData.error) {
-        console.error('Alkanes JSON-RPC Error:', responseData.error)
-        throw new Error(responseData.error)
-      }
-
       return responseData.result
     } catch (error) {
       if (error.name === 'AbortError') {
@@ -142,15 +137,9 @@ export class AlkanesRpc {
     ])
 
     const alkanesList = ret.outpoints
-      .filter((outpoint: Outpoint) => outpoint.runes.length > 0)
-      .map((outpoint: Outpoint) => ({
+      .filter((outpoint) => outpoint.runes.length > 0)
+      .map((outpoint) => ({
         ...outpoint,
-        outpoint: {
-          ...outpoint.outpoint,
-          txid: Buffer.from(outpoint.outpoint.txid, 'hex')
-            .reverse()
-            .toString('hex'),
-        },
         runes: outpoint.runes.map((rune) => ({
           ...rune,
           balance: Number(rune.balance),
@@ -169,8 +158,6 @@ export class AlkanesRpc {
         outpoints.runes.filter((item) => item.rune.name === name)
       )
     }
-
-    console.log(alkanesList)
 
     return alkanesList
   }
@@ -271,7 +258,6 @@ export class AlkanesRpc {
     }
     return alkaneData
   }
-
   async getAlkanes({
     limit,
     offset = 0,
@@ -301,61 +287,88 @@ export class AlkanesRpc {
       }
 
       let hasValidResult = false
+      const validOpcodes = opcodes.filter((opcode) => opcode !== undefined)
 
-      const opcodeResults = await Promise.all(
-        opcodes.map(async (opcode) => {
-          try {
-            const result = await this.simulate({
-              target: { block: '2', tx: index.toString() },
-              alkanes: [],
-              transaction: '0x',
-              block: '0x',
-              height: '20000',
-              txindex: 0,
-              inputs: [opcode],
-              pointer: 0,
-              refundPointer: 0,
-              vout: 0,
-            })
+      try {
+        const opcodeResults = await Promise.all(
+          validOpcodes.map(async (opcode, opcodeIndex) => {
+            if (!opcode) return null // Extra safety check
 
-            if (result.status === 0) {
-              return { opcode, result }
+            try {
+              const result = await this.simulate({
+                target: { block: '2', tx: index.toString() },
+                alkanes: [],
+                transaction: '0x',
+                block: '0x',
+                height: '20000',
+                txindex: 0,
+                inputs: [opcode],
+                pointer: 0,
+                refundPointer: 0,
+                vout: 0,
+              })
+
+              if (result?.status === 0) {
+                return {
+                  opcode,
+                  result,
+                  opcodeIndex,
+                  opcodeHRV: opcodesHRV[opcodeIndex],
+                }
+              }
+            } catch (error) {
+              return null
             }
-          } catch (error) {
-            console.log(error)
             return null
-          }
-        })
-      )
+          })
+        )
 
-      opcodeResults
-        .filter((result) => result !== null)
-        .forEach(({ opcode, result }) => {
-          const opcodeHRV = opcodesHRV[opcodes.indexOf(opcode)]
+        // Only process valid results
+        const validResults = opcodeResults.filter(
+          (
+            item
+          ): item is {
+            opcode: any
+            result: any
+            opcodeIndex: number
+            opcodeHRV: string
+          } => {
+            return (
+              item !== null &&
+              item !== undefined &&
+              item.opcodeHRV !== undefined
+            )
+          }
+        )
+
+        validResults.forEach(({ result, opcodeHRV }) => {
+          if (!opcodeHRV) return // Skip if no HRV mapping
 
           if (['name', 'symbol', 'data'].includes(opcodeHRV)) {
-            alkaneData[opcodeHRV] = result.parsed.string
+            alkaneData[opcodeHRV] = result.parsed?.string || ''
           } else {
-            alkaneData[opcodeHRV] = Number(result.parsed.le)
+            alkaneData[opcodeHRV] = Number(result.parsed?.le || 0)
           }
-
           hasValidResult = true
         })
 
-      if (hasValidResult) {
-        alkaneData.mintActive =
-          Number(alkaneData.minted) < Number(alkaneData.cap)
-        alkaneData.percentageMinted = Math.floor(
-          (alkaneData.minted / alkaneData.cap) * 100
-        )
-        return alkaneData
+        if (hasValidResult) {
+          alkaneData.mintActive =
+            Number(alkaneData.minted || 0) < Number(alkaneData.cap || 0)
+          alkaneData.percentageMinted = Math.floor(
+            ((alkaneData.minted || 0) / (alkaneData.cap || 1)) * 100
+          )
+          return alkaneData
+        }
+      } catch (error) {
+        console.log(`Error processing alkane at index ${index}:`, error)
       }
 
       return null
     }
 
     const results = []
-    for await (const result of asyncPool(5, indices, processAlkane)) {
+    for await (const result of asyncPool(10, indices, processAlkane)) {
       if (result !== null) {
         results.push(result)
       }
@@ -366,7 +379,7 @@ export class AlkanesRpc {
 
   parseSimulateReturn(v: any) {
     if (v === '0x') {
-      return 'invalid'
+      return undefined
     }
     const stripHexPrefix = (v: string) => (v.startsWith('0x') ? v.slice(2) : v)
     const addHexPrefix = (v: string) => '0x' + stripHexPrefix(v)
@@ -395,3 +408,7 @@ export class AlkanesRpc {
     }
   }
 }
+
+new AlkanesRpc('https://oylnet.oyl.gg/v2/regtest')
+  .getAlkanes({ limit: 100 })
+  .then((ret) => console.log(ret))
