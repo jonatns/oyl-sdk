@@ -142,12 +142,12 @@ export class AlkanesRpc {
         ...outpoint,
         runes: outpoint.runes.map((rune) => ({
           ...rune,
-          balance: Number(rune.balance),
+          balance: parseInt(rune.balance, 16).toString(),
           rune: {
             ...rune.rune,
             id: {
-              block: Number(rune.rune.id.block),
-              tx: Number(rune.rune.id.tx),
+              block: parseInt(rune.rune.id.block, 16).toString(),
+              tx: parseInt(rune.rune.id.tx, 16).toString(),
             },
           },
         })),
@@ -186,7 +186,7 @@ export class AlkanesRpc {
   }): Promise<any> {
     const alkaneList = await this._call('alkanes_protorunesbyoutpoint', [
       {
-        txid,
+        txid: Buffer.from(txid, 'hex').reverse().toString('hex'),
         vout,
         protocolTag,
       },
@@ -197,11 +197,11 @@ export class AlkanesRpc {
       token: {
         ...outpoint.token,
         id: {
-          block: Number(outpoint.token.id.block),
-          tx: Number(outpoint.token.id.tx),
+          block: parseInt(outpoint.token.id.block, 16).toString(),
+          tx: parseInt(outpoint.token.id.tx, 16).toString(),
         },
       },
-      value: Number(outpoint.value),
+      value: parseInt(outpoint.value, 16).toString(),
     }))
   }
 
@@ -406,7 +406,3 @@ export class AlkanesRpc {
     }
   }
 }
-
-new AlkanesRpc('https://oylnet.oyl.gg/v2/regtest')
-  .getAlkanes({ limit: 100 })
-  .then((ret) => console.log(ret))
