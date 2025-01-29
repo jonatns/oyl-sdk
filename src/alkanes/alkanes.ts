@@ -462,11 +462,7 @@ export const findAlkaneUtxos = async ({
     ) {
       const satoshis = Number(alkane.outpoint.output.value)
       alkaneUtxos.push({
-        txId: Buffer.from(
-          Array.from(
-            Buffer.from(alkane.outpoint.outpoint.txid, 'hex')
-          ).reverse()
-        ).toString('hex'),
+        txId: alkane.outpoint.outpoint.txid,
         txIndex: alkane.outpoint.outpoint.vout,
         script: alkane.outpoint.output.script,
         address,
