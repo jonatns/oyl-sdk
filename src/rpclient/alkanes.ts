@@ -1,4 +1,5 @@
 import fetch from 'node-fetch'
+import asyncPool from 'tiny-async-pool'
 
 export const stripHexPrefix = (s: string): string =>
   s.substr(0, 2) === '0x' ? s.substr(2) : s
@@ -92,11 +93,6 @@ export class AlkanesRpc {
       const response = await fetch(this.alkanesUrl, requestOptions)
       const responseData = await response.json()
 
-      if (responseData.error) {
-        console.error('Alkanes JSON-RPC Error:', responseData.error)
-        throw new Error(responseData.error)
-      }
-
       return responseData.result
     } catch (error) {
       if (error.name === 'AbortError') {
@@ -179,25 +175,24 @@ export class AlkanesRpc {
     return ret
   }
 
- 
-    async getAlkanesByOutpoint({
-     txid,
-     vout,
-     protocolTag = '1',
-   }: {
-     txid: string
-     vout: number
-     protocolTag?: string
-   }): Promise<any> {
-     const alkaneList = await this._call('alkanes_protorunesbyoutpoint', [
-       {
-         txid: Buffer.from(txid, 'hex').reverse().toString('hex'),
-         vout,
-         protocolTag,
-       },
-     ])
+  async getAlkanesByOutpoint({
+    txid,
+    vout,
+    protocolTag = '1',
+  }: {
+    txid: string
+    vout: number
+    protocolTag?: string
+  }): Promise<any> {
+    const alkaneList = await this._call('alkanes_protorunesbyoutpoint', [
+      {
+        txid: Buffer.from(txid, 'hex').reverse().toString('hex'),
+        vout,
+        protocolTag,
+      },
+    ])
 
-     return alkaneList.map((outpoint) => ({
+    return alkaneList.map((outpoint) => ({
       ...outpoint,
       token: {
         ...outpoint.token,
@@ -208,8 +203,7 @@ export class AlkanesRpc {
       },
       value: parseInt(outpoint.value, 16).toString(),
     }))
-
-   }
+  }
 
   async getAlkaneById({
     block,
@@ -264,7 +258,6 @@ export class AlkanesRpc {
     }
     return alkaneData
   }
-
   async getAlkanes({
     limit,
     offset = 0,
@@ -277,58 +270,114 @@ export class AlkanesRpc {
         'Max limit reached. Request fewer than 1000 alkanes per call'
       )
     }
-    const alkaneResults: AlkaneToken[] = []
-    for (let i = offset; i <= limit; i++) {
-      const alkaneData: any = {}
-      let hasValidResult = false
-      alkaneData.id = {
-        block: '2',
-        tx: i.toString(),
+
+    const indices = Array.from(
+      { length: limit - offset + 1 },
+      (_, i) => i + offset
+    )
+
+    const processAlkane = async (
+      index: number
+    ): Promise<AlkaneToken | null> => {
+      const alkaneData: any = {
+        id: {
+          block: '2',
+          tx: index.toString(),
+        },
       }
-      for (let j = 0; j < opcodes.length; j++) {
-        try {
-          const result = await this.simulate({
-            target: { block: '2', tx: i.toString() },
-            alkanes: [],
-            transaction: '0x',
-            block: '0x',
-            height: '20000',
-            txindex: 0,
-            inputs: [opcodes[j]],
-            pointer: 0,
-            refundPointer: 0,
-            vout: 0,
-          })
-          if (result.status === 0) {
-            alkaneData[opcodesHRV[j]] = Number(result.parsed.le)
-            if (
-              opcodesHRV[j] === 'name' ||
-              opcodesHRV[j] === 'symbol' ||
-              opcodesHRV[j] === 'data'
-            ) {
-              alkaneData[opcodesHRV[j]] = result.parsed.string
+
+      let hasValidResult = false
+      const validOpcodes = opcodes.filter((opcode) => opcode !== undefined)
+
+      try {
+        const opcodeResults = await Promise.all(
+          validOpcodes.map(async (opcode, opcodeIndex) => {
+            if (!opcode) return null
+
+            try {
+              const result = await this.simulate({
+                target: { block: '2', tx: index.toString() },
+                alkanes: [],
+                transaction: '0x',
+                block: '0x',
+                height: '20000',
+                txindex: 0,
+                inputs: [opcode],
+                pointer: 0,
+                refundPointer: 0,
+                vout: 0,
+              })
+
+              if (result?.status === 0) {
+                return {
+                  opcode,
+                  result,
+                  opcodeIndex,
+                  opcodeHRV: opcodesHRV[opcodeIndex],
+                }
+              }
+            } catch (error) {
+              return null
             }
-            hasValidResult = true
-            alkaneData.mintActive =
-              Number(alkaneData.minted) < Number(alkaneData.cap)
-            alkaneData.percentageMinted = Math.floor(
-              (alkaneData.minted / alkaneData.cap) * 100
+            return null
+          })
+        )
+        const validResults = opcodeResults.filter(
+          (
+            item
+          ): item is {
+            opcode: any
+            result: any
+            opcodeIndex: number
+            opcodeHRV: string
+          } => {
+            return (
+              item !== null &&
+              item !== undefined &&
+              item.opcodeHRV !== undefined
             )
           }
-        } catch (error) {
-          console.log(error)
+        )
+
+        validResults.forEach(({ result, opcodeHRV }) => {
+          if (!opcodeHRV) return
+
+          if (['name', 'symbol', 'data'].includes(opcodeHRV)) {
+            alkaneData[opcodeHRV] = result.parsed?.string || ''
+          } else {
+            alkaneData[opcodeHRV] = Number(result.parsed?.le || 0)
+          }
+          hasValidResult = true
+        })
+
+        if (hasValidResult) {
+          alkaneData.mintActive =
+            Number(alkaneData.minted || 0) < Number(alkaneData.cap || 0)
+          alkaneData.percentageMinted = Math.floor(
+            ((alkaneData.minted || 0) / (alkaneData.cap || 1)) * 100
+          )
+          return alkaneData
         }
+      } catch (error) {
+        console.log(`Error processing alkane at index ${index}:`, error)
       }
-      if (hasValidResult) {
-        alkaneResults.push(alkaneData)
+
+      return null
+    }
+
+    const results = []
+    for await (const result of asyncPool(10, indices, processAlkane)) {
+      if (result !== null) {
+        results.push(result)
       }
     }
-    return alkaneResults
+
+    return results
   }
 
   parseSimulateReturn(v: any) {
     if (v === '0x') {
-      return 'invalid'
+      return undefined
     }
     const stripHexPrefix = (v: string) => (v.startsWith('0x') ? v.slice(2) : v)
     const addHexPrefix = (v: string) => '0x' + stripHexPrefix(v)

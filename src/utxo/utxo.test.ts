@@ -385,6 +385,8 @@ const testEsploraTxInfo = [
   },
 ]
 
+const mockAlkanesByAddress = jest.fn().mockResolvedValue([])
+
 const mockedMultiCall = jest
   .fn()
   .mockResolvedValue([{ result: testEsploraUtxos }, { result: 283 }])
@@ -418,6 +420,9 @@ jest.mock('../provider/provider', () => {
       },
       ord: {
         getTxOutput: () => mockOrdTxOutputs(),
+      },
+      alkanes: {
+        getAlkanesByAddress: () => mockAlkanesByAddress(),
       },
     })),
   }
