@@ -139,8 +139,9 @@ export class AlkanesRpc {
     const alkanesList = ret.outpoints
       .filter((outpoint) => outpoint.runes.length > 0)
       .map((outpoint) => ({
+        ...outpoint,
         outpoint: {
-          vout: outpoint.vout,
+          vout: outpoint.outpoint.vout,
           txid: Buffer.from(outpoint.outpoint.txid, 'hex')
             .reverse()
             .toString('hex'),
