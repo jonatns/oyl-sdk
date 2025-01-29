@@ -238,13 +238,13 @@ export class AlkanesRpc {
           vout: 0,
         })
         if (result.status === 0) {
-          alkaneData[opcodesHRV[j]] = Number(result.parsed.le)
+          alkaneData[opcodesHRV[j]] = Number(result.parsed?.le || 0)
           if (
             opcodesHRV[j] === 'name' ||
             opcodesHRV[j] === 'symbol' ||
             opcodesHRV[j] === 'data'
           ) {
-            alkaneData[opcodesHRV[j]] = result.parsed.string
+            alkaneData[opcodesHRV[j]] = result.parsed?.string || ''
           }
           alkaneData.mintActive =
             Number(alkaneData.minted) < Number(alkaneData.cap)
