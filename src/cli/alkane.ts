@@ -8,6 +8,7 @@ import * as utxo from '../utxo'
 import { Wallet } from './wallet'
 import { contractDeployment } from '../alkanes/contract'
 import { send, tokenDeployment } from '../alkanes/token'
+import { AlkanesPayload } from 'shared/interface'
 
 /* @dev example call
   oyl alkane trace -params '{"txid":"0322c3a2ce665485c8125cd0334675f0ddbd7d5b278936144efb108ff59c49b5","vout":0}'
@@ -75,7 +76,7 @@ export const alkaneContractDeploy = new Command('new-contract')
     )
     const gzip = promisify(_gzip)
 
-    const payload = {
+    const payload: AlkanesPayload = {
       body: await gzip(contract, { level: 9 }),
       cursed: false,
       tags: { contentType: '' },
@@ -170,7 +171,7 @@ export const alkaneTokenDeploy = new Command('new-token')
       )
       const gzip = promisify(_gzip)
 
-      const payload = {
+      const payload: AlkanesPayload = {
         body: await gzip(image, { level: 9 }),
         cursed: false,
         tags: { contentType: '' },

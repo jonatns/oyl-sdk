@@ -3,6 +3,7 @@ import ECPairFactory from 'ecpair'
 import ecc from '@bitcoinerlab/secp256k1'
 import {
   AddressType,
+  AlkanesPayload,
   DecodedCBOR,
   FormattedUtxo,
   IBlockchainInfoUTXO,
@@ -760,4 +761,16 @@ export function findXAmountOfSats(utxos: FormattedUtxo[], target: number) {
 export function decodeCBOR(hex: string): DecodedCBOR {
   const buffer = Buffer.from(hex, 'hex')
   return CBOR.decode(buffer)
+}
+
+export const getVSize = (data: Buffer) => {
+  let totalSize = data.length
+  if (totalSize < 0xfd) {
+    totalSize += 1
+  } else if (totalSize <= 0xffff) {
+    totalSize += 3
+  } else if (totalSize <= 0xffffffff) {
+    totalSize += 5
+  }
+  return Math.ceil(totalSize / 4)
 }

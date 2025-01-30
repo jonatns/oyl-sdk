@@ -12,6 +12,7 @@ import {
   findXAmountOfSats,
   formatInputsToSign,
   getOutputValueByVOutIndex,
+  getVSize,
   inscriptionSats,
   tweakSigner,
 } from '../shared/utils'
@@ -206,16 +207,11 @@ export const createDeployCommit = async ({
       network: provider.network,
     })
 
-    //read byte size of payload body to estimate fee
-
-    psbt.addOutput({
-      value: 40000 + 546,
-      address: inscriberInfo.address,
-    })
+    const wasmDeploySize = getVSize(Buffer.from(payload.body)) * feeRate
 
     gatheredUtxos = findXAmountOfSats(
       originalGatheredUtxos.utxos,
-      40000 + Number(inscriptionSats)
+      wasmDeploySize + Number(inscriptionSats) + finalFee * 2
     )
 
     if (!fee && gatheredUtxos.utxos.length > 1) {
@@ -229,7 +225,7 @@ export const createDeployCommit = async ({
       if (gatheredUtxos.totalAmount < finalFee) {
         gatheredUtxos = findXAmountOfSats(
           originalGatheredUtxos.utxos,
-          40000 + Number(inscriptionSats)
+          wasmDeploySize + Number(inscriptionSats) + finalFee * 2
         )
       }
     }
@@ -282,12 +278,21 @@ export const createDeployCommit = async ({
       }
     }
 
-    if (gatheredUtxos.totalAmount < finalFee + inscriptionSats) {
+    if (
+      gatheredUtxos.totalAmount <
+      finalFee * 2 + inscriptionSats + wasmDeploySize
+    ) {
       throw new OylTransactionError(Error('Insufficient Balance'))
     }
 
+    psbt.addOutput({
+      value: finalFee + wasmDeploySize + 546,
+      address: inscriberInfo.address,
+    })
+
     const changeAmount =
-      gatheredUtxos.totalAmount - (finalFee + 40000 + inscriptionSats)
+      gatheredUtxos.totalAmount -
+      (finalFee * 2 + wasmDeploySize + inscriptionSats)
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
@@ -889,5 +894,6 @@ export const deployCommit = async ({
     psbtBase64: signedPsbt,
   })
 
+  console.log('commit:', result)
   return { ...result, script: script.toString('hex') }
 }
