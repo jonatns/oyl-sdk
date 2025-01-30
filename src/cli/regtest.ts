@@ -72,7 +72,6 @@ export const init = new Command('init')
     console.log(`${address} has been funded with ${addressBlockCount} utxos`)
   })
 
-
 /* @dev example call
   oyl regtest genBlocks -c 2
 */
@@ -101,45 +100,47 @@ export const genBlocks = new Command('genBlocks')
     )
     console.log('Processed blocks: ', genBlock)
   })
-  
 
 /* @dev example call
   oyl regtest sendFromFaucet --to "bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx" -s 1000000 
 */
 export const sendFromFaucet = new Command('sendFromFaucet')
-.description('Send funds from regtest faucet to an address')
-.option('-p, --provider <provider>', 'Network provider type (regtest, bitcoin)')
-.requiredOption(
-  '-t, --to <to>',
-  '(optional) Address to recieve block reward.'
-)
-.option(
-  '-s, --sats <sats>',
-  '(optional) Number of sats to send (default = 1000000)',
-  parseInt
-)
-.action(async (options) => {
-  options.mnemonic = REGTEST_FAUCET.mnemonic
-  const faucet: Wallet = new Wallet(options)
-
-  const { accountSpendableTotalUtxos } = await utxo.accountUtxos({
-    account: faucet.account,
-    provider: faucet.provider,
-  })
-  const utxos = utxo.selectUtxos(
-    accountSpendableTotalUtxos,
-    faucet.account.spendStrategy
+  .description('Send funds from regtest faucet to an address')
+  .option(
+    '-p, --provider <provider>',
+    'Network provider type (regtest, bitcoin)'
   )
+  .requiredOption(
+    '-t, --to <to>',
+    '(optional) Address to recieve block reward.'
+  )
+  .option(
+    '-s, --sats <sats>',
+    '(optional) Number of sats to send (default = 1000000)',
+    parseInt
+  )
+  .action(async (options) => {
+    options.mnemonic = REGTEST_FAUCET.mnemonic
+    const faucet: Wallet = new Wallet(options)
 
-  console.log(
-    await btc.send({
-      utxos,
-      toAddress: options.to,
-      feeRate: faucet.feeRate,
+    const { accountSpendableTotalUtxos } = await utxo.accountUtxos({
       account: faucet.account,
-      signer: faucet.signer,
       provider: faucet.provider,
-      amount: options.sats || 1000000,
     })
-  )
-})
+    const utxos = utxo.selectUtxos(
+      accountSpendableTotalUtxos,
+      faucet.account.spendStrategy
+    )
+
+    console.log(
+      await btc.send({
+        utxos,
+        toAddress: options.to,
+        feeRate: faucet.feeRate,
+        account: faucet.account,
+        signer: faucet.signer,
+        provider: faucet.provider,
+        amount: options.sats || 1000000,
+      })
+    )
+  })
