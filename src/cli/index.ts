@@ -35,7 +35,7 @@ const program = new Command()
 program
   .name('default')
   .description('All functionality for oyl-sdk in a cli-wrapper')
-  .version('0.0.1')
+  .version(require('../../package.json').version)
 
 const regtestCommand = new Command('regtest')
   .description('Regtest commands')
