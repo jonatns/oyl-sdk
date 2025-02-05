@@ -100,7 +100,7 @@ export const createSendPsbt = async ({
       finalFee = Math.max(txSize * feeRate, 250)
       gatheredUtxos = findXAmountOfSats(
         originalGatheredUtxos.utxos,
-        Number(finalFee) + Number(amount)
+        Number(finalFee) + Number(inscriptionSats)
       )
     }
 
