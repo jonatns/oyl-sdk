@@ -312,7 +312,7 @@ export const createDeployCommit = async ({
 }
 
 export const createDeployReveal = async ({
-  createReserveNumber,
+  callData,
   receiverAddress,
   script,
   feeRate,
@@ -321,7 +321,7 @@ export const createDeployReveal = async ({
   fee = 0,
   commitTxId,
 }: {
-  createReserveNumber: string
+  callData: bigint[]
   receiverAddress: string
   script: Buffer
   feeRate: number
@@ -362,11 +362,7 @@ export const createDeployReveal = async ({
           edicts: [],
           pointer: 0,
           refundPointer: 0,
-          calldata: encipher([
-            BigInt(3),
-            BigInt(createReserveNumber),
-            BigInt(100),
-          ]),
+          calldata: encipher(callData),
         }),
       ],
     }).encodedRunestone

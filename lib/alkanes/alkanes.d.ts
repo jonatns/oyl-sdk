@@ -27,8 +27,8 @@ export declare const createDeployCommit: ({ payload, gatheredUtxos, tweakedTapro
     psbt: string;
     script: Buffer;
 }>;
-export declare const createDeployReveal: ({ createReserveNumber, receiverAddress, script, feeRate, tweakedTaprootKeyPair, provider, fee, commitTxId, }: {
-    createReserveNumber: string;
+export declare const createDeployReveal: ({ callData, receiverAddress, script, feeRate, tweakedTaprootKeyPair, provider, fee, commitTxId, }: {
+    callData: bigint[];
     receiverAddress: string;
     script: Buffer;
     feeRate: number;

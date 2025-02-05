@@ -37,7 +37,7 @@ export const alkanesTrace = new Command('trace')
   })
 
 /* @dev example call 
-  oyl alkane new-contract -c ./src/cli/contracts/free_mint.wasm -resNumber 777
+  oyl alkane new-contract -c ./src/cli/contracts/free_mint.wasm -data 3,3,100
 
   The free_mint.wasm contract is used as an example. 
 
@@ -47,6 +47,15 @@ export const alkanesTrace = new Command('trace')
   Remember to genBlocks after sending transactions to the regtest chain!
 */
 export const alkaneContractDeploy = new Command('new-contract')
+  .requiredOption(
+    '-data, --calldata <calldata>',
+    'op code + params to be used when deploying a contracts',
+    (value, previous) => {
+      const items = value.split(',')
+      return previous ? previous.concat(items) : items
+    },
+    []
+  )
   .requiredOption(
     '-c, --contract <contract>',
     'Relative path to contract wasm file to deploy (e.g., "../alkanes/free_mint.wasm")'
@@ -82,9 +91,14 @@ export const alkaneContractDeploy = new Command('new-contract')
       tags: { contentType: '' },
     }
 
+    const callData: bigint[] = []
+    for (let i = 0; i < options.calldata.length; i++) {
+      callData.push(BigInt(options.calldata[i]))
+    }
+
     console.log(
       await contractDeployment({
-        reserveNumber: options.reserveNumber,
+        callData,
         payload,
         gatheredUtxos: {
           utxos: accountSpendableTotalUtxos,
