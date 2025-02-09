@@ -1,0 +1,72 @@
+alkanes/alkanes.ts:        const previousTxHex: string = await provider.esplora.getTxHex(
+alkanes/alkanes.ts:        const previousTxHex: string = await provider.esplora.getTxHex(
+alkanes/alkanes.ts:      feeRate = (await provider.esplora.getFeeEstimates())['1']
+alkanes/alkanes.ts:      esploraRpc: provider.esplora,
+alkanes/alkanes.ts:    feeRate = (await provider.esplora.getFeeEstimates())['1']
+alkanes/alkanes.ts:    feeRate = (await provider.esplora.getFeeEstimates())['1']
+alkanes/alkanes.ts:      feeRate = (await provider.esplora.getFeeEstimates())['1']
+alkanes/alkanes.ts:      esploraRpc: provider.esplora,
+alkanes/contract.ts:    feeRate = (await provider.esplora.getFeeEstimates())['1']
+alkanes/contract.ts:    feeRate = (await provider.esplora.getFeeEstimates())['1']
+alkanes/token.ts:        const previousTxHex: string = await provider.esplora.getTxHex(utxo.txId)
+alkanes/token.ts:        const previousTxHex: string = await provider.esplora.getTxHex(
+alkanes/token.ts:    feeRate = (await provider.esplora.getFeeEstimates())['1']
+brc20/brc20.ts:      feeRate = (await provider.esplora.getFeeEstimates())['1']
+brc20/brc20.ts:        const previousTxHex: string = await provider.esplora.getTxHex(
+brc20/brc20.ts:      feeRate = (await provider.esplora.getFeeEstimates())['1']
+brc20/brc20.ts:        const previousTxHex: string = await provider.esplora.getTxHex(
+brc20/brc20.ts:      feeRate = (await provider.esplora.getFeeEstimates())['1']
+brc20/brc20.ts:      esploraRpc: provider.esplora,
+brc20/brc20.ts:      feeRate = (await provider.esplora.getFeeEstimates())['1']
+brc20/brc20.ts:      ['esplora_tx', [commitChangeUtxoId]],
+brc20/brc20.ts:      ['esplora_tx', [revealTxId]],
+brc20/brc20.ts:          const previousTxHex: string = await provider.esplora.getTxHex(
+btc/btc.ts:        const previousTxHex: string = await provider.esplora.getTxHex(
+cli/provider.ts:  oyl provider sandShrewMulticall -c '[{"method":"esplora_tx","params":["688f5c239e4e114af461dc1331d02ad5702e795daf2dcf397815e0b05cd23dbc"]},{"method":"btc_getblockcount", "params":[]}]' -p bitcoin
+collectible/collectible.ts:      const previousTxHex: string = await provider.esplora.getTxHex(txId)
+collectible/collectible.ts:        const previousTxHex: string = await provider.esplora.getTxHex(
+collectible/collectible.ts:  const inscriptionUtxoDetails = await provider.esplora.getTxInfo(
+collectible/collectible.ts:    provider.esplora.getTxOutspends(inscriptionTxId)
+provider/index.test.ts:    expect(provider.esplora.esploraUrl).toBe(
+provider/provider.ts:import { EsploraRpc } from '../rpclient/esplora'
+provider/provider.ts:  public esplora: EsploraRpc
+provider/provider.ts:    this.esplora = new EsploraRpc(masterUrl)
+rpclient/esplora.ts:  public esploraUrl: string
+rpclient/esplora.ts:    this.esploraUrl = url
+rpclient/esplora.ts:      const response = await fetch(this.esploraUrl, requestOptions)
+rpclient/esplora.ts:    return (await this._call('esplora_tx', [txid])) as EsploraTx
+rpclient/esplora.ts:    return await this._call('esplora_tx::status', [txid])
+rpclient/esplora.ts:    return await this._call('esplora_block::txids', [hash])
+rpclient/esplora.ts:    return await this._call('esplora_tx::hex', [txid])
+rpclient/esplora.ts:    return await this._call('esplora_tx::raw', [txid])
+rpclient/esplora.ts:    return (await this._call('esplora_tx::outspends', [txid])) as Array<{
+rpclient/esplora.ts:    return await this._call('esplora_address::txs', [address])
+rpclient/esplora.ts:    return (await this._call('esplora_address::txs:mempool', [
+rpclient/esplora.ts:    const response = await this._call('esplora_address::utxo', [address])
+rpclient/esplora.ts:    return await this._call('esplora_fee-estimates')
+rpclient/provider.ts:import { EsploraRpc } from './esplora'
+rpclient/provider.ts:  public esplora: EsploraRpc
+rpclient/provider.ts:    this.esplora = new EsploraRpc(url)
+rune/rune.ts:        const previousTxHex: string = await provider.esplora.getTxHex(utxo.txId)
+rune/rune.ts:        const previousTxHex: string = await provider.esplora.getTxHex(
+rune/rune.ts:        const previousTxHex: string = await provider.esplora.getTxHex(
+rune/rune.ts:        const previousTxHex: string = await provider.esplora.getTxHex(
+rune/rune.ts:      feeRate = (await provider.esplora.getFeeEstimates())['1']
+rune/rune.ts:      esploraRpc: provider.esplora,
+rune/rune.ts:    singleRuneOutpoint["pkscript"] = (await provider.esplora.getTxInfo(txId)).vout[txIndex].scriptpubkey;
+rune/rune.ts:        const txDetails = await provider.esplora.getTxInfo(txHash)
+rune/rune.ts:    feeRate = (await provider.esplora.getFeeEstimates())['1']
+rune/rune.ts:    feeRate = (await provider.esplora.getFeeEstimates())['1']
+rune/rune.ts:    feeRate = (await provider.esplora.getFeeEstimates())['1']
+rune/rune.ts:    feeRate = (await provider.esplora.getFeeEstimates())['1']
+shared/utils.ts:import { EsploraRpc } from '../rpclient/esplora'
+shared/utils.ts:  esploraRpc,
+shared/utils.ts:  esploraRpc: EsploraRpc
+shared/utils.ts:    const txDetails = await esploraRpc.getTxInfo(txId)
+utxo/utxo.ts:    const { chain_stats, mempool_stats } = await provider.esplora._call(
+utxo/utxo.ts:      'esplora_address',
+utxo/utxo.ts:  const { chain_stats, mempool_stats } = await provider.esplora._call(
+utxo/utxo.ts:    'esplora_address',
+utxo/utxo.ts:    ['esplora_address::utxo', [address]],
+utxo/utxo.ts:        provider.esplora.getTxInfo(utxo.txid),
+utxo/utxo.test.ts:      esplora: {

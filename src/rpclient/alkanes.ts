@@ -93,6 +93,7 @@ export class AlkanesRpc {
       const response = await fetch(this.alkanesUrl, requestOptions)
       const responseData = await response.json()
 
+      if (responseData.error) throw new Error(responseData.error.message)
       return responseData.result
     } catch (error) {
       if (error.name === 'AbortError') {
