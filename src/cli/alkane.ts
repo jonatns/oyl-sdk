@@ -9,6 +9,12 @@ import { Wallet } from './wallet'
 import { contractDeployment } from '../alkanes/contract'
 import { send, tokenDeployment } from '../alkanes/token'
 import { AlkanesPayload } from 'shared/interface'
+import { encodeRunestoneProtostone } from 'alkanes/lib/protorune/proto_runestone_upgrade'
+import { ProtoStone } from 'alkanes/lib/protorune/protostone'
+import { encipher } from 'alkanes/lib/bytes'
+import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
+import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
+import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 
 /* @dev example call
   oyl alkane trace -params '{"txid":"0322c3a2ce665485c8125cd0334675f0ddbd7d5b278936144efb108ff59c49b5","vout":0}'
@@ -96,9 +102,21 @@ export const alkaneContractDeploy = new Command('new-contract')
       callData.push(BigInt(options.calldata[i]))
     }
 
+    const protostone = encodeRunestoneProtostone({
+      protostones: [
+        ProtoStone.message({
+          protocolTag: 1n,
+          edicts: [],
+          pointer: 0,
+          refundPointer: 0,
+          calldata: encipher(callData),
+        }),
+      ],
+    }).encodedRunestone
+
     console.log(
       await contractDeployment({
-        callData,
+        protostone,
         payload,
         gatheredUtxos: {
           utxos: accountSpendableTotalUtxos,
@@ -177,6 +195,18 @@ export const alkaneTokenDeploy = new Command('new-token')
       ),
     ]
 
+    const protostone = encodeRunestoneProtostone({
+      protostones: [
+        ProtoStone.message({
+          protocolTag: 1n,
+          edicts: [],
+          pointer: 0,
+          refundPointer: 0,
+          calldata: encipher(calldata),
+        }),
+      ],
+    }).encodedRunestone
+
     if (options.image) {
       const image = new Uint8Array(
         Array.from(
@@ -194,7 +224,7 @@ export const alkaneTokenDeploy = new Command('new-token')
       console.log(
         await tokenDeployment({
           payload,
-          calldata,
+          protostone,
           gatheredUtxos: {
             utxos: accountSpendableTotalUtxos,
             totalAmount: accountSpendableTotalBalance,
@@ -210,7 +240,7 @@ export const alkaneTokenDeploy = new Command('new-token')
 
     console.log(
       await alkanes.execute({
-        calldata,
+        protostone,
         gatheredUtxos: {
           utxos: accountSpendableTotalUtxos,
           totalAmount: accountSpendableTotalBalance,
@@ -224,10 +254,12 @@ export const alkaneTokenDeploy = new Command('new-token')
   })
 
 /* @dev example call 
-  oyl alkane execute -data 2,1,77
+  oyl alkane execute -data 2,1,77 -e 2:1:333:1
 
   In this example we call a mint (opcode 77) from the [2,1] token. The token
   will mint to the wallet calling execute.
+
+  We also pass the edict 2:1:333:1. That is id [2,1], the amount is 333, and the output is vout 1. 
 
   Hint: you can grab the TEST_WALLET's alkanes balance with:
   oyl provider alkanes -method getAlkanesByAddress -params '{"address":"bcrt1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqvg32hk"}'
@@ -236,6 +268,15 @@ export const alkaneExecute = new Command('execute')
   .requiredOption(
     '-data, --calldata <calldata>',
     'op code + params to be called on a contract',
+    (value, previous) => {
+      const items = value.split(',')
+      return previous ? previous.concat(items) : items
+    },
+    []
+  )
+  .option(
+    '-e, --edicts <edicts>',
+    'edicts for protostone',
     (value, previous) => {
       const items = value.split(',')
       return previous ? previous.concat(items) : items
@@ -259,15 +300,33 @@ export const alkaneExecute = new Command('execute')
         account: wallet.account,
         provider: wallet.provider,
       })
+    const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
 
-    const calldata: bigint[] = []
-    for (let i = 0; i < options.calldata.length; i++) {
-      calldata.push(BigInt(options.calldata[i]))
-    }
+    const edicts: ProtoruneEdict[] = options.edicts.map((item) => {
+      const [block, tx, amount, output] = item
+        .split(':')
+        .map((part) => part.trim())
+      return {
+        id: new ProtoruneRuneId(u128(block), u128(tx)),
+        amount: amount ? BigInt(amount) : undefined,
+        output: output ? Number(output) : undefined,
+      }
+    })
+    const protostone: Buffer = encodeRunestoneProtostone({
+      protostones: [
+        ProtoStone.message({
+          protocolTag: 1n,
+          edicts,
+          pointer: 0,
+          refundPointer: 0,
+          calldata: encipher(calldata),
+        }),
+      ],
+    }).encodedRunestone
 
     console.log(
       await alkanes.execute({
-        calldata,
+        protostone,
         gatheredUtxos: {
           utxos: accountSpendableTotalUtxos,
           totalAmount: accountSpendableTotalBalance,
