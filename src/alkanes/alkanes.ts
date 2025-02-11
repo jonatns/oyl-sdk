@@ -176,7 +176,8 @@ export const createExecutePsbt = async ({
     const output = { script: protostone, value: 0 }
     psbt.addOutput(output)
 
-    const changeAmount = gatheredUtxos.totalAmount - finalFee - 546
+    const changeAmount =
+      gatheredUtxos.totalAmount + alkaneUtxos.totalSatoshis - finalFee - 546
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
