@@ -20,6 +20,7 @@ import { Outpoint } from 'rpclient/alkanes'
 import { actualDeployCommitFee } from './contract'
 
 export const createExecutePsbt = async ({
+  alkaneUtxos,
   gatheredUtxos,
   account,
   protostone,
@@ -27,6 +28,10 @@ export const createExecutePsbt = async ({
   feeRate,
   fee = 0,
 }: {
+  alkaneUtxos?: {
+    alkaneUtxos: any[]
+    totalSatoshis: number
+  }
   gatheredUtxos: GatheredUtxos
   account: Account
   protostone: Buffer
@@ -52,6 +57,52 @@ export const createExecutePsbt = async ({
     )
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
+
+    for await (const utxo of alkaneUtxos.alkaneUtxos) {
+      if (getAddressType(utxo.address) === 0) {
+        const previousTxHex: string = await provider.esplora.getTxHex(utxo.txId)
+        psbt.addInput({
+          hash: utxo.txId,
+          index: parseInt(utxo.txIndex),
+          nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
+        })
+      }
+      if (getAddressType(utxo.address) === 2) {
+        const redeemScript = bitcoin.script.compile([
+          bitcoin.opcodes.OP_0,
+          bitcoin.crypto.hash160(
+            Buffer.from(account.nestedSegwit.pubkey, 'hex')
+          ),
+        ])
+
+        psbt.addInput({
+          hash: utxo.txId,
+          index: parseInt(utxo.txIndex),
+          redeemScript: redeemScript,
+          witnessUtxo: {
+            value: utxo.satoshis,
+            script: bitcoin.script.compile([
+              bitcoin.opcodes.OP_HASH160,
+              bitcoin.crypto.hash160(redeemScript),
+              bitcoin.opcodes.OP_EQUAL,
+            ]),
+          },
+        })
+      }
+      if (
+        getAddressType(utxo.address) === 1 ||
+        getAddressType(utxo.address) === 3
+      ) {
+        psbt.addInput({
+          hash: utxo.txId,
+          index: parseInt(utxo.txIndex),
+          witnessUtxo: {
+            value: utxo.satoshis,
+            script: Buffer.from(utxo.script, 'hex'),
+          },
+        })
+      }
+    }
 
     if (fee === 0 && gatheredUtxos.utxos.length > 1) {
       const txSize = minimumFee({
@@ -531,6 +582,7 @@ export const actualExecuteFee = async ({
   provider,
   feeRate,
   signer,
+  alkaneUtxos,
 }: {
   gatheredUtxos: GatheredUtxos
   account: Account
@@ -538,6 +590,10 @@ export const actualExecuteFee = async ({
   provider: Provider
   feeRate: number
   signer: Signer
+  alkaneUtxos?: {
+    alkaneUtxos: any[]
+    totalSatoshis: number
+  }
 }) => {
   if (!feeRate) {
     feeRate = (await provider.esplora.getFeeEstimates())['1']
@@ -549,6 +605,7 @@ export const actualExecuteFee = async ({
     protostone,
     provider,
     feeRate,
+    alkaneUtxos,
   })
 
   const { signedPsbt } = await signer.signAllInputs({
@@ -574,6 +631,7 @@ export const actualExecuteFee = async ({
     protostone,
     provider,
     feeRate,
+    alkaneUtxos,
     fee: correctFee,
   })
 
@@ -659,6 +717,7 @@ export const executeReveal = async ({
 }
 
 export const execute = async ({
+  alkaneUtxos,
   gatheredUtxos,
   account,
   protostone,
@@ -666,6 +725,10 @@ export const execute = async ({
   feeRate,
   signer,
 }: {
+  alkaneUtxos?: {
+    alkaneUtxos: any[]
+    totalSatoshis: number
+  }
   gatheredUtxos: GatheredUtxos
   account: Account
   protostone: Buffer
@@ -674,6 +737,7 @@ export const execute = async ({
   signer: Signer
 }) => {
   const { fee } = await actualExecuteFee({
+    alkaneUtxos,
     gatheredUtxos,
     account,
     protostone,
@@ -683,6 +747,7 @@ export const execute = async ({
   })
 
   const { psbt: finalPsbt } = await createExecutePsbt({
+    alkaneUtxos,
     gatheredUtxos,
     account,
     protostone,
