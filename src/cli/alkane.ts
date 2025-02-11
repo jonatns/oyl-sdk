@@ -37,9 +37,9 @@ export const alkanesTrace = new Command('trace')
   })
 
 /* @dev example call 
-  oyl alkane new-contract -c ./src/cli/contracts/free_mint.wasm -data 3,3,100
+  oyl alkane new-contract -c ./src/cli/contracts/free_mint.wasm -data 3,77,100
 
-  The free_mint.wasm contract is used as an example. 
+  The free_mint.wasm contract is used as an example. This deploys to Reserve Number 77.
 
   To verify the factory contract was deployed, you can use the oyl alkane trace command 
   using the returned txid and vout: 3
@@ -59,10 +59,6 @@ export const alkaneContractDeploy = new Command('new-contract')
   .requiredOption(
     '-c, --contract <contract>',
     'Relative path to contract wasm file to deploy (e.g., "../alkanes/free_mint.wasm")'
-  )
-  .requiredOption(
-    '-resNumber, --reserveNumber <reserveNumber>',
-    'number to reserve for factory id'
   )
   .option(
     '-p, --provider <provider>',
@@ -113,9 +109,9 @@ export const alkaneContractDeploy = new Command('new-contract')
   })
 
 /* @dev example call 
-  oyl alkane new-token -pre 5000 -amount 1000 -c 100000 -name "OYL" -symbol "OL" -resNumber 777 -i ./src/cli/contracts/image.png
+  oyl alkane new-token -pre 5000 -amount 1000 -c 100000 -name "OYL" -symbol "OL" -resNumber 77 -i ./src/cli/contracts/image.png
   
-  The resNumber must be a resNumber for a deployed contract. In this case 777 is the resNumber for 
+  The resNumber must be a resNumber for a deployed contract. In this case 77 is the resNumber for 
   the free_mint.wasm contract and the options supplied are for the free_mint.wasm contract.
 
   The token will deploy to the next available [2, n] Alkane ID.

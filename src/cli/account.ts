@@ -65,6 +65,9 @@ export const mnemonicToAccountCommand = new Command('mnemonicToAccount')
     console.log(account)
   })
 
+/* @dev example call 
+  oyl account generateMnemonic
+*/
 export const generateMnemonicCommand = new Command('generateMnemonic')
   .description('Returns a new mnemonic phrase')
   .action(() => {
