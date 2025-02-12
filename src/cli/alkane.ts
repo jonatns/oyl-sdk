@@ -15,6 +15,7 @@ import { encipher } from 'alkanes/lib/bytes'
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer'
+import { createNewPool } from 'amm/factory'
 
 /* @dev example call
   oyl alkane trace -params '{"txid":"0322c3a2ce665485c8125cd0334675f0ddbd7d5b278936144efb108ff59c49b5","vout":0}'
@@ -363,19 +364,24 @@ export const alkaneSend = new Command('send')
         provider: wallet.provider,
       })
 
+      const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
+
     console.log(
-      await send({
-        alkaneId: { block: options.block, tx: options.txNum },
-        toAddress: options.to,
-        amount: Number(options.amount),
-        gatheredUtxos: {
+      await createNewPool(
+        calldata,
+        {block: options.block, tx: options.txNum},
+        BigInt(options.amount),
+        {block: options.blockb, tx: options.txNumb} ,
+        BigInt(options.amountb),
+       {
           utxos: accountSpendableTotalUtxos,
           totalAmount: accountSpendableTotalBalance,
         },
-        account: wallet.account,
-        signer: wallet.signer,
-        provider: wallet.provider,
-        feeRate: wallet.feeRate,
-      })
+        wallet.feeRate,
+        wallet.account,
+        wallet.signer,
+        wallet.provider,
+        
+      )
     )
   })
