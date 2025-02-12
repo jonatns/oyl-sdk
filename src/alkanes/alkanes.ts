@@ -53,7 +53,7 @@ export const createExecutePsbt = async ({
 
     gatheredUtxos = findXAmountOfSats(
       originalGatheredUtxos.utxos,
-      Number(finalFee)
+      Number(finalFee) + 1092
     )
 
     let psbt = new bitcoin.Psbt({ network: provider.network })

@@ -1,4 +1,4 @@
-import { Account, Provider, Signer } from 'index';
+import { Account, Provider, Signer } from '..';
 import { AlkaneId, Utxo } from 'shared/interface';
 export declare const getPoolId: () => Promise<void>;
 export declare const createNewPool: (calldata: bigint[], token0: AlkaneId, token0Amount: bigint, token1: AlkaneId, token1Amount: bigint, gatheredUtxos: {
