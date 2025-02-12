@@ -9,7 +9,7 @@ import { ProtoStone } from 'alkanes/lib/protorune/protostone'
 import { Account, alkanes, Provider, Signer, utxo } from 'index'
 import { AlkaneId, Utxo } from 'shared/interface'
 
-const BURN_OUTPUT = u32(0)
+const BURN_OUTPUT = u32(2)
 
 export const getPoolId = async () => {}
 
@@ -58,7 +58,7 @@ export const createNewPool = async (
         u128(BigInt(token0.tx))
       ),
       amount: u128(token0Amount),
-      output: BURN_OUTPUT,
+      output: u32(0),
     },
     {
       id: new ProtoruneRuneId(
@@ -66,7 +66,7 @@ export const createNewPool = async (
         u128(BigInt(token1.tx))
       ),
       amount: u128(token1Amount),
-      output: BURN_OUTPUT,
+      output: u32(1),
     },
   ]
 
@@ -75,8 +75,8 @@ export const createNewPool = async (
       ProtoStone.message({
         protocolTag: 1n,
         edicts,
-        pointer: 0,
-        refundPointer: 1,
+        pointer: Number(BURN_OUTPUT),
+        refundPointer: 0,
         calldata: encipher(calldata),
       }),
     ],

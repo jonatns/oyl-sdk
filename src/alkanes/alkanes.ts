@@ -173,6 +173,11 @@ export const createExecutePsbt = async ({
       value: 546,
     })
 
+    psbt.addOutput({
+      address: account.taproot.address,
+      value: 546,
+    })
+
     const output = { script: protostone, value: 0 }
     psbt.addOutput(output)
 
