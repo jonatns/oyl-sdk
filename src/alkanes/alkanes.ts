@@ -182,7 +182,7 @@ export const createExecutePsbt = async ({
     psbt.addOutput(output)
 
     const changeAmount =
-      gatheredUtxos.totalAmount + alkaneUtxos.totalSatoshis - finalFee - 546
+      gatheredUtxos.totalAmount + alkaneUtxos.totalSatoshis - finalFee - 1092
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
