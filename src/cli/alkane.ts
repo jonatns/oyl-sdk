@@ -15,7 +15,7 @@ import { encipher } from 'alkanes/lib/bytes'
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer'
-import { createNewPool } from 'amm/factory'
+import { createNewPool } from '../amm/factory'
 
 /* @dev example call
   oyl alkane trace -params '{"txid":"0322c3a2ce665485c8125cd0334675f0ddbd7d5b278936144efb108ff59c49b5","vout":0}'
@@ -337,15 +337,24 @@ export const alkaneExecute = new Command('execute')
   })
 
 /* @dev example call 
-  oyl alkane send -blk 2 -tx 1 -amt 200 -to bcrt1pkq6ayylfpe5hn05550ry25pkakuf72x9qkjc2sl06dfcet8sg25ql4dm73
+  oyl alkane send -data "2,9,1" -p alkanes -feeRate 5 -blk 2 -tx 1 -amt 200 -to bcrt1pkq6ayylfpe5hn05550ry25pkakuf72x9qkjc2sl06dfcet8sg25ql4dm73
 
   Sends an alkane token amount to a given address (example is sending token with Alkane ID [2, 1]) 
 */
 export const alkaneSend = new Command('send')
-  .requiredOption('-to, --to <to>')
-  .requiredOption('-amt, --amount <amount>')
-  .requiredOption('-blk, --block <block>')
-  .requiredOption('-tx, --txNum <txNum>')
+  .requiredOption(
+    '-data, --calldata <calldata>',
+    'op code + params to be called on a contract',
+    (value, previous) => {
+      const items = value.split(',')
+      return previous ? previous.concat(items) : items
+    },
+    []
+  )
+  .option('-to, --to <to>')
+  .option('-amt, --amount <amount>')
+  .option('-blk, --block <block>')
+  .option('-tx, --txNum <txNum>')
   .option(
     '-m, --mnemonic <mnemonic>',
     '(optional) Mnemonic used for signing transactions (default = TEST_WALLET)'
@@ -369,10 +378,10 @@ export const alkaneSend = new Command('send')
     console.log(
       await createNewPool(
         calldata,
-        {block: options.block, tx: options.txNum},
-        BigInt(options.amount),
-        {block: options.blockb, tx: options.txNumb} ,
-        BigInt(options.amountb),
+        {block: "2", tx: "6"},
+        BigInt(50000),
+        {block: "2", tx: "4"} ,
+        BigInt(50000),
        {
           utxos: accountSpendableTotalUtxos,
           totalAmount: accountSpendableTotalBalance,

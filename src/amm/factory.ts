@@ -1,4 +1,4 @@
-import { findAlkaneUtxos } from '@alkanes/alkanes'
+import { findAlkaneUtxos } from '../alkanes/alkanes'
 import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer/u128'
 import { u32 } from '@magiceden-oss/runestone-lib/dist/src/integer/u32'
 import { encipher } from 'alkanes/lib/bytes'
@@ -6,7 +6,7 @@ import { encodeRunestoneProtostone } from 'alkanes/lib/protorune/proto_runestone
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { ProtoStone } from 'alkanes/lib/protorune/protostone'
-import { Account, alkanes, Provider, Signer, utxo } from 'index'
+import { Account, alkanes, Provider, Signer, utxo } from '..'
 import { AlkaneId, Utxo } from 'shared/interface'
 
 const BURN_OUTPUT = u32(0)
@@ -82,7 +82,7 @@ export const createNewPool = async (
     ],
   }).encodedRunestone
 
-  await alkanes.execute({
+  return await alkanes.execute({
     alkaneUtxos: tokenUtxos,
     protostone,
     gatheredUtxos,
