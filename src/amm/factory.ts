@@ -82,7 +82,7 @@ export const createNewPool = async (
     ],
   }).encodedRunestone
 
-  await alkanes.execute({
+  return await alkanes.execute({
     alkaneUtxos: tokenUtxos,
     protostone,
     gatheredUtxos,
