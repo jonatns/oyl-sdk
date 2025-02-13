@@ -1,12 +1,7 @@
 import { minimumFee } from '../btc'
 import { Provider } from '../provider/provider'
 import * as bitcoin from 'bitcoinjs-lib'
-import {
-  ProtoStone,
-  encipher,
-  encodeRunestoneProtostone,
-  p2tr_ord_reveal,
-} from 'alkanes/lib/index'
+import { p2tr_ord_reveal } from 'alkanes/lib/index'
 import { Account, Signer } from '..'
 import {
   findXAmountOfSats,
@@ -27,14 +22,14 @@ import { actualDeployCommitFee } from './contract'
 export const createExecutePsbt = async ({
   gatheredUtxos,
   account,
-  calldata,
+  protostone,
   provider,
   feeRate,
   fee = 0,
 }: {
   gatheredUtxos: GatheredUtxos
   account: Account
-  calldata: bigint[]
+  protostone: Buffer
   provider: Provider
   feeRate?: number
   fee?: number
@@ -122,24 +117,12 @@ export const createExecutePsbt = async ({
       }
     }
 
-    const script = encodeRunestoneProtostone({
-      protostones: [
-        ProtoStone.message({
-          protocolTag: 1n,
-          edicts: [],
-          pointer: 0,
-          refundPointer: 0,
-          calldata: encipher(calldata),
-        }),
-      ],
-    }).encodedRunestone
-
     psbt.addOutput({
       address: account.taproot.address,
       value: 546,
     })
 
-    const output = { script, value: 0 }
+    const output = { script: protostone, value: 0 }
     psbt.addOutput(output)
 
     const changeAmount = gatheredUtxos.totalAmount - finalFee - 546
@@ -312,7 +295,7 @@ export const createDeployCommit = async ({
 }
 
 export const createDeployReveal = async ({
-  callData,
+  protostone,
   receiverAddress,
   script,
   feeRate,
@@ -321,7 +304,7 @@ export const createDeployReveal = async ({
   fee = 0,
   commitTxId,
 }: {
-  callData: bigint[]
+  protostone: Buffer
   receiverAddress: string
   script: Buffer
   feeRate: number
@@ -352,20 +335,8 @@ export const createDeployReveal = async ({
     })
 
     if (!commitTxOutput) {
-      throw new Error('Error getting vin #0 value')
+      throw new OylTransactionError(new Error('Error getting vin #0 value'))
     }
-
-    const protostone = encodeRunestoneProtostone({
-      protostones: [
-        ProtoStone.message({
-          protocolTag: 1n,
-          edicts: [],
-          pointer: 0,
-          refundPointer: 0,
-          calldata: encipher(callData),
-        }),
-      ],
-    }).encodedRunestone
 
     const p2pk_redeem = { output: script }
 
@@ -481,7 +452,7 @@ export const findAlkaneUtxos = async ({
 }
 
 export const actualTransactRevealFee = async ({
-  calldata,
+  protostone,
   tweakedTaprootKeyPair,
   commitTxId,
   receiverAddress,
@@ -489,7 +460,7 @@ export const actualTransactRevealFee = async ({
   provider,
   feeRate,
 }: {
-  calldata: bigint[]
+  protostone: Buffer
   tweakedTaprootKeyPair: bitcoin.Signer
   commitTxId: string
   receiverAddress: string
@@ -502,7 +473,7 @@ export const actualTransactRevealFee = async ({
   }
 
   const { psbt: initReveal } = await createTransactReveal({
-    calldata,
+    protostone,
     commitTxId,
     receiverAddress,
     script,
@@ -526,7 +497,7 @@ export const actualTransactRevealFee = async ({
   const correctFee = vsize * feeRate
 
   const { psbt: finalReveal } = await createTransactReveal({
-    calldata,
+    protostone,
     commitTxId,
     receiverAddress,
     script,
@@ -556,14 +527,14 @@ export const actualTransactRevealFee = async ({
 export const actualExecuteFee = async ({
   gatheredUtxos,
   account,
-  calldata,
+  protostone,
   provider,
   feeRate,
   signer,
 }: {
   gatheredUtxos: GatheredUtxos
   account: Account
-  calldata: bigint[]
+  protostone: Buffer
   provider: Provider
   feeRate: number
   signer: Signer
@@ -575,7 +546,7 @@ export const actualExecuteFee = async ({
   const { psbt } = await createExecutePsbt({
     gatheredUtxos,
     account,
-    calldata,
+    protostone,
     provider,
     feeRate,
   })
@@ -600,7 +571,7 @@ export const actualExecuteFee = async ({
   const { psbt: finalPsbt } = await createExecutePsbt({
     gatheredUtxos,
     account,
-    calldata,
+    protostone,
     provider,
     feeRate,
     fee: correctFee,
@@ -627,7 +598,7 @@ export const actualExecuteFee = async ({
 }
 
 export const executeReveal = async ({
-  calldata,
+  protostone,
   commitTxId,
   script,
   account,
@@ -635,7 +606,7 @@ export const executeReveal = async ({
   feeRate,
   signer,
 }: {
-  calldata: bigint[]
+  protostone: Buffer
   commitTxId: string
   script: string
   account: Account
@@ -651,7 +622,7 @@ export const executeReveal = async ({
   )
 
   const { fee } = await actualTransactRevealFee({
-    calldata,
+    protostone,
     tweakedTaprootKeyPair,
     receiverAddress: account.taproot.address,
     commitTxId,
@@ -661,7 +632,7 @@ export const executeReveal = async ({
   })
 
   const { psbt: finalRevealPsbt } = await createTransactReveal({
-    calldata,
+    protostone,
     tweakedTaprootKeyPair,
     receiverAddress: account.taproot.address,
     commitTxId,
@@ -690,14 +661,14 @@ export const executeReveal = async ({
 export const execute = async ({
   gatheredUtxos,
   account,
-  calldata,
+  protostone,
   provider,
   feeRate,
   signer,
 }: {
   gatheredUtxos: GatheredUtxos
   account: Account
-  calldata: bigint[]
+  protostone: Buffer
   provider: Provider
   feeRate?: number
   signer: Signer
@@ -705,7 +676,7 @@ export const execute = async ({
   const { fee } = await actualExecuteFee({
     gatheredUtxos,
     account,
-    calldata,
+    protostone,
     provider,
     feeRate,
     signer,
@@ -714,7 +685,7 @@ export const execute = async ({
   const { psbt: finalPsbt } = await createExecutePsbt({
     gatheredUtxos,
     account,
-    calldata,
+    protostone,
     provider,
     feeRate,
     fee,
@@ -733,7 +704,7 @@ export const execute = async ({
 }
 
 export const createTransactReveal = async ({
-  calldata,
+  protostone,
   receiverAddress,
   script,
   feeRate,
@@ -742,7 +713,7 @@ export const createTransactReveal = async ({
   fee = 0,
   commitTxId,
 }: {
-  calldata: bigint[]
+  protostone: Buffer
   receiverAddress: string
   script: Buffer
   feeRate: number
@@ -773,20 +744,8 @@ export const createTransactReveal = async ({
     })
 
     if (!commitTxOutput) {
-      throw new Error('Error getting vin #0 value')
+      throw new OylTransactionError(new Error('Error getting vin #0 value'))
     }
-
-    const protostone = encodeRunestoneProtostone({
-      protostones: [
-        ProtoStone.message({
-          protocolTag: 1n,
-          edicts: [],
-          pointer: 0,
-          refundPointer: 0,
-          calldata: encipher(calldata),
-        }),
-      ],
-    }).encodedRunestone
 
     const p2pk_redeem = { output: script }
 

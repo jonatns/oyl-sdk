@@ -1,10 +1,12 @@
+/// <reference types="node" />
+/// <reference types="node" />
 import { Account, Signer, Provider } from '..';
 import { AlkaneId, AlkanesPayload, GatheredUtxos } from '../shared/interface';
-export declare const tokenDeployment: ({ payload, gatheredUtxos, account, calldata, provider, feeRate, signer, }: {
+export declare const tokenDeployment: ({ payload, gatheredUtxos, account, protostone, provider, feeRate, signer, }: {
     payload: AlkanesPayload;
     gatheredUtxos: GatheredUtxos;
     account: Account;
-    calldata: bigint[];
+    protostone: Buffer;
     provider: Provider;
     feeRate?: number;
     signer: Signer;

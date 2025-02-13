@@ -8,7 +8,7 @@ export const contractDeployment = async ({
   payload,
   gatheredUtxos,
   account,
-  callData,
+  protostone,
   provider,
   feeRate,
   signer,
@@ -16,7 +16,7 @@ export const contractDeployment = async ({
   payload: AlkanesPayload
   gatheredUtxos: GatheredUtxos
   account: Account
-  callData: bigint[]
+  protostone: Buffer
   provider: Provider
   feeRate?: number
   signer: Signer
@@ -35,7 +35,7 @@ export const contractDeployment = async ({
   const reveal = await deployReveal({
     commitTxId: txId,
     script,
-    callData,
+    protostone,
     account,
     provider,
     feeRate,
@@ -122,7 +122,7 @@ export const actualDeployCommitFee = async ({
 }
 
 export const actualDeployRevealFee = async ({
-  callData,
+  protostone,
   tweakedTaprootKeyPair,
   commitTxId,
   receiverAddress,
@@ -130,7 +130,7 @@ export const actualDeployRevealFee = async ({
   provider,
   feeRate,
 }: {
-  callData: bigint[]
+  protostone: Buffer
   tweakedTaprootKeyPair: bitcoin.Signer
   commitTxId: string
   receiverAddress: string
@@ -144,7 +144,7 @@ export const actualDeployRevealFee = async ({
   }
 
   const { psbt } = await createDeployReveal({
-    callData,
+    protostone,
     commitTxId,
     receiverAddress,
     script,
@@ -169,7 +169,7 @@ export const actualDeployRevealFee = async ({
   const correctFee = vsize * feeRate
 
   const { psbt: finalPsbt } = await createDeployReveal({
-    callData,
+    protostone,
     commitTxId,
     receiverAddress,
     script,
@@ -198,7 +198,7 @@ export const actualDeployRevealFee = async ({
 }
 
 export const deployReveal = async ({
-  callData,
+  protostone,
   commitTxId,
   script,
   account,
@@ -206,7 +206,7 @@ export const deployReveal = async ({
   feeRate,
   signer,
 }: {
-  callData: bigint[]
+  protostone: Buffer
   commitTxId: string
   script: string
   account: Account
@@ -222,7 +222,7 @@ export const deployReveal = async ({
   )
 
   const { fee } = await actualDeployRevealFee({
-    callData,
+    protostone,
     tweakedTaprootKeyPair,
     receiverAddress: account.taproot.address,
     commitTxId,
@@ -233,7 +233,7 @@ export const deployReveal = async ({
   })
 
   const { psbt: finalRevealPsbt } = await createDeployReveal({
-    callData,
+    protostone,
     tweakedTaprootKeyPair,
     receiverAddress: account.taproot.address,
     commitTxId,

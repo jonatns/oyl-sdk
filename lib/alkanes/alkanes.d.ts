@@ -4,10 +4,10 @@ import { Provider } from '../provider/provider';
 import * as bitcoin from 'bitcoinjs-lib';
 import { Account, Signer } from '..';
 import { GatheredUtxos, AlkanesPayload } from '../shared/interface';
-export declare const createExecutePsbt: ({ gatheredUtxos, account, calldata, provider, feeRate, fee, }: {
+export declare const createExecutePsbt: ({ gatheredUtxos, account, protostone, provider, feeRate, fee, }: {
     gatheredUtxos: GatheredUtxos;
     account: Account;
-    calldata: bigint[];
+    protostone: Buffer;
     provider: Provider;
     feeRate?: number;
     fee?: number;
@@ -27,8 +27,8 @@ export declare const createDeployCommit: ({ payload, gatheredUtxos, tweakedTapro
     psbt: string;
     script: Buffer;
 }>;
-export declare const createDeployReveal: ({ callData, receiverAddress, script, feeRate, tweakedTaprootKeyPair, provider, fee, commitTxId, }: {
-    callData: bigint[];
+export declare const createDeployReveal: ({ protostone, receiverAddress, script, feeRate, tweakedTaprootKeyPair, provider, fee, commitTxId, }: {
+    protostone: Buffer;
     receiverAddress: string;
     script: Buffer;
     feeRate: number;
@@ -53,8 +53,8 @@ export declare const findAlkaneUtxos: ({ address, greatestToLeast, provider, alk
     alkaneUtxos: any[];
     totalSatoshis: number;
 }>;
-export declare const actualTransactRevealFee: ({ calldata, tweakedTaprootKeyPair, commitTxId, receiverAddress, script, provider, feeRate, }: {
-    calldata: bigint[];
+export declare const actualTransactRevealFee: ({ protostone, tweakedTaprootKeyPair, commitTxId, receiverAddress, script, provider, feeRate, }: {
+    protostone: Buffer;
     tweakedTaprootKeyPair: bitcoin.Signer;
     commitTxId: string;
     receiverAddress: string;
@@ -64,18 +64,18 @@ export declare const actualTransactRevealFee: ({ calldata, tweakedTaprootKeyPair
 }) => Promise<{
     fee: number;
 }>;
-export declare const actualExecuteFee: ({ gatheredUtxos, account, calldata, provider, feeRate, signer, }: {
+export declare const actualExecuteFee: ({ gatheredUtxos, account, protostone, provider, feeRate, signer, }: {
     gatheredUtxos: GatheredUtxos;
     account: Account;
-    calldata: bigint[];
+    protostone: Buffer;
     provider: Provider;
     feeRate: number;
     signer: Signer;
 }) => Promise<{
     fee: number;
 }>;
-export declare const executeReveal: ({ calldata, commitTxId, script, account, provider, feeRate, signer, }: {
-    calldata: bigint[];
+export declare const executeReveal: ({ protostone, commitTxId, script, account, provider, feeRate, signer, }: {
+    protostone: Buffer;
     commitTxId: string;
     script: string;
     account: Account;
@@ -90,10 +90,10 @@ export declare const executeReveal: ({ calldata, commitTxId, script, account, pr
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const execute: ({ gatheredUtxos, account, calldata, provider, feeRate, signer, }: {
+export declare const execute: ({ gatheredUtxos, account, protostone, provider, feeRate, signer, }: {
     gatheredUtxos: GatheredUtxos;
     account: Account;
-    calldata: bigint[];
+    protostone: Buffer;
     provider: Provider;
     feeRate?: number;
     signer: Signer;
@@ -105,8 +105,8 @@ export declare const execute: ({ gatheredUtxos, account, calldata, provider, fee
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const createTransactReveal: ({ calldata, receiverAddress, script, feeRate, tweakedTaprootKeyPair, provider, fee, commitTxId, }: {
-    calldata: bigint[];
+export declare const createTransactReveal: ({ protostone, receiverAddress, script, feeRate, tweakedTaprootKeyPair, provider, fee, commitTxId, }: {
+    protostone: Buffer;
     receiverAddress: string;
     script: Buffer;
     feeRate: number;

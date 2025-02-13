@@ -19,7 +19,7 @@ export const tokenDeployment = async ({
   payload,
   gatheredUtxos,
   account,
-  calldata,
+  protostone,
   provider,
   feeRate,
   signer,
@@ -27,7 +27,7 @@ export const tokenDeployment = async ({
   payload: AlkanesPayload
   gatheredUtxos: GatheredUtxos
   account: Account
-  calldata: bigint[]
+  protostone: Buffer
   provider: Provider
   feeRate?: number
   signer: Signer
@@ -44,7 +44,7 @@ export const tokenDeployment = async ({
   await timeout(3000)
 
   const reveal = await executeReveal({
-    calldata,
+    protostone,
     script,
     commitTxId: txId,
     account,
