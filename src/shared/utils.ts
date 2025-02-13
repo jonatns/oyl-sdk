@@ -508,9 +508,6 @@ export const createRuneEtchScript = ({
   return runeEtch
 }
 
-export let RPC_ADDR =
-  'https://mainnet.sandshrew.io/v1/6e3bc3c289591bb447c116fda149b094'
-
 export function getAddressType(address: string): AddressType | null {
   if (
     addressFormats.mainnet.p2pkh.test(address) ||

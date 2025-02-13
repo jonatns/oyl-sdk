@@ -94,7 +94,6 @@ export declare const createRuneEtchScript: ({ pointer, runeName, symbol, divisib
     premine?: number;
     turbo?: boolean;
 }) => Buffer;
-export declare let RPC_ADDR: string;
 export declare function getAddressType(address: string): AddressType | null;
 export declare function getAddressKey(address: string): AddressKey;
 export declare function waitForTransaction({ txId, sandshrewBtcClient, }: {
