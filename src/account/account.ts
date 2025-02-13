@@ -60,8 +60,11 @@ export interface MnemonicToAccountOptions {
   hdPaths?: HDPaths
 }
 
-export const generateMnemonic = () => {
-  return bip39.generateMnemonic()
+export const generateMnemonic = (bitsize?: 128 | 256) => {
+  if (bitsize && bitsize !== 128 && bitsize !== 256) {
+    throw new Error('Bitsize must be either 128 or 256')
+  }
+  return bitsize === 256 ? bip39.generateMnemonic(256) : bip39.generateMnemonic()
 }
 
 export const validateMnemonic = (mnemonic: string) => {
