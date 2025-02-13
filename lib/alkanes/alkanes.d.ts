@@ -56,6 +56,7 @@ export declare const findAlkaneUtxos: ({ address, greatestToLeast, provider, alk
 }) => Promise<{
     alkaneUtxos: any[];
     totalSatoshis: number;
+    totalBalanceBeingSent: number;
 }>;
 export declare const actualTransactRevealFee: ({ protostone, tweakedTaprootKeyPair, commitTxId, receiverAddress, script, provider, feeRate, }: {
     protostone: Buffer;

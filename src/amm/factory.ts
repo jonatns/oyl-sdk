@@ -28,6 +28,8 @@ export const createNewPool = async (
   let tokenUtxos: {
     alkaneUtxos: any[]
     totalSatoshis: number
+    totalSentToken0: number
+    totalSentToken1: number
   }
 
   const [token0Utxos, token1Utxos] = await Promise.all([
@@ -50,6 +52,8 @@ export const createNewPool = async (
   tokenUtxos = {
     alkaneUtxos: [...token0Utxos.alkaneUtxos, ...token1Utxos.alkaneUtxos],
     totalSatoshis: token0Utxos.totalSatoshis + token1Utxos.totalSatoshis,
+    totalSentToken0: token0Utxos.totalBalanceBeingSent,
+    totalSentToken1: token1Utxos.totalBalanceBeingSent,
   }
   const edicts: ProtoruneEdict[] = [
     {
@@ -57,8 +61,24 @@ export const createNewPool = async (
         u128(BigInt(token0.block)),
         u128(BigInt(token0.tx))
       ),
-      amount: u128(token0Amount),
+      amount: u128(tokenUtxos.totalSentToken0 - Number(token0Amount)),
       output: u32(0),
+    },
+    {
+      id: new ProtoruneRuneId(
+        u128(BigInt(token0.block)),
+        u128(BigInt(token0.tx))
+      ),
+      amount: u128(token0Amount),
+      output: u32(2),
+    },
+    {
+      id: new ProtoruneRuneId(
+        u128(BigInt(token1.block)),
+        u128(BigInt(token1.tx))
+      ),
+      amount: u128(tokenUtxos.totalSentToken1 - Number(token1Amount)),
+      output: u32(1),
     },
     {
       id: new ProtoruneRuneId(
@@ -66,7 +86,7 @@ export const createNewPool = async (
         u128(BigInt(token1.tx))
       ),
       amount: u128(token1Amount),
-      output: u32(1),
+      output: u32(2),
     },
   ]
 
@@ -75,7 +95,7 @@ export const createNewPool = async (
       ProtoStone.message({
         protocolTag: 1n,
         edicts,
-        pointer: Number(BURN_OUTPUT),
+        pointer: 0,
         refundPointer: 0,
         calldata: encipher(calldata),
       }),

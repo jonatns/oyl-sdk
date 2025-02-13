@@ -504,8 +504,11 @@ export const findAlkaneUtxos = async ({
     } else {
       break
     }
+    if (totalBalanceBeingSent < targetNumberOfAlkanes) {
+      throw new OylTransactionError(Error('Insuffiecient balance of alkanes.'))
+    }
   }
-  return { alkaneUtxos, totalSatoshis }
+  return { alkaneUtxos, totalSatoshis, totalBalanceBeingSent }
 }
 
 export const actualTransactRevealFee = async ({
