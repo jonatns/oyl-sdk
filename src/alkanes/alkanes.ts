@@ -58,49 +58,51 @@ export const createExecutePsbt = async ({
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
 
-    for await (const utxo of alkaneUtxos.alkaneUtxos) {
-      if (getAddressType(utxo.address) === 0) {
-        const previousTxHex: string = await provider.esplora.getTxHex(utxo.txId)
-        psbt.addInput({
-          hash: utxo.txId,
-          index: parseInt(utxo.txIndex),
-          nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
-        })
-      }
-      if (getAddressType(utxo.address) === 2) {
-        const redeemScript = bitcoin.script.compile([
-          bitcoin.opcodes.OP_0,
-          bitcoin.crypto.hash160(
-            Buffer.from(account.nestedSegwit.pubkey, 'hex')
-          ),
-        ])
+    if (alkaneUtxos) {
+      for await (const utxo of alkaneUtxos.alkaneUtxos) {
+        if (getAddressType(utxo.address) === 0) {
+          const previousTxHex: string = await provider.esplora.getTxHex(utxo.txId)
+          psbt.addInput({
+            hash: utxo.txId,
+            index: parseInt(utxo.txIndex),
+            nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
+          })
+        }
+        if (getAddressType(utxo.address) === 2) {
+          const redeemScript = bitcoin.script.compile([
+            bitcoin.opcodes.OP_0,
+            bitcoin.crypto.hash160(
+              Buffer.from(account.nestedSegwit.pubkey, 'hex')
+            ),
+          ])
 
-        psbt.addInput({
-          hash: utxo.txId,
-          index: parseInt(utxo.txIndex),
-          redeemScript: redeemScript,
-          witnessUtxo: {
-            value: utxo.satoshis,
-            script: bitcoin.script.compile([
-              bitcoin.opcodes.OP_HASH160,
-              bitcoin.crypto.hash160(redeemScript),
-              bitcoin.opcodes.OP_EQUAL,
-            ]),
-          },
-        })
-      }
-      if (
-        getAddressType(utxo.address) === 1 ||
-        getAddressType(utxo.address) === 3
-      ) {
-        psbt.addInput({
-          hash: utxo.txId,
-          index: parseInt(utxo.txIndex),
-          witnessUtxo: {
-            value: utxo.satoshis,
-            script: Buffer.from(utxo.script, 'hex'),
-          },
-        })
+          psbt.addInput({
+            hash: utxo.txId,
+            index: parseInt(utxo.txIndex),
+            redeemScript: redeemScript,
+            witnessUtxo: {
+              value: utxo.satoshis,
+              script: bitcoin.script.compile([
+                bitcoin.opcodes.OP_HASH160,
+                bitcoin.crypto.hash160(redeemScript),
+                bitcoin.opcodes.OP_EQUAL,
+              ]),
+            },
+          })
+        }
+        if (
+          getAddressType(utxo.address) === 1 ||
+          getAddressType(utxo.address) === 3
+        ) {
+          psbt.addInput({
+            hash: utxo.txId,
+            index: parseInt(utxo.txIndex),
+            witnessUtxo: {
+              value: utxo.satoshis,
+              script: Buffer.from(utxo.script, 'hex'),
+            },
+          })
+        }
       }
     }
 
@@ -182,7 +184,10 @@ export const createExecutePsbt = async ({
     psbt.addOutput(output)
 
     const changeAmount =
-      gatheredUtxos.totalAmount + alkaneUtxos.totalSatoshis - finalFee - 1092
+      gatheredUtxos.totalAmount + 
+      (alkaneUtxos?.totalSatoshis || 0) - 
+      finalFee - 
+      1092
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
