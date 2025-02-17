@@ -92,13 +92,10 @@ export const createNewPool = async (
 
   const protostone: Buffer = encodeRunestoneProtostone({
     protostones: [
-      ProtoStone.edicts({
-        protocolTag: 1n,
-        edicts,
-      }),
       ProtoStone.message({
         protocolTag: 1n,
-        pointer: 0,
+        pointer: 2,
+        edicts,
         refundPointer: 0,
         calldata: encipher(calldata),
       }),
