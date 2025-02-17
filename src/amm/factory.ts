@@ -90,12 +90,20 @@ export const createNewPool = async (
     },
   ]
 
+  const protostone1: Buffer = encodeRunestoneProtostone({
+    protostones: [
+      ProtoStone.edicts({
+        protocolTag: 1n,
+        edicts,
+      }),
+    ],
+  }).encodedRunestone
+
   const protostone: Buffer = encodeRunestoneProtostone({
     protostones: [
       ProtoStone.message({
         protocolTag: 1n,
         pointer: 0,
-        edicts,
         refundPointer: 0,
         calldata: encipher(calldata),
       }),
@@ -105,6 +113,7 @@ export const createNewPool = async (
   return await alkanes.execute({
     alkaneUtxos: tokenUtxos,
     protostone,
+    protostone1,
     gatheredUtxos,
     feeRate,
     account,

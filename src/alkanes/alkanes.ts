@@ -1,7 +1,11 @@
 import { minimumFee } from '../btc'
 import { Provider } from '../provider/provider'
 import * as bitcoin from 'bitcoinjs-lib'
-import { p2tr_ord_reveal } from 'alkanes/lib/index'
+import {
+  encodeRunestoneProtostone,
+  p2tr_ord_reveal,
+  ProtoStone,
+} from 'alkanes/lib/index'
 import { Account, Signer } from '..'
 import {
   findXAmountOfSats,
@@ -24,6 +28,7 @@ export const createExecutePsbt = async ({
   gatheredUtxos,
   account,
   protostone,
+  protostone1,
   provider,
   feeRate,
   fee = 0,
@@ -35,6 +40,7 @@ export const createExecutePsbt = async ({
   gatheredUtxos: GatheredUtxos
   account: Account
   protostone: Buffer
+  protostone1: Buffer
   provider: Provider
   feeRate?: number
   fee?: number
@@ -61,7 +67,9 @@ export const createExecutePsbt = async ({
     if (alkaneUtxos) {
       for await (const utxo of alkaneUtxos.alkaneUtxos) {
         if (getAddressType(utxo.address) === 0) {
-          const previousTxHex: string = await provider.esplora.getTxHex(utxo.txId)
+          const previousTxHex: string = await provider.esplora.getTxHex(
+            utxo.txId
+          )
           psbt.addInput({
             hash: utxo.txId,
             index: parseInt(utxo.txIndex),
@@ -183,10 +191,13 @@ export const createExecutePsbt = async ({
     const output = { script: protostone, value: 0 }
     psbt.addOutput(output)
 
+    const output1 = { script: protostone1, value: 0 }
+    psbt.addOutput(output1)
+
     const changeAmount =
-      gatheredUtxos.totalAmount + 
-      (alkaneUtxos?.totalSatoshis || 0) - 
-      finalFee - 
+      gatheredUtxos.totalAmount +
+      (alkaneUtxos?.totalSatoshis || 0) -
+      finalFee -
       1092
 
     psbt.addOutput({
@@ -593,6 +604,7 @@ export const actualExecuteFee = async ({
   gatheredUtxos,
   account,
   protostone,
+  protostone1,
   provider,
   feeRate,
   signer,
@@ -601,6 +613,7 @@ export const actualExecuteFee = async ({
   gatheredUtxos: GatheredUtxos
   account: Account
   protostone: Buffer
+  protostone1: Buffer
   provider: Provider
   feeRate: number
   signer: Signer
@@ -617,6 +630,7 @@ export const actualExecuteFee = async ({
     gatheredUtxos,
     account,
     protostone,
+    protostone1,
     provider,
     feeRate,
     alkaneUtxos,
@@ -643,6 +657,7 @@ export const actualExecuteFee = async ({
     gatheredUtxos,
     account,
     protostone,
+    protostone1,
     provider,
     feeRate,
     alkaneUtxos,
@@ -735,6 +750,7 @@ export const execute = async ({
   gatheredUtxos,
   account,
   protostone,
+  protostone1,
   provider,
   feeRate,
   signer,
@@ -746,6 +762,7 @@ export const execute = async ({
   gatheredUtxos: GatheredUtxos
   account: Account
   protostone: Buffer
+  protostone1?: Buffer
   provider: Provider
   feeRate?: number
   signer: Signer
@@ -755,6 +772,7 @@ export const execute = async ({
     gatheredUtxos,
     account,
     protostone,
+    protostone1,
     provider,
     feeRate,
     signer,
@@ -765,6 +783,7 @@ export const execute = async ({
     gatheredUtxos,
     account,
     protostone,
+    protostone1,
     provider,
     feeRate,
     fee,
