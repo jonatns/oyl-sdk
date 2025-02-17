@@ -94,7 +94,7 @@ export const createNewPool = async (
     protostones: [
       ProtoStone.message({
         protocolTag: 1n,
-        pointer: 2,
+        pointer: 0,
         edicts,
         refundPointer: 0,
         calldata: encipher(calldata),

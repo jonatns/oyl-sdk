@@ -378,9 +378,9 @@ export const alkaneSend = new Command('send')
     console.log(
       await createNewPool(
         calldata,
-        {block: "2", tx: "3"},
+        {block: "2", tx: "6"},
         BigInt(50000),
-        {block: "2", tx: "4"} ,
+        {block: "2", tx: "7"} ,
         BigInt(50000),
        {
           utxos: accountSpendableTotalUtxos,

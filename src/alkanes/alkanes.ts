@@ -170,18 +170,20 @@ export const createExecutePsbt = async ({
       }
     }
 
-    psbt.addOutput({
-      address: account.taproot.address,
-      value: 546,
-    })
-
-    psbt.addOutput({
-      address: account.taproot.address,
-      value: 546,
-    })
-
     const output = { script: protostone, value: 0 }
     psbt.addOutput(output)
+
+    psbt.addOutput({
+      address: account.taproot.address,
+      value: 546,
+    })
+
+    psbt.addOutput({
+      address: account.taproot.address,
+      value: 546,
+    })
+
+   
 
     const changeAmount =
       gatheredUtxos.totalAmount + 
