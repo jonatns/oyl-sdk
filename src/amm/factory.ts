@@ -35,14 +35,14 @@ export const createNewPool = async (
   const [token0Utxos, token1Utxos] = await Promise.all([
     findAlkaneUtxos({
       address: account.taproot.address,
-      greatestToLeast: true,
+      greatestToLeast: false,
       provider,
       targetNumberOfAlkanes: Number(token0Amount),
       alkaneId: token0,
     }),
     findAlkaneUtxos({
       address: account.taproot.address,
-      greatestToLeast: true,
+      greatestToLeast: false,
       provider,
       targetNumberOfAlkanes: Number(token1Amount),
       alkaneId: token1,
@@ -55,56 +55,13 @@ export const createNewPool = async (
     totalSentToken0: token0Utxos.totalBalanceBeingSent,
     totalSentToken1: token1Utxos.totalBalanceBeingSent,
   }
-  const edicts: ProtoruneEdict[] = [
-    {
-      id: new ProtoruneRuneId(
-        u128(BigInt(token0.block)),
-        u128(BigInt(token0.tx))
-      ),
-      amount: u128(tokenUtxos.totalSentToken0 - Number(token0Amount)),
-      output: u32(0),
-    },
-    {
-      id: new ProtoruneRuneId(
-        u128(BigInt(token0.block)),
-        u128(BigInt(token0.tx))
-      ),
-      amount: u128(token0Amount),
-      output: u32(2),
-    },
-    {
-      id: new ProtoruneRuneId(
-        u128(BigInt(token1.block)),
-        u128(BigInt(token1.tx))
-      ),
-      amount: u128(tokenUtxos.totalSentToken1 - Number(token1Amount)),
-      output: u32(1),
-    },
-    {
-      id: new ProtoruneRuneId(
-        u128(BigInt(token1.block)),
-        u128(BigInt(token1.tx))
-      ),
-      amount: u128(token1Amount),
-      output: u32(2),
-    },
-  ]
-
-  const protostone1: Buffer = encodeRunestoneProtostone({
-    protostones: [
-      ProtoStone.edicts({
-        protocolTag: 1n,
-        edicts,
-      }),
-    ],
-  }).encodedRunestone
 
   const protostone: Buffer = encodeRunestoneProtostone({
     protostones: [
       ProtoStone.message({
         protocolTag: 1n,
         pointer: 0,
-        refundPointer: 0,
+        refundPointer: 1,
         calldata: encipher(calldata),
       }),
     ],

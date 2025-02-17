@@ -7,7 +7,7 @@ import * as alkanes from '../alkanes/alkanes'
 import * as utxo from '../utxo'
 import { Wallet } from './wallet'
 import { contractDeployment } from '../alkanes/contract'
-import { send, tokenDeployment } from '../alkanes/token'
+import { send, split, tokenDeployment } from '../alkanes/token'
 import { AlkanesPayload } from 'shared/interface'
 import { encodeRunestoneProtostone } from 'alkanes/lib/protorune/proto_runestone_upgrade'
 import { ProtoStone } from 'alkanes/lib/protorune/protostone'
@@ -15,7 +15,7 @@ import { encipher } from 'alkanes/lib/bytes'
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer'
-import { createNewPool } from '../amm/factory'
+import { createNewPool, splitAlkaneUtxos } from '../amm/factory'
 
 /* @dev example call
   oyl alkane trace -params '{"txid":"0322c3a2ce665485c8125cd0334675f0ddbd7d5b278936144efb108ff59c49b5","vout":0}'
@@ -378,9 +378,9 @@ export const alkaneSend = new Command('send')
     console.log(
       await createNewPool(
         calldata,
-        {block: "2", tx: "3"},
+        {block: "2", tx: "2"},
         BigInt(50000),
-        {block: "2", tx: "4"} ,
+        {block: "2", tx: "3"} ,
         BigInt(50000),
        {
           utxos: accountSpendableTotalUtxos,
@@ -394,3 +394,53 @@ export const alkaneSend = new Command('send')
       )
     )
   })
+
+
+  /* @dev example call 
+  oyl alkane split -amt1 200 -amt2 200 -blk1 2 -tx1 1 -blk2 2 -tx2 1 -feeRate 5
+
+  Splits an alkane token amount to a given address (example is sending token with Alkane ID [2, 1]) 
+*/
+export const alkaneSplit = new Command('split')
+.requiredOption('-amt1, --amount1 <amount1>')
+.requiredOption('-amt2, --amount2 <amount2>')
+.requiredOption('-blk1, --block1 <block1>')
+.requiredOption('-blk2, --block2 <block2>')
+.requiredOption('-tx1, --txNum1 <txNum1>')
+.requiredOption('-tx2, --txNum2 <txNum2>')
+.option(
+  '-m, --mnemonic <mnemonic>',
+  '(optional) Mnemonic used for signing transactions (default = TEST_WALLET)'
+)
+.option(
+  '-p, --provider <provider>',
+  'Network provider type (regtest, bitcoin)'
+)
+.option('-feeRate, --feeRate <feeRate>', 'fee rate')
+.action(async (options) => {
+  const wallet: Wallet = new Wallet(options)
+
+  const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
+    await utxo.accountUtxos({
+      account: wallet.account,
+      provider: wallet.provider,
+    })
+
+
+  console.log(
+    await splitAlkaneUtxos(
+      {block: options.block1, tx: options.txNum1},
+      BigInt(options.amount1),
+     {block: options.block2, tx: options.txNum2} ,
+      BigInt(options.amount2),
+      {
+        utxos: accountSpendableTotalUtxos,
+        totalAmount: accountSpendableTotalBalance,
+      },
+      wallet.feeRate,
+      wallet.account,
+      wallet.signer,
+      wallet.provider,
+    )
+  )
+})

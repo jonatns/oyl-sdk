@@ -44,6 +44,9 @@ export const createExecutePsbt = async ({
   fee?: number
 }) => {
   try {
+
+    console.log('alkaneUtxos', alkaneUtxos)
+
     const originalGatheredUtxos = gatheredUtxos
 
     const minTxSize = minimumFee({
@@ -57,7 +60,7 @@ export const createExecutePsbt = async ({
 
     gatheredUtxos = findXAmountOfSats(
       originalGatheredUtxos.utxos,
-      Number(finalFee) + 1092
+      Number(finalFee) + 546
     )
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
@@ -176,24 +179,19 @@ export const createExecutePsbt = async ({
       }
     }
 
-    psbt.addOutput({
-      address: account.taproot.address,
-      value: 546,
-    })
-
-    psbt.addOutput({
-      address: account.taproot.address,
-      value: 546,
-    })
-
     const output = { script: protostone, value: 0 }
     psbt.addOutput(output)
+
+    psbt.addOutput({
+      address: account.taproot.address,
+      value: 546
+    })
+    
 
     const changeAmount =
       gatheredUtxos.totalAmount +
       (alkaneUtxos?.totalSatoshis || 0) -
-      finalFee -
-      1092
+      finalFee - 546
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
@@ -491,15 +489,20 @@ export const findAlkaneUtxos = async ({
       : Number(a.rune.balance) - Number(b.rune.balance)
   )
 
+  console.log('sortedRunesWithOutpoints', sortedRunesWithOutpoints)
+
   let totalSatoshis: number = 0
   let totalBalanceBeingSent: number = 0
+  console.log('targetNumberOfAlkanes', targetNumberOfAlkanes)
   const alkaneUtxos = []
 
   for (const alkane of sortedRunesWithOutpoints) {
     if (
       totalBalanceBeingSent < targetNumberOfAlkanes &&
-      Number(alkane.rune.balance) > 0
+      Number(alkane.rune.balance) > 0 
     ) {
+      console.log('totalBalanceBeingSent', totalBalanceBeingSent)
+      console.log('alkane divisibility', alkane.rune.rune.divisibility)
       const satoshis = Number(alkane.outpoint.output.value)
       alkaneUtxos.push({
         txId: alkane.outpoint.outpoint.txid,
@@ -511,13 +514,11 @@ export const findAlkaneUtxos = async ({
       })
       totalSatoshis += satoshis
       totalBalanceBeingSent +=
-        Number(alkane.rune.balance) / 10 ** alkane.rune.rune.divisibility
-    } else {
-      break
-    }
-    if (totalBalanceBeingSent < targetNumberOfAlkanes) {
-      throw new OylTransactionError(Error('Insuffiecient balance of alkanes.'))
-    }
+        Number(alkane.rune.balance) / (alkane.rune.rune.divisibility == 1 ? 1 : 10 ** alkane.rune.rune.divisibility)
+    } 
+  }
+  if (totalBalanceBeingSent < targetNumberOfAlkanes) {
+    throw new OylTransactionError(Error('Insuffiecient balance of alkanes.'))
   }
   return { alkaneUtxos, totalSatoshis, totalBalanceBeingSent }
 }

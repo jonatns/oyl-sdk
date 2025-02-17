@@ -491,7 +491,7 @@ export const createSplitPsbt = async ({
 
     gatheredUtxos = findXAmountOfSats(
       originalGatheredUtxos.utxos,
-      Number(finalFee) + 1092
+      Number(finalFee) + 546 * 4
     )
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
@@ -637,7 +637,7 @@ export const createSplitPsbt = async ({
       gatheredUtxos.totalAmount +
       (alkaneUtxos?.totalSatoshis || 0) -
       finalFee -
-      1092
+      546 * 4
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
