@@ -8,6 +8,8 @@ import {
   alkanesTrace,
   alkaneTokenDeploy,
   alkaneSplit,
+  alkaneBurn,
+  alkaneCreatePool,
 } from './alkane'
 import { init, genBlocks, sendFromFaucet } from './regtest'
 import { runeSend, runeMint, runeEtchCommit, runeEtchReveal } from './rune'
@@ -84,6 +86,8 @@ const alkaneCommand = new Command('alkane')
   .addCommand(alkanesTrace)
   .addCommand(alkaneSend)
   .addCommand(alkaneSplit)
+  .addCommand(alkaneBurn)
+  .addCommand(alkaneCreatePool)
 
   
 const providerCommand = new Command('provider')

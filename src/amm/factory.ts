@@ -11,7 +11,7 @@ import { AlkaneId, Utxo } from 'shared/interface'
 
 const BURN_OUTPUT = u32(2)
 
-export const getPoolId = async () => {}
+export const getPoolId = async () => { }
 
 export const createNewPool = async (
   calldata: bigint[],
@@ -56,12 +56,32 @@ export const createNewPool = async (
     totalSentToken1: token1Utxos.totalBalanceBeingSent,
   }
 
+  const edicts: ProtoruneEdict[] = [
+    {
+      id: new ProtoruneRuneId(
+        u128(BigInt(token0.block)),
+        u128(BigInt(token0.tx))
+      ),
+      amount: u128(token0Amount),
+      output: u32(1),
+    },
+    {
+      id: new ProtoruneRuneId(
+        u128(BigInt(token1.block)),
+        u128(BigInt(token1.tx))
+      ),
+      amount: u128(Number(token1Amount)),
+      output: u32(1),
+    }
+  ]
+
   const protostone: Buffer = encodeRunestoneProtostone({
     protostones: [
       ProtoStone.message({
         protocolTag: 1n,
         pointer: 0,
-        refundPointer: 1,
+        edicts,
+        refundPointer: 0,
         calldata: encipher(calldata),
       }),
     ],
@@ -79,10 +99,7 @@ export const createNewPool = async (
 }
 
 export const splitAlkaneUtxos = async (
-  token0: AlkaneId,
-  token0Amount: bigint,
-  token1: AlkaneId,
-  token1Amount: bigint,
+  tokens: { alkaneId: AlkaneId, amount: bigint }[],
   gatheredUtxos: { utxos: Utxo[]; totalAmount: number },
   feeRate: number,
   account: Account,
@@ -92,67 +109,51 @@ export const splitAlkaneUtxos = async (
   let tokenUtxos: {
     alkaneUtxos: any[]
     totalSatoshis: number
-    totalSentToken0: number
-    totalSentToken1: number
   }
 
-  const [token0Utxos, token1Utxos] = await Promise.all([
-    findAlkaneUtxos({
-      address: account.taproot.address,
-      greatestToLeast: true,
-      provider,
-      targetNumberOfAlkanes: Number(token0Amount),
-      alkaneId: token0,
-    }),
-    findAlkaneUtxos({
-      address: account.taproot.address,
-      greatestToLeast: true,
-      provider,
-      targetNumberOfAlkanes: Number(token1Amount),
-      alkaneId: token1,
-    }),
-  ])
+  const [allTokenUtxos] = await Promise.all(
+    tokens.map(async (token) => {
+      return findAlkaneUtxos({
+        address: account.taproot.address,
+        greatestToLeast: true,
+        provider,
+        targetNumberOfAlkanes: Number(token.amount),
+        alkaneId: token.alkaneId,
+      })
+    })
+  )
+
 
   tokenUtxos = {
-    alkaneUtxos: [...token0Utxos.alkaneUtxos, ...token1Utxos.alkaneUtxos],
-    totalSatoshis: token0Utxos.totalSatoshis + token1Utxos.totalSatoshis,
-    totalSentToken0: token0Utxos.totalBalanceBeingSent,
-    totalSentToken1: token1Utxos.totalBalanceBeingSent,
+    alkaneUtxos: allTokenUtxos.alkaneUtxos,
+    totalSatoshis: allTokenUtxos.totalSatoshis
   }
-  const edicts: ProtoruneEdict[] = [
-    {
-      id: new ProtoruneRuneId(
-        u128(BigInt(token0.block)),
-        u128(BigInt(token0.tx))
-      ),
-      amount: u128(tokenUtxos.totalSentToken0 - Number(token0Amount)),
-      output: u32(0),
-    },
-    {
-      id: new ProtoruneRuneId(
-        u128(BigInt(token0.block)),
-        u128(BigInt(token0.tx))
-      ),
-      amount: u128(token0Amount),
-      output: u32(1),
-    },
-    {
-      id: new ProtoruneRuneId(
-        u128(BigInt(token1.block)),
-        u128(BigInt(token1.tx))
-      ),
-      amount: u128(tokenUtxos.totalSentToken1 - Number(token1Amount)),
-      output: u32(2),
-    },
-    {
-      id: new ProtoruneRuneId(
-        u128(BigInt(token1.block)),
-        u128(BigInt(token1.tx))
-      ),
-      amount: u128(token1Amount),
-      output: u32(3),
-    },
-  ]
+  const edicts: ProtoruneEdict[] = tokens.flatMap((token, index) => {
+    return [
+      {
+        id: new ProtoruneRuneId(
+          u128(BigInt(token.alkaneId.block)),
+          u128(BigInt(token.alkaneId.tx))
+        ),
+        amount: u128(token.amount),
+        output: u32(index),
+      },
+      {
+        id: new ProtoruneRuneId(
+          u128(BigInt(token.alkaneId.block)),
+          u128(BigInt(token.alkaneId.tx))
+        ),
+        amount: u128(tokenUtxos.alkaneUtxos.filter((utxo) => 
+          utxo.id.block === token.alkaneId.block 
+          && utxo.id.tx === token.alkaneId.tx).reduce((acc, utxo) => 
+          acc + Number(utxo.amountOfAlkanes), 0) - Number(token.amount)),
+        output: u32(index + 1),
+      },
+    ]
+  }
+  )
+
+
 
   const protostone: Buffer = encodeRunestoneProtostone({
     protostones: [

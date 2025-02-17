@@ -16,6 +16,7 @@ import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 import { createNewPool, splitAlkaneUtxos } from '../amm/factory'
+import { burn } from '../amm/pool'
 
 /* @dev example call
   oyl alkane trace -params '{"txid":"0322c3a2ce665485c8125cd0334675f0ddbd7d5b278936144efb108ff59c49b5","vout":0}'
@@ -180,15 +181,15 @@ export const alkaneTokenDeploy = new Command('new-token')
       BigInt(options.cap),
       BigInt(
         '0x' +
-          Buffer.from(options.tokenName.split('').reverse().join('')).toString(
-            'hex'
-          )
+        Buffer.from(options.tokenName.split('').reverse().join('')).toString(
+          'hex'
+        )
       ),
       BigInt(
         '0x' +
-          Buffer.from(
-            options.tokenSymbol.split('').reverse().join('')
-          ).toString('hex')
+        Buffer.from(
+          options.tokenSymbol.split('').reverse().join('')
+        ).toString('hex')
       ),
     ]
 
@@ -337,11 +338,11 @@ export const alkaneExecute = new Command('execute')
   })
 
 /* @dev example call 
-  oyl alkane send -data "2,9,1" -p alkanes -feeRate 5 -blk 2 -tx 1 -amt 200 -to bcrt1pkq6ayylfpe5hn05550ry25pkakuf72x9qkjc2sl06dfcet8sg25ql4dm73
+  oyl alkane burn -data "2,9,1" -p alkanes -feeRate 5 -blk 2 -tx 1 -amt 200
 
-  Sends an alkane token amount to a given address (example is sending token with Alkane ID [2, 1]) 
+  Burns an alkane LP token amount
 */
-export const alkaneSend = new Command('send')
+export const alkaneBurn = new Command('burn')
   .requiredOption(
     '-data, --calldata <calldata>',
     'op code + params to be called on a contract',
@@ -351,10 +352,59 @@ export const alkaneSend = new Command('send')
     },
     []
   )
-  .option('-to, --to <to>')
-  .option('-amt, --amount <amount>')
-  .option('-blk, --block <block>')
-  .option('-tx, --txNum <txNum>')
+  .requiredOption('-amt, --amount <amount>', 'amount to burn')
+  .requiredOption('-blk, --block <block>', 'block number')
+  .requiredOption('-tx, --txNum <txNum>', 'transaction number')
+  .option(
+    '-p, --provider <provider>',
+    'Network provider type (regtest, bitcoin)'
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .action(async (options) => {
+    const wallet: Wallet = new Wallet(options)
+
+    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
+      await utxo.accountUtxos({
+        account: wallet.account,
+        provider: wallet.provider,
+      })
+
+    const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
+
+    console.log(
+      await burn(
+        calldata,
+          { block: options.block, tx: options.txNum },
+          BigInt(options.amount),
+          {
+          utxos: accountSpendableTotalUtxos,
+          totalAmount: accountSpendableTotalBalance,
+        },
+        wallet.feeRate,
+        wallet.account,
+        wallet.signer,
+        wallet.provider,
+
+      )
+    )
+  })
+
+
+/* @dev example call 
+ oyl alkane split -tokens 2:8:20000,2:9:20000 -feeRate 5
+
+Splits an alkane token amount(s) to a send the split amount to a new outpoint
+*/
+export const alkaneSplit = new Command('split')
+  .requiredOption(
+    '-tokens, --tokens <tokens>',
+    'tokens to split and amounts',
+    (value, previous) => {
+      const items = value.split(',')
+      return previous ? previous.concat(items) : items
+    },
+    []
+  )
   .option(
     '-m, --mnemonic <mnemonic>',
     '(optional) Mnemonic used for signing transactions (default = TEST_WALLET)'
@@ -373,16 +423,21 @@ export const alkaneSend = new Command('send')
         provider: wallet.provider,
       })
 
-      const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
+      const alkaneTokensToSplit = options.tokens.map((item) => {
+        const [block, tx, amount] = item
+          .split(':')
+          .map((part) => part.trim())
+        return {
+          alkaneId: { block: block, tx: tx },
+          amount: BigInt(amount),
+        }
+      })
+     
 
     console.log(
-      await createNewPool(
-        calldata,
-        {block: "2", tx: "2"},
-        BigInt(50000),
-        {block: "2", tx: "3"} ,
-        BigInt(50000),
-       {
+      await splitAlkaneUtxos(
+        alkaneTokensToSplit,
+        {
           utxos: accountSpendableTotalUtxos,
           totalAmount: accountSpendableTotalBalance,
         },
@@ -390,24 +445,84 @@ export const alkaneSend = new Command('send')
         wallet.account,
         wallet.signer,
         wallet.provider,
-        
       )
     )
   })
 
 
-  /* @dev example call 
-  oyl alkane split -amt1 200 -amt2 200 -blk1 2 -tx1 1 -blk2 2 -tx2 1 -feeRate 5
 
-  Splits an alkane token amount to a given address (example is sending token with Alkane ID [2, 1]) 
+/* @dev example call 
+  oyl alkane send -blk 2 -tx 1 -amt 200 -to bcrt1pkq6ayylfpe5hn05550ry25pkakuf72x9qkjc2sl06dfcet8sg25ql4dm73
+
+  Sends an alkane token amount to a given address (example is sending token with Alkane ID [2, 1]) 
 */
-export const alkaneSplit = new Command('split')
-.requiredOption('-amt1, --amount1 <amount1>')
-.requiredOption('-amt2, --amount2 <amount2>')
-.requiredOption('-blk1, --block1 <block1>')
-.requiredOption('-blk2, --block2 <block2>')
-.requiredOption('-tx1, --txNum1 <txNum1>')
-.requiredOption('-tx2, --txNum2 <txNum2>')
+export const alkaneSend = new Command('send')
+  .requiredOption('-to, --to <to>')
+  .requiredOption('-amt, --amount <amount>')
+  .requiredOption('-blk, --block <block>')
+  .requiredOption('-tx, --txNum <txNum>')
+  .option(
+    '-m, --mnemonic <mnemonic>',
+    '(optional) Mnemonic used for signing transactions (default = TEST_WALLET)'
+  )
+  .option(
+    '-p, --provider <provider>',
+    'Network provider type (regtest, bitcoin)'
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .action(async (options) => {
+    const wallet: Wallet = new Wallet(options)
+
+    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
+      await utxo.accountUtxos({
+        account: wallet.account,
+        provider: wallet.provider,
+      })
+
+    console.log(
+      await send({
+        alkaneId: { block: options.block, tx: options.txNum },
+        toAddress: options.to,
+        amount: Number(options.amount),
+        gatheredUtxos: {
+          utxos: accountSpendableTotalUtxos,
+          totalAmount: accountSpendableTotalBalance,
+        },
+        account: wallet.account,
+        signer: wallet.signer,
+        provider: wallet.provider,
+        feeRate: wallet.feeRate,
+      })
+    )
+  })
+
+
+
+
+/* @dev example call 
+ oyl alkane create-pool -data "2,9,1" -tokens 2:8:20000,2:9:20000 -feeRate 5
+
+Creates a new pool with the given tokens and amounts
+*/
+export const alkaneCreatePool = new Command('create-pool')
+.requiredOption(
+  '-data, --calldata <calldata>',
+  'op code + params to be called on a contract',
+  (value, previous) => {
+    const items = value.split(',')
+    return previous ? previous.concat(items) : items
+  },
+  []
+)
+.requiredOption(
+  '-tokens, --tokens <tokens>',
+  'tokens and amounts to pair for pool',
+  (value, previous) => {
+    const items = value.split(',')
+    return previous ? previous.concat(items) : items
+  },
+  []
+)
 .option(
   '-m, --mnemonic <mnemonic>',
   '(optional) Mnemonic used for signing transactions (default = TEST_WALLET)'
@@ -426,13 +541,25 @@ export const alkaneSplit = new Command('split')
       provider: wallet.provider,
     })
 
+  const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
+
+  const alkaneTokensToPool = options.tokens.map((item) => {
+    const [block, tx, amount] = item
+      .split(':')
+      .map((part) => part.trim())
+    return {
+      alkaneId: { block: block, tx: tx },
+      amount: BigInt(amount),
+    }
+  })
 
   console.log(
-    await splitAlkaneUtxos(
-      {block: options.block1, tx: options.txNum1},
-      BigInt(options.amount1),
-     {block: options.block2, tx: options.txNum2} ,
-      BigInt(options.amount2),
+    await createNewPool(
+      calldata,
+      alkaneTokensToPool[0].alkaneId,
+      alkaneTokensToPool[0].amount,
+      alkaneTokensToPool[1].alkaneId,
+      alkaneTokensToPool[1].amount,
       {
         utxos: accountSpendableTotalUtxos,
         totalAmount: accountSpendableTotalBalance,

@@ -45,8 +45,6 @@ export const createExecutePsbt = async ({
 }) => {
   try {
 
-    console.log('alkaneUtxos', alkaneUtxos)
-
     const originalGatheredUtxos = gatheredUtxos
 
     const minTxSize = minimumFee({
@@ -179,13 +177,15 @@ export const createExecutePsbt = async ({
       }
     }
 
-    const output = { script: protostone, value: 0 }
-    psbt.addOutput(output)
-
     psbt.addOutput({
       address: account.taproot.address,
       value: 546
     })
+
+    const output = { script: protostone, value: 0 }
+    psbt.addOutput(output)
+
+    
     
 
     const changeAmount =
@@ -493,7 +493,6 @@ export const findAlkaneUtxos = async ({
 
   let totalSatoshis: number = 0
   let totalBalanceBeingSent: number = 0
-  console.log('targetNumberOfAlkanes', targetNumberOfAlkanes)
   const alkaneUtxos = []
 
   for (const alkane of sortedRunesWithOutpoints) {
@@ -501,8 +500,7 @@ export const findAlkaneUtxos = async ({
       totalBalanceBeingSent < targetNumberOfAlkanes &&
       Number(alkane.rune.balance) > 0 
     ) {
-      console.log('totalBalanceBeingSent', totalBalanceBeingSent)
-      console.log('alkane divisibility', alkane.rune.rune.divisibility)
+     
       const satoshis = Number(alkane.outpoint.output.value)
       alkaneUtxos.push({
         txId: alkane.outpoint.outpoint.txid,
@@ -511,6 +509,7 @@ export const findAlkaneUtxos = async ({
         address,
         amountOfAlkanes: alkane.rune.balance,
         satoshis,
+        ...alkane.rune.rune
       })
       totalSatoshis += satoshis
       totalBalanceBeingSent +=
