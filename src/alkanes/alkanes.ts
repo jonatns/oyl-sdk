@@ -28,7 +28,6 @@ export const createExecutePsbt = async ({
   gatheredUtxos,
   account,
   protostone,
-  protostone1,
   provider,
   feeRate,
   fee = 0,
@@ -40,7 +39,6 @@ export const createExecutePsbt = async ({
   gatheredUtxos: GatheredUtxos
   account: Account
   protostone: Buffer
-  protostone1: Buffer
   provider: Provider
   feeRate?: number
   fee?: number
@@ -190,9 +188,6 @@ export const createExecutePsbt = async ({
 
     const output = { script: protostone, value: 0 }
     psbt.addOutput(output)
-
-    const output1 = { script: protostone1, value: 0 }
-    psbt.addOutput(output1)
 
     const changeAmount =
       gatheredUtxos.totalAmount +
@@ -604,7 +599,6 @@ export const actualExecuteFee = async ({
   gatheredUtxos,
   account,
   protostone,
-  protostone1,
   provider,
   feeRate,
   signer,
@@ -613,7 +607,6 @@ export const actualExecuteFee = async ({
   gatheredUtxos: GatheredUtxos
   account: Account
   protostone: Buffer
-  protostone1: Buffer
   provider: Provider
   feeRate: number
   signer: Signer
@@ -630,7 +623,6 @@ export const actualExecuteFee = async ({
     gatheredUtxos,
     account,
     protostone,
-    protostone1,
     provider,
     feeRate,
     alkaneUtxos,
@@ -657,7 +649,6 @@ export const actualExecuteFee = async ({
     gatheredUtxos,
     account,
     protostone,
-    protostone1,
     provider,
     feeRate,
     alkaneUtxos,
@@ -750,7 +741,6 @@ export const execute = async ({
   gatheredUtxos,
   account,
   protostone,
-  protostone1,
   provider,
   feeRate,
   signer,
@@ -762,7 +752,6 @@ export const execute = async ({
   gatheredUtxos: GatheredUtxos
   account: Account
   protostone: Buffer
-  protostone1?: Buffer
   provider: Provider
   feeRate?: number
   signer: Signer
@@ -772,7 +761,6 @@ export const execute = async ({
     gatheredUtxos,
     account,
     protostone,
-    protostone1,
     provider,
     feeRate,
     signer,
@@ -783,7 +771,6 @@ export const execute = async ({
     gatheredUtxos,
     account,
     protostone,
-    protostone1,
     provider,
     feeRate,
     fee,

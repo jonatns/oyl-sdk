@@ -4,7 +4,7 @@ import { Provider } from '../provider/provider';
 import * as bitcoin from 'bitcoinjs-lib';
 import { Account, Signer } from '..';
 import { GatheredUtxos, AlkanesPayload } from '../shared/interface';
-export declare const createExecutePsbt: ({ alkaneUtxos, gatheredUtxos, account, protostone, protostone1, provider, feeRate, fee, }: {
+export declare const createExecutePsbt: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, fee, }: {
     alkaneUtxos?: {
         alkaneUtxos: any[];
         totalSatoshis: number;
@@ -12,7 +12,6 @@ export declare const createExecutePsbt: ({ alkaneUtxos, gatheredUtxos, account, 
     gatheredUtxos: GatheredUtxos;
     account: Account;
     protostone: Buffer;
-    protostone1: Buffer;
     provider: Provider;
     feeRate?: number;
     fee?: number;
@@ -70,11 +69,10 @@ export declare const actualTransactRevealFee: ({ protostone, tweakedTaprootKeyPa
 }) => Promise<{
     fee: number;
 }>;
-export declare const actualExecuteFee: ({ gatheredUtxos, account, protostone, protostone1, provider, feeRate, signer, alkaneUtxos, }: {
+export declare const actualExecuteFee: ({ gatheredUtxos, account, protostone, provider, feeRate, signer, alkaneUtxos, }: {
     gatheredUtxos: GatheredUtxos;
     account: Account;
     protostone: Buffer;
-    protostone1: Buffer;
     provider: Provider;
     feeRate: number;
     signer: Signer;
@@ -101,7 +99,7 @@ export declare const executeReveal: ({ protostone, commitTxId, script, account, 
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const execute: ({ alkaneUtxos, gatheredUtxos, account, protostone, protostone1, provider, feeRate, signer, }: {
+export declare const execute: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, signer, }: {
     alkaneUtxos?: {
         alkaneUtxos: any[];
         totalSatoshis: number;
@@ -109,7 +107,6 @@ export declare const execute: ({ alkaneUtxos, gatheredUtxos, account, protostone
     gatheredUtxos: GatheredUtxos;
     account: Account;
     protostone: Buffer;
-    protostone1?: Buffer;
     provider: Provider;
     feeRate?: number;
     signer: Signer;
