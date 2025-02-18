@@ -115,7 +115,7 @@ export const splitAlkaneUtxos = async (
     tokens.map(async (token) => {
       return findAlkaneUtxos({
         address: account.taproot.address,
-        greatestToLeast: true,
+        greatestToLeast: false,
         provider,
         targetNumberOfAlkanes: Number(token.amount),
         alkaneId: token.alkaneId,
