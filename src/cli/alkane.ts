@@ -16,7 +16,7 @@ import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 import { createNewPool, splitAlkaneUtxos } from '../amm/factory'
-import { burn } from '../amm/pool'
+import { burn, mint } from '../amm/pool'
 
 /* @dev example call
   oyl alkane trace -params '{"txid":"0322c3a2ce665485c8125cd0334675f0ddbd7d5b278936144efb108ff59c49b5","vout":0}'
@@ -502,7 +502,7 @@ export const alkaneSend = new Command('send')
 
 
 /* @dev example call 
- oyl alkane create-pool -data "2,9,1" -tokens 2:8:20000,2:9:20000 -feeRate 5
+ oyl alkane create-pool -data "2,1,1" -tokens "2:2:50000,2:3:50000" -feeRate 5 -p alkanes
 
 Creates a new pool with the given tokens and amounts
 */
@@ -562,6 +562,79 @@ export const alkaneCreatePool = new Command('create-pool')
       alkaneTokensToPool[0].amount,
       alkaneTokensToPool[1].alkaneId,
       alkaneTokensToPool[1].amount,
+      {
+        utxos: accountSpendableTotalUtxos,
+        totalAmount: accountSpendableTotalBalance,
+      },
+      wallet.feeRate,
+      wallet.account,
+      wallet.signer,
+      wallet.provider,
+    )
+  )
+})
+
+/* @dev example call 
+ oyl alkane mint -data "2,1,1" -tokens "2:2:50000,2:3:50000" -feeRate 5 -p alkanes
+
+Mints new LP tokens and adds liquidity to the pool with the given tokens and amounts
+*/
+export const alkaneMint = new Command('mint')
+.requiredOption(
+  '-data, --calldata <calldata>',
+  'op code + params to be called on a contract',
+  (value, previous) => {
+    const items = value.split(',')
+    return previous ? previous.concat(items) : items
+  },
+  []
+)
+.requiredOption(
+  '-tokens, --tokens <tokens>',
+  'tokens and amounts to pair for pool',
+  (value, previous) => {
+    const items = value.split(',')
+    return previous ? previous.concat(items) : items
+  },
+  []
+)
+.option(
+  '-m, --mnemonic <mnemonic>',
+  '(optional) Mnemonic used for signing transactions (default = TEST_WALLET)'
+)
+.option(
+  '-p, --provider <provider>',
+  'Network provider type (regtest, bitcoin)'
+)
+.option('-feeRate, --feeRate <feeRate>', 'fee rate')
+.action(async (options) => {
+  const wallet: Wallet = new Wallet(options)
+
+  const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
+    await utxo.accountUtxos({
+      account: wallet.account,
+      provider: wallet.provider,
+    })
+
+  const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
+
+  const alkaneTokensToMint = options.tokens.map((item) => {
+    const [block, tx, amount] = item
+      .split(':')
+      .map((part) => part.trim())
+    return {
+      alkaneId: { block: block, tx: tx },
+      amount: BigInt(amount),
+    }
+  })
+
+  console.log(
+    await mint(
+      calldata,
+      alkaneTokensToMint[0].alkaneId,
+      alkaneTokensToMint[0].amount,
+      alkaneTokensToMint[1].alkaneId,
+      alkaneTokensToMint[1].amount,
       {
         utxos: accountSpendableTotalUtxos,
         totalAmount: accountSpendableTotalBalance,

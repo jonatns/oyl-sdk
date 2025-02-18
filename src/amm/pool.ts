@@ -30,14 +30,14 @@ export const mint = async (
   const [token0Utxos, token1Utxos] = await Promise.all([
     findAlkaneUtxos({
       address: account.taproot.address,
-      greatestToLeast: true,
+      greatestToLeast: false,
       provider,
       targetNumberOfAlkanes: Number(token0Amount),
       alkaneId: token0,
     }),
     findAlkaneUtxos({
       address: account.taproot.address,
-      greatestToLeast: true,
+      greatestToLeast: false,
       provider,
       targetNumberOfAlkanes: Number(token1Amount),
       alkaneId: token1,
@@ -50,29 +50,15 @@ export const mint = async (
     totalSentToken0: token0Utxos.totalBalanceBeingSent,
     totalSentToken1: token1Utxos.totalBalanceBeingSent,
   }
+
+  
   const edicts: ProtoruneEdict[] = [
     {
       id: new ProtoruneRuneId(
         u128(BigInt(token0.block)),
         u128(BigInt(token0.tx))
       ),
-      amount: u128(tokenUtxos.totalSentToken0 - Number(token0Amount)),
-      output: u32(0),
-    },
-    {
-      id: new ProtoruneRuneId(
-        u128(BigInt(token0.block)),
-        u128(BigInt(token0.tx))
-      ),
       amount: u128(token0Amount),
-      output: u32(2),
-    },
-    {
-      id: new ProtoruneRuneId(
-        u128(BigInt(token1.block)),
-        u128(BigInt(token1.tx))
-      ),
-      amount: u128(tokenUtxos.totalSentToken1 - Number(token1Amount)),
       output: u32(1),
     },
     {
@@ -80,9 +66,9 @@ export const mint = async (
         u128(BigInt(token1.block)),
         u128(BigInt(token1.tx))
       ),
-      amount: u128(token1Amount),
-      output: u32(2),
-    },
+      amount: u128(Number(token1Amount)),
+      output: u32(1),
+    }
   ]
 
   const protostone: Buffer = encodeRunestoneProtostone({
@@ -126,7 +112,7 @@ export const burn = async (
   const [tokenUtxos] = await Promise.all([
     findAlkaneUtxos({
       address: account.taproot.address,
-      greatestToLeast: false,
+      greatestToLeast: true,
       provider,
       targetNumberOfAlkanes: Number(tokenAmount),
       alkaneId: token,
@@ -154,7 +140,7 @@ export const burn = async (
       ProtoStone.message({
         protocolTag: 1n,
         edicts,
-        pointer: 1,
+        pointer: 0,
         refundPointer: 0,
         calldata: encipher(calldata),
       }),

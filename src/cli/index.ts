@@ -10,6 +10,7 @@ import {
   alkaneSplit,
   alkaneBurn,
   alkaneCreatePool,
+  alkaneMint,
 } from './alkane'
 import { init, genBlocks, sendFromFaucet } from './regtest'
 import { runeSend, runeMint, runeEtchCommit, runeEtchReveal } from './rune'
@@ -88,7 +89,7 @@ const alkaneCommand = new Command('alkane')
   .addCommand(alkaneSplit)
   .addCommand(alkaneBurn)
   .addCommand(alkaneCreatePool)
-
+  .addCommand(alkaneMint)
   
 const providerCommand = new Command('provider')
   .description('Functions avaialble for all provider services')

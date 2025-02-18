@@ -7,3 +7,4 @@ export declare const alkaneBurn: Command;
 export declare const alkaneSplit: Command;
 export declare const alkaneSend: Command;
 export declare const alkaneCreatePool: Command;
+export declare const alkaneMint: Command;
