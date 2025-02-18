@@ -37,10 +37,12 @@ export const alkanesTrace = new Command('trace')
     isJson = JSON.parse(options.parameters)
     const { vout, txid } = isJson
     console.log(
-      await provider.alkanes.trace({
-        vout,
-        txid,
-      })
+      JSON.stringify(
+        await provider.alkanes.trace({
+          vout,
+          txid,
+        })
+      )
     )
   })
 
