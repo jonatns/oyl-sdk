@@ -72,7 +72,20 @@ export declare class AlkanesRpc {
         vout: number;
         txid: string;
     }): Promise<any>;
+    parsePoolInfo(hexData: string): {
+        tokenA: {
+            block: string;
+            tx: string;
+        };
+        tokenB: {
+            block: string;
+            tx: string;
+        };
+        reserveA: string;
+        reserveB: string;
+    };
     simulate(request: AlkaneSimulateRequest): Promise<any>;
+    simulatePoolInfo(request: AlkaneSimulateRequest): Promise<any>;
     getAlkanesByOutpoint({ txid, vout, protocolTag, }: {
         txid: string;
         vout: number;

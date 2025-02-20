@@ -175,10 +175,57 @@ export class AlkanesRpc {
     return await ret
   }
 
+  parsePoolInfo(hexData: string) {
+    function parseLittleEndian(hexString: string): string[] {
+      // Remove the "0x" prefix if present
+      if (hexString.startsWith('0x')) {
+        hexString = hexString.slice(2)
+      }
+      // Ensure the input length is a multiple of 32 hex chars (128-bit each)
+      if (hexString.length % 32 !== 0) {
+        throw new Error(
+          'Invalid hex length. Expected multiples of 128-bit (32 hex chars).'
+        )
+      }
+      // Function to convert a single 128-bit segment
+      const convertSegment = (segment: string): bigint => {
+        const littleEndianHex = segment.match(/.{2}/g)?.reverse()?.join('')
+        if (!littleEndianHex) {
+          throw new Error('Failed to process hex segment.')
+        }
+        return BigInt('0x' + littleEndianHex)
+      }
+      // Split into 128-bit (32 hex character) chunks
+      const chunks = hexString.match(/.{32}/g) || []
+      const parsedValues = chunks.map(convertSegment)
+      return parsedValues.map((num) => num.toString())
+    }
+    // Parse the data
+    const parsedData = parseLittleEndian(hexData);
+    return {
+        tokenA: {
+          block: parsedData[0],
+          tx: parsedData[1],
+        },
+        tokenB: {
+          block: parsedData[2],
+          tx: parsedData[3],
+        },
+        reserveA: parsedData[4],
+        reserveB: parsedData[5]
+    };
+}
   async simulate(request: AlkaneSimulateRequest) {
     const ret = await this._call('alkanes_simulate', [request])
     const parsed = this.parseSimulateReturn(ret.execution.data)
     ret.parsed = parsed
+    return ret
+  }
+
+  async simulatePoolInfo(request: AlkaneSimulateRequest) {
+    const ret = await this._call('alkanes_simulate', [request])
+    const parsedPool = this.parsePoolInfo(ret.execution.data)
+    ret.parsed = parsedPool
     return ret
   }
 
