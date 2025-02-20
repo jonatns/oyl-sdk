@@ -8,6 +8,92 @@ import { u128, u32 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 
+export type AddLiquiditySimulationResult = {
+  lpTokens: bigint;
+  lpTokenId: { block: bigint; tx: bigint };
+};
+
+export type RemoveLiquiditySimulationResult = {
+  token0Amount: bigint;
+  token1Amount: bigint;
+};
+
+export type SwapSimulationResult = {
+  amountOut: bigint;
+};
+
+export enum PoolOpcodes {
+  INIT_POOL = 0,
+  ADD_LIQUIDITY = 1,
+  REMOVE_LIQUIDITY = 2,
+  SWAP = 3,
+  SIMULATE_SWAP = 4,
+}
+
+export class AlkanesPoolSimulateDecoder {
+  private static decodeAddLiquidity(execution: any): AddLiquiditySimulationResult | undefined {
+    if (!execution.alkanes?.[0]) return undefined;
+    return {
+      lpTokens: BigInt(execution.alkanes[0].u[1][0]),
+      lpTokenId: {
+        block: BigInt(execution.alkanes[0].u[0][0][0]),
+        tx: BigInt(execution.alkanes[0].u[0][1][0])
+      }
+    };
+  }
+
+  private static decodeSwap(data: string): SwapSimulationResult | undefined {
+    if (data === '0x') return undefined;
+    // Convert hex to BigInt (little-endian)
+    const bytes = Buffer.from(data.slice(2), 'hex');
+    const reversed = Buffer.from([...bytes].reverse());
+    return {
+      amountOut: BigInt('0x' + reversed.toString('hex'))
+    };
+  }
+
+  private static decodeRemoveLiquidity(execution: any): RemoveLiquiditySimulationResult | undefined {
+    if (!execution.alkanes?.[0] || !execution.alkanes?.[1]) return undefined;
+    return {
+      token0Amount: BigInt(execution.alkanes[0].u[1][0]),
+      token1Amount: BigInt(execution.alkanes[1].u[1][0])
+    };
+  }
+
+  static decodeSimulation(result: any, opcodeType: PoolOpcodes) {
+    if (result.status !== 0 || result.execution.error) {
+      return {
+        success: false,
+        error: result.execution.error || 'Unknown error',
+        gasUsed: result.gasUsed
+      };
+    }
+
+    let decoded;
+    switch (opcodeType) {
+      case PoolOpcodes.INIT_POOL:
+      case PoolOpcodes.ADD_LIQUIDITY:
+        decoded = this.decodeAddLiquidity(result.execution);
+        break;
+      case PoolOpcodes.SIMULATE_SWAP:
+        decoded = this.decodeSwap(result.execution.data);
+        break;
+      case PoolOpcodes.REMOVE_LIQUIDITY:
+        decoded = this.decodeRemoveLiquidity(result.execution);
+        break;
+      default:
+        decoded = undefined;
+    }
+
+    return {
+      success: true,
+      gasUsed: result.gasUsed,
+      decoded,
+      raw: result
+    };
+  }
+}
+
 export const mint = async (
   calldata: bigint[],
   token0: AlkaneId,
