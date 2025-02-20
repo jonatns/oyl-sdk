@@ -16,7 +16,7 @@ import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 import { createNewPool, splitAlkaneUtxos } from '../amm/factory'
-import { burn, mint } from '../amm/pool'
+import { burn, mint, swap } from '../amm/pool'
 
 /* @dev example call
   oyl alkane trace -params '{"txid":"0322c3a2ce665485c8125cd0334675f0ddbd7d5b278936144efb108ff59c49b5","vout":0}'
@@ -390,6 +390,59 @@ export const alkaneBurn = new Command('burn')
       )
     )
   })
+
+
+  /* @dev example call 
+  oyl alkane swap -data "2,7,3,160" -p alkanes -feeRate 5 -blk 2 -tx 1 -amt 200
+
+  Swaps an alkane from a pool
+*/
+export const alkaneSwap = new Command('swap')
+.requiredOption(
+  '-data, --calldata <calldata>',
+  'op code + params to be called on a contract',
+  (value, previous) => {
+    const items = value.split(',')
+    return previous ? previous.concat(items) : items
+  },
+  []
+)
+.requiredOption('-amt, --amount <amount>', 'amount to swap')
+.requiredOption('-blk, --block <block>', 'block number')
+.requiredOption('-tx, --txNum <txNum>', 'transaction number')
+.option(
+  '-p, --provider <provider>',
+  'Network provider type (regtest, bitcoin)'
+)
+.option('-feeRate, --feeRate <feeRate>', 'fee rate')
+.action(async (options) => {
+  const wallet: Wallet = new Wallet(options)
+
+  const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
+    await utxo.accountUtxos({
+      account: wallet.account,
+      provider: wallet.provider,
+    })
+
+  const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
+
+  console.log(
+    await swap(
+      calldata,
+        { block: options.block, tx: options.txNum },
+        BigInt(options.amount),
+        {
+        utxos: accountSpendableTotalUtxos,
+        totalAmount: accountSpendableTotalBalance,
+      },
+      wallet.feeRate,
+      wallet.account,
+      wallet.signer,
+      wallet.provider,
+
+    )
+  )
+})
 
 
 /* @dev example call 

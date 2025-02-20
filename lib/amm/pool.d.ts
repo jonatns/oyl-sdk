@@ -22,5 +22,15 @@ export declare const burn: (calldata: bigint[], token: AlkaneId, tokenAmount: bi
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const swap: () => Promise<void>;
+export declare const swap: (calldata: bigint[], token: AlkaneId, tokenAmount: bigint, gatheredUtxos: {
+    utxos: Utxo[];
+    totalAmount: number;
+}, feeRate: number, account: Account, signer: Signer, provider: Provider) => Promise<{
+    txId: string;
+    rawTx: string;
+    size: any;
+    weight: any;
+    fee: number;
+    satsPerVByte: string;
+}>;
 export declare const getPoolId: () => Promise<void>;

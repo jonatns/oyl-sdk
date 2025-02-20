@@ -112,7 +112,7 @@ export const burn = async (
   const [tokenUtxos] = await Promise.all([
     findAlkaneUtxos({
       address: account.taproot.address,
-      greatestToLeast: true,
+      greatestToLeast: false,
       provider,
       targetNumberOfAlkanes: Number(tokenAmount),
       alkaneId: token,
@@ -159,6 +159,68 @@ export const burn = async (
 }
 
 
-export const swap = async () => {}
+export const swap = async (
+  calldata: bigint[],
+  token: AlkaneId,
+  tokenAmount: bigint,
+  gatheredUtxos: { utxos: Utxo[]; totalAmount: number },
+  feeRate: number,
+  account: Account,
+  signer: Signer,
+  provider: Provider
+) => {
+  let alkaneTokenUtxos: {
+    alkaneUtxos: any[]
+    totalSatoshis: number
+  }
+
+  const [tokenUtxos] = await Promise.all([
+    findAlkaneUtxos({
+      address: account.taproot.address,
+      greatestToLeast: false,
+      provider,
+      targetNumberOfAlkanes: Number(tokenAmount),
+      alkaneId: token,
+    })
+  ])
+
+  alkaneTokenUtxos = {
+    alkaneUtxos: [...tokenUtxos.alkaneUtxos],
+    totalSatoshis: tokenUtxos.totalSatoshis,
+  }
+  const edicts: ProtoruneEdict[] = [
+    {
+      id: new ProtoruneRuneId(
+        u128(BigInt(token.block)),
+        u128(BigInt(token.tx))
+      ),
+      amount: u128(tokenAmount),
+      output: u32(1),
+    }
+  ]
+
+
+  const protostone: Buffer = encodeRunestoneProtostone({
+    protostones: [
+      ProtoStone.message({
+        protocolTag: 1n,
+        edicts,
+        pointer: 0,
+        refundPointer: 0,
+        calldata: encipher(calldata),
+      }),
+    ],
+  }).encodedRunestone
+
+  return await alkanes.execute({
+    alkaneUtxos: alkaneTokenUtxos,
+    protostone,
+    gatheredUtxos,
+    feeRate,
+    account,
+    signer,
+    provider,
+  })
+}
 
 export const getPoolId = async () => {}
