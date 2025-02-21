@@ -25,19 +25,7 @@ export declare class AlkanesPoolSimulateDecoder {
     private static decodeAddLiquidity;
     private static decodeSwap;
     private static decodeRemoveLiquidity;
-    static decodeSimulation(result: any, opcodeType: PoolOpcodes): {
-        success: boolean;
-        error: any;
-        gasUsed: any;
-        decoded?: undefined;
-        raw?: undefined;
-    } | {
-        success: boolean;
-        gasUsed: any;
-        decoded: any;
-        raw: any;
-        error?: undefined;
-    };
+    static decodeSimulation(result: any, opcode: number): any;
 }
 export declare const mint: (calldata: bigint[], token0: AlkaneId, token0Amount: bigint, token1: AlkaneId, token1Amount: bigint, gatheredUtxos: {
     utxos: Utxo[];

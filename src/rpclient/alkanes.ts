@@ -217,7 +217,6 @@ export class AlkanesRpc {
   }
 
   async simulate(request: Partial<AlkaneSimulateRequest>, decoder?: any) {
-    console.log('request: ', request)
     const ret = await this._call('alkanes_simulate', [{
       alkanes: [],
       transaction: '0x',
@@ -230,9 +229,9 @@ export class AlkanesRpc {
       vout: 0,
       ...request,
     }]);
-    console.log('ret: ', ret)
+
     if (decoder) {
-      const operationType = request.inputs[0];
+      const operationType = Number(request.inputs[0]);
       ret.parsed = decoder(ret, operationType);
     } else {
       ret.parsed = this.parseSimulateReturn(ret.execution.data);

@@ -60,7 +60,7 @@ export class AlkanesPoolSimulateDecoder {
     };
   }
 
-  static decodeSimulation(result: any, opcodeType: PoolOpcodes) {
+  static decodeSimulation(result: any, opcode: number) {
     if (result.status !== 0 || result.execution.error) {
       return {
         success: false,
@@ -69,8 +69,8 @@ export class AlkanesPoolSimulateDecoder {
       };
     }
 
-    let decoded;
-    switch (opcodeType) {
+    let decoded: any;
+    switch (opcode) {
       case PoolOpcodes.INIT_POOL:
       case PoolOpcodes.ADD_LIQUIDITY:
         decoded = this.decodeAddLiquidity(result.execution);
@@ -85,12 +85,7 @@ export class AlkanesPoolSimulateDecoder {
         decoded = undefined;
     }
 
-    return {
-      success: true,
-      gasUsed: result.gasUsed,
-      decoded,
-      raw: result
-    };
+    return decoded;
   }
 }
 
