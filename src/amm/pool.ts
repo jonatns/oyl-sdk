@@ -30,8 +30,8 @@ export enum PoolOpcodes {
   SIMULATE_SWAP = 4,
 }
 
-export class AlkanesPoolSimulateDecoder {
-  private static decodeAddLiquidity(execution: any): AddLiquiditySimulationResult | undefined {
+export class AlkanesAMMPoolDecoder {
+  decodeAddLiquidity(execution: any): AddLiquiditySimulationResult | undefined {
     if (!execution.alkanes?.[0]) return undefined;
     return {
       lpTokens: BigInt(execution.alkanes[0].u[1][0]),
@@ -42,7 +42,7 @@ export class AlkanesPoolSimulateDecoder {
     };
   }
 
-  private static decodeSwap(data: string): SwapSimulationResult | undefined {
+  decodeSwap(data: string): SwapSimulationResult | undefined {
     if (data === '0x') return undefined;
     // Convert hex to BigInt (little-endian)
     const bytes = Buffer.from(data.slice(2), 'hex');
@@ -52,7 +52,7 @@ export class AlkanesPoolSimulateDecoder {
     };
   }
 
-  private static decodeRemoveLiquidity(execution: any): RemoveLiquiditySimulationResult | undefined {
+  decodeRemoveLiquidity(execution: any): RemoveLiquiditySimulationResult | undefined {
     if (!execution.alkanes?.[0] || !execution.alkanes?.[1]) return undefined;
     return {
       token0Amount: BigInt(execution.alkanes[0].u[1][0]),
@@ -69,17 +69,18 @@ export class AlkanesPoolSimulateDecoder {
       };
     }
 
+    const decoder = new AlkanesAMMPoolDecoder();
     let decoded: any;
     switch (opcode) {
       case PoolOpcodes.INIT_POOL:
       case PoolOpcodes.ADD_LIQUIDITY:
-        decoded = this.decodeAddLiquidity(result.execution);
+        decoded = decoder.decodeAddLiquidity(result.execution);
         break;
       case PoolOpcodes.SIMULATE_SWAP:
-        decoded = this.decodeSwap(result.execution.data);
+        decoded = decoder.decodeSwap(result.execution.data);
         break;
       case PoolOpcodes.REMOVE_LIQUIDITY:
-        decoded = this.decodeRemoveLiquidity(result.execution);
+        decoded = decoder.decodeRemoveLiquidity(result.execution);
         break;
       default:
         decoded = undefined;

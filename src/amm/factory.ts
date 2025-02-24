@@ -26,28 +26,27 @@ export enum PoolFactoryOpcodes {
   FIND_EXISTING_POOL_ID = 2,
 }
 
-export const parseAlkaneIdFromHex = (hex: string): { block: number; tx: number } => {
-  // Remove '0x' prefix if present
+export const parseAlkaneIdFromHex = (hex: string): AlkaneId => {
   const cleanHex = hex.startsWith('0x') ? hex.slice(2) : hex
-  
-  // Split the 64-character hex string into two 32-character parts
+
   const blockHex = cleanHex.slice(0, 32)
   const txHex = cleanHex.slice(32)
 
   const reversedBlockHex = Buffer.from(blockHex, 'hex').reverse().toString('hex')
   const reversedTxHex = Buffer.from(txHex, 'hex').reverse().toString('hex')
-  
-  // Convert hex to numbers
-  const block = parseInt(reversedBlockHex, 16)
-  const tx = parseInt(reversedTxHex, 16)
+
+  const block = parseInt(reversedBlockHex, 16).toString()
+  const tx = parseInt(reversedTxHex, 16).toString()
   
   return { block, tx }
 }
 
 export class AlkanesAMMPoolFactoryDecoder {
+  decodeCreateNewPool(execution: any): CreateNewPoolSimulationResult | undefined {
+    if (!execution?.alkanes?.[0]?.u?.[1]?.[0] || !execution?.alkanes?.[0]?.u?.[0]) {
+      return undefined;
+    }
 
-  private static decodeCreateNewPool(execution: any): CreateNewPoolSimulationResult | undefined {
-    if (!execution.alkanes?.[0]) return undefined;
     return {
       lpTokens: execution.alkanes[0].u[1][0].toString(),
       alkaneId: {
@@ -57,9 +56,11 @@ export class AlkanesAMMPoolFactoryDecoder {
     };
   }
 
-  private static decodeFindExistingPoolId(execution: any): FindExistingPoolIdSimulationResult | undefined {
-    if (execution.data === '0x') return undefined;
-    const bytes = parseAlkaneIdFromHex(execution.data)
+  decodeFindExistingPoolId(execution: any): FindExistingPoolIdSimulationResult | undefined {
+    if (!execution?.data || execution.data === '0x') {
+      return undefined;
+    }
+    const bytes = parseAlkaneIdFromHex(execution.data);
     return {
       alkaneId: {
         block: bytes.block.toString(),
@@ -69,30 +70,32 @@ export class AlkanesAMMPoolFactoryDecoder {
   }
 
   static decodeSimulation(result: any, opcode: number) {
-    if (result.status !== 0 || result.execution.error) {
+    if (!result || typeof result.status === 'undefined') {
       return {
         success: false,
-        error: result.execution.error || 'Unknown error',
-        gasUsed: result.gasUsed
+        error: 'Invalid simulation result',
+        gasUsed: 0
       };
     }
 
-    let decoded: any;
+    const decoder = new AlkanesAMMPoolFactoryDecoder();
+    let decoded;
+    
     switch (opcode) {
       case PoolFactoryOpcodes.INIT_POOL:
         // Not implemented
         break;
       case PoolFactoryOpcodes.CREATE_NEW_POOL:
-        decoded = this.decodeCreateNewPool(result.execution);
+        decoded = decoder.decodeCreateNewPool(result.execution);
         break;
       case PoolFactoryOpcodes.FIND_EXISTING_POOL_ID:
-        decoded = this.decodeFindExistingPoolId(result.execution);
+        decoded = decoder.decodeFindExistingPoolId(result.execution);
         break;
       default:
         decoded = undefined;
     }
 
-    return decoded;
+    return decoded
   }
 }
 

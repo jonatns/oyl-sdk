@@ -12,13 +12,10 @@ export declare enum PoolFactoryOpcodes {
     CREATE_NEW_POOL = 1,
     FIND_EXISTING_POOL_ID = 2
 }
-export declare const parseAlkaneIdFromHex: (hex: string) => {
-    block: number;
-    tx: number;
-};
+export declare const parseAlkaneIdFromHex: (hex: string) => AlkaneId;
 export declare class AlkanesAMMPoolFactoryDecoder {
-    private static decodeCreateNewPool;
-    private static decodeFindExistingPoolId;
+    decodeCreateNewPool(execution: any): CreateNewPoolSimulationResult | undefined;
+    decodeFindExistingPoolId(execution: any): FindExistingPoolIdSimulationResult | undefined;
     static decodeSimulation(result: any, opcode: number): any;
 }
 export declare const getPoolId: () => Promise<void>;

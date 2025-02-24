@@ -763,8 +763,8 @@ export const alkaneSimulate = new Command('simulate')
     let decoder: any;
     switch (options.decoder) {
       case 'pool':
-        const { AlkanesPoolSimulateDecoder } = await import('../amm/pool')
-        decoder = (result: any) => AlkanesPoolSimulateDecoder.decodeSimulation(
+        const { AlkanesAMMPoolDecoder } = await import('../amm/pool')
+        decoder = (result: any) => AlkanesAMMPoolDecoder.decodeSimulation(
         result, 
         Number(options.inputs[0])
         )
