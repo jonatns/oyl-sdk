@@ -11,46 +11,60 @@ import { AlkaneId, Utxo } from 'shared/interface'
 
 const BURN_OUTPUT = u32(2)
 
-export type InitPoolFactorySimulationResult = {
-  poolId: bigint;
-};
-
 export type CreateNewPoolSimulationResult = {
-  poolId: bigint;
+  lpTokens: string;
+  alkaneId: AlkaneId;
 };
 
 export type FindExistingPoolIdSimulationResult = {
-  poolId: bigint;
+  alkaneId: AlkaneId;
 };
 
 export enum PoolFactoryOpcodes {
-  INIT_POOL = 0,
+  INIT_POOL = 0, 
   CREATE_NEW_POOL = 1,
   FIND_EXISTING_POOL_ID = 2,
 }
 
-export class AlkanesPoolFactoryDecoder {
-  private static decodeInitPoolFactory(execution: any): InitPoolFactorySimulationResult | undefined {
+export const parseAlkaneIdFromHex = (hex: string): { block: number; tx: number } => {
+  // Remove '0x' prefix if present
+  const cleanHex = hex.startsWith('0x') ? hex.slice(2) : hex
+  
+  // Split the 64-character hex string into two 32-character parts
+  const blockHex = cleanHex.slice(0, 32)
+  const txHex = cleanHex.slice(32)
+
+  const reversedBlockHex = Buffer.from(blockHex, 'hex').reverse().toString('hex')
+  const reversedTxHex = Buffer.from(txHex, 'hex').reverse().toString('hex')
+  
+  // Convert hex to numbers
+  const block = parseInt(reversedBlockHex, 16)
+  const tx = parseInt(reversedTxHex, 16)
+  
+  return { block, tx }
+}
+
+export class AlkanesAMMPoolFactoryDecoder {
+
+  private static decodeCreateNewPool(execution: any): CreateNewPoolSimulationResult | undefined {
     if (!execution.alkanes?.[0]) return undefined;
     return {
-      poolId: BigInt(execution.alkanes[0].u[1][0]),
-    };
-  }
-
-  private static decodeCreateNewPool(data: string): CreateNewPoolSimulationResult | undefined {
-    if (data === '0x') return undefined;
-    // Convert hex to BigInt (little-endian)
-    const bytes = Buffer.from(data.slice(2), 'hex');
-    const reversed = Buffer.from([...bytes].reverse());
-    return {
-      poolId: BigInt('0x' + reversed.toString('hex'))
+      lpTokens: execution.alkanes[0].u[1][0].toString(),
+      alkaneId: {
+        block: execution.alkanes[0].u[0][0][0],
+        tx: execution.alkanes[0].u[0][1][0]
+      }
     };
   }
 
   private static decodeFindExistingPoolId(execution: any): FindExistingPoolIdSimulationResult | undefined {
-    if (!execution.alkanes?.[0] || !execution.alkanes?.[1]) return undefined;
+    if (execution.data === '0x') return undefined;
+    const bytes = parseAlkaneIdFromHex(execution.data)
     return {
-      poolId: BigInt(execution.alkanes[0].u[1][0]),
+      alkaneId: {
+        block: bytes.block.toString(),
+        tx: bytes.tx.toString()
+      }
     };
   }
 
@@ -66,7 +80,7 @@ export class AlkanesPoolFactoryDecoder {
     let decoded: any;
     switch (opcode) {
       case PoolFactoryOpcodes.INIT_POOL:
-        decoded = this.decodeInitPoolFactory(result.execution);
+        // Not implemented
         break;
       case PoolFactoryOpcodes.CREATE_NEW_POOL:
         decoded = this.decodeCreateNewPool(result.execution);

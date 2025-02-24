@@ -1,21 +1,22 @@
 import { Account, Provider, Signer } from '..';
 import { AlkaneId, Utxo } from 'shared/interface';
-export type InitPoolFactorySimulationResult = {
-    poolId: bigint;
-};
 export type CreateNewPoolSimulationResult = {
-    poolId: bigint;
+    lpTokens: string;
+    alkaneId: AlkaneId;
 };
 export type FindExistingPoolIdSimulationResult = {
-    poolId: bigint;
+    alkaneId: AlkaneId;
 };
 export declare enum PoolFactoryOpcodes {
     INIT_POOL = 0,
     CREATE_NEW_POOL = 1,
     FIND_EXISTING_POOL_ID = 2
 }
-export declare class AlkanesPoolFactoryDecoder {
-    private static decodeInitPoolFactory;
+export declare const parseAlkaneIdFromHex: (hex: string) => {
+    block: number;
+    tx: number;
+};
+export declare class AlkanesAMMPoolFactoryDecoder {
     private static decodeCreateNewPool;
     private static decodeFindExistingPoolId;
     static decodeSimulation(result: any, opcode: number): any;

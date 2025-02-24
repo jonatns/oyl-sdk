@@ -701,7 +701,9 @@ export const alkaneMint = new Command('mint')
 })
 
 /* @dev example call 
- oyl alkane simulate  -target "2:1" -inputs "1,2,6,2,7" -tokens "2:6:1000,2:7:2000" -decoder "pool"
+ AMM factory: 
+ oyl alkane simulate  -target "2:1" -inputs "1,2,6,2,7" -tokens "2:6:1000,2:7:2000" -decoder "factory"
+ oyl alkane simulate  -target "2:1" -inputs "2,2,3,2,4" -decoder "factory"
 
   Simulates an operation using the pool decoder
   First input is the opcode
@@ -759,15 +761,26 @@ export const alkaneSimulate = new Command('simulate')
     }
 
     let decoder: any;
-    if (options.decoder === 'pool') {
-      const { AlkanesPoolSimulateDecoder, PoolOpcodes } = await import('../amm/pool')
-      decoder = (result: any) => AlkanesPoolSimulateDecoder.decodeSimulation(
+    switch (options.decoder) {
+      case 'pool':
+        const { AlkanesPoolSimulateDecoder } = await import('../amm/pool')
+        decoder = (result: any) => AlkanesPoolSimulateDecoder.decodeSimulation(
         result, 
         Number(options.inputs[0])
-      )
+        )
+        break;
+      case 'factory':
+        const { AlkanesAMMPoolFactoryDecoder } = await import('../amm/factory')
+        decoder = (result: any) => AlkanesAMMPoolFactoryDecoder.decodeSimulation(
+          result,
+          Number(options.inputs[0])
+        )
     }
 
-    console.log(
-      await wallet.provider.alkanes.simulate(request, decoder)
-    )
+   console.log(await wallet.provider.alkanes.simulate(request, decoder))
+
+
+    // console.log(result)
+    // console.log(result.execution.alkanes)
+    // console.log(JSON.stringify(result.execution.alkanes[0].u, null, 4))
   })
