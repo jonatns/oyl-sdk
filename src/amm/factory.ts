@@ -11,6 +11,77 @@ import { AlkaneId, Utxo } from 'shared/interface'
 
 const BURN_OUTPUT = u32(2)
 
+export type InitPoolFactorySimulationResult = {
+  poolId: bigint;
+};
+
+export type CreateNewPoolSimulationResult = {
+  poolId: bigint;
+};
+
+export type FindExistingPoolIdSimulationResult = {
+  poolId: bigint;
+};
+
+export enum PoolFactoryOpcodes {
+  INIT_POOL = 0,
+  CREATE_NEW_POOL = 1,
+  FIND_EXISTING_POOL_ID = 2,
+}
+
+export class AlkanesPoolFactoryDecoder {
+  private static decodeInitPoolFactory(execution: any): InitPoolFactorySimulationResult | undefined {
+    if (!execution.alkanes?.[0]) return undefined;
+    return {
+      poolId: BigInt(execution.alkanes[0].u[1][0]),
+    };
+  }
+
+  private static decodeCreateNewPool(data: string): CreateNewPoolSimulationResult | undefined {
+    if (data === '0x') return undefined;
+    // Convert hex to BigInt (little-endian)
+    const bytes = Buffer.from(data.slice(2), 'hex');
+    const reversed = Buffer.from([...bytes].reverse());
+    return {
+      poolId: BigInt('0x' + reversed.toString('hex'))
+    };
+  }
+
+  private static decodeFindExistingPoolId(execution: any): FindExistingPoolIdSimulationResult | undefined {
+    if (!execution.alkanes?.[0] || !execution.alkanes?.[1]) return undefined;
+    return {
+      poolId: BigInt(execution.alkanes[0].u[1][0]),
+    };
+  }
+
+  static decodeSimulation(result: any, opcode: number) {
+    if (result.status !== 0 || result.execution.error) {
+      return {
+        success: false,
+        error: result.execution.error || 'Unknown error',
+        gasUsed: result.gasUsed
+      };
+    }
+
+    let decoded: any;
+    switch (opcode) {
+      case PoolFactoryOpcodes.INIT_POOL:
+        decoded = this.decodeInitPoolFactory(result.execution);
+        break;
+      case PoolFactoryOpcodes.CREATE_NEW_POOL:
+        decoded = this.decodeCreateNewPool(result.execution);
+        break;
+      case PoolFactoryOpcodes.FIND_EXISTING_POOL_ID:
+        decoded = this.decodeFindExistingPoolId(result.execution);
+        break;
+      default:
+        decoded = undefined;
+    }
+
+    return decoded;
+  }
+}
+
 export const getPoolId = async () => { }
 
 export const createNewPool = async (
