@@ -8,16 +8,6 @@ import { u128, u32 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 
-export type AddLiquiditySimulationResult = {
-  lpTokens: bigint;
-  lpTokenId: { block: bigint; tx: bigint };
-};
-
-export type RemoveLiquiditySimulationResult = {
-  token0Amount: bigint;
-  token1Amount: bigint;
-};
-
 export type SwapSimulationResult = {
   amountOut: bigint;
 };

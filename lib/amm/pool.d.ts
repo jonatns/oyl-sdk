@@ -1,16 +1,5 @@
 import { Account, Provider, Signer } from '..';
 import { AlkaneId, Utxo } from 'shared/interface';
-export type AddLiquiditySimulationResult = {
-    lpTokens: bigint;
-    lpTokenId: {
-        block: bigint;
-        tx: bigint;
-    };
-};
-export type RemoveLiquiditySimulationResult = {
-    token0Amount: bigint;
-    token1Amount: bigint;
-};
 export type SwapSimulationResult = {
     amountOut: bigint;
 };
