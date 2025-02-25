@@ -230,11 +230,8 @@ export class AlkanesRpc {
       ...request,
     }]);
 
-    if (decoder) {
-      console.log(ret)
-      
+    if (decoder) {     
       const operationType = Number(request.inputs[0]);
-      console.log(operationType)
       ret.parsed = decoder(ret, operationType);
     } else {
       ret.parsed = this.parseSimulateReturn(ret.execution.data);
