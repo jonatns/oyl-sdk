@@ -31,17 +31,6 @@ export enum PoolOpcodes {
 }
 
 export class AlkanesAMMPoolDecoder {
-  decodeAddLiquidity(execution: any): AddLiquiditySimulationResult | undefined {
-    if (!execution.alkanes?.[0]) return undefined;
-    return {
-      lpTokens: BigInt(execution.alkanes[0].u[1][0]),
-      lpTokenId: {
-        block: BigInt(execution.alkanes[0].u[0][0][0]),
-        tx: BigInt(execution.alkanes[0].u[0][1][0])
-      }
-    };
-  }
-
   decodeSwap(data: string): SwapSimulationResult | undefined {
     if (data === '0x') return undefined;
     // Convert hex to BigInt (little-endian)
@@ -52,38 +41,24 @@ export class AlkanesAMMPoolDecoder {
     };
   }
 
-  decodeRemoveLiquidity(execution: any): RemoveLiquiditySimulationResult | undefined {
-    if (!execution.alkanes?.[0] || !execution.alkanes?.[1]) return undefined;
-    return {
-      token0Amount: BigInt(execution.alkanes[0].u[1][0]),
-      token1Amount: BigInt(execution.alkanes[1].u[1][0])
-    };
-  }
-
   static decodeSimulation(result: any, opcode: number) {
-    if (result.status !== 0 || result.execution.error) {
-      return {
-        success: false,
-        error: result.execution.error || 'Unknown error',
-        gasUsed: result.gasUsed
-      };
-    }
 
     const decoder = new AlkanesAMMPoolDecoder();
     let decoded: any;
     switch (opcode) {
       case PoolOpcodes.INIT_POOL:
       case PoolOpcodes.ADD_LIQUIDITY:
-        decoded = decoder.decodeAddLiquidity(result.execution);
-        break;
+      case PoolOpcodes.REMOVE_LIQUIDITY:
+        throw new Error('Opcode not supported in simulation mode');
       case PoolOpcodes.SIMULATE_SWAP:
         decoded = decoder.decodeSwap(result.execution.data);
         break;
-      case PoolOpcodes.REMOVE_LIQUIDITY:
-        decoded = decoder.decodeRemoveLiquidity(result.execution);
-        break;
       default:
         decoded = undefined;
+    }
+
+    if (result.status !== 0 || result.execution.error) {
+      throw new Error(result.execution.error || 'Unknown error');
     }
 
     return decoded;

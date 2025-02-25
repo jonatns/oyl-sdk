@@ -22,9 +22,7 @@ export declare enum PoolOpcodes {
     SIMULATE_SWAP = 4
 }
 export declare class AlkanesAMMPoolDecoder {
-    decodeAddLiquidity(execution: any): AddLiquiditySimulationResult | undefined;
     decodeSwap(data: string): SwapSimulationResult | undefined;
-    decodeRemoveLiquidity(execution: any): RemoveLiquiditySimulationResult | undefined;
     static decodeSimulation(result: any, opcode: number): any;
 }
 export declare const mint: (calldata: bigint[], token0: AlkaneId, token0Amount: bigint, token1: AlkaneId, token1Amount: bigint, gatheredUtxos: {
