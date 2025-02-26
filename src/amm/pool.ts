@@ -8,6 +8,53 @@ import { u128, u32 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 
+export type SwapSimulationResult = {
+  amountOut: bigint;
+};
+
+export enum PoolOpcodes {
+  INIT_POOL = 0,
+  ADD_LIQUIDITY = 1,
+  REMOVE_LIQUIDITY = 2,
+  SWAP = 3,
+  SIMULATE_SWAP = 4,
+}
+
+export class AlkanesAMMPoolDecoder {
+  decodeSwap(data: string): SwapSimulationResult | undefined {
+    if (data === '0x') return undefined;
+    // Convert hex to BigInt (little-endian)
+    const bytes = Buffer.from(data.slice(2), 'hex');
+    const reversed = Buffer.from([...bytes].reverse());
+    return {
+      amountOut: BigInt('0x' + reversed.toString('hex'))
+    };
+  }
+
+  static decodeSimulation(result: any, opcode: number) {
+
+    const decoder = new AlkanesAMMPoolDecoder();
+    let decoded: any;
+    switch (opcode) {
+      case PoolOpcodes.INIT_POOL:
+      case PoolOpcodes.ADD_LIQUIDITY:
+      case PoolOpcodes.REMOVE_LIQUIDITY:
+        throw new Error('Opcode not supported in simulation mode');
+      case PoolOpcodes.SIMULATE_SWAP:
+        decoded = decoder.decodeSwap(result.execution.data);
+        break;
+      default:
+        decoded = undefined;
+    }
+
+    if (result.status !== 0 || result.execution.error) {
+      throw new Error(result.execution.error || 'Unknown error');
+    }
+
+    return decoded;
+  }
+}
+
 export const mint = async (
   calldata: bigint[],
   token0: AlkaneId,

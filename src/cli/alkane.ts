@@ -699,3 +699,83 @@ export const alkaneMint = new Command('mint')
     )
   )
 })
+
+/* @dev example call 
+ AMM factory: 
+ oyl alkane simulate  -target "2:1" -inputs "1,2,6,2,7" -tokens "2:6:1000,2:7:2000" -decoder "factory"
+ oyl alkane simulate  -target "2:1" -inputs "2,2,3,2,4" -decoder "factory"
+
+  Simulates an operation using the pool decoder
+  First input is the opcode
+*/
+export const alkaneSimulate = new Command('simulate')
+  .requiredOption(
+    '-target, --target <target>',
+    'target block:tx for simulation',
+    (value) => {
+      const [block, tx] = value.split(':').map(part => part.trim())
+      return { block: block.toString(), tx: tx.toString() }
+    }
+  )
+  .requiredOption(
+    '-inputs, --inputs <inputs>',
+    'inputs for simulation (comma-separated)',
+    (value) => value.split(',').map(item => item.trim())
+  )
+  .option(
+    '-tokens, --tokens <tokens>',
+    'tokens and amounts to pair for pool',
+    (value) => {
+      return value.split(',').map(item => {
+        const [block, tx, value] = item.split(':').map(part => part.trim())
+        return {
+          id: { block, tx },
+          value
+        }
+      })
+    },
+    []
+  )
+  .option(
+    '-decoder, --decoder <decoder>',
+    'decoder to use for simulation results (e.g., "pool")'
+  )
+  .option(
+    '-p, --provider <provider>',
+    'Network provider type (regtest, bitcoin)'
+  )
+  .action(async (options) => {
+    const wallet: Wallet = new Wallet(options)
+
+    const request = {
+      alkanes: options.tokens,
+      transaction: '0x',
+      block: '0x',
+      height: '20000',
+      txindex: 0,
+      target: options.target,
+      inputs: options.inputs, 
+      pointer: 0,
+      refundPointer: 0,
+      vout: 0
+    }
+
+    let decoder: any;
+    switch (options.decoder) {
+      case 'pool':
+        const { AlkanesAMMPoolDecoder } = await import('../amm/pool')
+        decoder = (result: any) => AlkanesAMMPoolDecoder.decodeSimulation(
+        result, 
+        Number(options.inputs[0])
+        )
+        break;
+      case 'factory':
+        const { AlkanesAMMPoolFactoryDecoder } = await import('../amm/factory')
+        decoder = (result: any) => AlkanesAMMPoolFactoryDecoder.decodeSimulation(
+          result,
+          Number(options.inputs[0])
+        )
+    }
+
+   console.log(await wallet.provider.alkanes.simulate(request, decoder))
+  })

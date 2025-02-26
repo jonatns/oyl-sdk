@@ -214,12 +214,30 @@ export class AlkanesRpc {
         reserveA: parsedData[4],
         reserveB: parsedData[5]
     };
-}
-  async simulate(request: AlkaneSimulateRequest) {
-    const ret = await this._call('alkanes_simulate', [request])
-    const parsed = this.parseSimulateReturn(ret.execution.data)
-    ret.parsed = parsed
-    return ret
+  }
+
+  async simulate(request: Partial<AlkaneSimulateRequest>, decoder?: any) {
+    const ret = await this._call('alkanes_simulate', [{
+      alkanes: [],
+      transaction: '0x',
+      block: '0x',
+      height: '20000',
+      txindex: 0,
+      inputs: [],
+      pointer: 0,
+      refundPointer: 0,
+      vout: 0,
+      ...request,
+    }]);
+
+    if (decoder) {     
+      const operationType = Number(request.inputs[0]);
+      ret.parsed = decoder(ret, operationType);
+    } else {
+      ret.parsed = this.parseSimulateReturn(ret.execution.data);
+    }
+    
+    return ret;
   }
 
   async simulatePoolInfo(request: AlkaneSimulateRequest) {

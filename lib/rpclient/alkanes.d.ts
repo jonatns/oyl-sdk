@@ -84,7 +84,7 @@ export declare class AlkanesRpc {
         reserveA: string;
         reserveB: string;
     };
-    simulate(request: AlkaneSimulateRequest): Promise<any>;
+    simulate(request: Partial<AlkaneSimulateRequest>, decoder?: any): Promise<any>;
     simulatePoolInfo(request: AlkaneSimulateRequest): Promise<any>;
     getAlkanesByOutpoint({ txid, vout, protocolTag, }: {
         txid: string;

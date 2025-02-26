@@ -489,8 +489,6 @@ export const findAlkaneUtxos = async ({
       : Number(a.rune.balance) - Number(b.rune.balance)
   )
 
-  console.log('sortedRunesWithOutpoints', sortedRunesWithOutpoints)
-
   let totalSatoshis: number = 0
   let totalBalanceBeingSent: number = 0
   const alkaneUtxos = []
@@ -934,6 +932,5 @@ export const deployCommit = async ({
     psbtBase64: signedPsbt,
   })
 
-  console.log('commit:', result)
   return { ...result, script: script.toString('hex') }
 }
