@@ -1,7 +1,11 @@
 import { minimumFee } from '../btc'
 import { Provider } from '../provider/provider'
 import * as bitcoin from 'bitcoinjs-lib'
-import { p2tr_ord_reveal } from 'alkanes/lib/index'
+import {
+  encodeRunestoneProtostone,
+  p2tr_ord_reveal,
+  ProtoStone,
+} from 'alkanes/lib/index'
 import { Account, Signer } from '..'
 import {
   findXAmountOfSats,
@@ -20,6 +24,7 @@ import { Outpoint } from 'rpclient/alkanes'
 import { actualDeployCommitFee } from './contract'
 
 export const createExecutePsbt = async ({
+  alkaneUtxos,
   gatheredUtxos,
   account,
   protostone,
@@ -27,6 +32,10 @@ export const createExecutePsbt = async ({
   feeRate,
   fee = 0,
 }: {
+  alkaneUtxos?: {
+    alkaneUtxos: any[]
+    totalSatoshis: number
+  }
   gatheredUtxos: GatheredUtxos
   account: Account
   protostone: Buffer
@@ -35,6 +44,7 @@ export const createExecutePsbt = async ({
   fee?: number
 }) => {
   try {
+
     const originalGatheredUtxos = gatheredUtxos
 
     const minTxSize = minimumFee({
@@ -48,10 +58,60 @@ export const createExecutePsbt = async ({
 
     gatheredUtxos = findXAmountOfSats(
       originalGatheredUtxos.utxos,
-      Number(finalFee)
+      Number(finalFee) + 546 
     )
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
+
+    if (alkaneUtxos) {
+      for await (const utxo of alkaneUtxos.alkaneUtxos) {
+        if (getAddressType(utxo.address) === 0) {
+          const previousTxHex: string = await provider.esplora.getTxHex(
+            utxo.txId
+          )
+          psbt.addInput({
+            hash: utxo.txId,
+            index: parseInt(utxo.txIndex),
+            nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
+          })
+        }
+        if (getAddressType(utxo.address) === 2) {
+          const redeemScript = bitcoin.script.compile([
+            bitcoin.opcodes.OP_0,
+            bitcoin.crypto.hash160(
+              Buffer.from(account.nestedSegwit.pubkey, 'hex')
+            ),
+          ])
+
+          psbt.addInput({
+            hash: utxo.txId,
+            index: parseInt(utxo.txIndex),
+            redeemScript: redeemScript,
+            witnessUtxo: {
+              value: utxo.satoshis,
+              script: bitcoin.script.compile([
+                bitcoin.opcodes.OP_HASH160,
+                bitcoin.crypto.hash160(redeemScript),
+                bitcoin.opcodes.OP_EQUAL,
+              ]),
+            },
+          })
+        }
+        if (
+          getAddressType(utxo.address) === 1 ||
+          getAddressType(utxo.address) === 3
+        ) {
+          psbt.addInput({
+            hash: utxo.txId,
+            index: parseInt(utxo.txIndex),
+            witnessUtxo: {
+              value: utxo.satoshis,
+              script: Buffer.from(utxo.script, 'hex'),
+            },
+          })
+        }
+      }
+    }
 
     if (fee === 0 && gatheredUtxos.utxos.length > 1) {
       const txSize = minimumFee({
@@ -119,13 +179,19 @@ export const createExecutePsbt = async ({
 
     psbt.addOutput({
       address: account.taproot.address,
-      value: 546,
+      value: 546
     })
 
     const output = { script: protostone, value: 0 }
     psbt.addOutput(output)
 
-    const changeAmount = gatheredUtxos.totalAmount - finalFee - 546
+    
+    
+
+    const changeAmount =
+      gatheredUtxos.totalAmount +
+      (alkaneUtxos?.totalSatoshis || 0) -
+      finalFee - 546 
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
@@ -430,8 +496,9 @@ export const findAlkaneUtxos = async ({
   for (const alkane of sortedRunesWithOutpoints) {
     if (
       totalBalanceBeingSent < targetNumberOfAlkanes &&
-      Number(alkane.rune.balance) > 0
+      Number(alkane.rune.balance) > 0 
     ) {
+     
       const satoshis = Number(alkane.outpoint.output.value)
       alkaneUtxos.push({
         txId: alkane.outpoint.outpoint.txid,
@@ -440,15 +507,17 @@ export const findAlkaneUtxos = async ({
         address,
         amountOfAlkanes: alkane.rune.balance,
         satoshis,
+        ...alkane.rune.rune
       })
       totalSatoshis += satoshis
       totalBalanceBeingSent +=
-        Number(alkane.rune.balance) / 10 ** alkane.rune.rune.divisibility
-    } else {
-      break
-    }
+        Number(alkane.rune.balance) / (alkane.rune.rune.divisibility == 1 ? 1 : 10 ** alkane.rune.rune.divisibility)
+    } 
   }
-  return { alkaneUtxos, totalSatoshis }
+  if (totalBalanceBeingSent < targetNumberOfAlkanes) {
+    throw new OylTransactionError(Error('Insuffiecient balance of alkanes.'))
+  }
+  return { alkaneUtxos, totalSatoshis, totalBalanceBeingSent }
 }
 
 export const actualTransactRevealFee = async ({
@@ -531,6 +600,7 @@ export const actualExecuteFee = async ({
   provider,
   feeRate,
   signer,
+  alkaneUtxos,
 }: {
   gatheredUtxos: GatheredUtxos
   account: Account
@@ -538,6 +608,10 @@ export const actualExecuteFee = async ({
   provider: Provider
   feeRate: number
   signer: Signer
+  alkaneUtxos?: {
+    alkaneUtxos: any[]
+    totalSatoshis: number
+  }
 }) => {
   if (!feeRate) {
     feeRate = (await provider.esplora.getFeeEstimates())['1']
@@ -549,6 +623,7 @@ export const actualExecuteFee = async ({
     protostone,
     provider,
     feeRate,
+    alkaneUtxos,
   })
 
   const { signedPsbt } = await signer.signAllInputs({
@@ -574,6 +649,7 @@ export const actualExecuteFee = async ({
     protostone,
     provider,
     feeRate,
+    alkaneUtxos,
     fee: correctFee,
   })
 
@@ -659,6 +735,7 @@ export const executeReveal = async ({
 }
 
 export const execute = async ({
+  alkaneUtxos,
   gatheredUtxos,
   account,
   protostone,
@@ -666,6 +743,10 @@ export const execute = async ({
   feeRate,
   signer,
 }: {
+  alkaneUtxos?: {
+    alkaneUtxos: any[]
+    totalSatoshis: number
+  }
   gatheredUtxos: GatheredUtxos
   account: Account
   protostone: Buffer
@@ -674,6 +755,7 @@ export const execute = async ({
   signer: Signer
 }) => {
   const { fee } = await actualExecuteFee({
+    alkaneUtxos,
     gatheredUtxos,
     account,
     protostone,
@@ -683,6 +765,7 @@ export const execute = async ({
   })
 
   const { psbt: finalPsbt } = await createExecutePsbt({
+    alkaneUtxos,
     gatheredUtxos,
     account,
     protostone,
@@ -849,6 +932,5 @@ export const deployCommit = async ({
     psbtBase64: signedPsbt,
   })
 
-  console.log('commit:', result)
   return { ...result, script: script.toString('hex') }
 }

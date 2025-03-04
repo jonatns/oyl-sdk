@@ -7,6 +7,12 @@ import {
   alkaneSend,
   alkanesTrace,
   alkaneTokenDeploy,
+  alkaneSplit,
+  alkaneBurn,
+  alkaneCreatePool,
+  alkaneMint,
+  alkaneSwap,
+  alkaneSimulate,
 } from './alkane'
 import { init, genBlocks, sendFromFaucet } from './regtest'
 import { runeSend, runeMint, runeEtchCommit, runeEtchReveal } from './rune'
@@ -82,7 +88,13 @@ const alkaneCommand = new Command('alkane')
   .addCommand(alkaneTokenDeploy)
   .addCommand(alkanesTrace)
   .addCommand(alkaneSend)
-
+  .addCommand(alkaneSplit)
+  .addCommand(alkaneBurn)
+  .addCommand(alkaneCreatePool)
+  .addCommand(alkaneMint)
+  .addCommand(alkaneSwap)
+  .addCommand(alkaneSimulate)
+  
 const providerCommand = new Command('provider')
   .description('Functions avaialble for all provider services')
   .addCommand(ordProviderCall)

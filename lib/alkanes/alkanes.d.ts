@@ -4,7 +4,11 @@ import { Provider } from '../provider/provider';
 import * as bitcoin from 'bitcoinjs-lib';
 import { Account, Signer } from '..';
 import { GatheredUtxos, AlkanesPayload } from '../shared/interface';
-export declare const createExecutePsbt: ({ gatheredUtxos, account, protostone, provider, feeRate, fee, }: {
+export declare const createExecutePsbt: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, fee, }: {
+    alkaneUtxos?: {
+        alkaneUtxos: any[];
+        totalSatoshis: number;
+    };
     gatheredUtxos: GatheredUtxos;
     account: Account;
     protostone: Buffer;
@@ -52,6 +56,7 @@ export declare const findAlkaneUtxos: ({ address, greatestToLeast, provider, alk
 }) => Promise<{
     alkaneUtxos: any[];
     totalSatoshis: number;
+    totalBalanceBeingSent: number;
 }>;
 export declare const actualTransactRevealFee: ({ protostone, tweakedTaprootKeyPair, commitTxId, receiverAddress, script, provider, feeRate, }: {
     protostone: Buffer;
@@ -64,13 +69,17 @@ export declare const actualTransactRevealFee: ({ protostone, tweakedTaprootKeyPa
 }) => Promise<{
     fee: number;
 }>;
-export declare const actualExecuteFee: ({ gatheredUtxos, account, protostone, provider, feeRate, signer, }: {
+export declare const actualExecuteFee: ({ gatheredUtxos, account, protostone, provider, feeRate, signer, alkaneUtxos, }: {
     gatheredUtxos: GatheredUtxos;
     account: Account;
     protostone: Buffer;
     provider: Provider;
     feeRate: number;
     signer: Signer;
+    alkaneUtxos?: {
+        alkaneUtxos: any[];
+        totalSatoshis: number;
+    };
 }) => Promise<{
     fee: number;
 }>;
@@ -90,7 +99,11 @@ export declare const executeReveal: ({ protostone, commitTxId, script, account, 
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const execute: ({ gatheredUtxos, account, protostone, provider, feeRate, signer, }: {
+export declare const execute: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, signer, }: {
+    alkaneUtxos?: {
+        alkaneUtxos: any[];
+        totalSatoshis: number;
+    };
     gatheredUtxos: GatheredUtxos;
     account: Account;
     protostone: Buffer;
