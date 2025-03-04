@@ -130,3 +130,11 @@ export declare function findXAmountOfSats(utxos: FormattedUtxo[], target: number
 };
 export declare function decodeCBOR(hex: string): DecodedCBOR;
 export declare const getVSize: (data: Buffer) => number;
+export declare const getEstimatedFee: ({ feeRate, psbt, provider, }: {
+    feeRate: number;
+    psbt: string;
+    provider: Provider;
+}) => Promise<{
+    fee: number;
+    vsize: number;
+}>;

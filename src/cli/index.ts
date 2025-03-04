@@ -8,9 +8,9 @@ import {
   alkanesTrace,
   alkaneTokenDeploy,
   alkaneSplit,
-  alkaneBurn,
   alkaneCreatePool,
-  alkaneMint,
+  alkaneAddLiquidity,
+  alkaneRemoveLiquidity,
   alkaneSwap,
   alkaneSimulate,
 } from './alkane'
@@ -89,9 +89,9 @@ const alkaneCommand = new Command('alkane')
   .addCommand(alkanesTrace)
   .addCommand(alkaneSend)
   .addCommand(alkaneSplit)
-  .addCommand(alkaneBurn)
   .addCommand(alkaneCreatePool)
-  .addCommand(alkaneMint)
+  .addCommand(alkaneAddLiquidity)
+  .addCommand(alkaneRemoveLiquidity)
   .addCommand(alkaneSwap)
   .addCommand(alkaneSimulate)
   

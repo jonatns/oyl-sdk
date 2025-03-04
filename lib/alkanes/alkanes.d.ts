@@ -69,19 +69,19 @@ export declare const actualTransactRevealFee: ({ protostone, tweakedTaprootKeyPa
 }) => Promise<{
     fee: number;
 }>;
-export declare const actualExecuteFee: ({ gatheredUtxos, account, protostone, provider, feeRate, signer, alkaneUtxos, }: {
+export declare const actualExecuteFee: ({ gatheredUtxos, account, protostone, provider, feeRate, alkaneUtxos, }: {
     gatheredUtxos: GatheredUtxos;
     account: Account;
     protostone: Buffer;
     provider: Provider;
     feeRate: number;
-    signer: Signer;
     alkaneUtxos?: {
         alkaneUtxos: any[];
         totalSatoshis: number;
     };
 }) => Promise<{
     fee: number;
+    vsize: number;
 }>;
 export declare const executeReveal: ({ protostone, commitTxId, script, account, provider, feeRate, signer, }: {
     protostone: Buffer;
@@ -98,6 +98,20 @@ export declare const executeReveal: ({ protostone, commitTxId, script, account, 
     weight: any;
     fee: number;
     satsPerVByte: string;
+}>;
+export declare const executePsbt: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, }: {
+    alkaneUtxos?: {
+        alkaneUtxos: any[];
+        totalSatoshis: number;
+    };
+    gatheredUtxos: GatheredUtxos;
+    account: Account;
+    protostone: Buffer;
+    provider: Provider;
+    feeRate?: number;
+}) => Promise<{
+    psbt: string;
+    fee: number;
 }>;
 export declare const execute: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, signer, }: {
     alkaneUtxos?: {

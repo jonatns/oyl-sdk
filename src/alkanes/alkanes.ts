@@ -14,6 +14,7 @@ import {
   getVSize,
   inscriptionSats,
   tweakSigner,
+  getEstimatedFee
 } from '../shared/utils'
 import { OylTransactionError } from '../errors'
 import { GatheredUtxos, AlkanesPayload } from '../shared/interface'
@@ -599,7 +600,6 @@ export const actualExecuteFee = async ({
   protostone,
   provider,
   feeRate,
-  signer,
   alkaneUtxos,
 }: {
   gatheredUtxos: GatheredUtxos
@@ -607,7 +607,6 @@ export const actualExecuteFee = async ({
   protostone: Buffer
   provider: Provider
   feeRate: number
-  signer: Signer
   alkaneUtxos?: {
     alkaneUtxos: any[]
     totalSatoshis: number
@@ -626,22 +625,11 @@ export const actualExecuteFee = async ({
     alkaneUtxos,
   })
 
-  const { signedPsbt } = await signer.signAllInputs({
-    rawPsbt: psbt,
-    finalize: true,
+  const { fee: estimatedFee } = await getEstimatedFee({
+    feeRate,
+    psbt,
+    provider,
   })
-
-  let rawPsbt = bitcoin.Psbt.fromBase64(signedPsbt, {
-    network: account.network,
-  })
-    .extractTransaction()
-    .toHex()
-
-  const vsize = (
-    await provider.sandshrew.bitcoindRpc.testMemPoolAccept([rawPsbt])
-  )[0].vsize
-
-  const correctFee = vsize * feeRate
 
   const { psbt: finalPsbt } = await createExecutePsbt({
     gatheredUtxos,
@@ -650,27 +638,16 @@ export const actualExecuteFee = async ({
     provider,
     feeRate,
     alkaneUtxos,
-    fee: correctFee,
+    fee: estimatedFee,
   })
 
-  const { signedPsbt: finalSignedPsbt } = await signer.signAllInputs({
-    rawPsbt: finalPsbt,
-    finalize: true,
+  const { fee: finalFee, vsize } = await getEstimatedFee({
+    feeRate,
+    psbt: finalPsbt,
+    provider,
   })
 
-  let finalRawPsbt = bitcoin.Psbt.fromBase64(finalSignedPsbt, {
-    network: account.network,
-  })
-    .extractTransaction()
-    .toHex()
-
-  const finalVsize = (
-    await provider.sandshrew.bitcoindRpc.testMemPoolAccept([finalRawPsbt])
-  )[0].vsize
-
-  const finalFee = finalVsize * feeRate
-
-  return { fee: finalFee }
+  return { fee: finalFee, vsize }
 }
 
 export const executeReveal = async ({
@@ -734,6 +711,46 @@ export const executeReveal = async ({
   return revealResult
 }
 
+export const executePsbt = async ({
+  alkaneUtxos,
+  gatheredUtxos,
+  account,
+  protostone,
+  provider,
+  feeRate,
+}: {
+  alkaneUtxos?: {
+    alkaneUtxos: any[]
+    totalSatoshis: number
+  }
+  gatheredUtxos: GatheredUtxos
+  account: Account
+  protostone: Buffer
+  provider: Provider
+  feeRate?: number
+}) => {
+  const { fee } = await actualExecuteFee({
+    alkaneUtxos,
+    gatheredUtxos,
+    account,
+    protostone,
+    provider,
+    feeRate,
+  })
+
+  const { psbt: finalPsbt } = await createExecutePsbt({
+    alkaneUtxos,
+    gatheredUtxos,
+    account,
+    protostone,
+    provider,
+    feeRate,
+    fee,
+  })
+
+  return { psbt: finalPsbt, fee }
+}
+
 export const execute = async ({
   alkaneUtxos,
   gatheredUtxos,
@@ -754,36 +771,25 @@ export const execute = async ({
   feeRate?: number
   signer: Signer
 }) => {
-  const { fee } = await actualExecuteFee({
+  const { psbt: finalPsbt } = await executePsbt({
     alkaneUtxos,
     gatheredUtxos,
     account,
     protostone,
     provider,
     feeRate,
-    signer,
   })
-
-  const { psbt: finalPsbt } = await createExecutePsbt({
-    alkaneUtxos,
-    gatheredUtxos,
-    account,
-    protostone,
-    provider,
-    feeRate,
-    fee,
-  })
-
+  
   const { signedPsbt } = await signer.signAllInputs({
     rawPsbt: finalPsbt,
     finalize: true,
   })
 
-  const revealResult = await provider.pushPsbt({
+  const pushResult = await provider.pushPsbt({
     psbtBase64: signedPsbt,
   })
 
-  return revealResult
+  return pushResult
 }
 
 export const createTransactReveal = async ({
