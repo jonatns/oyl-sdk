@@ -12,12 +12,21 @@ export type SwapSimulationResult = {
   amountOut: bigint;
 };
 
+export type PoolDetailsResult = {
+  token0: AlkaneId;
+  token1: AlkaneId;
+  token0Amount: string;
+  token1Amount: string;
+  tokenSupply: string;
+};
+
 export enum PoolOpcodes {
   INIT_POOL = 0,
   ADD_LIQUIDITY = 1,
   REMOVE_LIQUIDITY = 2,
   SWAP = 3,
   SIMULATE_SWAP = 4,
+  POOL_DETAILS = 5,
 }
 
 export class AlkanesAMMPoolDecoder {
@@ -31,6 +40,26 @@ export class AlkanesAMMPoolDecoder {
     };
   }
 
+  decodePoolDetails(data: string): PoolDetailsResult | undefined {
+    if (data === '0x') return undefined;
+    const bytes = Buffer.from(data.slice(2), 'hex');
+    
+    const token0: AlkaneId = {
+      block: bytes.readBigUInt64LE(0).toString(),
+      tx: bytes.readBigUInt64LE(16).toString()
+    };
+    const token1: AlkaneId = {
+      block: bytes.readBigUInt64LE(32).toString(),
+      tx: bytes.readBigUInt64LE(48).toString()
+    };
+    
+    const token0Amount = bytes.readBigUInt64LE(64).toString();
+    const token1Amount = bytes.readBigUInt64LE(80).toString();
+    const tokenSupply = bytes.readBigUInt64LE(96).toString();
+
+    return { token0, token1, token0Amount, token1Amount, tokenSupply };
+  }
+
   static decodeSimulation(result: any, opcode: number) {
 
     const decoder = new AlkanesAMMPoolDecoder();
@@ -42,6 +71,9 @@ export class AlkanesAMMPoolDecoder {
         throw new Error('Opcode not supported in simulation mode');
       case PoolOpcodes.SIMULATE_SWAP:
         decoded = decoder.decodeSwap(result.execution.data);
+        break;
+      case PoolOpcodes.POOL_DETAILS:
+        decoded = decoder.decodePoolDetails(result.execution.data);
         break;
       default:
         decoded = undefined;
