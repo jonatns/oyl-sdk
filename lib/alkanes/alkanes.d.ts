@@ -1,7 +1,6 @@
 /// <reference types="node" />
 /// <reference types="node" />
 import { Provider } from '../provider/provider';
-import * as bitcoin from 'bitcoinjs-lib';
 import { Account, Signer } from '..';
 import { GatheredUtxos, AlkanesPayload } from '../shared/interface';
 export declare const createExecutePsbt: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, fee, }: {
@@ -19,10 +18,10 @@ export declare const createExecutePsbt: ({ alkaneUtxos, gatheredUtxos, account, 
     psbt: string;
     psbtHex: string;
 }>;
-export declare const createDeployCommit: ({ payload, gatheredUtxos, tweakedTaprootKeyPair, account, provider, feeRate, fee, }: {
+export declare const createDeployCommit: ({ payload, gatheredUtxos, tweakedPublicKey, account, provider, feeRate, fee, }: {
     payload: AlkanesPayload;
     gatheredUtxos: GatheredUtxos;
-    tweakedTaprootKeyPair: bitcoin.Signer;
+    tweakedPublicKey: string;
     account: Account;
     provider: Provider;
     feeRate?: number;
@@ -31,12 +30,12 @@ export declare const createDeployCommit: ({ payload, gatheredUtxos, tweakedTapro
     psbt: string;
     script: Buffer;
 }>;
-export declare const createDeployReveal: ({ protostone, receiverAddress, script, feeRate, tweakedTaprootKeyPair, provider, fee, commitTxId, }: {
+export declare const createDeployReveal: ({ protostone, receiverAddress, script, feeRate, tweakedPublicKey, provider, fee, commitTxId, }: {
     protostone: Buffer;
     receiverAddress: string;
     script: Buffer;
     feeRate: number;
-    tweakedTaprootKeyPair: bitcoin.Signer;
+    tweakedPublicKey: string;
     provider: Provider;
     fee?: number;
     commitTxId: string;
@@ -58,9 +57,9 @@ export declare const findAlkaneUtxos: ({ address, greatestToLeast, provider, alk
     totalSatoshis: number;
     totalBalanceBeingSent: number;
 }>;
-export declare const actualTransactRevealFee: ({ protostone, tweakedTaprootKeyPair, commitTxId, receiverAddress, script, provider, feeRate, }: {
+export declare const actualTransactRevealFee: ({ protostone, tweakedPublicKey, commitTxId, receiverAddress, script, provider, feeRate, }: {
     protostone: Buffer;
-    tweakedTaprootKeyPair: bitcoin.Signer;
+    tweakedPublicKey: string;
     commitTxId: string;
     receiverAddress: string;
     script: Buffer;
@@ -68,6 +67,7 @@ export declare const actualTransactRevealFee: ({ protostone, tweakedTaprootKeyPa
     feeRate?: number;
 }) => Promise<{
     fee: number;
+    vsize: number;
 }>;
 export declare const actualExecuteFee: ({ gatheredUtxos, account, protostone, provider, feeRate, alkaneUtxos, }: {
     gatheredUtxos: GatheredUtxos;
@@ -132,12 +132,12 @@ export declare const execute: ({ alkaneUtxos, gatheredUtxos, account, protostone
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const createTransactReveal: ({ protostone, receiverAddress, script, feeRate, tweakedTaprootKeyPair, provider, fee, commitTxId, }: {
+export declare const createTransactReveal: ({ protostone, receiverAddress, script, feeRate, tweakedPublicKey, provider, fee, commitTxId, }: {
     protostone: Buffer;
     receiverAddress: string;
     script: Buffer;
     feeRate: number;
-    tweakedTaprootKeyPair: bitcoin.Signer;
+    tweakedPublicKey: string;
     provider: Provider;
     fee?: number;
     commitTxId: string;

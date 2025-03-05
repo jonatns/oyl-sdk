@@ -51,7 +51,7 @@ export declare const send: ({ gatheredUtxos, toAddress, amount, alkaneId, feeRat
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const actualSendFee: ({ gatheredUtxos, account, alkaneId, provider, toAddress, amount, feeRate, signer, }: {
+export declare const actualSendFee: ({ gatheredUtxos, account, alkaneId, provider, toAddress, amount, feeRate, }: {
     gatheredUtxos: GatheredUtxos;
     account: Account;
     alkaneId: {
@@ -62,9 +62,9 @@ export declare const actualSendFee: ({ gatheredUtxos, account, alkaneId, provide
     toAddress: string;
     amount: number;
     feeRate?: number;
-    signer: Signer;
 }) => Promise<{
     fee: number;
+    vsize: number;
 }>;
 export declare const split: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, signer, }: {
     alkaneUtxos?: {

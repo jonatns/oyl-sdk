@@ -101,22 +101,6 @@ export class AlkanesAMMPoolFactoryDecoder {
 
 export const getPoolId = async () => { }
 
-export type CreateNewPoolPsbtParams = {
-  calldata: bigint[];
-  token0: AlkaneId;
-  token0Amount: bigint;
-  token1: AlkaneId;
-  token1Amount: bigint;
-  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
-  feeRate: number;
-  account: Account;
-  provider: Provider;
-}
-
-export type CreateNewPoolParams = CreateNewPoolPsbtParams & {
-  signer: Signer;
-}
-
 export const createNewPoolPsbt = async ({
   calldata,
   token0,
@@ -127,7 +111,17 @@ export const createNewPoolPsbt = async ({
   feeRate,
   account,
   provider,
-}: CreateNewPoolPsbtParams) => {
+}: {
+  calldata: bigint[];
+  token0: AlkaneId;
+  token0Amount: bigint;
+  token1: AlkaneId;
+  token1Amount: bigint;
+  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
+  feeRate: number;
+  account: Account;
+  provider: Provider;
+}) => {
   let tokenUtxos: {
     alkaneUtxos: any[]
     totalSatoshis: number
@@ -213,7 +207,18 @@ export const createNewPool = async ({
   account,
   signer,
   provider,
-}: CreateNewPoolParams) => {
+}: {
+  calldata: bigint[];
+  token0: AlkaneId;
+  token0Amount: bigint;
+  token1: AlkaneId;
+  token1Amount: bigint;
+  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
+  feeRate: number;
+  account: Account;
+  provider: Provider;
+  signer: Signer;
+}) => {
   const { psbt } = await createNewPoolPsbt({ calldata, token0, token0Amount, token1, token1Amount, gatheredUtxos, feeRate, account, provider })
 
   const { signedPsbt } = await signer.signAllInputs({

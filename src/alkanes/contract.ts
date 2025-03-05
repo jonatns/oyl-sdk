@@ -3,7 +3,7 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { AlkanesPayload, GatheredUtxos } from '../shared/interface'
 import { timeout, tweakSigner } from '../shared/utils'
 import { createDeployCommit, createDeployReveal, deployCommit } from './alkanes'
-
+import { getEstimatedFee } from '../psbt'
 export const contractDeployment = async ({
   payload,
   gatheredUtxos,
@@ -47,20 +47,18 @@ export const contractDeployment = async ({
 
 export const actualDeployCommitFee = async ({
   payload,
-  tweakedTaprootKeyPair,
+  tweakedPublicKey,
   gatheredUtxos,
   account,
   provider,
   feeRate,
-  signer,
 }: {
   payload: AlkanesPayload
-  tweakedTaprootKeyPair: bitcoin.Signer
+  tweakedPublicKey: string
   gatheredUtxos: GatheredUtxos
   account: Account
   provider: Provider
   feeRate?: number
-  signer: Signer
 }) => {
   if (!feeRate) {
     feeRate = (await provider.esplora.getFeeEstimates())['1']
@@ -69,61 +67,40 @@ export const actualDeployCommitFee = async ({
   const { psbt } = await createDeployCommit({
     payload,
     gatheredUtxos,
-    tweakedTaprootKeyPair,
+    tweakedPublicKey,
     account,
     provider,
     feeRate,
   })
-  const { signedPsbt } = await signer.signAllInputs({
-    rawPsbt: psbt,
-    finalize: true,
+
+  const { fee: estimatedFee } = await getEstimatedFee({
+    feeRate,
+    psbt,
+    provider,
   })
-
-  let rawPsbt = bitcoin.Psbt.fromBase64(signedPsbt, {
-    network: provider.network,
-  })
-
-  const signedHexPsbt = rawPsbt.extractTransaction().toHex()
-
-  const vsize = (
-    await provider.sandshrew.bitcoindRpc.testMemPoolAccept([signedHexPsbt])
-  )[0].vsize
-
-  const correctFee = vsize * feeRate
 
   const { psbt: finalPsbt } = await createDeployCommit({
     payload,
     gatheredUtxos,
-    tweakedTaprootKeyPair,
+    tweakedPublicKey,
     account,
     provider,
     feeRate,
-    fee: correctFee,
+    fee: estimatedFee,
   })
 
-  const { signedPsbt: signedAll } = await signer.signAllInputs({
-    rawPsbt: finalPsbt,
-    finalize: true,
+  const { fee: finalFee, vsize } = await getEstimatedFee({
+    feeRate,
+    psbt: finalPsbt,
+    provider,
   })
 
-  let finalRawPsbt = bitcoin.Psbt.fromBase64(signedAll, {
-    network: provider.network,
-  })
-
-  const finalSignedHexPsbt = finalRawPsbt.extractTransaction().toHex()
-
-  const finalVsize = (
-    await provider.sandshrew.bitcoindRpc.testMemPoolAccept([finalSignedHexPsbt])
-  )[0].vsize
-
-  const finalFee = finalVsize * feeRate
-
-  return { fee: finalFee }
+  return { fee: finalFee, vsize }
 }
 
 export const actualDeployRevealFee = async ({
   protostone,
-  tweakedTaprootKeyPair,
+  tweakedPublicKey,
   commitTxId,
   receiverAddress,
   script,
@@ -131,12 +108,11 @@ export const actualDeployRevealFee = async ({
   feeRate,
 }: {
   protostone: Buffer
-  tweakedTaprootKeyPair: bitcoin.Signer
+  tweakedPublicKey: string
   commitTxId: string
   receiverAddress: string
   script: Buffer
   provider: Provider
-  signer: Signer
   feeRate?: number
 }) => {
   if (!feeRate) {
@@ -148,53 +124,35 @@ export const actualDeployRevealFee = async ({
     commitTxId,
     receiverAddress,
     script,
-    tweakedTaprootKeyPair,
+    tweakedPublicKey,
     provider,
     feeRate,
   })
 
-  let rawPsbt = bitcoin.Psbt.fromBase64(psbt, {
-    network: provider.network,
+  const { fee: estimatedFee } = await getEstimatedFee({
+    feeRate,
+    psbt,
+    provider,
   })
-
-  rawPsbt.signInput(0, tweakedTaprootKeyPair)
-  rawPsbt.finalizeInput(0)
-
-  const signedHexPsbt = rawPsbt.extractTransaction().toHex()
-
-  const vsize = (
-    await provider.sandshrew.bitcoindRpc.testMemPoolAccept([signedHexPsbt])
-  )[0].vsize
-
-  const correctFee = vsize * feeRate
 
   const { psbt: finalPsbt } = await createDeployReveal({
     protostone,
     commitTxId,
     receiverAddress,
     script,
-    tweakedTaprootKeyPair,
+    tweakedPublicKey,
     provider,
     feeRate,
-    fee: correctFee,
+    fee: estimatedFee,
   })
 
-  let finalRawPsbt = bitcoin.Psbt.fromBase64(finalPsbt, {
-    network: provider.network,
+  const { fee: finalFee, vsize } = await getEstimatedFee({
+    feeRate,
+    psbt: finalPsbt,
+    provider,
   })
 
-  finalRawPsbt.signInput(0, tweakedTaprootKeyPair)
-  finalRawPsbt.finalizeInput(0)
-
-  const finalSignedHexPsbt = finalRawPsbt.extractTransaction().toHex()
-
-  const finalVsize = (
-    await provider.sandshrew.bitcoindRpc.testMemPoolAccept([finalSignedHexPsbt])
-  )[0].vsize
-
-  const finalFee = finalVsize * feeRate
-
-  return { fee: finalFee }
+  return { fee: finalFee, vsize }
 }
 
 export const deployReveal = async ({
@@ -221,20 +179,21 @@ export const deployReveal = async ({
     }
   )
 
+  const tweakedPublicKey = tweakedTaprootKeyPair.publicKey.toString('hex')
+
   const { fee } = await actualDeployRevealFee({
     protostone,
-    tweakedTaprootKeyPair,
+    tweakedPublicKey,
     receiverAddress: account.taproot.address,
     commitTxId,
     script: Buffer.from(script, 'hex'),
     provider,
     feeRate,
-    signer,
   })
 
   const { psbt: finalRevealPsbt } = await createDeployReveal({
     protostone,
-    tweakedTaprootKeyPair,
+    tweakedPublicKey,
     receiverAddress: account.taproot.address,
     commitTxId,
     script: Buffer.from(script, 'hex'),

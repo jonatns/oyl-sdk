@@ -23,7 +23,7 @@ export declare class AlkanesAMMPoolDecoder {
     decodePoolDetails(data: string): PoolDetailsResult | undefined;
     static decodeSimulation(result: any, opcode: number): any;
 }
-export type AddLiquidityPsbtParams = {
+export declare const addLiquidityPsbt: ({ calldata, token0, token0Amount, token1, token1Amount, gatheredUtxos, feeRate, account, provider, }: {
     calldata: bigint[];
     token0: AlkaneId;
     token0Amount: bigint;
@@ -36,15 +36,25 @@ export type AddLiquidityPsbtParams = {
     feeRate: number;
     account: Account;
     provider: Provider;
-};
-export type AddLiquidityParams = AddLiquidityPsbtParams & {
-    signer: Signer;
-};
-export declare const addLiquidityPsbt: ({ calldata, token0, token0Amount, token1, token1Amount, gatheredUtxos, feeRate, account, provider, }: AddLiquidityPsbtParams) => Promise<{
+}) => Promise<{
     psbt: string;
     fee: number;
 }>;
-export declare const addLiquidity: ({ calldata, token0, token0Amount, token1, token1Amount, gatheredUtxos, feeRate, account, signer, provider, }: AddLiquidityParams) => Promise<{
+export declare const addLiquidity: ({ calldata, token0, token0Amount, token1, token1Amount, gatheredUtxos, feeRate, account, signer, provider, }: {
+    calldata: bigint[];
+    token0: AlkaneId;
+    token0Amount: bigint;
+    token1: AlkaneId;
+    token1Amount: bigint;
+    gatheredUtxos: {
+        utxos: Utxo[];
+        totalAmount: number;
+    };
+    feeRate: number;
+    account: Account;
+    provider: Provider;
+    signer: Signer;
+}) => Promise<{
     txId: string;
     rawTx: string;
     size: any;
@@ -52,7 +62,7 @@ export declare const addLiquidity: ({ calldata, token0, token0Amount, token1, to
     fee: number;
     satsPerVByte: string;
 }>;
-export type RemoveLiquidityPsbtParams = {
+export declare const removeLiquidityPsbt: ({ calldata, token, tokenAmount, gatheredUtxos, feeRate, account, provider, }: {
     calldata: bigint[];
     token: AlkaneId;
     tokenAmount: bigint;
@@ -63,23 +73,11 @@ export type RemoveLiquidityPsbtParams = {
     feeRate: number;
     account: Account;
     provider: Provider;
-};
-export type RemoveLiquidityParams = RemoveLiquidityPsbtParams & {
-    signer: Signer;
-};
-export declare const removeLiquidityPsbt: ({ calldata, token, tokenAmount, gatheredUtxos, feeRate, account, provider, }: RemoveLiquidityPsbtParams) => Promise<{
+}) => Promise<{
     psbt: string;
     fee: number;
 }>;
-export declare const removeLiquidity: ({ calldata, token, tokenAmount, gatheredUtxos, feeRate, account, signer, provider, }: RemoveLiquidityParams) => Promise<{
-    txId: string;
-    rawTx: string;
-    size: any;
-    weight: any;
-    fee: number;
-    satsPerVByte: string;
-}>;
-export type SwapPsbtParams = {
+export declare const removeLiquidity: ({ calldata, token, tokenAmount, gatheredUtxos, feeRate, account, signer, provider, }: {
     calldata: bigint[];
     token: AlkaneId;
     tokenAmount: bigint;
@@ -90,15 +88,8 @@ export type SwapPsbtParams = {
     feeRate: number;
     account: Account;
     provider: Provider;
-};
-export type SwapParams = SwapPsbtParams & {
     signer: Signer;
-};
-export declare const swapPsbt: ({ calldata, token, tokenAmount, gatheredUtxos, feeRate, account, provider, }: SwapPsbtParams) => Promise<{
-    psbt: string;
-    fee: number;
-}>;
-export declare const swap: ({ calldata, token, tokenAmount, gatheredUtxos, feeRate, account, signer, provider, }: SwapParams) => Promise<{
+}) => Promise<{
     txId: string;
     rawTx: string;
     size: any;
@@ -106,25 +97,38 @@ export declare const swap: ({ calldata, token, tokenAmount, gatheredUtxos, feeRa
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const getPoolId: () => Promise<void>;
-type PsbtBuilderFunction<T> = (params: T) => Promise<{
+export declare const swapPsbt: ({ calldata, token, tokenAmount, gatheredUtxos, feeRate, account, provider, }: {
+    calldata: bigint[];
+    token: AlkaneId;
+    tokenAmount: bigint;
+    gatheredUtxos: {
+        utxos: Utxo[];
+        totalAmount: number;
+    };
+    feeRate: number;
+    account: Account;
+    provider: Provider;
+}) => Promise<{
     psbt: string;
     fee: number;
 }>;
-export declare const estimateFee: <T>(psbtBuilder: PsbtBuilderFunction<T>, params: T, getEstimatedFee: (initialFee: number) => number) => Promise<{
-    psbt: string;
+export declare const swap: ({ calldata, token, tokenAmount, gatheredUtxos, feeRate, account, signer, provider, }: {
+    calldata: bigint[];
+    token: AlkaneId;
+    tokenAmount: bigint;
+    gatheredUtxos: {
+        utxos: Utxo[];
+        totalAmount: number;
+    };
+    feeRate: number;
+    account: Account;
+    provider: Provider;
+    signer: Signer;
+}) => Promise<{
+    txId: string;
+    rawTx: string;
+    size: any;
+    weight: any;
     fee: number;
+    satsPerVByte: string;
 }>;
-export declare const estimateAddLiquidityFee: (params: AddLiquidityPsbtParams, getEstimatedFee: (initialFee: number) => number) => Promise<{
-    psbt: string;
-    fee: number;
-}>;
-export declare const estimateRemoveLiquidityFee: (params: RemoveLiquidityPsbtParams, getEstimatedFee: (initialFee: number) => number) => Promise<{
-    psbt: string;
-    fee: number;
-}>;
-export declare const estimateSwapFee: (params: SwapPsbtParams, getEstimatedFee: (initialFee: number) => number) => Promise<{
-    psbt: string;
-    fee: number;
-}>;
-export {};

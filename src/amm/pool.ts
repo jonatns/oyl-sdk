@@ -87,22 +87,6 @@ export class AlkanesAMMPoolDecoder {
   }
 }
 
-export type AddLiquidityPsbtParams = {
-  calldata: bigint[];
-  token0: AlkaneId;
-  token0Amount: bigint;
-  token1: AlkaneId;
-  token1Amount: bigint;
-  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
-  feeRate: number;
-  account: Account;
-  provider: Provider;
-};
-
-export type AddLiquidityParams = AddLiquidityPsbtParams & {
-  signer: Signer;
-};
-
 export const addLiquidityPsbt = async ({
   calldata,
   token0,
@@ -113,7 +97,17 @@ export const addLiquidityPsbt = async ({
   feeRate,
   account,
   provider,
-}: AddLiquidityPsbtParams) => {
+}: {
+  calldata: bigint[];
+  token0: AlkaneId;
+  token0Amount: bigint;
+  token1: AlkaneId;
+  token1Amount: bigint;
+  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
+  feeRate: number;
+  account: Account;
+  provider: Provider;
+}) => {
   let tokenUtxos: {
     alkaneUtxos: any[]
     totalSatoshis: number
@@ -200,7 +194,18 @@ export const addLiquidity = async ({
   account,
   signer,
   provider,
-}: AddLiquidityParams) => {
+}: {
+  calldata: bigint[];
+  token0: AlkaneId;
+  token0Amount: bigint;
+  token1: AlkaneId;
+  token1Amount: bigint;
+  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
+  feeRate: number;
+  account: Account;
+  provider: Provider;
+  signer: Signer;
+}) => {
   const { psbt } = await addLiquidityPsbt({ calldata, token0, token0Amount, token1, token1Amount, gatheredUtxos, feeRate, account, provider })
 
   const { signedPsbt } = await signer.signAllInputs({
@@ -215,21 +220,6 @@ export const addLiquidity = async ({
   return pushResult
 }
 
-export type RemoveLiquidityPsbtParams = {
-  calldata: bigint[];
-  token: AlkaneId;
-  tokenAmount: bigint;
-  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
-  feeRate: number;
-  account: Account;
-  provider: Provider;
-}
-
-export type RemoveLiquidityParams = RemoveLiquidityPsbtParams & {
-  signer: Signer;
-}
-
-
 export const removeLiquidityPsbt = async ({
   calldata,
   token,
@@ -238,7 +228,15 @@ export const removeLiquidityPsbt = async ({
   feeRate,
   account,
   provider,
-}: RemoveLiquidityPsbtParams) => {
+}: {
+  calldata: bigint[];
+  token: AlkaneId;
+  tokenAmount: bigint;
+  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
+  feeRate: number;
+  account: Account;
+  provider: Provider;
+}) => {
   let alkaneTokenUtxos: {
     alkaneUtxos: any[]
     totalSatoshis: number
@@ -302,7 +300,16 @@ export const removeLiquidity = async ({
   account,
   signer,
   provider,
-}: RemoveLiquidityParams) => {
+}: {
+  calldata: bigint[];
+  token: AlkaneId;
+  tokenAmount: bigint;
+  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
+  feeRate: number;
+  account: Account;
+  provider: Provider;
+  signer: Signer;
+}) => {
   const { psbt, fee } = await removeLiquidityPsbt({ calldata, token, tokenAmount, gatheredUtxos, feeRate, account, provider })
 
   const { signedPsbt } = await signer.signAllInputs({
@@ -317,20 +324,6 @@ export const removeLiquidity = async ({
   return pushResult
 }
 
-export type SwapPsbtParams = {
-  calldata: bigint[];
-  token: AlkaneId;
-  tokenAmount: bigint;
-  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
-  feeRate: number;
-  account: Account;
-  provider: Provider;
-}
-
-export type SwapParams = SwapPsbtParams & {
-  signer: Signer;
-}
-
 export const swapPsbt = async ({
   calldata,
   token,
@@ -339,7 +332,15 @@ export const swapPsbt = async ({
   feeRate,
   account,
   provider,
-}: SwapPsbtParams) => {
+}: {
+  calldata: bigint[];
+  token: AlkaneId;
+  tokenAmount: bigint;
+  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
+  feeRate: number;
+  account: Account;
+  provider: Provider;
+}) => {
   let alkaneTokenUtxos: {
     alkaneUtxos: any[]
     totalSatoshis: number
@@ -403,7 +404,16 @@ export const swap = async ({
   account,
   signer,
   provider,
-}: SwapParams) => {
+}: {
+  calldata: bigint[];
+  token: AlkaneId;
+  tokenAmount: bigint;
+  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
+  feeRate: number;
+  account: Account;
+  provider: Provider;
+  signer: Signer;
+}) => {
   const { psbt, fee } = await swapPsbt({ calldata, token, tokenAmount, gatheredUtxos, feeRate, account, provider })
 
   const { signedPsbt } = await signer.signAllInputs({
@@ -418,50 +428,4 @@ export const swap = async ({
   return pushResult
 }
 
-export const getPoolId = async () => {}
 
-type PsbtBuilderFunction<T> = (params: T) => Promise<{ psbt: string; fee: number }>;
-
-export const estimateFee = async <T>(
-  psbtBuilder: PsbtBuilderFunction<T>,
-  params: T,
-  getEstimatedFee: (initialFee: number) => number
-): Promise<{ psbt: string; fee: number }> => {
-  // First build PSBT with initial parameters to get rough fee estimate
-  const { fee: initialFee } = await psbtBuilder(params);
-  
-  // Calculate actual fee based on initial estimate
-  const actualFee = getEstimatedFee(initialFee);
-  
-  // Rebuild PSBT with actual fee
-  const result = await psbtBuilder({
-    ...params,
-    feeRate: actualFee
-  });
-
-  return result;
-};
-
-// Example usage for addLiquidity fee estimation
-export const estimateAddLiquidityFee = async (
-  params: AddLiquidityPsbtParams,
-  getEstimatedFee: (initialFee: number) => number
-) => {
-  return estimateFee(addLiquidityPsbt, params, getEstimatedFee);
-};
-
-// Example usage for removeLiquidity fee estimation
-export const estimateRemoveLiquidityFee = async (
-  params: RemoveLiquidityPsbtParams,
-  getEstimatedFee: (initialFee: number) => number
-) => {
-  return estimateFee(removeLiquidityPsbt, params, getEstimatedFee);
-};
-
-// Example usage for swap fee estimation
-export const estimateSwapFee = async (
-  params: SwapPsbtParams,
-  getEstimatedFee: (initialFee: number) => number
-) => {
-  return estimateFee(swapPsbt, params, getEstimatedFee);
-};

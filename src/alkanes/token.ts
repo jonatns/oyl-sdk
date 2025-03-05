@@ -13,6 +13,7 @@ import {
   formatInputsToSign,
   getAddressType,
 } from '../shared/utils'
+import { getEstimatedFee } from '../psbt'
 import { deployCommit, executeReveal, findAlkaneUtxos } from './alkanes'
 
 export const tokenDeployment = async ({
@@ -299,7 +300,6 @@ export const send = async ({
     provider,
     toAddress,
     feeRate,
-    signer,
   })
 
   const { psbt: finalPsbt } = await createSendPsbt({
@@ -333,7 +333,6 @@ export const actualSendFee = async ({
   toAddress,
   amount,
   feeRate,
-  signer,
 }: {
   gatheredUtxos: GatheredUtxos
   account: Account
@@ -342,7 +341,6 @@ export const actualSendFee = async ({
   toAddress: string
   amount: number
   feeRate?: number
-  signer: Signer
 }) => {
   if (!feeRate) {
     feeRate = (await provider.esplora.getFeeEstimates())['1']
@@ -358,22 +356,11 @@ export const actualSendFee = async ({
     feeRate,
   })
 
-  const { signedPsbt } = await signer.signAllInputs({
-    rawPsbt: psbt,
-    finalize: true,
+  const { fee: estimatedFee } = await getEstimatedFee({
+    feeRate,
+    psbt,
+    provider,
   })
-
-  let rawPsbt = bitcoin.Psbt.fromBase64(signedPsbt, {
-    network: account.network,
-  })
-
-  const signedHexPsbt = rawPsbt.extractTransaction().toHex()
-
-  const vsize = (
-    await provider.sandshrew.bitcoindRpc.testMemPoolAccept([signedHexPsbt])
-  )[0].vsize
-
-  const correctFee = vsize * feeRate
 
   const { psbt: finalPsbt } = await createSendPsbt({
     gatheredUtxos,
@@ -383,27 +370,16 @@ export const actualSendFee = async ({
     toAddress,
     amount,
     feeRate,
-    fee: correctFee,
+    fee: estimatedFee,
   })
 
-  const { signedPsbt: signedAll } = await signer.signAllInputs({
-    rawPsbt: finalPsbt,
-    finalize: true,
+  const { fee: finalFee, vsize } = await getEstimatedFee({
+    feeRate,
+    psbt: finalPsbt,
+    provider,
   })
 
-  let finalRawPsbt = bitcoin.Psbt.fromBase64(signedAll, {
-    network: account.network,
-  })
-
-  const finalSignedHexPsbt = finalRawPsbt.extractTransaction().toHex()
-
-  const finalVsize = (
-    await provider.sandshrew.bitcoindRpc.testMemPoolAccept([finalSignedHexPsbt])
-  )[0].vsize
-
-  const finalFee = finalVsize * feeRate
-
-  return { fee: finalFee }
+  return { fee: finalFee, vsize }
 }
 
 export const split = async ({
