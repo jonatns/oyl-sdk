@@ -18,7 +18,7 @@ export declare const createExecutePsbt: ({ alkaneUtxos, gatheredUtxos, account, 
     psbt: string;
     psbtHex: string;
 }>;
-export declare const createDeployCommit: ({ payload, gatheredUtxos, tweakedPublicKey, account, provider, feeRate, fee, }: {
+export declare const createDeployCommitPsbt: ({ payload, gatheredUtxos, tweakedPublicKey, account, provider, feeRate, fee, }: {
     payload: AlkanesPayload;
     gatheredUtxos: GatheredUtxos;
     tweakedPublicKey: string;
@@ -30,7 +30,23 @@ export declare const createDeployCommit: ({ payload, gatheredUtxos, tweakedPubli
     psbt: string;
     script: Buffer;
 }>;
-export declare const createDeployReveal: ({ protostone, receiverAddress, script, feeRate, tweakedPublicKey, provider, fee, commitTxId, }: {
+export declare const deployCommit: ({ payload, gatheredUtxos, account, provider, feeRate, signer, }: {
+    payload: AlkanesPayload;
+    gatheredUtxos: GatheredUtxos;
+    account: Account;
+    provider: Provider;
+    feeRate?: number;
+    signer: Signer;
+}) => Promise<{
+    script: string;
+    txId: string;
+    rawTx: string;
+    size: any;
+    weight: any;
+    fee: number;
+    satsPerVByte: string;
+}>;
+export declare const createDeployRevealPsbt: ({ protostone, receiverAddress, script, feeRate, tweakedPublicKey, provider, fee, commitTxId, }: {
     protostone: Buffer;
     receiverAddress: string;
     script: Buffer;
@@ -42,6 +58,22 @@ export declare const createDeployReveal: ({ protostone, receiverAddress, script,
 }) => Promise<{
     psbt: string;
     fee: number;
+}>;
+export declare const deployReveal: ({ protostone, commitTxId, script, account, provider, feeRate, signer, }: {
+    protostone: Buffer;
+    commitTxId: string;
+    script: string;
+    account: Account;
+    provider: Provider;
+    feeRate?: number;
+    signer: Signer;
+}) => Promise<{
+    txId: string;
+    rawTx: string;
+    size: any;
+    weight: any;
+    fee: number;
+    satsPerVByte: string;
 }>;
 export declare const findAlkaneUtxos: ({ address, greatestToLeast, provider, alkaneId, targetNumberOfAlkanes, }: {
     address: string;
@@ -82,22 +114,6 @@ export declare const actualExecuteFee: ({ gatheredUtxos, account, protostone, pr
 }) => Promise<{
     fee: number;
     vsize: number;
-}>;
-export declare const executeReveal: ({ protostone, commitTxId, script, account, provider, feeRate, signer, }: {
-    protostone: Buffer;
-    commitTxId: string;
-    script: string;
-    account: Account;
-    provider: Provider;
-    feeRate?: number;
-    signer: Signer;
-}) => Promise<{
-    txId: string;
-    rawTx: string;
-    size: any;
-    weight: any;
-    fee: number;
-    satsPerVByte: string;
 }>;
 export declare const executePsbt: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, }: {
     alkaneUtxos?: {
@@ -144,20 +160,4 @@ export declare const createTransactReveal: ({ protostone, receiverAddress, scrip
 }) => Promise<{
     psbt: string;
     fee: number;
-}>;
-export declare const deployCommit: ({ payload, gatheredUtxos, account, provider, feeRate, signer, }: {
-    payload: AlkanesPayload;
-    gatheredUtxos: GatheredUtxos;
-    account: Account;
-    provider: Provider;
-    feeRate?: number;
-    signer: Signer;
-}) => Promise<{
-    script: string;
-    txId: string;
-    rawTx: string;
-    size: any;
-    weight: any;
-    fee: number;
-    satsPerVByte: string;
 }>;
