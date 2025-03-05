@@ -14,8 +14,8 @@ import {
   getVSize,
   inscriptionSats,
   tweakSigner,
-  getEstimatedFee
 } from '../shared/utils'
+import { getEstimatedFee, psbtBuilder } from '../psbt'
 import { OylTransactionError } from '../errors'
 import { GatheredUtxos, AlkanesPayload } from '../shared/interface'
 import { getAddressType } from '../shared/utils'
@@ -641,11 +641,15 @@ export const actualExecuteFee = async ({
     fee: estimatedFee,
   })
 
+  console.log('estimatedFee', estimatedFee)
+
   const { fee: finalFee, vsize } = await getEstimatedFee({
     feeRate,
     psbt: finalPsbt,
     provider,
   })
+
+  console.log('finalFee', finalFee)
 
   return { fee: finalFee, vsize }
 }
@@ -771,6 +775,19 @@ export const execute = async ({
   feeRate?: number
   signer: Signer
 }) => {
+
+  const result = await psbtBuilder(createExecutePsbt, {
+    alkaneUtxos,
+    gatheredUtxos,
+    account,
+    protostone,
+    provider,
+    feeRate,
+  })
+
+  console.log('result', result)
+  
+  
   const { psbt: finalPsbt } = await executePsbt({
     alkaneUtxos,
     gatheredUtxos,

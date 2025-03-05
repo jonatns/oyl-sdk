@@ -107,3 +107,24 @@ export declare const swap: ({ calldata, token, tokenAmount, gatheredUtxos, feeRa
     satsPerVByte: string;
 }>;
 export declare const getPoolId: () => Promise<void>;
+type PsbtBuilderFunction<T> = (params: T) => Promise<{
+    psbt: string;
+    fee: number;
+}>;
+export declare const estimateFee: <T>(psbtBuilder: PsbtBuilderFunction<T>, params: T, getEstimatedFee: (initialFee: number) => number) => Promise<{
+    psbt: string;
+    fee: number;
+}>;
+export declare const estimateAddLiquidityFee: (params: AddLiquidityPsbtParams, getEstimatedFee: (initialFee: number) => number) => Promise<{
+    psbt: string;
+    fee: number;
+}>;
+export declare const estimateRemoveLiquidityFee: (params: RemoveLiquidityPsbtParams, getEstimatedFee: (initialFee: number) => number) => Promise<{
+    psbt: string;
+    fee: number;
+}>;
+export declare const estimateSwapFee: (params: SwapPsbtParams, getEstimatedFee: (initialFee: number) => number) => Promise<{
+    psbt: string;
+    fee: number;
+}>;
+export {};

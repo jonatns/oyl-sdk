@@ -12,8 +12,6 @@ export type SwapSimulationResult = {
   amountOut: bigint;
 };
 
-
-
 export type PoolDetailsResult = {
   token0: AlkaneId;
   token1: AlkaneId;
@@ -421,3 +419,49 @@ export const swap = async ({
 }
 
 export const getPoolId = async () => {}
+
+type PsbtBuilderFunction<T> = (params: T) => Promise<{ psbt: string; fee: number }>;
+
+export const estimateFee = async <T>(
+  psbtBuilder: PsbtBuilderFunction<T>,
+  params: T,
+  getEstimatedFee: (initialFee: number) => number
+): Promise<{ psbt: string; fee: number }> => {
+  // First build PSBT with initial parameters to get rough fee estimate
+  const { fee: initialFee } = await psbtBuilder(params);
+  
+  // Calculate actual fee based on initial estimate
+  const actualFee = getEstimatedFee(initialFee);
+  
+  // Rebuild PSBT with actual fee
+  const result = await psbtBuilder({
+    ...params,
+    feeRate: actualFee
+  });
+
+  return result;
+};
+
+// Example usage for addLiquidity fee estimation
+export const estimateAddLiquidityFee = async (
+  params: AddLiquidityPsbtParams,
+  getEstimatedFee: (initialFee: number) => number
+) => {
+  return estimateFee(addLiquidityPsbt, params, getEstimatedFee);
+};
+
+// Example usage for removeLiquidity fee estimation
+export const estimateRemoveLiquidityFee = async (
+  params: RemoveLiquidityPsbtParams,
+  getEstimatedFee: (initialFee: number) => number
+) => {
+  return estimateFee(removeLiquidityPsbt, params, getEstimatedFee);
+};
+
+// Example usage for swap fee estimation
+export const estimateSwapFee = async (
+  params: SwapPsbtParams,
+  getEstimatedFee: (initialFee: number) => number
+) => {
+  return estimateFee(swapPsbt, params, getEstimatedFee);
+};

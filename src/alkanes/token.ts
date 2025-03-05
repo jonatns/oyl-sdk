@@ -55,6 +55,7 @@ export const tokenDeployment = async ({
 
   return { ...reveal, commitTx: txId }
 }
+
 export const createSendPsbt = async ({
   gatheredUtxos,
   account,
@@ -647,6 +648,7 @@ export const createSplitPsbt = async ({
     throw new OylTransactionError(error)
   }
 }
+
 export const actualSplitFee = async ({
   gatheredUtxos,
   account,
