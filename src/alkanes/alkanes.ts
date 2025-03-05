@@ -211,7 +211,7 @@ export const createExecutePsbt = async ({
   }
 }
 
-export const createDeployCommit = async ({
+export const createDeployCommitPsbt = async ({
   payload,
   gatheredUtxos,
   tweakedPublicKey,
@@ -358,7 +358,62 @@ export const createDeployCommit = async ({
   }
 }
 
-export const createDeployReveal = async ({
+export const deployCommit = async ({
+  payload,
+  gatheredUtxos,
+  account,
+  provider,
+  feeRate,
+  signer,
+}: {
+  payload: AlkanesPayload
+  gatheredUtxos: GatheredUtxos
+  account: Account
+  provider: Provider
+  feeRate?: number
+  signer: Signer
+}) => {
+  const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
+    signer.taprootKeyPair,
+    {
+      network: provider.network,
+    }
+  )
+
+  const tweakedPublicKey = tweakedTaprootKeyPair.publicKey.toString('hex')
+
+  const { fee: commitFee } = await actualDeployCommitFee({
+    payload,
+    gatheredUtxos,
+    tweakedPublicKey,
+    account,
+    provider,
+    feeRate,
+  })
+
+  const { psbt: finalPsbt, script } = await createDeployCommitPsbt({
+    payload,
+    gatheredUtxos,
+    tweakedPublicKey,
+    account,
+    provider,
+    feeRate,
+    fee: commitFee,
+  })
+
+  const { signedPsbt } = await signer.signAllInputs({
+    rawPsbt: finalPsbt,
+    finalize: true,
+  })
+
+  const result = await provider.pushPsbt({
+    psbtBase64: signedPsbt,
+  })
+
+  return { ...result, script: script.toString('hex') }
+}
+
+export const createDeployRevealPsbt = async ({
   protostone,
   receiverAddress,
   script,
@@ -451,6 +506,69 @@ export const createDeployReveal = async ({
   } catch (error) {
     throw new OylTransactionError(error)
   }
+}
+
+export const deployReveal = async ({
+  protostone,
+  commitTxId,
+  script,
+  account,
+  provider,
+  feeRate,
+  signer,
+}: {
+  protostone: Buffer
+  commitTxId: string
+  script: string
+  account: Account
+  provider: Provider
+  feeRate?: number
+  signer: Signer
+}) => {
+  const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
+    signer.taprootKeyPair,
+    {
+      network: provider.network,
+    }
+  )
+
+  const tweakedPublicKey = tweakedTaprootKeyPair.publicKey.toString('hex')
+
+  const { fee } = await actualTransactRevealFee({
+    protostone,
+    tweakedPublicKey,
+    receiverAddress: account.taproot.address,
+    commitTxId,
+    script: Buffer.from(script, 'hex'),
+    provider,
+    feeRate,
+  })
+
+  const { psbt: finalRevealPsbt } = await createTransactReveal({
+    protostone,
+    tweakedPublicKey,
+    receiverAddress: account.taproot.address,
+    commitTxId,
+    script: Buffer.from(script, 'hex'),
+    provider,
+    feeRate,
+    fee,
+  })
+
+  let finalReveal = bitcoin.Psbt.fromBase64(finalRevealPsbt, {
+    network: provider.network,
+  })
+
+  finalReveal.signInput(0, tweakedTaprootKeyPair)
+  finalReveal.finalizeInput(0)
+
+  const finalSignedPsbt = finalReveal.toBase64()
+
+  const revealResult = await provider.pushPsbt({
+    psbtBase64: finalSignedPsbt,
+  })
+
+  return revealResult
 }
 
 export const findAlkaneUtxos = async ({
@@ -631,69 +749,6 @@ export const actualExecuteFee = async ({
   return { fee: finalFee, vsize }
 }
 
-export const executeReveal = async ({
-  protostone,
-  commitTxId,
-  script,
-  account,
-  provider,
-  feeRate,
-  signer,
-}: {
-  protostone: Buffer
-  commitTxId: string
-  script: string
-  account: Account
-  provider: Provider
-  feeRate?: number
-  signer: Signer
-}) => {
-  const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
-    signer.taprootKeyPair,
-    {
-      network: provider.network,
-    }
-  )
-
-  const tweakedPublicKey = tweakedTaprootKeyPair.publicKey.toString('hex')
-
-  const { fee } = await actualTransactRevealFee({
-    protostone,
-    tweakedPublicKey,
-    receiverAddress: account.taproot.address,
-    commitTxId,
-    script: Buffer.from(script, 'hex'),
-    provider,
-    feeRate,
-  })
-
-  const { psbt: finalRevealPsbt } = await createTransactReveal({
-    protostone,
-    tweakedPublicKey,
-    receiverAddress: account.taproot.address,
-    commitTxId,
-    script: Buffer.from(script, 'hex'),
-    provider,
-    feeRate,
-    fee,
-  })
-
-  let finalReveal = bitcoin.Psbt.fromBase64(finalRevealPsbt, {
-    network: provider.network,
-  })
-
-  finalReveal.signInput(0, tweakedTaprootKeyPair)
-  finalReveal.finalizeInput(0)
-
-  const finalSignedPsbt = finalReveal.toBase64()
-
-  const revealResult = await provider.pushPsbt({
-    psbtBase64: finalSignedPsbt,
-  })
-
-  return revealResult
-}
-
 export const executePsbt = async ({
   alkaneUtxos,
   gatheredUtxos,
@@ -755,25 +810,23 @@ export const execute = async ({
   signer: Signer
 }) => {
 
-  // const result = await psbtBuilder(createExecutePsbt, {
-  //   alkaneUtxos,
-  //   gatheredUtxos,
-  //   account,
-  //   protostone,
-  //   provider,
-  //   feeRate,
-  // })
-
-  // console.log('result', result)
-  
-  
-  const { psbt: finalPsbt } = await executePsbt({
+  const { fee } = await actualExecuteFee({
     alkaneUtxos,
     gatheredUtxos,
     account,
     protostone,
     provider,
     feeRate,
+  })
+
+  const { psbt: finalPsbt } = await createExecutePsbt({
+    alkaneUtxos,
+    gatheredUtxos,
+    account,
+    protostone,
+    provider,
+    feeRate,
+    fee,
   })
   
   const { signedPsbt } = await signer.signAllInputs({
@@ -883,57 +936,3 @@ export const createTransactReveal = async ({
   }
 }
 
-export const deployCommit = async ({
-  payload,
-  gatheredUtxos,
-  account,
-  provider,
-  feeRate,
-  signer,
-}: {
-  payload: AlkanesPayload
-  gatheredUtxos: GatheredUtxos
-  account: Account
-  provider: Provider
-  feeRate?: number
-  signer: Signer
-}) => {
-  const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
-    signer.taprootKeyPair,
-    {
-      network: provider.network,
-    }
-  )
-
-  const tweakedPublicKey = tweakedTaprootKeyPair.publicKey.toString('hex')
-
-  const { fee: commitFee } = await actualDeployCommitFee({
-    payload,
-    gatheredUtxos,
-    tweakedPublicKey,
-    account,
-    provider,
-    feeRate,
-  })
-
-  const { psbt: finalPsbt, script } = await createDeployCommit({
-    payload,
-    gatheredUtxos,
-    tweakedPublicKey,
-    account,
-    provider,
-    feeRate,
-    fee: commitFee,
-  })
-
-  const { signedPsbt } = await signer.signAllInputs({
-    rawPsbt: finalPsbt,
-    finalize: true,
-  })
-
-  const result = await provider.pushPsbt({
-    psbtBase64: signedPsbt,
-  })
-
-  return { ...result, script: script.toString('hex') }
-}

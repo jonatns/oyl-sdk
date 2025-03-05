@@ -14,7 +14,7 @@ import {
   getAddressType,
 } from '../shared/utils'
 import { getEstimatedFee } from '../psbt'
-import { deployCommit, executeReveal, findAlkaneUtxos } from './alkanes'
+import { deployCommit, deployReveal, findAlkaneUtxos } from './alkanes'
 
 export const tokenDeployment = async ({
   payload,
@@ -44,7 +44,7 @@ export const tokenDeployment = async ({
 
   await timeout(3000)
 
-  const reveal = await executeReveal({
+  const reveal = await  deployReveal({
     protostone,
     script,
     commitTxId: txId,
@@ -107,6 +107,7 @@ export const createSendPsbt = async ({
     }
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
+
     const { alkaneUtxos, totalSatoshis } = await findAlkaneUtxos({
       address: account.taproot.address,
       greatestToLeast: account.spendStrategy.utxoSortGreatestToLeast,

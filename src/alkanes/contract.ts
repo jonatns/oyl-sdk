@@ -2,7 +2,7 @@ import { Account, Signer, Provider } from '..'
 import * as bitcoin from 'bitcoinjs-lib'
 import { AlkanesPayload, GatheredUtxos } from '../shared/interface'
 import { timeout, tweakSigner } from '../shared/utils'
-import { createDeployCommit, createDeployReveal, deployCommit } from './alkanes'
+import { createDeployCommitPsbt, createDeployRevealPsbt, deployCommit } from './alkanes'
 import { getEstimatedFee } from '../psbt'
 export const contractDeployment = async ({
   payload,
@@ -64,7 +64,7 @@ export const actualDeployCommitFee = async ({
     feeRate = (await provider.esplora.getFeeEstimates())['1']
   }
 
-  const { psbt } = await createDeployCommit({
+  const { psbt } = await createDeployCommitPsbt({
     payload,
     gatheredUtxos,
     tweakedPublicKey,
@@ -79,7 +79,7 @@ export const actualDeployCommitFee = async ({
     provider,
   })
 
-  const { psbt: finalPsbt } = await createDeployCommit({
+  const { psbt: finalPsbt } = await createDeployCommitPsbt({
     payload,
     gatheredUtxos,
     tweakedPublicKey,
@@ -119,7 +119,7 @@ export const actualDeployRevealFee = async ({
     feeRate = (await provider.esplora.getFeeEstimates())['1']
   }
 
-  const { psbt } = await createDeployReveal({
+  const { psbt } = await createDeployRevealPsbt({
     protostone,
     commitTxId,
     receiverAddress,
@@ -135,7 +135,7 @@ export const actualDeployRevealFee = async ({
     provider,
   })
 
-  const { psbt: finalPsbt } = await createDeployReveal({
+  const { psbt: finalPsbt } = await createDeployRevealPsbt({
     protostone,
     commitTxId,
     receiverAddress,
@@ -191,7 +191,7 @@ export const deployReveal = async ({
     feeRate,
   })
 
-  const { psbt: finalRevealPsbt } = await createDeployReveal({
+  const { psbt: finalRevealPsbt } = await createDeployRevealPsbt({
     protostone,
     tweakedPublicKey,
     receiverAddress: account.taproot.address,
