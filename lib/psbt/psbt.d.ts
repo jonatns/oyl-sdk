@@ -4,11 +4,10 @@ type BasePsbtParams = {
     provider: Provider;
     fee?: number;
 };
-type PsbtBuilderFunction<T extends BasePsbtParams> = (params: T) => Promise<{
+export declare const psbtBuilder: <T extends BasePsbtParams>(psbtBuilder: (params: T) => Promise<{
     psbt: string;
     fee?: number;
-}>;
-export declare const psbtBuilder: <T extends BasePsbtParams>(psbtBuilder: PsbtBuilderFunction<T>, params: T) => Promise<{
+}>, params: T) => Promise<{
     psbt: string;
     fee: number;
     vsize: number;

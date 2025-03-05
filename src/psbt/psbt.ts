@@ -12,14 +12,14 @@ type BasePsbtParams = {
 type PsbtBuilderFunction<T extends BasePsbtParams> = (params: T) => Promise<{ psbt: string; fee?: number }>;
 
 export const psbtBuilder = async <T extends BasePsbtParams>(
-  psbtBuilder: PsbtBuilderFunction<T>,
+  psbtBuilder: (params: T) => Promise<{ psbt: string; fee?: number }>,
   params: T
 ): Promise<{ psbt: string; fee: number; vsize: number }> => {
-  const { psbt }  = await psbtBuilder(params);
+  const { psbt } = await psbtBuilder(params);
   
-  const actualFee = getEstimatedFee({
+  const { fee: actualFee } = await getEstimatedFee({
     feeRate: params.feeRate,
-    psbt: psbt,
+    psbt,
     provider: params.provider
   });
   
