@@ -7,15 +7,21 @@ export type CreateNewPoolSimulationResult = {
 export type FindExistingPoolIdSimulationResult = {
     alkaneId: AlkaneId;
 };
+export type GetAllPoolsResult = {
+    count: number;
+    pools: AlkaneId[];
+};
 export declare enum PoolFactoryOpcodes {
     INIT_POOL = 0,
     CREATE_NEW_POOL = 1,
-    FIND_EXISTING_POOL_ID = 2
+    FIND_EXISTING_POOL_ID = 2,
+    GET_ALL_POOLS = 3
 }
 export declare const parseAlkaneIdFromHex: (hex: string) => AlkaneId;
 export declare class AlkanesAMMPoolFactoryDecoder {
     decodeCreateNewPool(execution: any): CreateNewPoolSimulationResult | undefined;
     decodeFindExistingPoolId(execution: any): FindExistingPoolIdSimulationResult | undefined;
+    decodeGetAllPools(execution: any): GetAllPoolsResult | undefined;
     static decodeSimulation(result: any, opcode: number): any;
 }
 export declare const getPoolId: () => Promise<void>;
