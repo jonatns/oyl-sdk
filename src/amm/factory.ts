@@ -20,10 +20,16 @@ export type FindExistingPoolIdSimulationResult = {
   alkaneId: AlkaneId;
 };
 
+export type GetAllPoolsResult = {
+  count: number;
+  pools: AlkaneId[];
+};
+
 export enum PoolFactoryOpcodes {
-  INIT_POOL = 0, 
+  INIT_POOL = 0,
   CREATE_NEW_POOL = 1,
   FIND_EXISTING_POOL_ID = 2,
+  GET_ALL_POOLS = 3,
 }
 
 export const parseAlkaneIdFromHex = (hex: string): AlkaneId => {
@@ -69,6 +75,32 @@ export class AlkanesAMMPoolFactoryDecoder {
     };
   }
 
+  decodeGetAllPools(execution: any): GetAllPoolsResult | undefined {
+    if (!execution?.data || execution.data === '0x') {
+      return undefined;
+    }
+    
+    const data = execution.data.startsWith('0x') ? execution.data.slice(2) : execution.data;
+    
+    const countBytes = Buffer.from(data.slice(0, 32), 'hex');
+    const count = parseInt(countBytes.reverse().toString('hex'), 16);
+    
+    const pools: AlkaneId[] = [];
+    for (let i = 0; i < count; i++) {
+      const offset = 32 + (i * 64);
+      
+      const blockBytes = Buffer.from(data.slice(offset, offset + 32), 'hex');
+      const block = parseInt(blockBytes.reverse().toString('hex'), 16).toString();
+    
+      const txBytes = Buffer.from(data.slice(offset + 32, offset + 64), 'hex');
+      const tx = parseInt(txBytes.reverse().toString('hex'), 16).toString();
+      
+      pools.push({ block, tx });
+    }
+    
+    return { count, pools };
+  }
+
   static decodeSimulation(result: any, opcode: number) {
     if (!result || typeof result.status === 'undefined') {
       return {
@@ -90,6 +122,9 @@ export class AlkanesAMMPoolFactoryDecoder {
         break;
       case PoolFactoryOpcodes.FIND_EXISTING_POOL_ID:
         decoded = decoder.decodeFindExistingPoolId(result.execution);
+        break;
+      case PoolFactoryOpcodes.GET_ALL_POOLS:
+        decoded = decoder.decodeGetAllPools(result.execution);
         break;
       default:
         decoded = undefined;
