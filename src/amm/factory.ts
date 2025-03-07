@@ -6,7 +6,7 @@ import { encodeRunestoneProtostone } from 'alkanes/lib/protorune/proto_runestone
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { ProtoStone } from 'alkanes/lib/protorune/protostone'
-import { Account, alkanes, Provider, Signer, utxo } from '..'
+import { Account, alkanes, Provider, Signer } from '..'
 import { AlkaneId, Utxo } from 'shared/interface'
 
 const BURN_OUTPUT = u32(2)
@@ -136,18 +136,27 @@ export class AlkanesAMMPoolFactoryDecoder {
 
 export const getPoolId = async () => { }
 
-export const createNewPool = async (
-  calldata: bigint[],
-  token0: AlkaneId,
-  token0Amount: bigint,
-  token1: AlkaneId,
-  token1Amount: bigint,
-  gatheredUtxos: { utxos: Utxo[]; totalAmount: number },
-  feeRate: number,
-  account: Account,
-  signer: Signer,
-  provider: Provider
-) => {
+export const createNewPoolPsbt = async ({
+  calldata,
+  token0,
+  token0Amount,
+  token1,
+  token1Amount,
+  gatheredUtxos,
+  feeRate,
+  account,
+  provider,
+}: {
+  calldata: bigint[];
+  token0: AlkaneId;
+  token0Amount: bigint;
+  token1: AlkaneId;
+  token1Amount: bigint;
+  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
+  feeRate: number;
+  account: Account;
+  provider: Provider;
+}) => {
   let tokenUtxos: {
     alkaneUtxos: any[]
     totalSatoshis: number
@@ -210,15 +219,53 @@ export const createNewPool = async (
     ],
   }).encodedRunestone
 
-  return await alkanes.execute({
+  const { psbt, fee } = await alkanes.executePsbt({
     alkaneUtxos: tokenUtxos,
     protostone,
     gatheredUtxos,
     feeRate,
     account,
-    signer,
     provider,
   })
+
+  return { psbt, fee }
+}
+
+export const createNewPool = async ({
+  calldata,
+  token0,
+  token0Amount,
+  token1,
+  token1Amount,
+  gatheredUtxos,
+  feeRate,
+  account,
+  signer,
+  provider,
+}: {
+  calldata: bigint[];
+  token0: AlkaneId;
+  token0Amount: bigint;
+  token1: AlkaneId;
+  token1Amount: bigint;
+  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
+  feeRate: number;
+  account: Account;
+  provider: Provider;
+  signer: Signer;
+}) => {
+  const { psbt } = await createNewPoolPsbt({ calldata, token0, token0Amount, token1, token1Amount, gatheredUtxos, feeRate, account, provider })
+
+  const { signedPsbt } = await signer.signAllInputs({
+    rawPsbt:  psbt,
+    finalize: true,
+  })
+
+  const pushResult = await provider.pushPsbt({
+    psbtBase64: signedPsbt,
+  })
+
+  return pushResult
 }
 
 export const splitAlkaneUtxos = async (
@@ -245,7 +292,6 @@ export const splitAlkaneUtxos = async (
       })
     })
   )
-
 
   tokenUtxos = {
     alkaneUtxos: allTokenUtxos.alkaneUtxos,
@@ -275,8 +321,6 @@ export const splitAlkaneUtxos = async (
     ]
   }
   )
-
-
 
   const protostone: Buffer = encodeRunestoneProtostone({
     protostones: [

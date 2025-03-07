@@ -87,18 +87,27 @@ export class AlkanesAMMPoolDecoder {
   }
 }
 
-export const mint = async (
-  calldata: bigint[],
-  token0: AlkaneId,
-  token0Amount: bigint,
-  token1: AlkaneId,
-  token1Amount: bigint,
-  gatheredUtxos: { utxos: Utxo[]; totalAmount: number },
-  feeRate: number,
-  account: Account,
-  signer: Signer,
-  provider: Provider
-) => {
+export const addLiquidityPsbt = async ({
+  calldata,
+  token0,
+  token0Amount,
+  token1,
+  token1Amount,
+  gatheredUtxos,
+  feeRate,
+  account,
+  provider,
+}: {
+  calldata: bigint[];
+  token0: AlkaneId;
+  token0Amount: bigint;
+  token1: AlkaneId;
+  token1Amount: bigint;
+  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
+  feeRate: number;
+  account: Account;
+  provider: Provider;
+}) => {
   let tokenUtxos: {
     alkaneUtxos: any[]
     totalSatoshis: number
@@ -162,27 +171,72 @@ export const mint = async (
     ],
   }).encodedRunestone
 
-  return await alkanes.execute({
+  const { psbt, fee } = await alkanes.executePsbt({
     alkaneUtxos: tokenUtxos,
     protostone,
     gatheredUtxos,
     feeRate,
     account,
-    signer,
     provider,
   })
+
+  return { psbt, fee }
 }
 
-export const burn = async (
-  calldata: bigint[],
-  token: AlkaneId,
-  tokenAmount: bigint,
-  gatheredUtxos: { utxos: Utxo[]; totalAmount: number },
-  feeRate: number,
-  account: Account,
-  signer: Signer,
-  provider: Provider
-) => {
+export const addLiquidity = async ({
+  calldata,
+  token0,
+  token0Amount,
+  token1,
+  token1Amount,
+  gatheredUtxos,
+  feeRate,
+  account,
+  signer,
+  provider,
+}: {
+  calldata: bigint[];
+  token0: AlkaneId;
+  token0Amount: bigint;
+  token1: AlkaneId;
+  token1Amount: bigint;
+  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
+  feeRate: number;
+  account: Account;
+  provider: Provider;
+  signer: Signer;
+}) => {
+  const { psbt } = await addLiquidityPsbt({ calldata, token0, token0Amount, token1, token1Amount, gatheredUtxos, feeRate, account, provider })
+
+  const { signedPsbt } = await signer.signAllInputs({
+    rawPsbt: psbt,
+    finalize: true,
+  })
+
+  const pushResult = await provider.pushPsbt({
+    psbtBase64: signedPsbt,
+  })
+
+  return pushResult
+}
+
+export const removeLiquidityPsbt = async ({
+  calldata,
+  token,
+  tokenAmount,
+  gatheredUtxos,
+  feeRate,
+  account,
+  provider,
+}: {
+  calldata: bigint[];
+  token: AlkaneId;
+  tokenAmount: bigint;
+  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
+  feeRate: number;
+  account: Account;
+  provider: Provider;
+}) => {
   let alkaneTokenUtxos: {
     alkaneUtxos: any[]
     totalSatoshis: number
@@ -213,7 +267,6 @@ export const burn = async (
     }
   ]
 
-
   const protostone: Buffer = encodeRunestoneProtostone({
     protostones: [
       ProtoStone.message({
@@ -226,28 +279,68 @@ export const burn = async (
     ],
   }).encodedRunestone
 
-  return await alkanes.execute({
+  const { psbt, fee } = await alkanes.executePsbt({
     alkaneUtxos: alkaneTokenUtxos,
     protostone,
     gatheredUtxos,
     feeRate,
     account,
-    signer,
     provider,
   })
+
+  return { psbt, fee }
 }
 
+export const removeLiquidity = async ({
+  calldata,
+  token,
+  tokenAmount,
+  gatheredUtxos,
+  feeRate,
+  account,
+  signer,
+  provider,
+}: {
+  calldata: bigint[];
+  token: AlkaneId;
+  tokenAmount: bigint;
+  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
+  feeRate: number;
+  account: Account;
+  provider: Provider;
+  signer: Signer;
+}) => {
+  const { psbt, fee } = await removeLiquidityPsbt({ calldata, token, tokenAmount, gatheredUtxos, feeRate, account, provider })
 
-export const swap = async (
-  calldata: bigint[],
-  token: AlkaneId,
-  tokenAmount: bigint,
-  gatheredUtxos: { utxos: Utxo[]; totalAmount: number },
-  feeRate: number,
-  account: Account,
-  signer: Signer,
-  provider: Provider
-) => {
+  const { signedPsbt } = await signer.signAllInputs({
+    rawPsbt: psbt,
+    finalize: true,
+  })
+
+  const pushResult = await provider.pushPsbt({
+    psbtBase64: signedPsbt,
+  })
+
+  return pushResult
+}
+
+export const swapPsbt = async ({
+  calldata,
+  token,
+  tokenAmount,
+  gatheredUtxos,
+  feeRate,
+  account,
+  provider,
+}: {
+  calldata: bigint[];
+  token: AlkaneId;
+  tokenAmount: bigint;
+  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
+  feeRate: number;
+  account: Account;
+  provider: Provider;
+}) => {
   let alkaneTokenUtxos: {
     alkaneUtxos: any[]
     totalSatoshis: number
@@ -278,7 +371,6 @@ export const swap = async (
     }
   ]
 
-
   const protostone: Buffer = encodeRunestoneProtostone({
     protostones: [
       ProtoStone.message({
@@ -291,15 +383,49 @@ export const swap = async (
     ],
   }).encodedRunestone
 
-  return await alkanes.execute({
+  const { psbt, fee } = await alkanes.executePsbt({
     alkaneUtxos: alkaneTokenUtxos,
     protostone,
     gatheredUtxos,
     feeRate,
     account,
-    signer,
     provider,
   })
+
+  return { psbt, fee }
 }
 
-export const getPoolId = async () => {}
+export const swap = async ({
+  calldata,
+  token,
+  tokenAmount,
+  gatheredUtxos,
+  feeRate,
+  account,
+  signer,
+  provider,
+}: {
+  calldata: bigint[];
+  token: AlkaneId;
+  tokenAmount: bigint;
+  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
+  feeRate: number;
+  account: Account;
+  provider: Provider;
+  signer: Signer;
+}) => {
+  const { psbt, fee } = await swapPsbt({ calldata, token, tokenAmount, gatheredUtxos, feeRate, account, provider })
+
+  const { signedPsbt } = await signer.signAllInputs({
+    rawPsbt: psbt,
+    finalize: true,
+  })
+
+  const pushResult = await provider.pushPsbt({
+    psbtBase64: signedPsbt,
+  })
+
+  return pushResult
+}
+
+

@@ -16,7 +16,7 @@ import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 import { createNewPool, splitAlkaneUtxos } from '../amm/factory'
-import { burn, mint, swap } from '../amm/pool'
+import { removeLiquidity, addLiquidity, swap } from '../amm/pool'
 
 /* @dev example call
   oyl alkane trace -params '{"txid":"0322c3a2ce665485c8125cd0334675f0ddbd7d5b278936144efb108ff59c49b5","vout":0}'
@@ -340,11 +340,11 @@ export const alkaneExecute = new Command('execute')
   })
 
 /* @dev example call 
-  oyl alkane burn -data "2,9,1" -p alkanes -feeRate 5 -blk 2 -tx 1 -amt 200
+  oyl alkane   -data "2,9,1" -p alkanes -feeRate 5 -blk 2 -tx 1 -amt 200
 
   Burns an alkane LP token amount
 */
-export const alkaneBurn = new Command('burn')
+export const alkaneRemoveLiquidity = new Command('remove-liquidity')
   .requiredOption(
     '-data, --calldata <calldata>',
     'op code + params to be called on a contract',
@@ -374,20 +374,19 @@ export const alkaneBurn = new Command('burn')
     const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
 
     console.log(
-      await burn(
+      await removeLiquidity({
         calldata,
-          { block: options.block, tx: options.txNum },
-          BigInt(options.amount),
-          {
+        token: { block: options.block, tx: options.txNum },
+        tokenAmount: BigInt(options.amount),
+        gatheredUtxos: {
           utxos: accountSpendableTotalUtxos,
           totalAmount: accountSpendableTotalBalance,
         },
-        wallet.feeRate,
-        wallet.account,
-        wallet.signer,
-        wallet.provider,
-
-      )
+        feeRate: wallet.feeRate,
+        account: wallet.account,
+        signer: wallet.signer,
+        provider: wallet.provider,
+      })  
     )
   })
 
@@ -427,20 +426,19 @@ export const alkaneSwap = new Command('swap')
   const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
 
   console.log(
-    await swap(
+    await swap({
       calldata,
-        { block: options.block, tx: options.txNum },
-        BigInt(options.amount),
-        {
+        token: { block: options.block, tx: options.txNum },
+        tokenAmount: BigInt(options.amount),
+        gatheredUtxos: {
         utxos: accountSpendableTotalUtxos,
         totalAmount: accountSpendableTotalBalance,
       },
-      wallet.feeRate,
-      wallet.account,
-      wallet.signer,
-      wallet.provider,
-
-    )
+      feeRate: wallet.feeRate,
+      account: wallet.account,
+      signer: wallet.signer,
+      provider: wallet.provider,
+    })
   )
 })
 
@@ -609,30 +607,30 @@ export const alkaneCreatePool = new Command('create-pool')
   })
 
   console.log(
-    await createNewPool(
+    await createNewPool({
       calldata,
-      alkaneTokensToPool[0].alkaneId,
-      alkaneTokensToPool[0].amount,
-      alkaneTokensToPool[1].alkaneId,
-      alkaneTokensToPool[1].amount,
-      {
+      token0: alkaneTokensToPool[0].alkaneId,
+      token0Amount: alkaneTokensToPool[0].amount,
+      token1: alkaneTokensToPool[1].alkaneId,
+      token1Amount: alkaneTokensToPool[1].amount,
+      gatheredUtxos: {
         utxos: accountSpendableTotalUtxos,
         totalAmount: accountSpendableTotalBalance,
       },
-      wallet.feeRate,
-      wallet.account,
-      wallet.signer,
-      wallet.provider,
-    )
+      feeRate: wallet.feeRate,
+      account: wallet.account,
+      signer: wallet.signer,
+      provider: wallet.provider,
+    })
   )
 })
 
 /* @dev example call 
- oyl alkane mint -data "2,1,1" -tokens "2:2:50000,2:3:50000" -feeRate 5 -p alkanes
+ oyl alkane add-liquidity -data "2,1,1" -tokens "2:2:50000,2:3:50000" -feeRate 5 -p alkanes
 
 Mints new LP tokens and adds liquidity to the pool with the given tokens and amounts
 */
-export const alkaneMint = new Command('mint')
+export const alkaneAddLiquidity = new Command('add-liquidity')
 .requiredOption(
   '-data, --calldata <calldata>',
   'op code + params to be called on a contract',
@@ -682,21 +680,21 @@ export const alkaneMint = new Command('mint')
   })
 
   console.log(
-    await mint(
+    await addLiquidity({
       calldata,
-      alkaneTokensToMint[0].alkaneId,
-      alkaneTokensToMint[0].amount,
-      alkaneTokensToMint[1].alkaneId,
-      alkaneTokensToMint[1].amount,
-      {
+      token0: alkaneTokensToMint[0].alkaneId,
+      token0Amount: alkaneTokensToMint[0].amount,
+      token1: alkaneTokensToMint[1].alkaneId,
+      token1Amount: alkaneTokensToMint[1].amount,
+      gatheredUtxos: {
         utxos: accountSpendableTotalUtxos,
         totalAmount: accountSpendableTotalBalance,
       },
-      wallet.feeRate,
-      wallet.account,
-      wallet.signer,
-      wallet.provider,
-    )
+      feeRate: wallet.feeRate,
+      account: wallet.account,
+      signer: wallet.signer,
+      provider: wallet.provider,
+    })
   )
 })
 
