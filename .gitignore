@@ -9,3 +9,5 @@ src.ts/Untitled-1.json
 logs.txt
 yarn-error.log
 package-lock.json
+.clinerules
+memory-bank/

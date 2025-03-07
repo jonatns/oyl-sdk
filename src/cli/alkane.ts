@@ -775,5 +775,5 @@ export const alkaneSimulate = new Command('simulate')
         )
     }
 
-   console.log(await wallet.provider.alkanes.simulate(request, decoder))
+   console.log(JSON.stringify(await wallet.provider.alkanes.simulate(request, decoder), null, 2))
   })
