@@ -9,6 +9,7 @@ export type PoolDetailsResult = {
     token0Amount: string;
     token1Amount: string;
     tokenSupply: string;
+    poolName: string;
 };
 export declare enum PoolOpcodes {
     INIT_POOL = 0,
@@ -16,11 +17,13 @@ export declare enum PoolOpcodes {
     REMOVE_LIQUIDITY = 2,
     SWAP = 3,
     SIMULATE_SWAP = 4,
-    POOL_DETAILS = 5
+    NAME = 99,
+    POOL_DETAILS = 999
 }
 export declare class AlkanesAMMPoolDecoder {
     decodeSwap(data: string): SwapSimulationResult | undefined;
     decodePoolDetails(data: string): PoolDetailsResult | undefined;
+    decodeName(data: string): string | undefined;
     static decodeSimulation(result: any, opcode: number): any;
 }
 export declare const addLiquidityPsbt: ({ calldata, token0, token0Amount, token1, token1Amount, gatheredUtxos, feeRate, account, provider, }: {

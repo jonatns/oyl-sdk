@@ -18,6 +18,7 @@ export type PoolDetailsResult = {
   token0Amount: string;
   token1Amount: string;
   tokenSupply: string;
+  poolName: string;
 };
 
 export enum PoolOpcodes {
@@ -26,7 +27,8 @@ export enum PoolOpcodes {
   REMOVE_LIQUIDITY = 2,
   SWAP = 3,
   SIMULATE_SWAP = 4,
-  POOL_DETAILS = 5,
+  NAME = 99,
+  POOL_DETAILS = 999,
 }
 
 export class AlkanesAMMPoolDecoder {
@@ -43,6 +45,7 @@ export class AlkanesAMMPoolDecoder {
   decodePoolDetails(data: string): PoolDetailsResult | undefined {
     if (data === '0x') return undefined;
     const bytes = Buffer.from(data.slice(2), 'hex');
+    console.log('data', data)
     
     const token0: AlkaneId = {
       block: bytes.readBigUInt64LE(0).toString(),
@@ -56,8 +59,18 @@ export class AlkanesAMMPoolDecoder {
     const token0Amount = bytes.readBigUInt64LE(64).toString();
     const token1Amount = bytes.readBigUInt64LE(80).toString();
     const tokenSupply = bytes.readBigUInt64LE(96).toString();
+    
+    // Decode the pool name string starting from byte 116 (112 + 4 to skip control chars)
+    const poolName = Buffer.from(bytes.subarray(116)).toString('utf8');
+    
+    console.log({ token0, token1, token0Amount, token1Amount, tokenSupply, poolName })
 
-    return { token0, token1, token0Amount, token1Amount, tokenSupply };
+    return { token0, token1, token0Amount, token1Amount, tokenSupply, poolName };
+  }
+
+  decodeName(data: string): string | undefined {
+    if (data === '0x') return undefined;
+    return data.slice(2);
   }
 
   static decodeSimulation(result: any, opcode: number) {
@@ -69,8 +82,11 @@ export class AlkanesAMMPoolDecoder {
       case PoolOpcodes.ADD_LIQUIDITY:
       case PoolOpcodes.REMOVE_LIQUIDITY:
         throw new Error('Opcode not supported in simulation mode');
-      case PoolOpcodes.SIMULATE_SWAP:
-        decoded = decoder.decodeSwap(result.execution.data);
+        case PoolOpcodes.SIMULATE_SWAP:
+          decoded = decoder.decodeSwap(result.execution.data);
+          break;
+      case PoolOpcodes.NAME:
+        decoded = decoder.decodeName(result.execution.data);
         break;
       case PoolOpcodes.POOL_DETAILS:
         decoded = decoder.decodePoolDetails(result.execution.data);
