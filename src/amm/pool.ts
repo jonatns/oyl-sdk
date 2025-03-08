@@ -65,7 +65,8 @@ export class AlkanesAMMPoolDecoder {
 
   decodeName(data: string): string | undefined {
     if (data === '0x') return undefined;
-    return data.slice(2);
+    const bytes = Buffer.from(data.slice(2), 'hex');
+    return bytes.toString('utf8');
   }
 
   static decodeSimulation(result: any, opcode: number) {
