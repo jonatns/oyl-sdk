@@ -45,7 +45,6 @@ export class AlkanesAMMPoolDecoder {
   decodePoolDetails(data: string): PoolDetailsResult | undefined {
     if (data === '0x') return undefined;
     const bytes = Buffer.from(data.slice(2), 'hex');
-    console.log('data', data)
     
     const token0: AlkaneId = {
       block: bytes.readBigUInt64LE(0).toString(),
@@ -59,11 +58,7 @@ export class AlkanesAMMPoolDecoder {
     const token0Amount = bytes.readBigUInt64LE(64).toString();
     const token1Amount = bytes.readBigUInt64LE(80).toString();
     const tokenSupply = bytes.readBigUInt64LE(96).toString();
-    
-    // Decode the pool name string starting from byte 116 (112 + 4 to skip control chars)
     const poolName = Buffer.from(bytes.subarray(116)).toString('utf8');
-    
-    console.log({ token0, token1, token0Amount, token1Amount, tokenSupply, poolName })
 
     return { token0, token1, token0Amount, token1Amount, tokenSupply, poolName };
   }
