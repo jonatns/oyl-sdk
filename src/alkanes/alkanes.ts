@@ -1,11 +1,7 @@
 import { minimumFee } from '../btc'
 import { Provider } from '../provider/provider'
 import * as bitcoin from 'bitcoinjs-lib'
-import {
-  encodeRunestoneProtostone,
-  p2tr_ord_reveal,
-  ProtoStone,
-} from 'alkanes/lib/index'
+import { p2tr_ord_reveal } from 'alkanes/lib/index'
 import { Account, Signer } from '..'
 import {
   findXAmountOfSats,
@@ -15,7 +11,7 @@ import {
   inscriptionSats,
   tweakSigner,
 } from '../shared/utils'
-import { getEstimatedFee, psbtBuilder } from '../psbt'
+import { getEstimatedFee } from '../psbt'
 import { OylTransactionError } from '../errors'
 import { GatheredUtxos, AlkanesPayload } from '../shared/interface'
 import { getAddressType } from '../shared/utils'
@@ -45,7 +41,6 @@ export const createExecutePsbt = async ({
   fee?: number
 }) => {
   try {
-
     const originalGatheredUtxos = gatheredUtxos
 
     const minTxSize = minimumFee({
@@ -59,7 +54,7 @@ export const createExecutePsbt = async ({
 
     gatheredUtxos = findXAmountOfSats(
       originalGatheredUtxos.utxos,
-      Number(finalFee) + 546 
+      Number(finalFee) + 546
     )
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
@@ -177,10 +172,10 @@ export const createExecutePsbt = async ({
         })
       }
     }
-    //make dynamic
+
     psbt.addOutput({
       address: account.taproot.address,
-      value: 546
+      value: 546,
     })
 
     const output = { script: protostone, value: 0 }
@@ -189,7 +184,8 @@ export const createExecutePsbt = async ({
     const changeAmount =
       gatheredUtxos.totalAmount +
       (alkaneUtxos?.totalSatoshis || 0) -
-      finalFee - 546 
+      finalFee -
+      546
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
@@ -612,9 +608,8 @@ export const findAlkaneUtxos = async ({
   for (const alkane of sortedRunesWithOutpoints) {
     if (
       totalBalanceBeingSent < targetNumberOfAlkanes &&
-      Number(alkane.rune.balance) > 0 
+      Number(alkane.rune.balance) > 0
     ) {
-     
       const satoshis = Number(alkane.outpoint.output.value)
       alkaneUtxos.push({
         txId: alkane.outpoint.outpoint.txid,
@@ -623,12 +618,15 @@ export const findAlkaneUtxos = async ({
         address,
         amountOfAlkanes: alkane.rune.balance,
         satoshis,
-        ...alkane.rune.rune
+        ...alkane.rune.rune,
       })
       totalSatoshis += satoshis
       totalBalanceBeingSent +=
-        Number(alkane.rune.balance) / (alkane.rune.rune.divisibility == 1 ? 1 : 10 ** alkane.rune.rune.divisibility)
-    } 
+        Number(alkane.rune.balance) /
+        (alkane.rune.rune.divisibility == 1
+          ? 1
+          : 10 ** alkane.rune.rune.divisibility)
+    }
   }
   if (totalBalanceBeingSent < targetNumberOfAlkanes) {
     throw new OylTransactionError(Error('Insuffiecient balance of alkanes.'))
@@ -809,7 +807,6 @@ export const execute = async ({
   feeRate?: number
   signer: Signer
 }) => {
-
   const { fee } = await actualExecuteFee({
     alkaneUtxos,
     gatheredUtxos,
@@ -828,7 +825,7 @@ export const execute = async ({
     feeRate,
     fee,
   })
-  
+
   const { signedPsbt } = await signer.signAllInputs({
     rawPsbt: finalPsbt,
     finalize: true,
@@ -935,4 +932,3 @@ export const createTransactReveal = async ({
     throw new OylTransactionError(error)
   }
 }
-
