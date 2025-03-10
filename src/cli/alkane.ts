@@ -183,15 +183,15 @@ export const alkaneTokenDeploy = new Command('new-token')
       BigInt(options.cap),
       BigInt(
         '0x' +
-        Buffer.from(options.tokenName.split('').reverse().join('')).toString(
-          'hex'
-        )
+          Buffer.from(options.tokenName.split('').reverse().join('')).toString(
+            'hex'
+          )
       ),
       BigInt(
         '0x' +
-        Buffer.from(
-          options.tokenSymbol.split('').reverse().join('')
-        ).toString('hex')
+          Buffer.from(
+            options.tokenSymbol.split('').reverse().join('')
+          ).toString('hex')
       ),
     ]
 
@@ -386,62 +386,60 @@ export const alkaneRemoveLiquidity = new Command('remove-liquidity')
         account: wallet.account,
         signer: wallet.signer,
         provider: wallet.provider,
-      })  
+      })
     )
   })
 
-
-  /* @dev example call 
+/* @dev example call 
   oyl alkane swap -data "2,7,3,160" -p alkanes -feeRate 5 -blk 2 -tx 1 -amt 200
 
   Swaps an alkane from a pool
 */
 export const alkaneSwap = new Command('swap')
-.requiredOption(
-  '-data, --calldata <calldata>',
-  'op code + params to be called on a contract',
-  (value, previous) => {
-    const items = value.split(',')
-    return previous ? previous.concat(items) : items
-  },
-  []
-)
-.requiredOption('-amt, --amount <amount>', 'amount to swap')
-.requiredOption('-blk, --block <block>', 'block number')
-.requiredOption('-tx, --txNum <txNum>', 'transaction number')
-.option(
-  '-p, --provider <provider>',
-  'Network provider type (regtest, bitcoin)'
-)
-.option('-feeRate, --feeRate <feeRate>', 'fee rate')
-.action(async (options) => {
-  const wallet: Wallet = new Wallet(options)
+  .requiredOption(
+    '-data, --calldata <calldata>',
+    'op code + params to be called on a contract',
+    (value, previous) => {
+      const items = value.split(',')
+      return previous ? previous.concat(items) : items
+    },
+    []
+  )
+  .requiredOption('-amt, --amount <amount>', 'amount to swap')
+  .requiredOption('-blk, --block <block>', 'block number')
+  .requiredOption('-tx, --txNum <txNum>', 'transaction number')
+  .option(
+    '-p, --provider <provider>',
+    'Network provider type (regtest, bitcoin)'
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .action(async (options) => {
+    const wallet: Wallet = new Wallet(options)
 
-  const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
-    await utxo.accountUtxos({
-      account: wallet.account,
-      provider: wallet.provider,
-    })
+    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
+      await utxo.accountUtxos({
+        account: wallet.account,
+        provider: wallet.provider,
+      })
 
-  const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
+    const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
 
-  console.log(
-    await swap({
-      calldata,
+    console.log(
+      await swap({
+        calldata,
         token: { block: options.block, tx: options.txNum },
         tokenAmount: BigInt(options.amount),
         gatheredUtxos: {
-        utxos: accountSpendableTotalUtxos,
-        totalAmount: accountSpendableTotalBalance,
-      },
-      feeRate: wallet.feeRate,
-      account: wallet.account,
-      signer: wallet.signer,
-      provider: wallet.provider,
-    })
-  )
-})
-
+          utxos: accountSpendableTotalUtxos,
+          totalAmount: accountSpendableTotalBalance,
+        },
+        feeRate: wallet.feeRate,
+        account: wallet.account,
+        signer: wallet.signer,
+        provider: wallet.provider,
+      })
+    )
+  })
 
 /* @dev example call 
  oyl alkane split -tokens 2:8:20000,2:9:20000 -feeRate 5
@@ -476,33 +474,37 @@ export const alkaneSplit = new Command('split')
         provider: wallet.provider,
       })
 
-      const alkaneTokensToSplit = options.tokens.map((item) => {
-        const [block, tx, amount] = item
-          .split(':')
-          .map((part) => part.trim())
-        return {
-          alkaneId: { block: block, tx: tx },
-          amount: BigInt(amount),
-        }
-      })
-     
+    const alkaneTokensToSplit = options.tokens.map((item) => {
+      const [block, tx, amount] = item.split(':').map((part) => part.trim())
+      return {
+        alkaneId: { block: block, tx: tx },
+        amount: BigInt(amount),
+      }
+    })
 
+    const { alkaneUtxos, totalSatoshis, protostone } = await splitAlkaneUtxos(
+      alkaneTokensToSplit,
+      wallet.account,
+      wallet.provider
+    )
     console.log(
-      await splitAlkaneUtxos(
-        alkaneTokensToSplit,
-        {
+      await split({
+        alkaneUtxos: {
+          alkaneUtxos,
+          totalSatoshis,
+        },
+        gatheredUtxos: {
           utxos: accountSpendableTotalUtxos,
           totalAmount: accountSpendableTotalBalance,
         },
-        wallet.feeRate,
-        wallet.account,
-        wallet.signer,
-        wallet.provider,
-      )
+        account: wallet.account,
+        protostone,
+        provider: wallet.provider,
+        feeRate: wallet.feeRate,
+        signer: wallet.signer,
+      })
     )
   })
-
-
 
 /* @dev example call 
   oyl alkane send -blk 2 -tx 1 -amt 200 -to bcrt1pkq6ayylfpe5hn05550ry25pkakuf72x9qkjc2sl06dfcet8sg25ql4dm73
@@ -549,81 +551,76 @@ export const alkaneSend = new Command('send')
     )
   })
 
-
-
-
 /* @dev example call 
  oyl alkane create-pool -data "2,1,1" -tokens "2:2:50000,2:3:50000" -feeRate 5 -p alkanes
 
 Creates a new pool with the given tokens and amounts
 */
 export const alkaneCreatePool = new Command('create-pool')
-.requiredOption(
-  '-data, --calldata <calldata>',
-  'op code + params to be called on a contract',
-  (value, previous) => {
-    const items = value.split(',')
-    return previous ? previous.concat(items) : items
-  },
-  []
-)
-.requiredOption(
-  '-tokens, --tokens <tokens>',
-  'tokens and amounts to pair for pool',
-  (value, previous) => {
-    const items = value.split(',')
-    return previous ? previous.concat(items) : items
-  },
-  []
-)
-.option(
-  '-m, --mnemonic <mnemonic>',
-  '(optional) Mnemonic used for signing transactions (default = TEST_WALLET)'
-)
-.option(
-  '-p, --provider <provider>',
-  'Network provider type (regtest, bitcoin)'
-)
-.option('-feeRate, --feeRate <feeRate>', 'fee rate')
-.action(async (options) => {
-  const wallet: Wallet = new Wallet(options)
-
-  const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
-    await utxo.accountUtxos({
-      account: wallet.account,
-      provider: wallet.provider,
-    })
-
-  const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
-
-  const alkaneTokensToPool = options.tokens.map((item) => {
-    const [block, tx, amount] = item
-      .split(':')
-      .map((part) => part.trim())
-    return {
-      alkaneId: { block: block, tx: tx },
-      amount: BigInt(amount),
-    }
-  })
-
-  console.log(
-    await createNewPool({
-      calldata,
-      token0: alkaneTokensToPool[0].alkaneId,
-      token0Amount: alkaneTokensToPool[0].amount,
-      token1: alkaneTokensToPool[1].alkaneId,
-      token1Amount: alkaneTokensToPool[1].amount,
-      gatheredUtxos: {
-        utxos: accountSpendableTotalUtxos,
-        totalAmount: accountSpendableTotalBalance,
-      },
-      feeRate: wallet.feeRate,
-      account: wallet.account,
-      signer: wallet.signer,
-      provider: wallet.provider,
-    })
+  .requiredOption(
+    '-data, --calldata <calldata>',
+    'op code + params to be called on a contract',
+    (value, previous) => {
+      const items = value.split(',')
+      return previous ? previous.concat(items) : items
+    },
+    []
   )
-})
+  .requiredOption(
+    '-tokens, --tokens <tokens>',
+    'tokens and amounts to pair for pool',
+    (value, previous) => {
+      const items = value.split(',')
+      return previous ? previous.concat(items) : items
+    },
+    []
+  )
+  .option(
+    '-m, --mnemonic <mnemonic>',
+    '(optional) Mnemonic used for signing transactions (default = TEST_WALLET)'
+  )
+  .option(
+    '-p, --provider <provider>',
+    'Network provider type (regtest, bitcoin)'
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .action(async (options) => {
+    const wallet: Wallet = new Wallet(options)
+
+    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
+      await utxo.accountUtxos({
+        account: wallet.account,
+        provider: wallet.provider,
+      })
+
+    const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
+
+    const alkaneTokensToPool = options.tokens.map((item) => {
+      const [block, tx, amount] = item.split(':').map((part) => part.trim())
+      return {
+        alkaneId: { block: block, tx: tx },
+        amount: BigInt(amount),
+      }
+    })
+
+    console.log(
+      await createNewPool({
+        calldata,
+        token0: alkaneTokensToPool[0].alkaneId,
+        token0Amount: alkaneTokensToPool[0].amount,
+        token1: alkaneTokensToPool[1].alkaneId,
+        token1Amount: alkaneTokensToPool[1].amount,
+        gatheredUtxos: {
+          utxos: accountSpendableTotalUtxos,
+          totalAmount: accountSpendableTotalBalance,
+        },
+        feeRate: wallet.feeRate,
+        account: wallet.account,
+        signer: wallet.signer,
+        provider: wallet.provider,
+      })
+    )
+  })
 
 /* @dev example call 
  oyl alkane add-liquidity -data "2,1,1" -tokens "2:2:50000,2:3:50000" -feeRate 5 -p alkanes
@@ -631,72 +628,70 @@ export const alkaneCreatePool = new Command('create-pool')
 Mints new LP tokens and adds liquidity to the pool with the given tokens and amounts
 */
 export const alkaneAddLiquidity = new Command('add-liquidity')
-.requiredOption(
-  '-data, --calldata <calldata>',
-  'op code + params to be called on a contract',
-  (value, previous) => {
-    const items = value.split(',')
-    return previous ? previous.concat(items) : items
-  },
-  []
-)
-.requiredOption(
-  '-tokens, --tokens <tokens>',
-  'tokens and amounts to pair for pool',
-  (value, previous) => {
-    const items = value.split(',')
-    return previous ? previous.concat(items) : items
-  },
-  []
-)
-.option(
-  '-m, --mnemonic <mnemonic>',
-  '(optional) Mnemonic used for signing transactions (default = TEST_WALLET)'
-)
-.option(
-  '-p, --provider <provider>',
-  'Network provider type (regtest, bitcoin)'
-)
-.option('-feeRate, --feeRate <feeRate>', 'fee rate')
-.action(async (options) => {
-  const wallet: Wallet = new Wallet(options)
-
-  const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
-    await utxo.accountUtxos({
-      account: wallet.account,
-      provider: wallet.provider,
-    })
-
-  const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
-
-  const alkaneTokensToMint = options.tokens.map((item) => {
-    const [block, tx, amount] = item
-      .split(':')
-      .map((part) => part.trim())
-    return {
-      alkaneId: { block: block, tx: tx },
-      amount: BigInt(amount),
-    }
-  })
-
-  console.log(
-    await addLiquidity({
-      calldata,
-      token0: alkaneTokensToMint[0].alkaneId,
-      token0Amount: alkaneTokensToMint[0].amount,
-      token1: alkaneTokensToMint[1].alkaneId,
-      token1Amount: alkaneTokensToMint[1].amount,
-      gatheredUtxos: {
-        utxos: accountSpendableTotalUtxos,
-        totalAmount: accountSpendableTotalBalance,
-      },
-      feeRate: wallet.feeRate,
-      account: wallet.account,
-      signer: wallet.signer,
-      provider: wallet.provider,
-    })
+  .requiredOption(
+    '-data, --calldata <calldata>',
+    'op code + params to be called on a contract',
+    (value, previous) => {
+      const items = value.split(',')
+      return previous ? previous.concat(items) : items
+    },
+    []
   )
-})
+  .requiredOption(
+    '-tokens, --tokens <tokens>',
+    'tokens and amounts to pair for pool',
+    (value, previous) => {
+      const items = value.split(',')
+      return previous ? previous.concat(items) : items
+    },
+    []
+  )
+  .option(
+    '-m, --mnemonic <mnemonic>',
+    '(optional) Mnemonic used for signing transactions (default = TEST_WALLET)'
+  )
+  .option(
+    '-p, --provider <provider>',
+    'Network provider type (regtest, bitcoin)'
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .action(async (options) => {
+    const wallet: Wallet = new Wallet(options)
+
+    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
+      await utxo.accountUtxos({
+        account: wallet.account,
+        provider: wallet.provider,
+      })
+
+    const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
+
+    const alkaneTokensToMint = options.tokens.map((item) => {
+      const [block, tx, amount] = item.split(':').map((part) => part.trim())
+      return {
+        alkaneId: { block: block, tx: tx },
+        amount: BigInt(amount),
+      }
+    })
+
+    console.log(
+      await addLiquidity({
+        calldata,
+        token0: alkaneTokensToMint[0].alkaneId,
+        token0Amount: alkaneTokensToMint[0].amount,
+        token1: alkaneTokensToMint[1].alkaneId,
+        token1Amount: alkaneTokensToMint[1].amount,
+        gatheredUtxos: {
+          utxos: accountSpendableTotalUtxos,
+          totalAmount: accountSpendableTotalBalance,
+        },
+        feeRate: wallet.feeRate,
+        account: wallet.account,
+        signer: wallet.signer,
+        provider: wallet.provider,
+      })
+    )
+  })
 
 /* @dev example call 
  AMM factory: 
@@ -711,24 +706,24 @@ export const alkaneSimulate = new Command('simulate')
     '-target, --target <target>',
     'target block:tx for simulation',
     (value) => {
-      const [block, tx] = value.split(':').map(part => part.trim())
+      const [block, tx] = value.split(':').map((part) => part.trim())
       return { block: block.toString(), tx: tx.toString() }
     }
   )
   .requiredOption(
     '-inputs, --inputs <inputs>',
     'inputs for simulation (comma-separated)',
-    (value) => value.split(',').map(item => item.trim())
+    (value) => value.split(',').map((item) => item.trim())
   )
   .option(
     '-tokens, --tokens <tokens>',
     'tokens and amounts to pair for pool',
     (value) => {
-      return value.split(',').map(item => {
-        const [block, tx, value] = item.split(':').map(part => part.trim())
+      return value.split(',').map((item) => {
+        const [block, tx, value] = item.split(':').map((part) => part.trim())
         return {
           id: { block, tx },
-          value
+          value,
         }
       })
     },
@@ -752,28 +747,36 @@ export const alkaneSimulate = new Command('simulate')
       height: '20000',
       txindex: 0,
       target: options.target,
-      inputs: options.inputs, 
+      inputs: options.inputs,
       pointer: 0,
       refundPointer: 0,
-      vout: 0
+      vout: 0,
     }
 
-    let decoder: any;
+    let decoder: any
     switch (options.decoder) {
       case 'pool':
         const { AlkanesAMMPoolDecoder } = await import('../amm/pool')
-        decoder = (result: any) => AlkanesAMMPoolDecoder.decodeSimulation(
-        result, 
-        Number(options.inputs[0])
-        )
-        break;
+        decoder = (result: any) =>
+          AlkanesAMMPoolDecoder.decodeSimulation(
+            result,
+            Number(options.inputs[0])
+          )
+        break
       case 'factory':
         const { AlkanesAMMPoolFactoryDecoder } = await import('../amm/factory')
-        decoder = (result: any) => AlkanesAMMPoolFactoryDecoder.decodeSimulation(
-          result,
-          Number(options.inputs[0])
-        )
+        decoder = (result: any) =>
+          AlkanesAMMPoolFactoryDecoder.decodeSimulation(
+            result,
+            Number(options.inputs[0])
+          )
     }
 
-   console.log(JSON.stringify(await wallet.provider.alkanes.simulate(request, decoder), null, 2))
+    console.log(
+      JSON.stringify(
+        await wallet.provider.alkanes.simulate(request, decoder),
+        null,
+        2
+      )
+    )
   })

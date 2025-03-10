@@ -177,7 +177,7 @@ export const createExecutePsbt = async ({
         })
       }
     }
-
+    //make dynamic
     psbt.addOutput({
       address: account.taproot.address,
       value: 546

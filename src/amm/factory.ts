@@ -6,24 +6,35 @@ import { encodeRunestoneProtostone } from 'alkanes/lib/protorune/proto_runestone
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { ProtoStone } from 'alkanes/lib/protorune/protostone'
-import { Account, alkanes, Provider, Signer } from '..'
-import { AlkaneId, Utxo } from 'shared/interface'
+import {
+  Account,
+  findXAmountOfSats,
+  formatInputsToSign,
+  getAddressType,
+  OylTransactionError,
+  Provider,
+  Signer,
+} from '..'
+import { AlkaneId, GatheredUtxos, Utxo } from 'shared/interface'
+import { minimumFee } from 'btc/index'
+import * as bitcoin from 'bitcoinjs-lib'
+import { getEstimatedFee } from 'psbt'
 
 const BURN_OUTPUT = u32(2)
 
 export type CreateNewPoolSimulationResult = {
-  lpTokens: string;
-  alkaneId: AlkaneId;
-};
+  lpTokens: string
+  alkaneId: AlkaneId
+}
 
 export type FindExistingPoolIdSimulationResult = {
-  alkaneId: AlkaneId;
-};
+  alkaneId: AlkaneId
+}
 
 export type GetAllPoolsResult = {
-  count: number;
-  pools: AlkaneId[];
-};
+  count: number
+  pools: AlkaneId[]
+}
 
 export enum PoolFactoryOpcodes {
   INIT_POOL = 0,
@@ -38,67 +49,81 @@ export const parseAlkaneIdFromHex = (hex: string): AlkaneId => {
   const blockHex = cleanHex.slice(0, 32)
   const txHex = cleanHex.slice(32)
 
-  const reversedBlockHex = Buffer.from(blockHex, 'hex').reverse().toString('hex')
+  const reversedBlockHex = Buffer.from(blockHex, 'hex')
+    .reverse()
+    .toString('hex')
   const reversedTxHex = Buffer.from(txHex, 'hex').reverse().toString('hex')
 
   const block = parseInt(reversedBlockHex, 16).toString()
   const tx = parseInt(reversedTxHex, 16).toString()
-  
+
   return { block, tx }
 }
 
 export class AlkanesAMMPoolFactoryDecoder {
-  decodeCreateNewPool(execution: any): CreateNewPoolSimulationResult | undefined {
-    if (!execution?.alkanes?.[0]?.u?.[1]?.[0] || !execution?.alkanes?.[0]?.u?.[0]) {
-      return undefined;
+  decodeCreateNewPool(
+    execution: any
+  ): CreateNewPoolSimulationResult | undefined {
+    if (
+      !execution?.alkanes?.[0]?.u?.[1]?.[0] ||
+      !execution?.alkanes?.[0]?.u?.[0]
+    ) {
+      return undefined
     }
 
     return {
       lpTokens: execution.alkanes[0].u[1][0].toString(),
       alkaneId: {
         block: execution.alkanes[0].u[0][0][0],
-        tx: execution.alkanes[0].u[0][1][0]
-      }
-    };
+        tx: execution.alkanes[0].u[0][1][0],
+      },
+    }
   }
 
-  decodeFindExistingPoolId(execution: any): FindExistingPoolIdSimulationResult | undefined {
+  decodeFindExistingPoolId(
+    execution: any
+  ): FindExistingPoolIdSimulationResult | undefined {
     if (!execution?.data || execution.data === '0x') {
-      return undefined;
+      return undefined
     }
-    const bytes = parseAlkaneIdFromHex(execution.data);
+    const bytes = parseAlkaneIdFromHex(execution.data)
     return {
       alkaneId: {
         block: bytes.block.toString(),
-        tx: bytes.tx.toString()
-      }
-    };
+        tx: bytes.tx.toString(),
+      },
+    }
   }
 
   decodeGetAllPools(execution: any): GetAllPoolsResult | undefined {
     if (!execution?.data || execution.data === '0x') {
-      return undefined;
+      return undefined
     }
-    
-    const data = execution.data.startsWith('0x') ? execution.data.slice(2) : execution.data;
-    
-    const countBytes = Buffer.from(data.slice(0, 32), 'hex');
-    const count = parseInt(countBytes.reverse().toString('hex'), 16);
-    
-    const pools: AlkaneId[] = [];
+
+    const data = execution.data.startsWith('0x')
+      ? execution.data.slice(2)
+      : execution.data
+
+    const countBytes = Buffer.from(data.slice(0, 32), 'hex')
+    const count = parseInt(countBytes.reverse().toString('hex'), 16)
+
+    const pools: AlkaneId[] = []
     for (let i = 0; i < count; i++) {
-      const offset = 32 + (i * 64);
-      
-      const blockBytes = Buffer.from(data.slice(offset, offset + 32), 'hex');
-      const block = parseInt(blockBytes.reverse().toString('hex'), 16).toString();
-    
-      const txBytes = Buffer.from(data.slice(offset + 32, offset + 64), 'hex');
-      const tx = parseInt(txBytes.reverse().toString('hex'), 16).toString();
-      
-      pools.push({ block, tx });
+      const offset = 32 + i * 64
+
+      const blockBytes = Buffer.from(data.slice(offset, offset + 32), 'hex')
+      const block = parseInt(
+        blockBytes.reverse().toString('hex'),
+        16
+      ).toString()
+
+      const txBytes = Buffer.from(data.slice(offset + 32, offset + 64), 'hex')
+      const tx = parseInt(txBytes.reverse().toString('hex'), 16).toString()
+
+      pools.push({ block, tx })
     }
-    
-    return { count, pools };
+
+    return { count, pools }
   }
 
   static decodeSimulation(result: any, opcode: number) {
@@ -106,35 +131,35 @@ export class AlkanesAMMPoolFactoryDecoder {
       return {
         success: false,
         error: 'Invalid simulation result',
-        gasUsed: 0
-      };
+        gasUsed: 0,
+      }
     }
 
-    const decoder = new AlkanesAMMPoolFactoryDecoder();
-    let decoded;
-    
+    const decoder = new AlkanesAMMPoolFactoryDecoder()
+    let decoded
+
     switch (opcode) {
       case PoolFactoryOpcodes.INIT_POOL:
         // Not implemented
-        break;
+        break
       case PoolFactoryOpcodes.CREATE_NEW_POOL:
-        decoded = decoder.decodeCreateNewPool(result.execution);
-        break;
+        decoded = decoder.decodeCreateNewPool(result.execution)
+        break
       case PoolFactoryOpcodes.FIND_EXISTING_POOL_ID:
-        decoded = decoder.decodeFindExistingPoolId(result.execution);
-        break;
+        decoded = decoder.decodeFindExistingPoolId(result.execution)
+        break
       case PoolFactoryOpcodes.GET_ALL_POOLS:
-        decoded = decoder.decodeGetAllPools(result.execution);
-        break;
+        decoded = decoder.decodeGetAllPools(result.execution)
+        break
       default:
-        decoded = undefined;
+        decoded = undefined
     }
 
     return decoded
   }
 }
 
-export const getPoolId = async () => { }
+export const getPoolId = async () => {}
 
 export const createNewPoolPsbt = async ({
   calldata,
@@ -147,80 +172,47 @@ export const createNewPoolPsbt = async ({
   account,
   provider,
 }: {
-  calldata: bigint[];
-  token0: AlkaneId;
-  token0Amount: bigint;
-  token1: AlkaneId;
-  token1Amount: bigint;
-  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
-  feeRate: number;
-  account: Account;
-  provider: Provider;
+  calldata: bigint[]
+  token0: AlkaneId
+  token0Amount: bigint
+  token1: AlkaneId
+  token1Amount: bigint
+  gatheredUtxos: { utxos: Utxo[]; totalAmount: number }
+  feeRate: number
+  account: Account
+  provider: Provider
 }) => {
-  let tokenUtxos: {
-    alkaneUtxos: any[]
-    totalSatoshis: number
-    totalSentToken0: number
-    totalSentToken1: number
-  }
-
-  const [token0Utxos, token1Utxos] = await Promise.all([
-    findAlkaneUtxos({
-      address: account.taproot.address,
-      greatestToLeast: false,
-      provider,
-      targetNumberOfAlkanes: Number(token0Amount),
-      alkaneId: token0,
-    }),
-    findAlkaneUtxos({
-      address: account.taproot.address,
-      greatestToLeast: false,
-      provider,
-      targetNumberOfAlkanes: Number(token1Amount),
-      alkaneId: token1,
-    }),
-  ])
-
-  tokenUtxos = {
-    alkaneUtxos: [...token0Utxos.alkaneUtxos, ...token1Utxos.alkaneUtxos],
-    totalSatoshis: token0Utxos.totalSatoshis + token1Utxos.totalSatoshis,
-    totalSentToken0: token0Utxos.totalBalanceBeingSent,
-    totalSentToken1: token1Utxos.totalBalanceBeingSent,
-  }
-
-  const edicts: ProtoruneEdict[] = [
-    {
-      id: new ProtoruneRuneId(
-        u128(BigInt(token0.block)),
-        u128(BigInt(token0.tx))
-      ),
-      amount: u128(token0Amount),
-      output: u32(1),
-    },
-    {
-      id: new ProtoruneRuneId(
-        u128(BigInt(token1.block)),
-        u128(BigInt(token1.tx))
-      ),
-      amount: u128(Number(token1Amount)),
-      output: u32(1),
-    }
+  const tokens = [
+    { alkaneId: token0, amount: token0Amount },
+    { alkaneId: token1, amount: token1Amount },
   ]
+  const { alkaneUtxos, edicts, totalSatoshis } = await splitAlkaneUtxos(
+    tokens,
+    account,
+    provider
+  )
 
   const protostone: Buffer = encodeRunestoneProtostone({
     protostones: [
+      ProtoStone.edicts({
+        protocolTag: 1n,
+        edicts,
+      }),
       ProtoStone.message({
         protocolTag: 1n,
         pointer: 0,
-        edicts,
-        refundPointer: 0,
+        refundPointer: 2,
         calldata: encipher(calldata),
       }),
     ],
   }).encodedRunestone
 
-  const { psbt, fee } = await alkanes.executePsbt({
-    alkaneUtxos: tokenUtxos,
+  const { psbt } = await poolPsbt({
+    alkaneUtxos: {
+      alkaneUtxos: alkaneUtxos,
+      totalSatoshis: totalSatoshis,
+    },
+    totalTokens: tokens.length,
     protostone,
     gatheredUtxos,
     feeRate,
@@ -228,7 +220,27 @@ export const createNewPoolPsbt = async ({
     provider,
   })
 
-  return { psbt, fee }
+  const { fee } = await getEstimatedFee({
+    psbt,
+    provider,
+    feeRate,
+  })
+
+  const { psbt: finalPsbt } = await poolPsbt({
+    alkaneUtxos: {
+      alkaneUtxos: alkaneUtxos,
+      totalSatoshis: totalSatoshis,
+    },
+    totalTokens: tokens.length,
+    fee,
+    gatheredUtxos,
+    account,
+    protostone,
+    provider,
+    feeRate,
+  })
+
+  return { psbt: finalPsbt, fee }
 }
 
 export const createNewPool = async ({
@@ -243,21 +255,31 @@ export const createNewPool = async ({
   signer,
   provider,
 }: {
-  calldata: bigint[];
-  token0: AlkaneId;
-  token0Amount: bigint;
-  token1: AlkaneId;
-  token1Amount: bigint;
-  gatheredUtxos: { utxos: Utxo[]; totalAmount: number };
-  feeRate: number;
-  account: Account;
-  provider: Provider;
-  signer: Signer;
+  calldata: bigint[]
+  token0: AlkaneId
+  token0Amount: bigint
+  token1: AlkaneId
+  token1Amount: bigint
+  gatheredUtxos: { utxos: Utxo[]; totalAmount: number }
+  feeRate: number
+  account: Account
+  provider: Provider
+  signer: Signer
 }) => {
-  const { psbt } = await createNewPoolPsbt({ calldata, token0, token0Amount, token1, token1Amount, gatheredUtxos, feeRate, account, provider })
+  const { psbt } = await createNewPoolPsbt({
+    calldata,
+    token0,
+    token0Amount,
+    token1,
+    token1Amount,
+    gatheredUtxos,
+    feeRate,
+    account,
+    provider,
+  })
 
   const { signedPsbt } = await signer.signAllInputs({
-    rawPsbt:  psbt,
+    rawPsbt: psbt,
     finalize: true,
   })
 
@@ -268,12 +290,11 @@ export const createNewPool = async ({
   return pushResult
 }
 
+//@dev we use output 5 for because that is the virtual output for the 2nd protostone. The index count starts after the total number of outputs in the txn.
+
 export const splitAlkaneUtxos = async (
-  tokens: { alkaneId: AlkaneId, amount: bigint }[],
-  gatheredUtxos: { utxos: Utxo[]; totalAmount: number },
-  feeRate: number,
+  tokens: { alkaneId: AlkaneId; amount: bigint }[],
   account: Account,
-  signer: Signer,
   provider: Provider
 ) => {
   let tokenUtxos: {
@@ -295,7 +316,7 @@ export const splitAlkaneUtxos = async (
 
   tokenUtxos = {
     alkaneUtxos: allTokenUtxos.alkaneUtxos,
-    totalSatoshis: allTokenUtxos.totalSatoshis
+    totalSatoshis: allTokenUtxos.totalSatoshis,
   }
   const edicts: ProtoruneEdict[] = tokens.flatMap((token, index) => {
     return [
@@ -305,22 +326,27 @@ export const splitAlkaneUtxos = async (
           u128(BigInt(token.alkaneId.tx))
         ),
         amount: u128(token.amount),
-        output: u32(index),
+        output: u32(tokens.length + 4),
       },
       {
         id: new ProtoruneRuneId(
           u128(BigInt(token.alkaneId.block)),
           u128(BigInt(token.alkaneId.tx))
         ),
-        amount: u128(tokenUtxos.alkaneUtxos.filter((utxo) => 
-          utxo.id.block === token.alkaneId.block 
-          && utxo.id.tx === token.alkaneId.tx).reduce((acc, utxo) => 
-          acc + Number(utxo.amountOfAlkanes), 0) - Number(token.amount)),
-        output: u32(index + 1),
+        amount: u128(
+          tokenUtxos.alkaneUtxos
+            .filter(
+              (utxo) =>
+                utxo.id.block === token.alkaneId.block &&
+                utxo.id.tx === token.alkaneId.tx
+            )
+            .reduce((acc, utxo) => acc + Number(utxo.amountOfAlkanes), 0) -
+            Number(token.amount)
+        ),
+        output: u32(index),
       },
     ]
-  }
-  )
+  })
 
   const protostone: Buffer = encodeRunestoneProtostone({
     protostones: [
@@ -331,13 +357,200 @@ export const splitAlkaneUtxos = async (
     ],
   }).encodedRunestone
 
-  return await alkanes.token.split({
-    alkaneUtxos: tokenUtxos,
+  return {
+    alkaneUtxos: tokenUtxos.alkaneUtxos,
+    totalSatoshis: tokenUtxos.totalSatoshis,
     protostone,
-    gatheredUtxos,
-    feeRate,
-    account,
-    signer,
-    provider,
-  })
+    edicts,
+  }
+}
+
+export const poolPsbt = async ({
+  alkaneUtxos,
+  gatheredUtxos,
+  account,
+  protostone,
+  totalTokens,
+  provider,
+  feeRate,
+  fee = 0,
+}: {
+  alkaneUtxos?: {
+    alkaneUtxos: any[]
+    totalSatoshis: number
+  }
+  gatheredUtxos: GatheredUtxos
+  account: Account
+  protostone: Buffer
+  totalTokens: number
+  provider: Provider
+  feeRate?: number
+  fee?: number
+}) => {
+  try {
+    const originalGatheredUtxos = gatheredUtxos
+
+    const minTxSize = minimumFee({
+      taprootInputCount: 2,
+      nonTaprootInputCount: 0,
+      outputCount: 2,
+    })
+
+    let calculatedFee = Math.max(minTxSize * feeRate, 250)
+    let finalFee = fee === 0 ? calculatedFee : fee
+
+    gatheredUtxos = findXAmountOfSats(
+      originalGatheredUtxos.utxos,
+      Number(finalFee) + 546
+    )
+
+    let psbt = new bitcoin.Psbt({ network: provider.network })
+
+    if (alkaneUtxos) {
+      for await (const utxo of alkaneUtxos.alkaneUtxos) {
+        if (getAddressType(utxo.address) === 0) {
+          const previousTxHex: string = await provider.esplora.getTxHex(
+            utxo.txId
+          )
+          psbt.addInput({
+            hash: utxo.txId,
+            index: parseInt(utxo.txIndex),
+            nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
+          })
+        }
+        if (getAddressType(utxo.address) === 2) {
+          const redeemScript = bitcoin.script.compile([
+            bitcoin.opcodes.OP_0,
+            bitcoin.crypto.hash160(
+              Buffer.from(account.nestedSegwit.pubkey, 'hex')
+            ),
+          ])
+
+          psbt.addInput({
+            hash: utxo.txId,
+            index: parseInt(utxo.txIndex),
+            redeemScript: redeemScript,
+            witnessUtxo: {
+              value: utxo.satoshis,
+              script: bitcoin.script.compile([
+                bitcoin.opcodes.OP_HASH160,
+                bitcoin.crypto.hash160(redeemScript),
+                bitcoin.opcodes.OP_EQUAL,
+              ]),
+            },
+          })
+        }
+        if (
+          getAddressType(utxo.address) === 1 ||
+          getAddressType(utxo.address) === 3
+        ) {
+          psbt.addInput({
+            hash: utxo.txId,
+            index: parseInt(utxo.txIndex),
+            witnessUtxo: {
+              value: utxo.satoshis,
+              script: Buffer.from(utxo.script, 'hex'),
+            },
+          })
+        }
+      }
+    }
+
+    if (fee === 0 && gatheredUtxos.utxos.length > 1) {
+      const txSize = minimumFee({
+        taprootInputCount: gatheredUtxos.utxos.length,
+        nonTaprootInputCount: 0,
+        outputCount: 2,
+      })
+      finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
+
+      if (gatheredUtxos.totalAmount < finalFee) {
+        throw new OylTransactionError(Error('Insufficient Balance'))
+      }
+    }
+
+    if (gatheredUtxos.totalAmount < finalFee) {
+      throw new OylTransactionError(Error('Insufficient Balance'))
+    }
+    for (let i = 0; i < gatheredUtxos.utxos.length; i++) {
+      if (getAddressType(gatheredUtxos.utxos[i].address) === 0) {
+        const previousTxHex: string = await provider.esplora.getTxHex(
+          gatheredUtxos.utxos[i].txId
+        )
+        psbt.addInput({
+          hash: gatheredUtxos.utxos[i].txId,
+          index: gatheredUtxos.utxos[i].outputIndex,
+          nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
+        })
+      }
+      if (getAddressType(gatheredUtxos.utxos[i].address) === 2) {
+        const redeemScript = bitcoin.script.compile([
+          bitcoin.opcodes.OP_0,
+          bitcoin.crypto.hash160(
+            Buffer.from(account.nestedSegwit.pubkey, 'hex')
+          ),
+        ])
+
+        psbt.addInput({
+          hash: gatheredUtxos.utxos[i].txId,
+          index: gatheredUtxos.utxos[i].outputIndex,
+          redeemScript: redeemScript,
+          witnessUtxo: {
+            value: gatheredUtxos.utxos[i].satoshis,
+            script: bitcoin.script.compile([
+              bitcoin.opcodes.OP_HASH160,
+              bitcoin.crypto.hash160(redeemScript),
+              bitcoin.opcodes.OP_EQUAL,
+            ]),
+          },
+        })
+      }
+      if (
+        getAddressType(gatheredUtxos.utxos[i].address) === 1 ||
+        getAddressType(gatheredUtxos.utxos[i].address) === 3
+      ) {
+        psbt.addInput({
+          hash: gatheredUtxos.utxos[i].txId,
+          index: gatheredUtxos.utxos[i].outputIndex,
+          witnessUtxo: {
+            value: gatheredUtxos.utxos[i].satoshis,
+            script: Buffer.from(gatheredUtxos.utxos[i].scriptPk, 'hex'),
+          },
+        })
+      }
+    }
+    for (let i = 0; i < totalTokens; i++) {
+      psbt.addOutput({
+        address: account.taproot.address,
+        value: 546,
+      })
+    }
+
+    const output = { script: protostone, value: 0 }
+    psbt.addOutput(output)
+
+    const changeAmount =
+      gatheredUtxos.totalAmount +
+      (alkaneUtxos?.totalSatoshis || 0) -
+      finalFee -
+      546 * totalTokens
+
+    psbt.addOutput({
+      address: account[account.spendStrategy.changeAddress].address,
+      value: changeAmount,
+    })
+
+    const formattedPsbtTx = await formatInputsToSign({
+      _psbt: psbt,
+      senderPublicKey: account.taproot.pubkey,
+      network: provider.network,
+    })
+
+    return {
+      psbt: formattedPsbtTx.toBase64(),
+      psbtHex: formattedPsbtTx.toHex(),
+    }
+  } catch (error) {
+    throw new OylTransactionError(error)
+  }
 }

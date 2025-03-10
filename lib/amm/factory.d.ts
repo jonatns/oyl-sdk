@@ -1,5 +1,8 @@
+/// <reference types="node" />
+/// <reference types="node" />
+import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict';
 import { Account, Provider, Signer } from '..';
-import { AlkaneId, Utxo } from 'shared/interface';
+import { AlkaneId, GatheredUtxos, Utxo } from 'shared/interface';
 export type CreateNewPoolSimulationResult = {
     lpTokens: string;
     alkaneId: AlkaneId;
@@ -67,14 +70,25 @@ export declare const createNewPool: ({ calldata, token0, token0Amount, token1, t
 export declare const splitAlkaneUtxos: (tokens: {
     alkaneId: AlkaneId;
     amount: bigint;
-}[], gatheredUtxos: {
-    utxos: Utxo[];
-    totalAmount: number;
-}, feeRate: number, account: Account, signer: Signer, provider: Provider) => Promise<{
-    txId: string;
-    rawTx: string;
-    size: any;
-    weight: any;
-    fee: number;
-    satsPerVByte: string;
+}[], account: Account, provider: Provider) => Promise<{
+    alkaneUtxos: any[];
+    totalSatoshis: number;
+    protostone: Buffer;
+    edicts: ProtoruneEdict[];
+}>;
+export declare const poolPsbt: ({ alkaneUtxos, gatheredUtxos, account, protostone, totalTokens, provider, feeRate, fee, }: {
+    alkaneUtxos?: {
+        alkaneUtxos: any[];
+        totalSatoshis: number;
+    };
+    gatheredUtxos: GatheredUtxos;
+    account: Account;
+    protostone: Buffer;
+    totalTokens: number;
+    provider: Provider;
+    feeRate?: number;
+    fee?: number;
+}) => Promise<{
+    psbt: string;
+    psbtHex: string;
 }>;
