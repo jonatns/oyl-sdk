@@ -2,7 +2,12 @@
 /// <reference types="node" />
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict';
 import { Account, Provider, Signer } from '..';
+<<<<<<< HEAD
 import { AlkaneId, GatheredUtxos, Utxo } from 'shared/interface';
+=======
+import { AlkaneId, Utxo } from 'shared/interface';
+import { PoolDetailsResult } from './pool';
+>>>>>>> 1c11b5d975a93eb0f9e49954fad3f69fcacf6e87
 export type CreateNewPoolSimulationResult = {
     lpTokens: string;
     alkaneId: AlkaneId;
@@ -13,6 +18,12 @@ export type FindExistingPoolIdSimulationResult = {
 export type GetAllPoolsResult = {
     count: number;
     pools: AlkaneId[];
+};
+export type AllPoolsDetailsResult = {
+    count: number;
+    pools: (PoolDetailsResult & {
+        poolId: AlkaneId;
+    })[];
 };
 export declare enum PoolFactoryOpcodes {
     INIT_POOL = 0,
@@ -25,6 +36,7 @@ export declare class AlkanesAMMPoolFactoryDecoder {
     decodeCreateNewPool(execution: any): CreateNewPoolSimulationResult | undefined;
     decodeFindExistingPoolId(execution: any): FindExistingPoolIdSimulationResult | undefined;
     decodeGetAllPools(execution: any): GetAllPoolsResult | undefined;
+    decodeAllPoolsDetails(factoryExecution: any, provider: Provider): Promise<AllPoolsDetailsResult | undefined>;
     static decodeSimulation(result: any, opcode: number): any;
 }
 export declare const getPoolId: () => Promise<void>;

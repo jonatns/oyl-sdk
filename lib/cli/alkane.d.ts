@@ -10,3 +10,4 @@ export declare const alkaneSend: Command;
 export declare const alkaneCreatePool: Command;
 export declare const alkaneAddLiquidity: Command;
 export declare const alkaneSimulate: Command;
+export declare const alkaneGetAllPoolsDetails: Command;
