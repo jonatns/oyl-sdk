@@ -16,10 +16,9 @@ import {
   Signer,
 } from '..'
 import { AlkaneId, GatheredUtxos, Utxo } from 'shared/interface'
-import { minimumFee } from 'btc/index'
 import * as bitcoin from 'bitcoinjs-lib'
-import { getEstimatedFee } from 'psbt'
-
+import { getEstimatedFee } from '../psbt'
+import { minimumFee } from '../btc'
 const BURN_OUTPUT = u32(2)
 
 export type CreateNewPoolSimulationResult = {
@@ -303,7 +302,7 @@ export const splitAlkaneUtxos = async (
     totalSatoshis: number
   }
 
-  const [allTokenUtxos] = await Promise.all(
+  const allTokenUtxos = await Promise.all(
     tokens.map(async (token) => {
       return findAlkaneUtxos({
         address: account.taproot.address,
@@ -316,8 +315,8 @@ export const splitAlkaneUtxos = async (
   )
 
   tokenUtxos = {
-    alkaneUtxos: allTokenUtxos.alkaneUtxos,
-    totalSatoshis: allTokenUtxos.totalSatoshis,
+    alkaneUtxos: allTokenUtxos.flatMap((t) => t.alkaneUtxos),
+    totalSatoshis: allTokenUtxos.reduce((acc, t) => acc + t.totalSatoshis, 0),
   }
   const edicts: ProtoruneEdict[] = tokens.flatMap((token) => {
     return [
