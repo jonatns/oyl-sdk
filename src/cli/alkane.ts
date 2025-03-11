@@ -820,7 +820,7 @@ export const alkaneGetAllPoolsDetails = new Command('get-all-pools-details')
       const factoryResult = await wallet.provider.alkanes.simulate(request)
       
       const factoryDecoder = new AlkanesAMMPoolFactoryDecoder()
-      const allPoolsDetails = await factoryDecoder.decodeAllPoolsDetails(factoryResult, wallet.provider)
+      const allPoolsDetails = await factoryDecoder.decodeAllPoolsDetails(factoryResult.execution, wallet.provider)
       
       console.log(JSON.stringify(allPoolsDetails, null, 2))
   })

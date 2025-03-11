@@ -118,7 +118,7 @@ export class AlkanesAMMPoolFactoryDecoder {
     
     const poolDecoder = new AlkanesAMMPoolDecoder();
     const poolsWithDetails: (PoolDetailsResult & { poolId: AlkaneId })[] = [];
-    
+
     // For each pool ID, simulate a call to get its details
     for (const poolId of allPools.pools) {
       const request = {
