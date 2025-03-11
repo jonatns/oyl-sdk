@@ -76,7 +76,7 @@ export declare const splitAlkaneUtxos: (tokens: {
     protostone: Buffer;
     edicts: ProtoruneEdict[];
 }>;
-export declare const poolPsbt: ({ alkaneUtxos, gatheredUtxos, account, protostone, totalTokens, provider, feeRate, fee, }: {
+export declare const poolPsbt: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, fee, }: {
     alkaneUtxos?: {
         alkaneUtxos: any[];
         totalSatoshis: number;
@@ -84,7 +84,6 @@ export declare const poolPsbt: ({ alkaneUtxos, gatheredUtxos, account, protoston
     gatheredUtxos: GatheredUtxos;
     account: Account;
     protostone: Buffer;
-    totalTokens: number;
     provider: Provider;
     feeRate?: number;
     fee?: number;

@@ -194,14 +194,17 @@ export const createNewPoolPsbt = async ({
 
   const protostone: Buffer = encodeRunestoneProtostone({
     protostones: [
-      ProtoStone.edicts({
-        protocolTag: 1n,
+      ProtoStone.message({
         edicts,
+        protocolTag: 1n,
+        pointer: 0,
+        refundPointer: 0,
+        calldata: encipher([]),
       }),
       ProtoStone.message({
         protocolTag: 1n,
         pointer: 0,
-        refundPointer: 2,
+        refundPointer: 0,
         calldata: encipher(calldata),
       }),
     ],
@@ -212,7 +215,6 @@ export const createNewPoolPsbt = async ({
       alkaneUtxos: alkaneUtxos,
       totalSatoshis: totalSatoshis,
     },
-    totalTokens: tokens.length,
     protostone,
     gatheredUtxos,
     feeRate,
@@ -231,7 +233,6 @@ export const createNewPoolPsbt = async ({
       alkaneUtxos: alkaneUtxos,
       totalSatoshis: totalSatoshis,
     },
-    totalTokens: tokens.length,
     fee,
     gatheredUtxos,
     account,
@@ -318,7 +319,7 @@ export const splitAlkaneUtxos = async (
     alkaneUtxos: allTokenUtxos.alkaneUtxos,
     totalSatoshis: allTokenUtxos.totalSatoshis,
   }
-  const edicts: ProtoruneEdict[] = tokens.flatMap((token, index) => {
+  const edicts: ProtoruneEdict[] = tokens.flatMap((token) => {
     return [
       {
         id: new ProtoruneRuneId(
@@ -326,24 +327,7 @@ export const splitAlkaneUtxos = async (
           u128(BigInt(token.alkaneId.tx))
         ),
         amount: u128(token.amount),
-        output: u32(tokens.length + 4),
-      },
-      {
-        id: new ProtoruneRuneId(
-          u128(BigInt(token.alkaneId.block)),
-          u128(BigInt(token.alkaneId.tx))
-        ),
-        amount: u128(
-          tokenUtxos.alkaneUtxos
-            .filter(
-              (utxo) =>
-                utxo.id.block === token.alkaneId.block &&
-                utxo.id.tx === token.alkaneId.tx
-            )
-            .reduce((acc, utxo) => acc + Number(utxo.amountOfAlkanes), 0) -
-            Number(token.amount)
-        ),
-        output: u32(index),
+        output: u32(5),
       },
     ]
   })
@@ -370,7 +354,6 @@ export const poolPsbt = async ({
   gatheredUtxos,
   account,
   protostone,
-  totalTokens,
   provider,
   feeRate,
   fee = 0,
@@ -382,7 +365,6 @@ export const poolPsbt = async ({
   gatheredUtxos: GatheredUtxos
   account: Account
   protostone: Buffer
-  totalTokens: number
   provider: Provider
   feeRate?: number
   fee?: number
@@ -519,12 +501,10 @@ export const poolPsbt = async ({
         })
       }
     }
-    for (let i = 0; i < totalTokens; i++) {
-      psbt.addOutput({
-        address: account.taproot.address,
-        value: 546,
-      })
-    }
+    psbt.addOutput({
+      address: account.taproot.address,
+      value: 546,
+    })
 
     const output = { script: protostone, value: 0 }
     psbt.addOutput(output)
@@ -533,7 +513,7 @@ export const poolPsbt = async ({
       gatheredUtxos.totalAmount +
       (alkaneUtxos?.totalSatoshis || 0) -
       finalFee -
-      546 * totalTokens
+      546
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
