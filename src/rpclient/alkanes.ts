@@ -201,44 +201,72 @@ export class AlkanesRpc {
       return parsedValues.map((num) => num.toString())
     }
     // Parse the data
-    const parsedData = parseLittleEndian(hexData);
+    const parsedData = parseLittleEndian(hexData)
     return {
-        tokenA: {
-          block: parsedData[0],
-          tx: parsedData[1],
-        },
-        tokenB: {
-          block: parsedData[2],
-          tx: parsedData[3],
-        },
-        reserveA: parsedData[4],
-        reserveB: parsedData[5]
-    };
+      tokenA: {
+        block: parsedData[0],
+        tx: parsedData[1],
+      },
+      tokenB: {
+        block: parsedData[2],
+        tx: parsedData[3],
+      },
+      reserveA: parsedData[4],
+      reserveB: parsedData[5],
+    }
   }
 
   async simulate(request: Partial<AlkaneSimulateRequest>, decoder?: any) {
-    const ret = await this._call('alkanes_simulate', [{
-      alkanes: [],
-      transaction: '0x',
-      block: '0x',
-      height: '20000',
-      txindex: 0,
-      inputs: [],
-      pointer: 0,
-      refundPointer: 0,
-      vout: 0,
-      ...request,
-    }]);
+    const ret = await this._call('alkanes_simulate', [
+      {
+        alkanes: [],
+        transaction: '0x',
+        block: '0x',
+        height: '20000',
+        txindex: 0,
+        inputs: [],
+        pointer: 0,
+        refundPointer: 0,
+        vout: 0,
+        ...request,
+      },
+    ])
 
-    if (decoder) {     
-      const operationType = Number(request.inputs[0]);
-      ret.parsed = decoder(ret, operationType);
+    if (decoder) {
+      const operationType = Number(request.inputs[0])
+      ret.parsed = decoder(ret, operationType)
     } else {
-      ret.parsed = this.parseSimulateReturn(ret.execution.data);
+      ret.parsed = this.parseSimulateReturn(ret.execution.data)
     }
-    
-    return ret;
+
+    return ret
   }
+  // @dev WIP
+  // async meta(request: Partial<AlkaneSimulateRequest>, decoder?: any) {
+  //   const ret = await this._call('alkanes___meta', [
+  //     {
+  //       alkanes: [],
+  //       transaction: '0x',
+  //       block: '0x',
+  //       height: '20000',
+  //       txindex: 0,
+  //       inputs: [],
+  //       pointer: 0,
+  //       refundPointer: 0,
+  //       vout: 0,
+  //       ...request,
+  //     },
+  //   ])
+
+  //   if (decoder) {
+  //     const operationType = Number(request.inputs[0])
+  //     ret.parsed = decoder(ret, operationType)
+  //   } else {
+  //     ret.parsed = this.parseSimulateReturn(ret.execution.data)
+  //   }
+
+  //   return ret
+  // }
 
   async simulatePoolInfo(request: AlkaneSimulateRequest) {
     const ret = await this._call('alkanes_simulate', [request])

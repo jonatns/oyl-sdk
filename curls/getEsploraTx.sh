@@ -1,8 +1,8 @@
-curl -s 'https://oylnet.oyl.gg/v2/regtest' \
+curl -s 'http://localhost:18888/v2/regtest' \
 --header 'Content-Type: application/json' \
 --data '{
     "jsonrpc": "2.0",
     "id": 1,
     "method": "esplora_tx",
-    "params": ["5edbf9ec13bf64a6abf64ca65e8e6af00442d62d3f2a87e5d85270e657637498"]
+    "params": ["b531c471c04cab9b8ed38cb5f51c3726d9563d3fff6c0389273ac295315766b3"]
 }' | jq .
