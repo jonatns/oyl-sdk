@@ -13,6 +13,7 @@ import {
   alkaneRemoveLiquidity,
   alkaneSwap,
   alkaneSimulate,
+  alkaneGetAllPoolsDetails,
 } from './alkane'
 import { init, genBlocks, sendFromFaucet } from './regtest'
 import { runeSend, runeMint, runeEtchCommit, runeEtchReveal } from './rune'
@@ -80,7 +81,6 @@ const runeCommand = new Command('rune')
   .addCommand(runeMint)
   .addCommand(runeEtchCommit)
   .addCommand(runeEtchReveal)
-
 const alkaneCommand = new Command('alkane')
   .description('Functions for alkanes')
   .addCommand(alkaneContractDeploy)
@@ -94,6 +94,8 @@ const alkaneCommand = new Command('alkane')
   .addCommand(alkaneRemoveLiquidity)
   .addCommand(alkaneSwap)
   .addCommand(alkaneSimulate)
+  .addCommand(alkaneGetAllPoolsDetails)
+  
   
 const providerCommand = new Command('provider')
   .description('Functions avaialble for all provider services')

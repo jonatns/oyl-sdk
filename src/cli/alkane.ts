@@ -698,8 +698,8 @@ export const alkaneAddLiquidity = new Command('add-liquidity')
   )
 })
 
-/* @dev example call 
- AMM factory: 
+/* @dev example call
+ AMM factory:
  oyl alkane simulate  -target "2:1" -inputs "1,2,6,2,7" -tokens "2:6:1000,2:7:2000" -decoder "factory"
  oyl alkane simulate  -target "2:1" -inputs "2,2,3,2,4" -decoder "factory"
 
@@ -763,7 +763,7 @@ export const alkaneSimulate = new Command('simulate')
       case 'pool':
         const { AlkanesAMMPoolDecoder } = await import('../amm/pool')
         decoder = (result: any) => AlkanesAMMPoolDecoder.decodeSimulation(
-        result, 
+        result,
         Number(options.inputs[0])
         )
         break;
@@ -776,4 +776,51 @@ export const alkaneSimulate = new Command('simulate')
     }
 
    console.log(JSON.stringify(await wallet.provider.alkanes.simulate(request, decoder), null, 2))
+  })
+
+/* @dev example call
+ oyl alkane get-all-pools-details -target "2:1"
+
+ Gets details for all pools by:
+ 1. Getting all pool IDs from the factory contract
+ 2. For each pool ID, getting its details
+ 3. Returning a combined result with all pool details
+*/
+export const alkaneGetAllPoolsDetails = new Command('get-all-pools-details')
+  .requiredOption(
+    '-target, --target <target>',
+    'target block:tx for the factory contract',
+    (value) => {
+      const [block, tx] = value.split(':').map(part => part.trim())
+      return { block: block.toString(), tx: tx.toString() }
+    }
+  )
+  .option(
+    '-p, --provider <provider>',
+    'Network provider type (regtest, bitcoin)'
+  )
+  .action(async (options) => {
+    const wallet: Wallet = new Wallet(options)
+
+      const { AlkanesAMMPoolFactoryDecoder, PoolFactoryOpcodes } = await import('../amm/factory')
+
+      const request = {
+        alkanes: [],
+        transaction: '0x',
+        block: '0x',
+        height: '20000',
+        txindex: 0,
+        target: options.target,
+        inputs: [PoolFactoryOpcodes.GET_ALL_POOLS.toString()],
+        pointer: 0,
+        refundPointer: 0,
+        vout: 0
+      }
+      
+      const factoryResult = await wallet.provider.alkanes.simulate(request)
+      
+      const factoryDecoder = new AlkanesAMMPoolFactoryDecoder()
+      const allPoolsDetails = await factoryDecoder.decodeAllPoolsDetails(factoryResult.execution, wallet.provider)
+      
+      console.log(JSON.stringify(allPoolsDetails, null, 2))
   })
