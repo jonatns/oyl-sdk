@@ -6,7 +6,6 @@ import { encodeRunestoneProtostone } from 'alkanes/lib/protorune/proto_runestone
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { ProtoStone } from 'alkanes/lib/protorune/protostone'
-<<<<<<< HEAD
 import {
   Account,
   findXAmountOfSats,
@@ -20,13 +19,7 @@ import { AlkaneId, GatheredUtxos, Utxo } from 'shared/interface'
 import * as bitcoin from 'bitcoinjs-lib'
 import { getEstimatedFee } from '../psbt'
 import { minimumFee } from '../btc'
-=======
-import { Account, alkanes, Provider, Signer } from '..'
-import { AlkaneId, Utxo } from 'shared/interface'
 import { AlkanesAMMPoolDecoder, PoolDetailsResult, PoolOpcodes } from './pool'
-
->>>>>>> 1c11b5d975a93eb0f9e49954fad3f69fcacf6e87
-const BURN_OUTPUT = u32(2)
 
 export type CreateNewPoolSimulationResult = {
   lpTokens: string
@@ -43,9 +36,9 @@ export type GetAllPoolsResult = {
 }
 
 export type AllPoolsDetailsResult = {
-  count: number;
-  pools: (PoolDetailsResult & { poolId: AlkaneId })[];
-};
+  count: number
+  pools: (PoolDetailsResult & { poolId: AlkaneId })[]
+}
 
 export enum PoolFactoryOpcodes {
   INIT_POOL = 0,
@@ -137,17 +130,16 @@ export class AlkanesAMMPoolFactoryDecoder {
     return { count, pools }
   }
 
-
   async decodeAllPoolsDetails(
     factoryExecution: any,
     provider: Provider
   ): Promise<AllPoolsDetailsResult | undefined> {
     // Get all pool IDs
-    const allPools = this.decodeGetAllPools(factoryExecution);
-    if (!allPools) return undefined;
-    
-    const poolDecoder = new AlkanesAMMPoolDecoder();
-    const poolsWithDetails: (PoolDetailsResult & { poolId: AlkaneId })[] = [];
+    const allPools = this.decodeGetAllPools(factoryExecution)
+    if (!allPools) return undefined
+
+    const poolDecoder = new AlkanesAMMPoolDecoder()
+    const poolsWithDetails: (PoolDetailsResult & { poolId: AlkaneId })[] = []
 
     // For each pool ID, simulate a call to get its details
     for (const poolId of allPools.pools) {
@@ -161,27 +153,30 @@ export class AlkanesAMMPoolFactoryDecoder {
         inputs: [PoolOpcodes.POOL_DETAILS.toString()],
         pointer: 0,
         refundPointer: 0,
-        vout: 0
-      };
-      
+        vout: 0,
+      }
+
       try {
-        const result = await provider.alkanes.simulate(request);
-        const poolDetails = poolDecoder.decodePoolDetails(result.execution.data);
+        const result = await provider.alkanes.simulate(request)
+        const poolDetails = poolDecoder.decodePoolDetails(result.execution.data)
         if (poolDetails) {
           poolsWithDetails.push({
             ...poolDetails,
-            poolId
-          });
+            poolId,
+          })
         }
       } catch (error) {
-        console.error(`Error getting details for pool ${poolId.block}:${poolId.tx}:`, error);
+        console.error(
+          `Error getting details for pool ${poolId.block}:${poolId.tx}:`,
+          error
+        )
       }
     }
-    
+
     return {
       count: poolsWithDetails.length,
-      pools: poolsWithDetails
-    };
+      pools: poolsWithDetails,
+    }
   }
 
   static decodeSimulation(result: any, opcode: number) {

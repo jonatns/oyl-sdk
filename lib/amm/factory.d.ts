@@ -2,12 +2,8 @@
 /// <reference types="node" />
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict';
 import { Account, Provider, Signer } from '..';
-<<<<<<< HEAD
 import { AlkaneId, GatheredUtxos, Utxo } from 'shared/interface';
-=======
-import { AlkaneId, Utxo } from 'shared/interface';
 import { PoolDetailsResult } from './pool';
->>>>>>> 1c11b5d975a93eb0f9e49954fad3f69fcacf6e87
 export type CreateNewPoolSimulationResult = {
     lpTokens: string;
     alkaneId: AlkaneId;
