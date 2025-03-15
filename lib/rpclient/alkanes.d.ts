@@ -1,3 +1,4 @@
+import { EsploraRpc } from './esplora';
 export declare const stripHexPrefix: (s: string) => string;
 export interface Rune {
     rune: {
@@ -24,7 +25,7 @@ export interface Outpoint {
         script: string;
     };
     txindex: number;
-    height: 2;
+    height: number;
 }
 export interface AlkanesResponse {
     outpoints: Outpoint[];
@@ -57,6 +58,7 @@ interface AlkaneToken {
 }
 export declare class AlkanesRpc {
     alkanesUrl: string;
+    esplora: EsploraRpc;
     constructor(url: string);
     _call(method: string, params?: any[]): Promise<any>;
     getAlkanesByHeight({ height, protocolTag, }: {
