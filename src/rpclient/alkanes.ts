@@ -1,5 +1,6 @@
 import fetch from 'node-fetch'
 import asyncPool from 'tiny-async-pool'
+import { EsploraRpc, EsploraUtxo } from './esplora'
 
 export const stripHexPrefix = (s: string): string =>
   s.substr(0, 2) === '0x' ? s.substr(2) : s
@@ -20,7 +21,7 @@ export interface Outpoint {
   outpoint: { txid: string; vout: number }
   output: { value: string; script: string }
   txindex: number
-  height: 2
+  height: number
 }
 export interface AlkanesResponse {
   outpoints: Outpoint[]
@@ -67,9 +68,11 @@ const opcodesHRV: string[] = [
 
 export class AlkanesRpc {
   public alkanesUrl: string
+  public esplora: EsploraRpc
 
   constructor(url: string) {
     this.alkanesUrl = url
+    this.esplora = new EsploraRpc(url)
   }
 
   async _call(method: string, params = []) {
@@ -130,43 +133,87 @@ export class AlkanesRpc {
     protocolTag?: string
     name?: string
   }): Promise<Outpoint[]> {
-    const ret = await this._call('alkanes_protorunesbyaddress', [
-      {
-        address,
-        protocolTag,
-      },
-    ])
-
-    const alkanesList = ret.outpoints
-      .filter((outpoint) => outpoint.runes.length > 0)
-      .map((outpoint) => ({
-        ...outpoint,
-        outpoint: {
-          vout: outpoint.outpoint.vout,
-          txid: Buffer.from(outpoint.outpoint.txid, 'hex')
-            .reverse()
-            .toString('hex'),
-        },
-        runes: outpoint.runes.map((rune) => ({
-          ...rune,
-          balance: parseInt(rune.balance, 16).toString(),
-          rune: {
-            ...rune.rune,
-            id: {
-              block: parseInt(rune.rune.id.block, 16).toString(),
-              tx: parseInt(rune.rune.id.tx, 16).toString(),
+    try {
+      const utxos = await this.esplora.getAddressUtxo(address);
+      
+      if (!utxos || utxos.length === 0) {
+        return [];
+      }
+      
+      const processUtxo = async (utxo: EsploraUtxo) => {
+        try {
+          const alkanesByOutpoint = await this.getAlkanesByOutpoint({
+            txid: utxo.txid,
+            vout: utxo.vout,
+            protocolTag
+          });
+          
+          if (!alkanesByOutpoint || alkanesByOutpoint.length === 0) {
+            return null;
+          }
+          
+          const txDetails = await this.esplora.getTxInfo(utxo.txid);
+          const script = txDetails.vout[utxo.vout].scriptpubkey;
+          
+          const firstAlkane = alkanesByOutpoint[0];
+          if (!firstAlkane || !firstAlkane.token || !firstAlkane.token.id) {
+            return null;
+          }
+          
+          return {
+            runes: alkanesByOutpoint.map(item => ({
+              rune: {
+                id: {
+                  block: item.token.id.block,
+                  tx: item.token.id.tx
+                },
+                name: item.token.name,
+                spacedName: item.token.name,
+                divisibility: 1, 
+                spacers: 0, 
+                symbol: item.token.symbol
+              },
+              balance: item.value
+            })),
+            outpoint: {
+              vout: utxo.vout,
+              txid: utxo.txid
             },
-          },
-        })),
-      }))
+            output: {
+              value: utxo.value.toString(),
+              script: script
+            },
 
-    if (name) {
-      return alkanesList.flatMap((outpoints) =>
-        outpoints.runes.filter((item) => item.rune.name === name)
-      )
+            height: parseInt(firstAlkane.token.id.block),
+            txindex: parseInt(firstAlkane.token.id.tx)
+          };
+        } catch (error) {
+          console.error(`Error processing UTXO ${utxo.txid}:${utxo.vout}:`, error);
+          return null;
+        }
+      };
+      
+      // Process UTXOs with concurrency limit using asyncPool
+      const concurrencyLimit = 100; 
+      const results = [];
+      for await (const result of asyncPool(concurrencyLimit, utxos, processUtxo)) {
+        if (result !== null) {
+          results.push(result);
+        }
+      }
+      
+      // Filter by name if specified
+      if (name) {
+        return results.filter(outpoint =>
+          outpoint.runes.some(rune => rune.rune.name === name)
+        );
+      }
+      
+      return results;
+    } catch (error) {
+      console.error('Error in getAlkanesByAddress:', error);
+      throw error;
     }
-
-    return alkanesList
   }
 
   async trace(request: { vout: number; txid: string }) {
