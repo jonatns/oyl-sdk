@@ -1,6 +1,6 @@
 {
   "name": "@oyl/sdk",
-  "version": "1.14.2",
+  "version": "1.15.0",
   "description": "Oyl SDK",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
