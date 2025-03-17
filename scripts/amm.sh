@@ -4,8 +4,8 @@
 set -e
 
 # Initialize regtest environment
-#oyl regtest init -p alkanes -a bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx
-oyl regtest sendFromFaucet --to "bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx" -s 1000000 -p alkanes
+oyl regtest init -p alkanes -a bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx
+#oyl regtest sendFromFaucet --to "bcrt1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx" -s 1000000 -p alkanes
 # Function to execute command and generate blocks
 execute_and_generate() {
     echo "Executing: $1"
@@ -34,11 +34,11 @@ execute_and_generate "oyl alkane new-contract -c ./src/cli/contracts/free_mint.w
 
 # Create first token
 echo "Creating first token (TEST1)..."
-execute_and_generate "oyl alkane new-token -pre 1000000 -amount 10000 -c 100000000 -name 'TEST' -symbol 'TEST1' -resNumber 3"
+execute_and_generate "oyl alkane new-token -pre 1000000 -amount 10000 -c 100000000 -name 'TEST' -symbol 'TEST1' -resNumber 3 -p alkanes"
 
 # Create second token
 echo "Creating second token (TEST2)..."
-execute_and_generate "oyl alkane new-token -pre 1000000 -amount 10000 -c 100000000 -name 'TESTER' -symbol 'TEST2' -resNumber 3"
+execute_and_generate "oyl alkane new-token -pre 1000000 -amount 10000 -c 100000000 -name 'TESTER' -symbol 'TEST2' -resNumber 3 -p alkanes"
 
 # Deploy router contract
 echo "Deploying router contract..."

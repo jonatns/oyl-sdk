@@ -250,7 +250,7 @@ export const removeLiquidityPsbt = async ({
         u128(BigInt(token.tx))
       ),
       amount: u128(tokenAmount),
-      output: u32(4),
+      output: u32(5),
     },
   ]
 
@@ -259,6 +259,12 @@ export const removeLiquidityPsbt = async ({
       ProtoStone.message({
         protocolTag: 1n,
         edicts,
+        pointer: 0,
+        refundPointer: 0,
+        calldata: encipher([]),
+      }),
+      ProtoStone.message({
+        protocolTag: 1n,
         pointer: 0,
         refundPointer: 0,
         calldata: encipher(calldata),
