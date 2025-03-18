@@ -441,9 +441,6 @@ export const poolPsbt = async ({
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
 
-    console.log('gatheredUtxos', gatheredUtxos)
-    console.log('alkaneUtxos', alkaneUtxos.alkaneUtxos)
-
     if (alkaneUtxos) {
       for await (const utxo of alkaneUtxos.alkaneUtxos) {
         if (getAddressType(utxo.address) === 0) {
