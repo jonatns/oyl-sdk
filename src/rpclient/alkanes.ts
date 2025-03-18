@@ -560,11 +560,3 @@ export class AlkanesRpc {
     }
   }
 }
-
-new AlkanesRpc('http://localhost:18888/v2/regtest')
-  .getAlkanesByAddress({
-    address: 'bcrt1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqvg32hk',
-  })
-  .then((res) => {
-    console.log(res)
-  })
