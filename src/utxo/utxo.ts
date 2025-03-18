@@ -4,7 +4,6 @@ import asyncPool from 'tiny-async-pool'
 import { OrdOutput } from 'rpclient/ord'
 import { getAddressKey } from '../shared/utils'
 import { Outpoint } from 'rpclient/alkanes'
-import { DEFAULT_PROVIDER } from 'cli/constants'
 
 export interface EsploraUtxo {
   txid: string
