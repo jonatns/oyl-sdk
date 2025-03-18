@@ -377,7 +377,7 @@ export const splitAlkaneUtxos = async (
       ),
     totalSatoshis: allTokenUtxos.reduce((acc, t) => acc + t.totalSatoshis, 0),
   }
-
+  console.log('tokenUtxos', tokenUtxos)
   const edicts: ProtoruneEdict[] = tokens.flatMap((token) => {
     return [
       {
@@ -430,6 +430,8 @@ export const poolPsbt = async ({
 }) => {
   try {
     const originalGatheredUtxos = gatheredUtxos
+
+    console.log('gatheredUtxos', gatheredUtxos)
 
     const minTxSize = minimumFee({
       taprootInputCount: 2,
