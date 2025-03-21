@@ -544,12 +544,6 @@ export class AlkanesRpc {
         ...request,
       },
     ])
-    // if (decoder) {
-    //   const operationType = Number(request.inputs[0])
-    //   ret.parsed = decoder(ret, operationType)
-    // } else {
-    //   ret.parsed = this.parseSimulateReturn(ret.execution.data)
-    // }
     return ret
   }
 
