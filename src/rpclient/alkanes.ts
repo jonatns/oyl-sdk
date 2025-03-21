@@ -529,6 +529,30 @@ export class AlkanesRpc {
     return results
   }
 
+  async meta(request: Partial<AlkaneSimulateRequest>, decoder?: any) {
+    const ret = await this._call('alkanes_meta', [
+      {
+        alkanes: [],
+        transaction: '0x',
+        block: '0x',
+        height: '0x',
+        txindex: 0,
+        inputs: [],
+        pointer: 0,
+        refundPointer: 0,
+        vout: 0,
+        ...request,
+      },
+    ])
+    // if (decoder) {
+    //   const operationType = Number(request.inputs[0])
+    //   ret.parsed = decoder(ret, operationType)
+    // } else {
+    //   ret.parsed = this.parseSimulateReturn(ret.execution.data)
+    // }
+    return ret
+  }
+
   parseSimulateReturn(v: any) {
     if (v === '0x') {
       return undefined

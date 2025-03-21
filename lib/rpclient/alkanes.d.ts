@@ -101,6 +101,7 @@ export declare class AlkanesRpc {
         limit: number;
         offset?: number;
     }): Promise<AlkaneToken[]>;
+    meta(request: Partial<AlkaneSimulateRequest>, decoder?: any): Promise<any>;
     parseSimulateReturn(v: any): {
         string: string;
         bytes: string;
