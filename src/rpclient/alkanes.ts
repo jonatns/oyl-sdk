@@ -426,7 +426,7 @@ export class AlkanesRpc {
     }
 
     const indices = Array.from(
-      { length: limit - offset + 1 },
+      { length: limit },
       (_, i) => i + offset
     )
 
