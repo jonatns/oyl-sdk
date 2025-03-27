@@ -27,22 +27,28 @@ import { Outpoint } from 'rpclient/alkanes'
 import { actualDeployCommitFee } from './contract'
 
 export interface ProtostoneMessage {
-  protocolTag: bigint
-  edicts: ProtoruneEdict[]
-  pointer: number
-  refundPointer: number
+  protocolTag?: bigint
+  edicts?: ProtoruneEdict[]
+  pointer?: number
+  refundPointer?: number
   calldata: bigint[]
 }
 
-export const encodeProtostone = (message: ProtostoneMessage) => {
+export const encodeProtostone = ({
+  protocolTag = 1n,
+  edicts = [],
+  pointer = 0,
+  refundPointer = 0,
+  calldata,
+}: ProtostoneMessage) => {
   return encodeRunestoneProtostone({
     protostones: [
       ProtoStone.message({
-        protocolTag: BigInt(message.protocolTag),
-        edicts: message.edicts,
-        pointer: message.pointer,
-        refundPointer: message.refundPointer,
-        calldata: encipher(message.calldata),
+        protocolTag,
+        edicts,
+        pointer,
+        refundPointer,
+        calldata: encipher(calldata),
       })
     ],
   }).encodedRunestone

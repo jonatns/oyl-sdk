@@ -5,13 +5,13 @@ import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict';
 import { Account, Signer } from '..';
 import { GatheredUtxos, AlkanesPayload } from '../shared/interface';
 export interface ProtostoneMessage {
-    protocolTag: bigint;
-    edicts: ProtoruneEdict[];
-    pointer: number;
-    refundPointer: number;
+    protocolTag?: bigint;
+    edicts?: ProtoruneEdict[];
+    pointer?: number;
+    refundPointer?: number;
     calldata: bigint[];
 }
-export declare const encodeProtostone: (message: ProtostoneMessage) => Buffer;
+export declare const encodeProtostone: ({ protocolTag, edicts, pointer, refundPointer, calldata, }: ProtostoneMessage) => Buffer;
 export declare const createExecutePsbt: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, fee, }: {
     alkaneUtxos?: {
         alkaneUtxos: any[];
