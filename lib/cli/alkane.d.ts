@@ -5,7 +5,6 @@ export declare const alkaneTokenDeploy: Command;
 export declare const alkaneExecute: Command;
 export declare const alkaneRemoveLiquidity: Command;
 export declare const alkaneSwap: Command;
-export declare const alkaneSplit: Command;
 export declare const alkaneSend: Command;
 export declare const alkaneCreatePool: Command;
 export declare const alkaneAddLiquidity: Command;
