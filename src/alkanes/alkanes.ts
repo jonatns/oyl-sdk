@@ -45,7 +45,7 @@ export const encodeProtostone = (message: ProtostoneMessage) => {
         calldata: encipher(message.calldata),
       })
     ],
-  })
+  }).encodedRunestone
 }
 
 export const createExecutePsbt = async ({

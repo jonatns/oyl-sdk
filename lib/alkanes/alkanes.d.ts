@@ -11,10 +11,7 @@ export interface ProtostoneMessage {
     refundPointer: number;
     calldata: bigint[];
 }
-export declare const encodeProtostone: (message: ProtostoneMessage) => {
-    encodedRunestone: Buffer;
-    etchingCommitment?: Buffer;
-};
+export declare const encodeProtostone: (message: ProtostoneMessage) => Buffer;
 export declare const createExecutePsbt: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, fee, }: {
     alkaneUtxos?: {
         alkaneUtxos: any[];
