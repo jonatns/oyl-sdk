@@ -1,7 +1,13 @@
 import { minimumFee } from '../btc'
 import { Provider } from '../provider/provider'
 import * as bitcoin from 'bitcoinjs-lib'
-import { p2tr_ord_reveal } from 'alkanes/lib/index'
+import { 
+  encipher, 
+  encodeRunestoneProtostone, 
+  p2tr_ord_reveal, 
+  ProtoStone,
+} from 'alkanes/lib/index'
+import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { Account, Signer } from '..'
 import {
   findXAmountOfSats,
@@ -19,6 +25,28 @@ import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import { Outpoint } from 'rpclient/alkanes'
 import { actualDeployCommitFee } from './contract'
+
+export interface ProtostoneMessage {
+  protocolTag: bigint
+  edicts: ProtoruneEdict[]
+  pointer: number
+  refundPointer: number
+  calldata: bigint[]
+}
+
+export const encodeProtostone = (message: ProtostoneMessage) => {
+  return encodeRunestoneProtostone({
+    protostones: [
+      ProtoStone.message({
+        protocolTag: BigInt(message.protocolTag),
+        edicts: message.edicts,
+        pointer: message.pointer,
+        refundPointer: message.refundPointer,
+        calldata: encipher(message.calldata),
+      })
+    ],
+  })
+}
 
 export const createExecutePsbt = async ({
   alkaneUtxos,
