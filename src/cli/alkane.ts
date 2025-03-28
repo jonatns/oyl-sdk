@@ -49,7 +49,7 @@ export class AlkanesCommand extends Command {
   action(fn) {
     this.option('-s, --metashrew-rpc-url <url>', 'metashrew JSON-RPC override');
     return super.action(async (options) => {
-      metashrew.set(options['metashrew-rpc-url'] || null);
+      metashrew.set(options.metashrewRpcUrl || null);
       return await fn(options);
     });
   }
