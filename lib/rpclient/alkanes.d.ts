@@ -60,6 +60,7 @@ export declare class AlkanesRpc {
     alkanesUrl: string;
     esplora: EsploraRpc;
     constructor(url: string);
+    _metashrewCall(method: string, params?: any[]): Promise<any>;
     _call(method: string, params?: any[]): Promise<any>;
     getAlkanesByHeight({ height, protocolTag, }: {
         height: number;

@@ -1,12 +1,24 @@
 import { Command } from 'commander';
-export declare const alkanesTrace: Command;
-export declare const alkaneContractDeploy: Command;
-export declare const alkaneTokenDeploy: Command;
-export declare const alkaneExecute: Command;
-export declare const alkaneRemoveLiquidity: Command;
-export declare const alkaneSwap: Command;
-export declare const alkaneSend: Command;
-export declare const alkaneCreatePool: Command;
-export declare const alkaneAddLiquidity: Command;
-export declare const alkaneSimulate: Command;
-export declare const alkaneGetAllPoolsDetails: Command;
+export declare class MetashrewOverride {
+    override: any;
+    constructor();
+    set(v: any): void;
+    exists(): boolean;
+    get(): any;
+}
+export declare const metashrew: MetashrewOverride;
+export declare class AlkanesCommand extends Command {
+    constructor(cmd: any);
+    action(fn: any): this;
+}
+export declare const alkanesTrace: AlkanesCommand;
+export declare const alkaneContractDeploy: AlkanesCommand;
+export declare const alkaneTokenDeploy: AlkanesCommand;
+export declare const alkaneExecute: AlkanesCommand;
+export declare const alkaneRemoveLiquidity: AlkanesCommand;
+export declare const alkaneSwap: AlkanesCommand;
+export declare const alkaneSend: AlkanesCommand;
+export declare const alkaneCreatePool: AlkanesCommand;
+export declare const alkaneAddLiquidity: AlkanesCommand;
+export declare const alkaneSimulate: AlkanesCommand;
+export declare const alkaneGetAllPoolsDetails: AlkanesCommand;

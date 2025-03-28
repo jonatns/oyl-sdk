@@ -23,7 +23,38 @@ import { removeLiquidity, addLiquidity, swap } from '../amm/pool'
 
   Note the json format if you need to pass an object.
 */
-export const alkanesTrace = new Command('trace')
+
+export class MetashrewOverride {
+  public override: any;
+  constructor() {
+    this.override = null;
+  }
+  set(v) {
+    this.override = v;
+  }
+  exists() {
+    return this.override !== null;
+  }
+  get() {
+    return this.override;
+  }
+}
+
+export const metashrew = new MetashrewOverride();
+
+export class AlkanesCommand extends Command {
+  constructor(cmd) {
+    super(cmd);
+  }
+  action(fn) {
+    this.option('-s, --metashrew-rpc-url <url>', 'metashrew JSON-RPC override');
+    return super.action(async (options) => {
+      metashrew.set(options['metashrew-rpc-url'] || null);
+      return await fn(options);
+    });
+  }
+}
+export const alkanesTrace = new AlkanesCommand('trace')
   .description('Returns data based on txid and vout of deployed alkane')
   .option('-p, --provider <provider>', 'provider to use to access the network.')
   .option(
@@ -56,7 +87,7 @@ export const alkanesTrace = new Command('trace')
 
   Remember to genBlocks after sending transactions to the regtest chain!
 */
-export const alkaneContractDeploy = new Command('new-contract')
+export const alkaneContractDeploy = new AlkanesCommand('new-contract')
   .requiredOption(
     '-data, --calldata <calldata>',
     'op code + params to be used when deploying a contracts',
@@ -143,7 +174,7 @@ export const alkaneContractDeploy = new Command('new-contract')
 
   Remember to genBlocks after transactions...
 */
-export const alkaneTokenDeploy = new Command('new-token')
+export const alkaneTokenDeploy = new AlkanesCommand('new-token')
   .requiredOption(
     '-resNumber, --reserveNumber <reserveNumber>',
     'Number to reserve for factory id'
@@ -265,7 +296,7 @@ export const alkaneTokenDeploy = new Command('new-token')
   Hint: you can grab the TEST_WALLET's alkanes balance with:
   oyl provider alkanes -method getAlkanesByAddress -params '{"address":"bcrt1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqvg32hk"}'
 */
-export const alkaneExecute = new Command('execute')
+export const alkaneExecute = new AlkanesCommand('execute')
   .requiredOption(
     '-data, --calldata <calldata>',
     'op code + params to be called on a contract',
@@ -345,7 +376,7 @@ export const alkaneExecute = new Command('execute')
 
   Burns an alkane LP token amount
 */
-export const alkaneRemoveLiquidity = new Command('remove-liquidity')
+export const alkaneRemoveLiquidity = new AlkanesCommand('remove-liquidity')
   .requiredOption(
     '-data, --calldata <calldata>',
     'op code + params to be called on a contract',
@@ -396,7 +427,7 @@ export const alkaneRemoveLiquidity = new Command('remove-liquidity')
 
   Swaps an alkane from a pool
 */
-export const alkaneSwap = new Command('swap')
+export const alkaneSwap = new AlkanesCommand('swap')
   .requiredOption(
     '-data, --calldata <calldata>',
     'op code + params to be called on a contract',
@@ -448,7 +479,7 @@ export const alkaneSwap = new Command('swap')
 
   Sends an alkane token amount to a given address (example is sending token with Alkane ID [2, 1]) 
 */
-export const alkaneSend = new Command('send')
+export const alkaneSend = new AlkanesCommand('send')
   .requiredOption('-to, --to <to>')
   .requiredOption('-amt, --amount <amount>')
   .requiredOption('-blk, --block <block>')
@@ -493,7 +524,7 @@ export const alkaneSend = new Command('send')
 
 Creates a new pool with the given tokens and amounts
 */
-export const alkaneCreatePool = new Command('create-pool')
+export const alkaneCreatePool = new AlkanesCommand('create-pool')
   .requiredOption(
     '-data, --calldata <calldata>',
     'op code + params to be called on a contract',
@@ -564,7 +595,7 @@ export const alkaneCreatePool = new Command('create-pool')
 
 Mints new LP tokens and adds liquidity to the pool with the given tokens and amounts
 */
-export const alkaneAddLiquidity = new Command('add-liquidity')
+export const alkaneAddLiquidity = new AlkanesCommand('add-liquidity')
   .requiredOption(
     '-data, --calldata <calldata>',
     'op code + params to be called on a contract',
@@ -638,7 +669,7 @@ export const alkaneAddLiquidity = new Command('add-liquidity')
   Simulates an operation using the pool decoder
   First input is the opcode
 */
-export const alkaneSimulate = new Command('simulate')
+export const alkaneSimulate = new AlkanesCommand('simulate')
   .requiredOption(
     '-target, --target <target>',
     'target block:tx for simulation',
@@ -726,7 +757,7 @@ export const alkaneSimulate = new Command('simulate')
  2. For each pool ID, getting its details
  3. Returning a combined result with all pool details
 */
-export const alkaneGetAllPoolsDetails = new Command('get-all-pools-details')
+export const alkaneGetAllPoolsDetails = new AlkanesCommand('get-all-pools-details')
   .requiredOption(
     '-target, --target <target>',
     'target block:tx for the factory contract',
