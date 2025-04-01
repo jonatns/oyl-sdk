@@ -419,104 +419,36 @@ export class AlkanesRpc {
     limit: number
     offset?: number
   }): Promise<AlkaneToken[]> {
-    if (limit > 1000) {
-      throw new Error(
-        'Max limit reached. Request fewer than 1000 alkanes per call'
-      )
-    }
-
-    const indices = Array.from(
-      { length: limit },
-      (_, i) => i + offset
-    )
+    const indices = Array.from({ length: limit }, (_, i) => i + offset)
 
     const processAlkane = async (
       index: number
     ): Promise<AlkaneToken | null> => {
-      const alkaneData: any = {
-        id: {
-          block: '2',
-          tx: index.toString(),
-        },
-      }
-
-      let hasValidResult = false
-      const validOpcodes = opcodes.filter((opcode) => opcode !== undefined)
-
       try {
-        const opcodeResults = await Promise.all(
-          validOpcodes.map(async (opcode, opcodeIndex) => {
-            if (!opcode) return null
-
-            try {
-              const result = await this.simulate({
-                target: { block: '2', tx: index.toString() },
-                alkanes: [],
-                transaction: '0x',
-                block: '0x',
-                height: '20000',
-                txindex: 0,
-                inputs: [opcode],
-                pointer: 0,
-                refundPointer: 0,
-                vout: 0,
-              })
-
-              if (result?.status === 0) {
-                return {
-                  opcode,
-                  result,
-                  opcodeIndex,
-                  opcodeHRV: opcodesHRV[opcodeIndex],
-                }
-              }
-            } catch (error) {
-              return null
-            }
-            return null
-          })
-        )
-        const validResults = opcodeResults.filter(
-          (
-            item
-          ): item is {
-            opcode: any
-            result: any
-            opcodeIndex: number
-            opcodeHRV: string
-          } => {
-            return (
-              item !== null &&
-              item !== undefined &&
-              item.opcodeHRV !== undefined
-            )
-          }
-        )
-
-        validResults.forEach(({ result, opcodeHRV }) => {
-          if (!opcodeHRV) return
-
-          if (['name', 'symbol', 'data'].includes(opcodeHRV)) {
-            alkaneData[opcodeHRV] = result.parsed?.string || ''
-          } else {
-            alkaneData[opcodeHRV] = Number(result.parsed?.le || 0)
-          }
-          hasValidResult = true
+        const metaResult = await this.meta({
+          target: { block: '2', tx: index.toString() },
+          alkanes: [],
+          transaction: '0x',
+          block: '0x',
+          height: '20000',
+          txindex: 0,
+          inputs: [],
+          pointer: 0,
+          refundPointer: 0,
+          vout: 0,
         })
 
-        if (hasValidResult) {
-          alkaneData.mintActive =
-            Number(alkaneData.minted || 0) < Number(alkaneData.cap || 0)
-          alkaneData.percentageMinted = Math.floor(
-            ((alkaneData.minted || 0) / (alkaneData.cap || 1)) * 100
-          )
-          return alkaneData
+        return {
+          id: {
+            block: '2',
+            tx: index.toString(),
+          },
+          ...metaResult,
         }
       } catch (error) {
         console.log(`Error processing alkane at index ${index}:`, error)
+        return null
       }
-
-      return null
     }
 
     const results = []
@@ -578,3 +510,9 @@ export class AlkanesRpc {
     }
   }
 }
+
+// const alkanesRpc = new AlkanesRpc('http://localhost:18888')
+
+// alkanesRpc.getAlkanes({ limit: 1000 }).then((alkanes) => {
+//   console.log(alkanes)
+// })
