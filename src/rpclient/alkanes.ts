@@ -136,8 +136,7 @@ export class AlkanesRpc {
   async _metashrewCall(method: string, params: any[] = []) {
     const rpc = new alkanes_rpc.AlkanesRpc({ baseUrl: metashrew.get() });
     return mapToPrimitives(await rpc[method.split('_')[1]](
-      unmapFromPrimitives(params[0] || {}),
-      889550
+      unmapFromPrimitives(params[0] || {})
     ));
   }
   async _call(method: string, params: any[] = []) {
