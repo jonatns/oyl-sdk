@@ -1,8 +1,25 @@
 import fetch from 'node-fetch'
 import asyncPool from 'tiny-async-pool'
 import { EsploraRpc, EsploraUtxo } from './esplora'
-import { metashrew } from "../cli/alkane";
 import * as alkanes_rpc from "alkanes/lib/rpc";
+
+export class MetashrewOverride {
+  public override: any;
+  constructor() {
+    this.override = null;
+  }
+  set(v) {
+    this.override = v;
+  }
+  exists() {
+    return this.override !== null;
+  }
+  get() {
+    return this.override;
+  }
+}
+
+export const metashrew = new MetashrewOverride();
 
 export const stripHexPrefix = (s: string): string =>
   s.substr(0, 2) === '0x' ? s.substr(2) : s

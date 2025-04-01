@@ -1,4 +1,12 @@
 import { EsploraRpc } from './esplora';
+export declare class MetashrewOverride {
+    override: any;
+    constructor();
+    set(v: any): void;
+    exists(): boolean;
+    get(): any;
+}
+export declare const metashrew: MetashrewOverride;
 export declare const stripHexPrefix: (s: string) => string;
 export declare function mapToPrimitives(v: any): any;
 export declare function unmapFromPrimitives(v: any): any;
