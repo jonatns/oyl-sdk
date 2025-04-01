@@ -2,13 +2,50 @@ import fetch from 'node-fetch'
 import asyncPool from 'tiny-async-pool'
 import { EsploraRpc, EsploraUtxo } from './esplora'
 import { metashrew } from "../cli/alkane";
-import { unmapFromPrimitives, mapToPrimitives } from "alkanes/jsonrpc/lib/utils";
 import * as alkanes_rpc from "alkanes/lib/rpc";
 
 export const stripHexPrefix = (s: string): string =>
   s.substr(0, 2) === '0x' ? s.substr(2) : s
 
 let id = 0;
+
+// Helper function to convert BigInt values to hex strings for JSON serialization
+export function mapToPrimitives(v: any): any {
+  switch (typeof v) {
+    case "bigint":
+      return "0x" + v.toString(16);
+    case "object":
+      if (v === null) return null;
+      if (Buffer.isBuffer(v)) return "0x" + v.toString("hex");
+      if (Array.isArray(v)) return v.map((v) => mapToPrimitives(v));
+      return Object.fromEntries(
+        Object.entries(v).map(([key, value]) => [key, mapToPrimitives(value)]),
+      );
+    default:
+      return v;
+  }
+}
+
+// Helper function to convert hex strings back to BigInt values
+export function unmapFromPrimitives(v: any): any {
+  switch (typeof v) {
+    case "string":
+      if (v !== '0x' && !isNaN(v as any)) return BigInt(v);
+      if (v.substr(0, 2) === "0x" || /^[0-9a-f]+$/.test(v)) return Buffer.from(stripHexPrefix(v), "hex");
+      return v;
+    case "object":
+      if (v === null) return null;
+      if (Array.isArray(v)) return v.map((item) => unmapFromPrimitives(item));
+      return Object.fromEntries(
+        Object.entries(v).map(([key, value]) => [
+          key,
+          unmapFromPrimitives(value),
+        ]),
+      );
+    default:
+      return v;
+  }
+}
 
 export interface Rune {
   rune: {
