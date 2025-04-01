@@ -1,5 +1,15 @@
 import { EsploraRpc } from './esplora';
+export declare class MetashrewOverride {
+    override: any;
+    constructor();
+    set(v: any): void;
+    exists(): boolean;
+    get(): any;
+}
+export declare const metashrew: MetashrewOverride;
 export declare const stripHexPrefix: (s: string) => string;
+export declare function mapToPrimitives(v: any): any;
+export declare function unmapFromPrimitives(v: any): any;
 export interface Rune {
     rune: {
         id: {
@@ -89,10 +99,11 @@ export declare class AlkanesRpc {
     };
     simulate(request: Partial<AlkaneSimulateRequest>, decoder?: any): Promise<any>;
     simulatePoolInfo(request: AlkaneSimulateRequest): Promise<any>;
-    getAlkanesByOutpoint({ txid, vout, protocolTag, }: {
+    getAlkanesByOutpoint({ txid, vout, protocolTag, height, }: {
         txid: string;
         vout: number;
         protocolTag?: string;
+        height?: string;
     }): Promise<any>;
     getAlkaneById({ block, tx, }: {
         block: string;
