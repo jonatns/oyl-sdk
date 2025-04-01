@@ -1,9 +1,14 @@
 import fetch from 'node-fetch'
 import asyncPool from 'tiny-async-pool'
 import { EsploraRpc, EsploraUtxo } from './esplora'
+import { metashrew } from "../cli/alkane";
+import { unmapFromPrimitives, mapToPrimitives } from "alkanes/jsonrpc/lib/utils";
+import * as alkanes_rpc from "alkanes/lib/rpc";
 
 export const stripHexPrefix = (s: string): string =>
   s.substr(0, 2) === '0x' ? s.substr(2) : s
+
+let id = 0;
 
 export interface Rune {
   rune: {
@@ -74,13 +79,19 @@ export class AlkanesRpc {
     this.alkanesUrl = url
     this.esplora = new EsploraRpc(url)
   }
-
-  async _call(method: string, params = []) {
+  async _metashrewCall(method: string, params: any[] = []) {
+    const rpc = new alkanes_rpc.AlkanesRpc({ baseUrl: metashrew.get() });
+    return mapToPrimitives(await rpc[method.split('_')[1]](unmapFromPrimitives(params[0] || {})));
+  }
+  async _call(method: string, params: any[] = []) {
+    if (metashrew.get() !== null && method.match("alkanes_")) {
+      return await this._metashrewCall(method, params);
+    }
     const requestData = {
       jsonrpc: '2.0',
       method: method,
       params: params,
-      id: 1,
+      id: id++,
     }
 
     const requestOptions = {
