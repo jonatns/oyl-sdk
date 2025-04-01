@@ -135,7 +135,10 @@ export class AlkanesRpc {
   }
   async _metashrewCall(method: string, params: any[] = []) {
     const rpc = new alkanes_rpc.AlkanesRpc({ baseUrl: metashrew.get() });
-    return mapToPrimitives(await rpc[method.split('_')[1]](unmapFromPrimitives(params[0] || {})));
+    return mapToPrimitives(await rpc[method.split('_')[1]](
+      unmapFromPrimitives(params[0] || {}),
+      889550
+    ));
   }
   async _call(method: string, params: any[] = []) {
     if (metashrew.get() !== null && method.match("alkanes_")) {
@@ -398,10 +401,12 @@ export class AlkanesRpc {
     txid,
     vout,
     protocolTag = '1',
+    height = 'latest',
   }: {
     txid: string
     vout: number
     protocolTag?: string
+    height?: string
   }): Promise<any> {
     const alkaneList = await this._call('alkanes_protorunesbyoutpoint', [
       {
@@ -409,6 +414,7 @@ export class AlkanesRpc {
         vout,
         protocolTag,
       },
+      height
     ])
 
     return alkaneList.map((outpoint) => ({
