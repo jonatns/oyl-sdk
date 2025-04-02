@@ -232,7 +232,8 @@ export const addressUtxos = async ({
           confirmations,
           scriptPk,
         })
-      } else if (hasInscriptions) {
+      }
+      if (hasInscriptions) {
         ordUtxos.push({
           txId: utxo.txid,
           outputIndex: utxo.vout,
@@ -242,7 +243,8 @@ export const addressUtxos = async ({
           confirmations,
           scriptPk,
         })
-      } else if (utxo.value !== 546) {
+      }
+      if (!hasInscriptions && !hasRunes && utxo.value !== 546) {
         spendableUtxos.push({
           txId: utxo.txid,
           outputIndex: utxo.vout,
@@ -253,7 +255,8 @@ export const addressUtxos = async ({
           scriptPk,
         })
         spendableTotalBalance += utxo.value
-      } else {
+      }
+      if (!hasInscriptions && !hasRunes) {
         otherUtxos.push({
           txId: utxo.txid,
           outputIndex: utxo.vout,
