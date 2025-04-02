@@ -273,17 +273,17 @@ export const addressUtxos = async ({
       })
 
       pendingTotalBalance += utxo.value
+    } else {
+      otherUtxos.push({
+        txId: utxo.txid,
+        outputIndex: utxo.vout,
+        satoshis: utxo.value,
+        address: address,
+        inscriptions: [],
+        confirmations: 0,
+        scriptPk,
+      })
     }
-
-    otherUtxos.push({
-      txId: utxo.txid,
-      outputIndex: utxo.vout,
-      satoshis: utxo.value,
-      address: address,
-      inscriptions: [],
-      confirmations: 0,
-      scriptPk,
-    })
   }
 
   return {
