@@ -321,6 +321,8 @@ export const accountUtxos = async ({
     const address = addresses[i].address
     const addressKey = addresses[i].addressKey
     const {
+      alkaneUtxos,
+      otherUtxos,
       spendableTotalBalance,
       spendableUtxos,
       runeUtxos,
@@ -339,6 +341,8 @@ export const accountUtxos = async ({
     accountTotalBalance += totalBalance
 
     accounts[addressKey] = {
+      alkaneUtxos,
+      otherUtxos,
       spendableTotalBalance,
       spendableUtxos,
       runeUtxos,
