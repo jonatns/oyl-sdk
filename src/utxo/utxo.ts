@@ -232,9 +232,7 @@ export const addressUtxos = async ({
           confirmations,
           scriptPk,
         })
-      }
-
-      if (hasInscriptions) {
+      } else if (hasInscriptions) {
         ordUtxos.push({
           txId: utxo.txid,
           outputIndex: utxo.vout,
@@ -244,9 +242,7 @@ export const addressUtxos = async ({
           confirmations,
           scriptPk,
         })
-      }
-
-      if (!hasInscriptions && !hasRunes && utxo.value !== 546) {
+      } else if (utxo.value !== 546) {
         spendableUtxos.push({
           txId: utxo.txid,
           outputIndex: utxo.vout,
@@ -256,8 +252,17 @@ export const addressUtxos = async ({
           confirmations,
           scriptPk,
         })
-
         spendableTotalBalance += utxo.value
+      } else {
+        otherUtxos.push({
+          txId: utxo.txid,
+          outputIndex: utxo.vout,
+          satoshis: utxo.value,
+          address: address,
+          inscriptions: [],
+          confirmations,
+          scriptPk,
+        })
       }
     }
 
@@ -271,18 +276,7 @@ export const addressUtxos = async ({
         confirmations: 0,
         scriptPk,
       })
-
       pendingTotalBalance += utxo.value
-    } else {
-      otherUtxos.push({
-        txId: utxo.txid,
-        outputIndex: utxo.vout,
-        satoshis: utxo.value,
-        address: address,
-        inscriptions: [],
-        confirmations: 0,
-        scriptPk,
-      })
     }
   }
 
@@ -341,8 +335,6 @@ export const accountUtxos = async ({
     accountTotalBalance += totalBalance
 
     accounts[addressKey] = {
-      alkaneUtxos,
-      otherUtxos,
       spendableTotalBalance,
       spendableUtxos,
       runeUtxos,
