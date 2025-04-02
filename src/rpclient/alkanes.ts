@@ -1,66 +1,67 @@
 import fetch from 'node-fetch'
 import asyncPool from 'tiny-async-pool'
 import { EsploraRpc, EsploraUtxo } from './esplora'
-import * as alkanes_rpc from "alkanes/lib/rpc";
+import * as alkanes_rpc from 'alkanes/lib/rpc'
 
 export class MetashrewOverride {
-  public override: any;
+  public override: any
   constructor() {
-    this.override = null;
+    this.override = null
   }
   set(v) {
-    this.override = v;
+    this.override = v
   }
   exists() {
-    return this.override !== null;
+    return this.override !== null
   }
   get() {
-    return this.override;
+    return this.override
   }
 }
 
-export const metashrew = new MetashrewOverride();
+export const metashrew = new MetashrewOverride()
 
 export const stripHexPrefix = (s: string): string =>
   s.substr(0, 2) === '0x' ? s.substr(2) : s
 
-let id = 0;
+let id = 0
 
 // Helper function to convert BigInt values to hex strings for JSON serialization
 export function mapToPrimitives(v: any): any {
   switch (typeof v) {
-    case "bigint":
-      return "0x" + v.toString(16);
-    case "object":
-      if (v === null) return null;
-      if (Buffer.isBuffer(v)) return "0x" + v.toString("hex");
-      if (Array.isArray(v)) return v.map((v) => mapToPrimitives(v));
+    case 'bigint':
+      return '0x' + v.toString(16)
+    case 'object':
+      if (v === null) return null
+      if (Buffer.isBuffer(v)) return '0x' + v.toString('hex')
+      if (Array.isArray(v)) return v.map((v) => mapToPrimitives(v))
       return Object.fromEntries(
-        Object.entries(v).map(([key, value]) => [key, mapToPrimitives(value)]),
-      );
+        Object.entries(v).map(([key, value]) => [key, mapToPrimitives(value)])
+      )
     default:
-      return v;
+      return v
   }
 }
 
 // Helper function to convert hex strings back to BigInt values
 export function unmapFromPrimitives(v: any): any {
   switch (typeof v) {
-    case "string":
-      if (v !== '0x' && !isNaN(v as any)) return BigInt(v);
-      if (v.substr(0, 2) === "0x" || /^[0-9a-f]+$/.test(v)) return Buffer.from(stripHexPrefix(v), "hex");
-      return v;
-    case "object":
-      if (v === null) return null;
-      if (Array.isArray(v)) return v.map((item) => unmapFromPrimitives(item));
+    case 'string':
+      if (v !== '0x' && !isNaN(v as any)) return BigInt(v)
+      if (v.substr(0, 2) === '0x' || /^[0-9a-f]+$/.test(v))
+        return Buffer.from(stripHexPrefix(v), 'hex')
+      return v
+    case 'object':
+      if (v === null) return null
+      if (Array.isArray(v)) return v.map((item) => unmapFromPrimitives(item))
       return Object.fromEntries(
         Object.entries(v).map(([key, value]) => [
           key,
           unmapFromPrimitives(value),
-        ]),
-      );
+        ])
+      )
     default:
-      return v;
+      return v
   }
 }
 
@@ -134,14 +135,14 @@ export class AlkanesRpc {
     this.esplora = new EsploraRpc(url)
   }
   async _metashrewCall(method: string, params: any[] = []) {
-    const rpc = new alkanes_rpc.AlkanesRpc({ baseUrl: metashrew.get() });
-    return mapToPrimitives(await rpc[method.split('_')[1]](
-      unmapFromPrimitives(params[0] || {})
-    ));
+    const rpc = new alkanes_rpc.AlkanesRpc({ baseUrl: metashrew.get() })
+    return mapToPrimitives(
+      await rpc[method.split('_')[1]](unmapFromPrimitives(params[0] || {}))
+    )
   }
   async _call(method: string, params: any[] = []) {
-    if (metashrew.get() !== null && method.match("alkanes_")) {
-      return await this._metashrewCall(method, params);
+    if (metashrew.get() !== null && method.match('alkanes_')) {
+      return await this._metashrewCall(method, params)
     }
     const requestData = {
       jsonrpc: '2.0',
@@ -362,32 +363,6 @@ export class AlkanesRpc {
 
     return ret
   }
-  // @dev WIP
-  // async meta(request: Partial<AlkaneSimulateRequest>, decoder?: any) {
-  //   const ret = await this._call('alkanes___meta', [
-  //     {
-  //       alkanes: [],
-  //       transaction: '0x',
-  //       block: '0x',
-  //       height: '20000',
-  //       txindex: 0,
-  //       inputs: [],
-  //       pointer: 0,
-  //       refundPointer: 0,
-  //       vout: 0,
-  //       ...request,
-  //     },
-  //   ])
-
-  //   if (decoder) {
-  //     const operationType = Number(request.inputs[0])
-  //     ret.parsed = decoder(ret, operationType)
-  //   } else {
-  //     ret.parsed = this.parseSimulateReturn(ret.execution.data)
-  //   }
-
-  //   return ret
-  // }
 
   async simulatePoolInfo(request: AlkaneSimulateRequest) {
     const ret = await this._call('alkanes_simulate', [request])
@@ -413,7 +388,7 @@ export class AlkanesRpc {
         vout,
         protocolTag,
       },
-      height
+      height,
     ])
 
     return alkaneList.map((outpoint) => ({
@@ -495,10 +470,7 @@ export class AlkanesRpc {
       )
     }
 
-    const indices = Array.from(
-      { length: limit },
-      (_, i) => i + offset
-    )
+    const indices = Array.from({ length: limit }, (_, i) => i + offset)
 
     const processAlkane = async (
       index: number
@@ -543,9 +515,9 @@ export class AlkanesRpc {
             } catch (error) {
               return null
             }
-            return null
           })
         )
+
         const validResults = opcodeResults.filter(
           (
             item
@@ -584,6 +556,7 @@ export class AlkanesRpc {
         }
       } catch (error) {
         console.log(`Error processing alkane at index ${index}:`, error)
+        return null
       }
 
       return null
@@ -595,7 +568,6 @@ export class AlkanesRpc {
         results.push(result)
       }
     }
-
     return results
   }
 

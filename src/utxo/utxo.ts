@@ -28,11 +28,13 @@ export interface FormattedUtxo {
 }
 
 export interface AddressUtxoPortfolio {
+  alkaneUtxos: FormattedUtxo[]
   spendableTotalBalance: number
   spendableUtxos: FormattedUtxo[]
   runeUtxos: FormattedUtxo[]
   ordUtxos: FormattedUtxo[]
   pendingUtxos: FormattedUtxo[]
+  otherUtxos: FormattedUtxo[]
   pendingTotalBalance: number
   totalBalance: number
 }
@@ -125,7 +127,8 @@ export const addressUtxos = async ({
   const pendingUtxos: FormattedUtxo[] = []
   const ordUtxos: FormattedUtxo[] = []
   const runeUtxos: FormattedUtxo[] = []
-
+  const otherUtxos: FormattedUtxo[] = []
+  let alkaneUtxos: FormattedUtxo[] = []
   const multiCall = await provider.sandshrew.multiCall([
     ['esplora_address::utxo', [address]],
     ['btc_getblockcount', []],
@@ -136,6 +139,8 @@ export const addressUtxos = async ({
 
   if (utxos.length === 0) {
     return {
+      otherUtxos,
+      alkaneUtxos,
       spendableTotalBalance,
       spendableUtxos,
       runeUtxos,
@@ -182,6 +187,19 @@ export const addressUtxos = async ({
     address,
   })
 
+  alkaneUtxos = alkanes.map((alkane) => {
+    totalBalance += Number(alkane.output.value)
+    return {
+      txId: alkane.outpoint.txid,
+      outputIndex: alkane.outpoint.vout,
+      satoshis: Number(alkane.output.value),
+      address: address,
+      inscriptions: [],
+      confirmations: 0,
+      scriptPk: alkane.output.script,
+    }
+  })
+
   const filteredProcessedUtxos = processedUtxos.filter(({ utxo }) => {
     return !alkanes.some(
       (alkane) =>
@@ -204,6 +222,20 @@ export const addressUtxos = async ({
       const hasRunes = Object.keys(txOutput.runes).length > 0
       const confirmations = blockCount - utxo.status.block_height
 
+      if (!utxo.status.confirmed) {
+        pendingUtxos.push({
+          txId: utxo.txid,
+          outputIndex: utxo.vout,
+          satoshis: utxo.value,
+          address: address,
+          inscriptions: [],
+          confirmations: 0,
+          scriptPk,
+        })
+        pendingTotalBalance += utxo.value
+        continue
+      }
+
       if (hasRunes) {
         runeUtxos.push({
           txId: utxo.txid,
@@ -215,7 +247,6 @@ export const addressUtxos = async ({
           scriptPk,
         })
       }
-
       if (hasInscriptions) {
         ordUtxos.push({
           txId: utxo.txid,
@@ -227,8 +258,7 @@ export const addressUtxos = async ({
           scriptPk,
         })
       }
-
-      if (!hasInscriptions && !hasRunes) {
+      if (!hasInscriptions && !hasRunes && utxo.value !== 546) {
         spendableUtxos.push({
           txId: utxo.txid,
           outputIndex: utxo.vout,
@@ -238,32 +268,31 @@ export const addressUtxos = async ({
           confirmations,
           scriptPk,
         })
-
         spendableTotalBalance += utxo.value
+        continue
       }
-    }
-
-    if (!utxo.status.confirmed) {
-      pendingUtxos.push({
-        txId: utxo.txid,
-        outputIndex: utxo.vout,
-        satoshis: utxo.value,
-        address: address,
-        inscriptions: [],
-        confirmations: 0,
-        scriptPk,
-      })
-
-      pendingTotalBalance += utxo.value
+      if (!hasInscriptions && !hasRunes) {
+        otherUtxos.push({
+          txId: utxo.txid,
+          outputIndex: utxo.vout,
+          satoshis: utxo.value,
+          address: address,
+          inscriptions: [],
+          confirmations,
+          scriptPk,
+        })
+      }
     }
   }
 
   return {
+    alkaneUtxos,
     spendableTotalBalance,
     spendableUtxos,
     runeUtxos,
     ordUtxos,
     pendingUtxos,
+    otherUtxos,
     pendingTotalBalance,
     totalBalance,
   }
@@ -291,6 +320,8 @@ export const accountUtxos = async ({
     const address = addresses[i].address
     const addressKey = addresses[i].addressKey
     const {
+      alkaneUtxos,
+      otherUtxos,
       spendableTotalBalance,
       spendableUtxos,
       runeUtxos,
@@ -309,6 +340,8 @@ export const accountUtxos = async ({
     accountTotalBalance += totalBalance
 
     accounts[addressKey] = {
+      alkaneUtxos,
+      otherUtxos,
       spendableTotalBalance,
       spendableUtxos,
       runeUtxos,
