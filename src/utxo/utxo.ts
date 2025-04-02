@@ -222,6 +222,20 @@ export const addressUtxos = async ({
       const hasRunes = Object.keys(txOutput.runes).length > 0
       const confirmations = blockCount - utxo.status.block_height
 
+      if (!utxo.status.confirmed) {
+        pendingUtxos.push({
+          txId: utxo.txid,
+          outputIndex: utxo.vout,
+          satoshis: utxo.value,
+          address: address,
+          inscriptions: [],
+          confirmations: 0,
+          scriptPk,
+        })
+        pendingTotalBalance += utxo.value
+        continue
+      }
+
       if (hasRunes) {
         runeUtxos.push({
           txId: utxo.txid,
@@ -255,6 +269,7 @@ export const addressUtxos = async ({
           scriptPk,
         })
         spendableTotalBalance += utxo.value
+        continue
       }
       if (!hasInscriptions && !hasRunes) {
         otherUtxos.push({
@@ -267,19 +282,6 @@ export const addressUtxos = async ({
           scriptPk,
         })
       }
-    }
-
-    if (!utxo.status.confirmed) {
-      pendingUtxos.push({
-        txId: utxo.txid,
-        outputIndex: utxo.vout,
-        satoshis: utxo.value,
-        address: address,
-        inscriptions: [],
-        confirmations: 0,
-        scriptPk,
-      })
-      pendingTotalBalance += utxo.value
     }
   }
 
