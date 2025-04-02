@@ -146,19 +146,6 @@ export const addressUtxos = async ({
     }
   }
 
-  const alkanes: Outpoint[] = await provider.alkanes.getAlkanesByAddress({
-    address,
-  })
-
-  utxos = utxos.filter(
-    (utxo) =>
-      !alkanes.some(
-        (alkane) =>
-          alkane.outpoint.txid === utxo.txid &&
-          alkane.outpoint.vout === utxo.vout
-      )
-  )
-
   const concurrencyLimit = 100
   const processedUtxos: {
     utxo: EsploraUtxo
@@ -191,14 +178,25 @@ export const addressUtxos = async ({
     }
   }
 
+  const alkanes: Outpoint[] = await provider.alkanes.getAlkanesByAddress({
+    address,
+  })
+
+  const filteredProcessedUtxos = processedUtxos.filter(({ utxo }) => {
+    return !alkanes.some(
+      (alkane) =>
+        alkane.outpoint.txid === utxo.txid && alkane.outpoint.vout === utxo.vout
+    )
+  })
+
   const utxoSortGreatestToLeast = spendStrategy?.utxoSortGreatestToLeast ?? true
-  processedUtxos.sort((a, b) =>
+  filteredProcessedUtxos.sort((a, b) =>
     utxoSortGreatestToLeast
       ? b.utxo.value - a.utxo.value
       : a.utxo.value - b.utxo.value
   )
 
-  for (const { utxo, txOutput, scriptPk } of processedUtxos) {
+  for (const { utxo, txOutput, scriptPk } of filteredProcessedUtxos) {
     totalBalance += utxo.value
 
     if (txOutput.indexed) {
@@ -230,24 +228,18 @@ export const addressUtxos = async ({
         })
       }
 
-      if (!hasInscriptions && !hasRunes) {
-        const alkane = await provider.alkanes.getAlkanesByOutpoint({
-          txid: utxo.txid,
-          vout: utxo.vout,
+      if (!hasInscriptions && !hasRunes && utxo.value !== 546) {
+        spendableUtxos.push({
+          txId: utxo.txid,
+          outputIndex: utxo.vout,
+          satoshis: utxo.value,
+          address: address,
+          inscriptions: [],
+          confirmations,
+          scriptPk,
         })
 
-        if (!alkane) {
-          spendableUtxos.push({
-            txId: utxo.txid,
-            outputIndex: utxo.vout,
-            satoshis: utxo.value,
-            address: address,
-            inscriptions: [],
-            confirmations,
-            scriptPk,
-          })
-          spendableTotalBalance += utxo.value
-        }
+        spendableTotalBalance += utxo.value
       }
     }
 

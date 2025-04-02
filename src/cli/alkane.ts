@@ -19,39 +19,39 @@ import { createNewPool, splitAlkaneUtxos } from '../amm/factory'
 import { removeLiquidity, addLiquidity, swap } from '../amm/pool'
 
 /* @dev example call
-  oyl alkane trace -params '{"txid":"0322c3a2ce665485c8125cd0334675f0ddbd7d5b278936144efb108ff59c49b5","vout":0}'
+  oyl alkane trace -params '{"txid":"e6561c7a8f80560c30a113c418bb56bde65694ac2b309a68549f35fdf2e785cb","vout":0}'
 
   Note the json format if you need to pass an object.
 */
 
 export class MetashrewOverride {
-  public override: any;
+  public override: any
   constructor() {
-    this.override = null;
+    this.override = null
   }
   set(v) {
-    this.override = v;
+    this.override = v
   }
   exists() {
-    return this.override !== null;
+    return this.override !== null
   }
   get() {
-    return this.override;
+    return this.override
   }
 }
 
-export const metashrew = new MetashrewOverride();
+export const metashrew = new MetashrewOverride()
 
 export class AlkanesCommand extends Command {
   constructor(cmd) {
-    super(cmd);
+    super(cmd)
   }
   action(fn) {
-    this.option('-s, --metashrew-rpc-url <url>', 'metashrew JSON-RPC override');
+    this.option('-s, --metashrew-rpc-url <url>', 'metashrew JSON-RPC override')
     return super.action(async (options) => {
-      metashrew.set(options.metashrewRpcUrl || null);
-      return await fn(options);
-    });
+      metashrew.set(options.metashrewRpcUrl || null)
+      return await fn(options)
+    })
   }
 }
 export const alkanesTrace = new AlkanesCommand('trace')
@@ -473,7 +473,6 @@ export const alkaneSwap = new AlkanesCommand('swap')
     )
   })
 
-
 /* @dev example call 
   oyl alkane send -blk 2 -tx 1 -amt 200 -to bcrt1pkq6ayylfpe5hn05550ry25pkakuf72x9qkjc2sl06dfcet8sg25ql4dm73
 
@@ -757,7 +756,9 @@ export const alkaneSimulate = new AlkanesCommand('simulate')
  2. For each pool ID, getting its details
  3. Returning a combined result with all pool details
 */
-export const alkaneGetAllPoolsDetails = new AlkanesCommand('get-all-pools-details')
+export const alkaneGetAllPoolsDetails = new AlkanesCommand(
+  'get-all-pools-details'
+)
   .requiredOption(
     '-target, --target <target>',
     'target block:tx for the factory contract',
