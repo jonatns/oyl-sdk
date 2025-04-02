@@ -338,6 +338,8 @@ export const accountUtxos = async ({
     accountTotalBalance += totalBalance
 
     accounts[addressKey] = {
+      alkaneUtxos,
+      otherUtxos,
       spendableTotalBalance,
       spendableUtxos,
       runeUtxos,
