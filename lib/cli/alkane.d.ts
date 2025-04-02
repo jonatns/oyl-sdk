@@ -1,12 +1,4 @@
 import { Command } from 'commander';
-export declare class MetashrewOverride {
-    override: any;
-    constructor();
-    set(v: any): void;
-    exists(): boolean;
-    get(): any;
-}
-export declare const metashrew: MetashrewOverride;
 export declare class AlkanesCommand extends Command {
     constructor(cmd: any);
     action(fn: any): this;

@@ -12,6 +12,7 @@ import { AlkanesPayload } from 'shared/interface'
 import { encodeRunestoneProtostone } from 'alkanes/lib/protorune/proto_runestone_upgrade'
 import { ProtoStone } from 'alkanes/lib/protorune/protostone'
 import { encipher } from 'alkanes/lib/bytes'
+import { metashrew } from '../rpclient/alkanes'
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer'
@@ -23,24 +24,6 @@ import { removeLiquidity, addLiquidity, swap } from '../amm/pool'
 
   Note the json format if you need to pass an object.
 */
-
-export class MetashrewOverride {
-  public override: any
-  constructor() {
-    this.override = null
-  }
-  set(v) {
-    this.override = v
-  }
-  exists() {
-    return this.override !== null
-  }
-  get() {
-    return this.override
-  }
-}
-
-export const metashrew = new MetashrewOverride()
 
 export class AlkanesCommand extends Command {
   constructor(cmd) {
