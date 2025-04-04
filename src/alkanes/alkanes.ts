@@ -92,7 +92,7 @@ export const createExecutePsbt = async ({
 
     gatheredUtxos = findXAmountOfSats(
       originalGatheredUtxos.utxos,
-      Number(finalFee) + 546
+      Number(finalFee) + 546 + (frontendFee || 0)
     )
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
@@ -223,7 +223,8 @@ export const createExecutePsbt = async ({
       gatheredUtxos.totalAmount +
       (alkaneUtxos?.totalSatoshis || 0) -
       finalFee -
-      546
+      546 -
+      (frontendFee || 0)
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
@@ -830,6 +831,8 @@ export const executePsbt = async ({
   feeAddress?: string
 }) => {
   const { fee } = await actualExecuteFee({
+    frontendFee,
+    feeAddress,
     alkaneUtxos,
     gatheredUtxos,
     account,
@@ -839,6 +842,8 @@ export const executePsbt = async ({
   })
 
   const { psbt: finalPsbt } = await createExecutePsbt({
+    frontendFee,
+    feeAddress,
     alkaneUtxos,
     gatheredUtxos,
     account,

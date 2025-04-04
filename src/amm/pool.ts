@@ -224,6 +224,10 @@ export const removeLiquidityPsbt = async ({
   account: Account
   provider: Provider
 }) => {
+  if (tokenAmount <= 0n) {
+    throw new Error('Cannot process zero tokens')
+  }
+
   let alkaneTokenUtxos: {
     alkaneUtxos: any[]
     totalSatoshis: number
@@ -346,6 +350,10 @@ export const swapPsbt = async ({
   frontendFee?: number
   feeAddress?: string
 }) => {
+  if (tokenAmount <= 0n) {
+    throw new Error('Cannot process zero tokens')
+  }
+
   let alkaneTokenUtxos: {
     alkaneUtxos: any[]
     totalSatoshis: number
