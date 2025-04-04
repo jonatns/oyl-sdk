@@ -333,6 +333,8 @@ export const swapPsbt = async ({
   feeRate,
   account,
   provider,
+  frontendFee,
+  feeAddress,
 }: {
   calldata: bigint[]
   token: AlkaneId
@@ -341,6 +343,8 @@ export const swapPsbt = async ({
   feeRate: number
   account: Account
   provider: Provider
+  frontendFee?: number
+  feeAddress?: string
 }) => {
   let alkaneTokenUtxos: {
     alkaneUtxos: any[]
@@ -390,14 +394,21 @@ export const swapPsbt = async ({
     ],
   }).encodedRunestone
 
-  const { psbt } = await alkanes.executePsbt({
+  let psbtOptions: any = {
     alkaneUtxos: alkaneTokenUtxos,
     protostone,
     gatheredUtxos,
     feeRate,
     account,
     provider,
-  })
+  }
+
+  if (frontendFee && feeAddress) {
+    psbtOptions.frontendFee = frontendFee
+    psbtOptions.feeAddress = feeAddress
+  }
+
+  const { psbt } = await alkanes.executePsbt(psbtOptions)
 
   return { psbt }
 }
@@ -411,6 +422,8 @@ export const swap = async ({
   account,
   signer,
   provider,
+  frontendFee,
+  feeAddress,
 }: {
   calldata: bigint[]
   token: AlkaneId
@@ -420,6 +433,8 @@ export const swap = async ({
   account: Account
   provider: Provider
   signer: Signer
+  frontendFee?: number
+  feeAddress?: string
 }) => {
   const { psbt } = await swapPsbt({
     calldata,
@@ -429,6 +444,8 @@ export const swap = async ({
     feeRate,
     account,
     provider,
+    frontendFee,
+    feeAddress,
   })
 
   const { signedPsbt } = await signer.signAllInputs({
