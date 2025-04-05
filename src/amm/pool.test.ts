@@ -434,8 +434,7 @@ describe('estimateRemoveLiquidityAmounts', () => {
     }
     const tokenAmount = 100n // 20% of total supply
 
-    const result = 
-          (poolDetails, tokenAmount)
+    const result = estimateRemoveLiquidityAmounts(poolDetails, tokenAmount)
 
     expect(result.token0).toEqual(poolDetails.token0)
     expect(result.token1).toEqual(poolDetails.token1)
