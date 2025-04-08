@@ -297,7 +297,7 @@ export const removeLiquidityPsbt = async ({
     ],
   }).encodedRunestone
 
-  const { psbt } = await alkanes.executePsbt({
+  const { psbt, fee } = await alkanes.executePsbt({
     alkaneUtxos: alkaneTokenUtxos,
     protostone,
     gatheredUtxos,
@@ -306,7 +306,7 @@ export const removeLiquidityPsbt = async ({
     provider,
   })
 
-  return { psbt }
+  return { psbt, fee }
 }
 
 export const removeLiquidity = async ({
@@ -437,9 +437,9 @@ export const swapPsbt = async ({
     psbtOptions.feeAddress = feeAddress
   }
 
-  const { psbt } = await alkanes.executePsbt(psbtOptions)
+  const { psbt, fee } = await alkanes.executePsbt(psbtOptions)
 
-  return { psbt }
+  return { psbt, fee }
 }
 
 export const swap = async ({
