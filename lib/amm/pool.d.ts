@@ -74,6 +74,7 @@ export declare const removeLiquidityPsbt: ({ calldata, token, tokenAmount, gathe
     provider: Provider;
 }) => Promise<{
     psbt: string;
+    fee: number;
 }>;
 export declare const removeLiquidity: ({ calldata, token, tokenAmount, gatheredUtxos, feeRate, account, signer, provider, }: {
     calldata: bigint[];
@@ -88,12 +89,14 @@ export declare const removeLiquidity: ({ calldata, token, tokenAmount, gatheredU
     provider: Provider;
     signer: Signer;
 }) => Promise<{
-    txId: string;
-    rawTx: string;
-    size: any;
-    weight: any;
-    fee: number;
-    satsPerVByte: string;
+    pushResult: {
+        txId: string;
+        rawTx: string;
+        size: any;
+        weight: any;
+        fee: number;
+        satsPerVByte: string;
+    };
 }>;
 export declare const swapPsbt: ({ calldata, token, tokenAmount, gatheredUtxos, feeRate, account, provider, frontendFee, feeAddress, }: {
     calldata: bigint[];
@@ -110,6 +113,7 @@ export declare const swapPsbt: ({ calldata, token, tokenAmount, gatheredUtxos, f
     feeAddress?: string;
 }) => Promise<{
     psbt: string;
+    fee: number;
 }>;
 export declare const swap: ({ calldata, token, tokenAmount, gatheredUtxos, feeRate, account, signer, provider, frontendFee, feeAddress, }: {
     calldata: bigint[];
