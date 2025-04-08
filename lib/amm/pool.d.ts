@@ -89,14 +89,12 @@ export declare const removeLiquidity: ({ calldata, token, tokenAmount, gatheredU
     provider: Provider;
     signer: Signer;
 }) => Promise<{
-    pushResult: {
-        txId: string;
-        rawTx: string;
-        size: any;
-        weight: any;
-        fee: number;
-        satsPerVByte: string;
-    };
+    txId: string;
+    rawTx: string;
+    size: any;
+    weight: any;
+    fee: number;
+    satsPerVByte: string;
 }>;
 export declare const swapPsbt: ({ calldata, token, tokenAmount, gatheredUtxos, feeRate, account, provider, frontendFee, feeAddress, }: {
     calldata: bigint[];

@@ -347,7 +347,7 @@ export const removeLiquidity = async ({
     psbtBase64: signedPsbt,
   })
 
-  return { pushResult }
+  return pushResult
 }
 
 export const swapPsbt = async ({
