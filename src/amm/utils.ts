@@ -60,3 +60,35 @@ export function estimateRemoveLiquidityAmounts(
     token1Amount,
   }
 }
+
+export interface SwapBuyAmountResult {
+  buyAmount: bigint,
+  sellTokenFeeAmount: bigint,
+}
+/**
+ * Calculates the expected amount of tokens received after a swap
+ * @param sellAmount The amount of tokens being sold
+ * @param sellTokenReserve The current balance of the token being sold
+ * @param buyTokenReserve The current balance of the token being received
+ * @param feeRate The fee percentage (0.5% default)
+ */
+export function swapBuyAmount({
+  sellAmount,
+  sellTokenReserve,
+  buyTokenReserve,
+  feeRate,
+}: {
+  sellAmount: bigint,
+  sellTokenReserve: bigint,
+  buyTokenReserve: bigint,
+  feeRate: bigint
+}): SwapBuyAmountResult {
+  if (sellAmount <= 0) throw new Error("swapBuyAmount: Insufficient sell amount");
+  if (sellTokenReserve <= 0 || buyTokenReserve <= 0) throw new Error("swapBuyAmount: Insufficient liquidity");
+  const sellAmountWithFee = sellAmount * (1000n - feeRate);
+  const numerator = sellAmountWithFee * buyTokenReserve;
+  const denominator = (sellTokenReserve * 1000n) + sellAmountWithFee;
+  const buyAmount: bigint = numerator / denominator;
+  const sellTokenFeeAmount = (sellAmount * feeRate) / 1000n;
+  return {buyAmount, sellTokenFeeAmount};
+}

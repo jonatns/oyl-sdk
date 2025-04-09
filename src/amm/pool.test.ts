@@ -12,6 +12,7 @@ import {
   PoolDetailsResult,
   PoolOpcodes,
   estimateRemoveLiquidityAmounts,
+  swapBuyAmount,
 } from './utils'
 
 // Test setup
@@ -584,5 +585,81 @@ describe('previewRemoveLiquidity', () => {
     await expect(
       previewRemoveLiquidity({ token, tokenAmount, provider: mockProvider })
     ).rejects.toThrow('Failed to get pool details')
+  })
+})
+
+describe('swapBuyAmount', () => {
+  it('should calculate correct buy amount and fee for a normal swap', () => {
+    const result = swapBuyAmount({
+      sellAmount: 1000n,
+      sellTokenReserve: 10000n,
+      buyTokenReserve: 20000n,
+      feeRate: 5n // 0.5%
+    })
+
+    // Expected calculations:
+    // sellAmountWithFee = 1000 * (1000 - 5) = 995000
+    // numerator = 995000 * 20000 = 19900000000
+    // denominator = (10000 * 1000) + 995000 = 10995000
+    // buyAmount = 19900000000 / 10995000 ≈ 1809
+    // tokenFee = (1000 * 5) / 1000 = 5
+    expect(result.buyAmount).toBe(1809n)
+    expect(result.sellTokenFeeAmount).toBe(5n)
+  })
+
+  it('should handle different fee rates correctly', () => {
+    const result = swapBuyAmount({
+      sellAmount: 1000n,
+      sellTokenReserve: 10000n,
+      buyTokenReserve: 20000n,
+      feeRate: 10n // 1%
+    })
+
+    // Expected calculations:
+    // sellAmountWithFee = 1000 * (1000 - 10) = 990000
+    // numerator = 990000 * 20000 = 19800000000
+    // denominator = (10000 * 1000) + 990000 = 10990000
+    // buyAmount = 19800000000 / 10990000 ≈ 1801
+    // tokenFee = (1000 * 10) / 1000 = 10
+    expect(result.buyAmount).toBe(1801n)
+    expect(result.sellTokenFeeAmount).toBe(10n)
+  })
+
+  it('should throw error for zero sell amount', () => {
+    expect(() => swapBuyAmount({
+      sellAmount: 0n,
+      sellTokenReserve: 10000n,
+      buyTokenReserve: 20000n,
+      feeRate: 5n
+    })).toThrow('swapBuyAmount: Insufficient sell amount')
+  })
+
+  it('should throw error for insufficient liquidity', () => {
+    expect(() => swapBuyAmount({
+      sellAmount: 1000n,
+      sellTokenReserve: 0n,
+      buyTokenReserve: 20000n,
+      feeRate: 5n
+    })).toThrow('swapBuyAmount: Insufficient liquidity')
+
+    expect(() => swapBuyAmount({
+      sellAmount: 1000n,
+      sellTokenReserve: 10000n,
+      buyTokenReserve: 0n,
+      feeRate: 5n
+    })).toThrow('swapBuyAmount: Insufficient liquidity')
+  })
+
+  it('should handle very large numbers correctly', () => {
+    const result = swapBuyAmount({
+      sellAmount: 1000000000000n,
+      sellTokenReserve: 10000000000000n,
+      buyTokenReserve: 20000000000000n,
+      feeRate: 5n
+    })
+
+    // The calculation should still work with large numbers
+    expect(result.buyAmount).toBeGreaterThan(0n)
+    expect(result.sellTokenFeeAmount).toBe(5000000000n) // (1000000000000 * 5) / 1000
   })
 })
