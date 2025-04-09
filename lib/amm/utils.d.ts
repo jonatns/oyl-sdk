@@ -38,3 +38,20 @@ export interface RemoveLiquidityPreviewResult {
  * @returns The preview result containing expected token amounts
  */
 export declare function estimateRemoveLiquidityAmounts(poolDetails: PoolDetailsResult, tokenAmount: bigint): RemoveLiquidityPreviewResult;
+export interface SwapBuyAmountResult {
+    buyAmount: bigint;
+    sellTokenFeeAmount: bigint;
+}
+/**
+ * Calculates the expected amount of tokens received after a swap
+ * @param sellAmount The amount of tokens being sold
+ * @param sellTokenReserve The current balance of the token being sold
+ * @param buyTokenReserve The current balance of the token being received
+ * @param feeRate The fee percentage (0.5% default)
+ */
+export declare function swapBuyAmount({ sellAmount, sellTokenReserve, buyTokenReserve, feeRate, }: {
+    sellAmount: bigint;
+    sellTokenReserve: bigint;
+    buyTokenReserve: bigint;
+    feeRate: bigint;
+}): SwapBuyAmountResult;
