@@ -18,7 +18,7 @@ import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 import { createNewPool, splitAlkaneUtxos } from '../amm/factory'
 import { removeLiquidity, addLiquidity, swap } from '../amm/pool'
-
+import { packUTF8 } from '../shared/utils'
 /* @dev example call
   oyl alkane trace -params '{"txid":"e6561c7a8f80560c30a113c418bb56bde65694ac2b309a68549f35fdf2e785cb","vout":0}'
 
@@ -187,6 +187,16 @@ export const alkaneTokenDeploy = new AlkanesCommand('new-token')
         account: wallet.account,
         provider: wallet.provider,
       })
+    const tokenName = packUTF8(options.tokenName)
+    const tokenSymbol = packUTF8(options.tokenSymbol)
+
+    if (tokenName.length > 2) {
+      throw new Error('Token name too long')
+    }
+
+    if (tokenSymbol.length > 1) {
+      throw new Error('Token symbol too long')
+    }
 
     const calldata = [
       BigInt(6),
@@ -196,17 +206,13 @@ export const alkaneTokenDeploy = new AlkanesCommand('new-token')
       BigInt(options.amountPerMint),
       BigInt(options.cap),
       BigInt(
-        '0x' +
-          Buffer.from(options.tokenName.split('').reverse().join('')).toString(
-            'hex'
-          )
+        '0x' + tokenName[0]
       ),
-      BigInt(0),
       BigInt(
-        '0x' +
-          Buffer.from(
-            options.tokenSymbol.split('').reverse().join('')
-          ).toString('hex')
+        tokenName.length > 1 ? '0x' + tokenName[1] : 0
+      ),
+      BigInt(
+        '0x' + tokenSymbol[0]
       ),
     ]
 
