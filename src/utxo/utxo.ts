@@ -156,24 +156,43 @@ export const addressUtxos = async ({
     utxo: EsploraUtxo
     txOutput: OrdOutput
     scriptPk: string
+    alkane?: Outpoint
   }[] = []
 
   const processUtxo = async (utxo: EsploraUtxo) => {
     try {
       const txIdVout = `${utxo.txid}:${utxo.vout}`
-      const [txOutput, txDetails] = await Promise.all([
-        provider.ord.getTxOutput(txIdVout),
-        provider.esplora.getTxInfo(utxo.txid),
+
+      const multiCall = await provider.sandshrew.multiCall([
+        ['ord_output', [txIdVout]],
+        ['esplora_tx', [utxo.txid]],
+        [
+          'alkanes_protorunesbyoutpoint',
+          [
+            // @ts-ignore
+            {
+              txid: Buffer.from(utxo.txid, 'hex').reverse().toString('hex'),
+              vout: utxo.vout,
+              protocolTag: '1',
+            },
+            'latest',
+          ],
+        ],
       ])
+
+      const txOutput = multiCall[0].result as OrdOutput
+      const txDetails = multiCall[1].result
+      const alkanesByOutpoint = multiCall[2].result as Outpoint[]
 
       return {
         utxo,
         txOutput,
         scriptPk: txDetails.vout[utxo.vout].scriptpubkey,
+        alkane: alkanesByOutpoint[0],
       }
     } catch (error) {
       console.error(`Error processing UTXO ${utxo.txid}:${utxo.vout}`, error)
-      return null
+      throw error
     }
   }
 
@@ -183,43 +202,21 @@ export const addressUtxos = async ({
     }
   }
 
-  const alkanes: Outpoint[] = await provider.alkanes.getAlkanesByAddress({
-    address,
-  })
-
-  alkaneUtxos = alkanes.map((alkane) => {
-    totalBalance += Number(alkane.output.value)
-    return {
-      txId: alkane.outpoint.txid,
-      outputIndex: alkane.outpoint.vout,
-      satoshis: Number(alkane.output.value),
-      address: address,
-      inscriptions: [],
-      confirmations: 0,
-      scriptPk: alkane.output.script,
-    }
-  })
-
-  const filteredProcessedUtxos = processedUtxos.filter(({ utxo }) => {
-    return !alkanes.some(
-      (alkane) =>
-        alkane.outpoint.txid === utxo.txid && alkane.outpoint.vout === utxo.vout
-    )
-  })
-
   const utxoSortGreatestToLeast = spendStrategy?.utxoSortGreatestToLeast ?? true
-  filteredProcessedUtxos.sort((a, b) =>
+
+  processedUtxos.sort((a, b) =>
     utxoSortGreatestToLeast
       ? b.utxo.value - a.utxo.value
       : a.utxo.value - b.utxo.value
   )
 
-  for (const { utxo, txOutput, scriptPk } of filteredProcessedUtxos) {
+  for (const { utxo, txOutput, scriptPk, alkane } of processedUtxos) {
     totalBalance += utxo.value
 
     if (txOutput.indexed) {
       const hasInscriptions = txOutput.inscriptions.length > 0
       const hasRunes = Object.keys(txOutput.runes).length > 0
+      const hasAlkanes = !!alkane
       const confirmations = blockCount - utxo.status.block_height
 
       if (!utxo.status.confirmed) {
@@ -234,6 +231,18 @@ export const addressUtxos = async ({
         })
         pendingTotalBalance += utxo.value
         continue
+      }
+
+      if (hasAlkanes) {
+        alkaneUtxos.push({
+          txId: utxo.txid,
+          outputIndex: utxo.vout,
+          satoshis: utxo.value,
+          address: address,
+          inscriptions: [],
+          confirmations,
+          scriptPk,
+        })
       }
 
       if (hasRunes) {

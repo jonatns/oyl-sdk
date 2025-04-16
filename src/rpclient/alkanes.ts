@@ -169,6 +169,7 @@ export class AlkanesRpc {
 
     try {
       const response = await fetch(this.alkanesUrl, requestOptions)
+
       const responseData = await response.json()
 
       if (responseData.error) throw new Error(responseData.error.message)
@@ -177,10 +178,10 @@ export class AlkanesRpc {
       if (error.name === 'AbortError') {
         console.error('Request Timeout:', error)
         throw new Error('Request timed out')
-      } else {
-        console.error('Request Error:', error)
-        throw error
       }
+
+      console.error('Request Error:', error)
+      throw error
     }
   }
 
