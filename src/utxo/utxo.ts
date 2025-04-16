@@ -169,7 +169,6 @@ export const addressUtxos = async ({
         [
           'alkanes_protorunesbyoutpoint',
           [
-            // @ts-ignore
             {
               txid: Buffer.from(utxo.txid, 'hex').reverse().toString('hex'),
               vout: utxo.vout,
