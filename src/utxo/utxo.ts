@@ -151,7 +151,7 @@ export const addressUtxos = async ({
     }
   }
 
-  const concurrencyLimit = 100
+  const concurrencyLimit = 50
   const processedUtxos: {
     utxo: EsploraUtxo
     txOutput: OrdOutput
