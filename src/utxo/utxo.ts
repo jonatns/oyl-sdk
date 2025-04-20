@@ -266,7 +266,7 @@ export const addressUtxos = async ({
           scriptPk,
         })
       }
-      if (!hasInscriptions && !hasRunes && utxo.value !== 546) {
+      if (!hasInscriptions && !hasRunes && utxo.value !== 546 && utxo.value !== 330) {
         spendableUtxos.push({
           txId: utxo.txid,
           outputIndex: utxo.vout,
