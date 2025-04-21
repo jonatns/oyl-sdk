@@ -1,9 +1,10 @@
 import { Provider } from '../provider/provider'
 import * as dotenv from 'dotenv'
 import * as bitcoin from 'bitcoinjs-lib'
-import { EsploraUtxo, addressUtxos, selectUtxos } from './utxo'
+import { EsploraUtxo, addressUtxos, selectUtxos, accountUtxos } from './utxo'
 import { FormattedUtxo } from '../shared/interface'
-import { accountUtxos } from '../__fixtures__/utxos'
+import { accountUtxos as accountUtxosFixture } from '../__fixtures__/utxos'
+import { Account } from '../account/account'
 
 dotenv.config()
 
@@ -490,6 +491,37 @@ jest.mock('../provider/provider', () => {
   }
 })
 
+// Add testAccount definition at the top with other test data
+const testAccount = {
+  taproot: {
+    address: 'bc1pklamaklxrdgm7njpudghhq3j7vwxfuak0l7jmrhvluf0cld5etjsga00nj',
+    pubkey: 'mock_taproot_pubkey',
+    pubKeyXOnly: 'mock_taproot_pubkey_xonly',
+    hdPath: "m/86'/1'/0'/0/0",
+  },
+  nativeSegwit: {
+    address: 'bc1qcr8te4kr609gcawutmrza0j4xv80jy8zeqchgx',
+    pubkey: 'mock_nativeSegwit_pubkey',
+    hdPath: "m/84'/1'/0'/0/0",
+  },
+  nestedSegwit: {
+    address: '2N1LGaGg836mqSQqiuUBLfcyGBhyZbremDX',
+    pubkey: 'mock_nestedSegwit_pubkey',
+    hdPath: "m/49'/1'/0'/0/0",
+  },
+  legacy: {
+    address: 'mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn',
+    pubkey: 'mock_legacy_pubkey',
+    hdPath: "m/44'/1'/0'/0/0",
+  },
+  spendStrategy: {
+    addressOrder: ['taproot', 'nativeSegwit', 'nestedSegwit', 'legacy'],
+    utxoSortGreatestToLeast: true,
+    changeAddress: 'taproot',
+  },
+  network: bitcoin.networks.regtest,
+} as Account
+
 describe('utxo', () => {
   it('addressUtxos', async () => {
     const result = await addressUtxos({
@@ -504,7 +536,7 @@ describe('utxo', () => {
 
   describe('selectUtxos', () => {
     it('returns the right utxos for smart spend (default)', async () => {
-      const result = selectUtxos(accountUtxos, {
+      const result = selectUtxos(accountUtxosFixture, {
         addressOrder: ['nativeSegwit', 'nestedSegwit', 'taproot', 'legacy'],
         utxoSortGreatestToLeast: true,
         changeAddress: 'nativeSegwit',
@@ -532,7 +564,7 @@ describe('utxo', () => {
     })
 
     it('returns the right utxos when sorting from least to greatest', async () => {
-      const result = selectUtxos(accountUtxos, {
+      const result = selectUtxos(accountUtxosFixture, {
         addressOrder: ['nativeSegwit', 'nestedSegwit', 'taproot', 'legacy'],
         utxoSortGreatestToLeast: false,
         changeAddress: 'nativeSegwit',
@@ -560,7 +592,7 @@ describe('utxo', () => {
     })
 
     it('returns the right utxos for single address', async () => {
-      const result = selectUtxos(accountUtxos, {
+      const result = selectUtxos(accountUtxosFixture, {
         addressOrder: ['taproot'],
         utxoSortGreatestToLeast: true,
         changeAddress: 'nativeSegwit',
@@ -570,6 +602,463 @@ describe('utxo', () => {
       expect(result[0].address).toMatch(/bcrt1p/)
       expect(result[1].address).toMatch(/bcrt1p/)
       expect(result[0].satoshis).toBeGreaterThan(result[1].satoshis)
+    })
+
+    it('handles utxoSortGreatestToLeast correctly for mixed address types', async () => {
+      // Create a test fixture with mixed address types and varying UTXO values
+      const mixedUtxosFixture: FormattedUtxo[] = [
+        {
+          txId: 'tx1',
+          outputIndex: 0,
+          satoshis: 50000,
+          address: testAccount.nativeSegwit.address,
+          inscriptions: [],
+          confirmations: 1,
+          scriptPk: 'mock_script1'
+        },
+        {
+          txId: 'tx2',
+          outputIndex: 0,
+          satoshis: 100000,
+          address: testAccount.taproot.address,
+          inscriptions: [],
+          confirmations: 1,
+          scriptPk: 'mock_script2'
+        },
+        {
+          txId: 'tx3',
+          outputIndex: 0,
+          satoshis: 75000,
+          address: testAccount.nativeSegwit.address,
+          inscriptions: [],
+          confirmations: 1,
+          scriptPk: 'mock_script3'
+        },
+        {
+          txId: 'tx4',
+          outputIndex: 0,
+          satoshis: 25000,
+          address: testAccount.taproot.address,
+          inscriptions: [],
+          confirmations: 1,
+          scriptPk: 'mock_script4'
+        }
+      ]
+
+      // Test greatest to least sorting
+      const greatestToLeast = selectUtxos(mixedUtxosFixture, {
+        addressOrder: ['nativeSegwit', 'taproot'],
+        utxoSortGreatestToLeast: true,
+        changeAddress: 'nativeSegwit'
+      })
+
+      // Verify nativeSegwit UTXOs are sorted greatest to least
+      expect(greatestToLeast[0].satoshis).toBe(75000)
+      expect(greatestToLeast[1].satoshis).toBe(50000)
+      
+      // Verify taproot UTXOs are sorted greatest to least
+      expect(greatestToLeast[2].satoshis).toBe(100000)
+      expect(greatestToLeast[3].satoshis).toBe(25000)
+
+      // Test least to greatest sorting
+      const leastToGreatest = selectUtxos(mixedUtxosFixture, {
+        addressOrder: ['nativeSegwit', 'taproot'],
+        utxoSortGreatestToLeast: false,
+        changeAddress: 'nativeSegwit'
+      })
+
+      // Verify nativeSegwit UTXOs are sorted least to greatest
+      expect(leastToGreatest[0].satoshis).toBe(50000)
+      expect(leastToGreatest[1].satoshis).toBe(75000)
+      
+      // Verify taproot UTXOs are sorted least to greatest
+      expect(leastToGreatest[2].satoshis).toBe(25000)
+      expect(leastToGreatest[3].satoshis).toBe(100000)
+    })
+
+    it('handles account.spendStrategy.addressOrder correctly', async () => {
+      // Create a test fixture with UTXOs across all address types
+      const addressOrderUtxosFixture: FormattedUtxo[] = [
+        // Native SegWit UTXOs (should be spent first)
+        {
+          txId: 'native_tx1',
+          outputIndex: 0,
+          satoshis: 50000,
+          address: testAccount.nativeSegwit.address,
+          inscriptions: [],
+          confirmations: 1,
+          scriptPk: 'mock_script1'
+        },
+        {
+          txId: 'native_tx2',
+          outputIndex: 0,
+          satoshis: 75000,
+          address: testAccount.nativeSegwit.address,
+          inscriptions: [],
+          confirmations: 1,
+          scriptPk: 'mock_script2'
+        },
+        // Nested SegWit UTXOs (should be spent second)
+        {
+          txId: 'nested_tx1',
+          outputIndex: 0,
+          satoshis: 100000,
+          address: testAccount.nestedSegwit.address,
+          inscriptions: [],
+          confirmations: 1,
+          scriptPk: 'mock_script3'
+        },
+        {
+          txId: 'nested_tx2',
+          outputIndex: 0,
+          satoshis: 25000,
+          address: testAccount.nestedSegwit.address,
+          inscriptions: [],
+          confirmations: 1,
+          scriptPk: 'mock_script4'
+        },
+        // Taproot UTXOs (should be spent third)
+        {
+          txId: 'taproot_tx1',
+          outputIndex: 0,
+          satoshis: 150000,
+          address: testAccount.taproot.address,
+          inscriptions: [],
+          confirmations: 1,
+          scriptPk: 'mock_script5'
+        },
+        {
+          txId: 'taproot_tx2',
+          outputIndex: 0,
+          satoshis: 50000,
+          address: testAccount.taproot.address,
+          inscriptions: [],
+          confirmations: 1,
+          scriptPk: 'mock_script6'
+        },
+        // Legacy UTXOs (should be spent last)
+        {
+          txId: 'legacy_tx1',
+          outputIndex: 0,
+          satoshis: 200000,
+          address: testAccount.legacy.address,
+          inscriptions: [],
+          confirmations: 1,
+          scriptPk: 'mock_script7'
+        },
+        {
+          txId: 'legacy_tx2',
+          outputIndex: 0,
+          satoshis: 100000,
+          address: testAccount.legacy.address,
+          inscriptions: [],
+          confirmations: 1,
+          scriptPk: 'mock_script8'
+        }
+      ]
+
+      // Test 1: Verify address order and exclusion of non-strategy addresses
+      const result1 = selectUtxos(addressOrderUtxosFixture, {
+        addressOrder: ['nativeSegwit', 'nestedSegwit', 'taproot', 'legacy'],
+        utxoSortGreatestToLeast: true,
+        changeAddress: 'nativeSegwit'
+      })
+
+      // Verify address order is maintained
+      expect(result1[0].address).toMatch(/bc1q/) // nativeSegwit
+      expect(result1[1].address).toMatch(/bc1q/) // nativeSegwit
+      expect(result1[2].address).toMatch(/2N/)   // nestedSegwit
+      expect(result1[3].address).toMatch(/2N/)   // nestedSegwit
+      expect(result1[4].address).toMatch(/bc1p/) // taproot
+      expect(result1[5].address).toMatch(/bc1p/) // taproot
+      expect(result1[6].address).toMatch(/m/)    // legacy
+      expect(result1[7].address).toMatch(/m/)    // legacy
+
+      // Test 2: Verify UTXOs are sorted within each address type
+      // Native SegWit
+      expect(result1[0].satoshis).toBe(75000)
+      expect(result1[1].satoshis).toBe(50000)
+      // Nested SegWit
+      expect(result1[2].satoshis).toBe(100000)
+      expect(result1[3].satoshis).toBe(25000)
+      // Taproot
+      expect(result1[4].satoshis).toBe(150000)
+      expect(result1[5].satoshis).toBe(50000)
+      // Legacy
+      expect(result1[6].satoshis).toBe(200000)
+      expect(result1[7].satoshis).toBe(100000)
+
+      // Test 3: Verify partial address order (exclude some addresses)
+      const result2 = selectUtxos(addressOrderUtxosFixture, {
+        addressOrder: ['nativeSegwit', 'taproot'], // Exclude nestedSegwit and legacy
+        utxoSortGreatestToLeast: true,
+        changeAddress: 'nativeSegwit'
+      })
+
+      console.log(result2)
+
+      // Should only include nativeSegwit and taproot UTXOs
+      expect(result2).toHaveLength(4)
+      expect(result2[0].address).toMatch(/bc1q/) // nativeSegwit
+      expect(result2[1].address).toMatch(/bc1q/) // nativeSegwit
+      expect(result2[2].address).toMatch(/bc1p/) // taproot
+      expect(result2[3].address).toMatch(/bc1p/) // taproot
+
+      // Test 4: Verify sorting is maintained within each address type
+      // Native SegWit
+      expect(result2[0].satoshis).toBe(75000)
+      expect(result2[1].satoshis).toBe(50000)
+      // Taproot
+      expect(result2[2].satoshis).toBe(150000)
+      expect(result2[3].satoshis).toBe(50000)
+
+      // Test 5: Verify least to greatest sorting within address order
+      const result3 = selectUtxos(addressOrderUtxosFixture, {
+        addressOrder: ['nativeSegwit', 'nestedSegwit', 'taproot', 'legacy'],
+        utxoSortGreatestToLeast: false,
+        changeAddress: 'nativeSegwit'
+      })
+
+      // Verify address order is maintained but UTXOs are sorted least to greatest
+      expect(result3[0].address).toMatch(/bc1q/) // nativeSegwit
+      expect(result3[1].address).toMatch(/bc1q/) // nativeSegwit
+      expect(result3[0].satoshis).toBe(50000)
+      expect(result3[1].satoshis).toBe(75000)
+
+      expect(result3[2].address).toMatch(/2N/)   // nestedSegwit
+      expect(result3[3].address).toMatch(/2N/)   // nestedSegwit
+      expect(result3[2].satoshis).toBe(25000)
+      expect(result3[3].satoshis).toBe(100000)
+    })
+  })
+
+  describe('addressUtxos', () => {
+    it('should filter out 546 and 330 satoshi UTXOs from spendable UTXOs', async () => {
+      // Add test UTXOs with special values
+      const specialValueUtxos: EsploraUtxo[] = [
+        {
+          txid: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b276',
+          vout: 0,
+          status: {
+            confirmed: true,
+            block_height: 280,
+            block_hash: '519a8fa6b439da658a83b231486958a26c76ca92811d1e5cc7bcb94bd574c20f',
+            block_time: 1719240702,
+          },
+          value: 546, // Dust UTXO that might contain inscriptions
+        },
+        {
+          txid: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b277',
+          vout: 0,
+          status: {
+            confirmed: true,
+            block_height: 280,
+            block_hash: '519a8fa6b439da658a83b231486958a26c76ca92811d1e5cc7bcb94bd574c20f',
+            block_time: 1719240702,
+          },
+          value: 330, // Another special value UTXO
+        },
+        {
+          txid: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b278',
+          vout: 0,
+          status: {
+            confirmed: true,
+            block_height: 280,
+            block_hash: '519a8fa6b439da658a83b231486958a26c76ca92811d1e5cc7bcb94bd574c20f',
+            block_time: 1719240702,
+          },
+          value: 1000, // Regular spendable UTXO
+        }
+      ]
+
+      // Mock the multiCall to return our special value UTXOs
+      mockSandshrewMultiCall.mockImplementationOnce(() => 
+        Promise.resolve([{ result: specialValueUtxos }, { result: 283 }])
+      )
+
+      // Mock the subsequent multiCalls for each UTXO
+      mockSandshrewMultiCall.mockImplementation((calls) => {
+        const txIdVout = calls[0][1][0]
+        const index = specialValueUtxos.findIndex(
+          (utxo) => `${utxo.txid}:${utxo.vout}` === txIdVout
+        )
+
+        if (index >= 0) {
+          return Promise.resolve([
+            { result: { indexed: true, inscriptions: [], runes: {} } }, // ord_output
+            { result: { vout: [{ scriptpubkey: 'mock_script' }] } }, // esplora_tx
+            { result: [] }, // alkanes_protorunesbyoutpoint
+          ])
+        }
+
+        return Promise.resolve([])
+      })
+
+      const result = await addressUtxos({
+        address: 'bc1pklamaklxrdgm7njpudghhq3j7vwxfuak0l7jmrhvluf0cld5etjsga00nj',
+        provider: provider,
+      })
+
+      // Verify that 546 and 330 satoshi UTXOs are in otherUtxos, not spendableUtxos
+      expect(result.spendableUtxos).toHaveLength(1)
+      expect(result.spendableUtxos[0].satoshis).toBe(1000)
+      
+      expect(result.otherUtxos).toHaveLength(2)
+      expect(result.otherUtxos.map(utxo => utxo.satoshis)).toEqual(expect.arrayContaining([546, 330]))
+      
+      // Verify total balances
+      expect(result.spendableTotalBalance).toBe(1000)
+      expect(result.totalBalance).toBe(1876) // 546 + 330 + 1000
+    })
+  })
+
+  describe('accountUtxos', () => {
+    it('should handle multiple address types and calculate correct balances', async () => {
+      // Mock UTXOs for different address types
+      const mockUtxos: Record<string, EsploraUtxo[]> = {
+        taproot: [
+          {
+            txid: 'taproot_tx1',
+            vout: 0,
+            value: 100000,
+            status: { confirmed: true, block_height: 280 }
+          }
+        ],
+        nativeSegwit: [
+          {
+            txid: 'native_tx1',
+            vout: 0,
+            value: 50000,
+            status: { confirmed: true, block_height: 280 }
+          }
+        ],
+        nestedSegwit: [
+          {
+            txid: 'nested_tx1',
+            vout: 0,
+            value: 25000,
+            status: { confirmed: true, block_height: 280 }
+          }
+        ],
+        legacy: [
+          {
+            txid: 'legacy_tx1',
+            vout: 0,
+            value: 10000,
+            status: { confirmed: true, block_height: 280 }
+          }
+        ]
+      }
+
+      // Mock multiCall to return different UTXOs based on address
+      mockSandshrewMultiCall.mockImplementation((calls) => {
+        // First call is for getting UTXOs and block count
+        if (calls[0][0] === 'esplora_address::utxo') {
+          const address = calls[0][1][0]
+          let utxos: EsploraUtxo[] = []
+          
+          if (address.includes('bc1p')) utxos = mockUtxos.taproot
+          else if (address.includes('bc1q')) utxos = mockUtxos.nativeSegwit
+          else if (address.includes('2')) utxos = mockUtxos.nestedSegwit
+          else utxos = mockUtxos.legacy
+
+          return Promise.resolve([{ result: utxos }, { result: 283 }])
+        }
+
+        // Subsequent calls are for processing individual UTXOs
+        const txIdVout = calls[0][1][0]
+        return Promise.resolve([
+          { result: { indexed: true, inscriptions: [], runes: {} } }, // ord_output
+          { result: { vout: [{ scriptpubkey: 'mock_script' }] } }, // esplora_tx
+          { result: [] } // alkanes_protorunesbyoutpoint
+        ])
+      })
+
+      const result = await accountUtxos({
+        account: testAccount,
+        provider: provider
+      })
+
+      // Verify total balances
+      expect(result.accountTotalBalance).toBe(185000) // 100000 + 50000 + 25000 + 10000
+      expect(result.accountSpendableTotalBalance).toBe(185000)
+      expect(result.accountPendingTotalBalance).toBe(0)
+
+      // Verify UTXOs per address type
+      expect(result.accounts.taproot.spendableUtxos).toHaveLength(1)
+      expect(result.accounts.taproot.spendableUtxos[0].satoshis).toBe(100000)
+
+      expect(result.accounts.nativeSegwit.spendableUtxos).toHaveLength(1)
+      expect(result.accounts.nativeSegwit.spendableUtxos[0].satoshis).toBe(50000)
+
+      expect(result.accounts.nestedSegwit.spendableUtxos).toHaveLength(1)
+      expect(result.accounts.nestedSegwit.spendableUtxos[0].satoshis).toBe(25000)
+
+      expect(result.accounts.legacy.spendableUtxos).toHaveLength(1)
+      expect(result.accounts.legacy.spendableUtxos[0].satoshis).toBe(10000)
+    })
+
+    it('should handle pending UTXOs correctly', async () => {
+      // Mock UTXOs with some pending transactions
+      const mockUtxos: EsploraUtxo[] = [
+        {
+          txid: 'confirmed_tx1',
+          vout: 0,
+          value: 100000,
+          status: { confirmed: true, block_height: 280 }
+        },
+        {
+          txid: 'pending_tx1',
+          vout: 0,
+          value: 50000,
+          status: { confirmed: false }
+        }
+      ]
+
+      // Mock multiCall to handle both initial UTXO fetch and subsequent processing
+      mockSandshrewMultiCall.mockImplementation((calls) => {
+        // First call is for getting UTXOs and block count
+        if (calls[0][0] === 'esplora_address::utxo') {
+          // Only return UTXOs for the first address to avoid duplicate counting
+          const address = calls[0][1][0]
+          if (address === testAccount.taproot.address) {
+            return Promise.resolve([{ result: mockUtxos }, { result: 283 }])
+          }
+          return Promise.resolve([{ result: [] }, { result: 283 }])
+        }
+
+        // Subsequent calls are for processing individual UTXOs
+        const txIdVout = calls[0][1][0]
+        return Promise.resolve([
+          { result: { indexed: true, inscriptions: [], runes: {} } }, // ord_output
+          { result: { vout: [{ scriptpubkey: 'mock_script' }] } }, // esplora_tx
+          { result: [] } // alkanes_protorunesbyoutpoint
+        ])
+      })
+
+      const result = await accountUtxos({
+        account: testAccount,
+        provider: provider
+      })
+
+      // Verify balances
+      expect(result.accountTotalBalance).toBe(150000) // 100000 (confirmed) + 50000 (pending)
+      expect(result.accountSpendableTotalBalance).toBe(100000) // Only confirmed UTXOs
+      expect(result.accountPendingTotalBalance).toBe(50000) // Only pending UTXOs
+
+      // Verify UTXO categorization
+      expect(result.accountSpendableTotalUtxos).toHaveLength(1)
+      expect(result.accountSpendableTotalUtxos[0].satoshis).toBe(100000)
+      
+      // Verify address-specific balances
+      expect(result.accounts.taproot.totalBalance).toBe(150000)
+      expect(result.accounts.taproot.spendableTotalBalance).toBe(100000)
+      expect(result.accounts.taproot.pendingTotalBalance).toBe(50000)
+      
+      // Other addresses should have zero balance
+      expect(result.accounts.nativeSegwit.totalBalance).toBe(0)
+      expect(result.accounts.nestedSegwit.totalBalance).toBe(0)
+      expect(result.accounts.legacy.totalBalance).toBe(0)
     })
   })
 })
