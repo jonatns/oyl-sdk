@@ -30,6 +30,7 @@ import {
   privateKeysCommand,
   generateMnemonicCommand,
   signPsbt,
+  generateAddressesCommand,
 } from './account'
 import {
   alkanesProvider,
@@ -56,6 +57,7 @@ const accountCommand = new Command('account')
   .addCommand(signPsbt)
   .addCommand(privateKeysCommand)
   .addCommand(generateMnemonicCommand)
+  .addCommand(generateAddressesCommand)
 
 const utxosCommand = new Command('utxo')
   .description('Examine utxos')

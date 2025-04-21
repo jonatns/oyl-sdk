@@ -108,3 +108,62 @@ export const signPsbt = new Command('sign')
     console.log('--------------------------------------')
     console.log('signed psbt', signedPsbt)
   })
+
+  /**
+   * @dev example call 
+   * oyl account generateAddresses -p bitcoin -n 10
+   * 
+   * You will need to specify a MNOMONIC= in your .env file
+   */
+export const generateAddressesCommand = new Command('generateAddresses')
+  .description('Generates multiple addresses for different indexes')
+  .requiredOption(
+    '-p, --provider <provider>',
+    'provider to use when querying the network (bitcoin, testnet, regtest)'
+  )
+  .requiredOption(
+    '-n, --number <number>',
+    'number of address indexes to generate'
+  )
+  .option('-w, --wallet-standard <walletStandard>', 'Wallet standard')
+  .action((options) => {
+    const wallet: Wallet = new Wallet({ networkType: options.provider })
+    const provider = wallet.provider
+    const numIndexes = parseInt(options.number, 10)
+    
+    if (isNaN(numIndexes) || numIndexes <= 0) {
+      console.error('Please provide a valid positive number for the number of addresses')
+      return
+    }
+
+    const results = []
+    for (let i = 0; i < numIndexes; i++) {
+      let hdPaths: HDPaths
+      if (options.walletStandard) {
+        hdPaths = getHDPaths(
+          i,
+          provider.network,
+          options.walletStandard
+        )
+      }
+      const account = mnemonicToAccount({
+        mnemonic: wallet.mnemonic,
+        opts: {
+          index: i,
+          network: provider.network,
+          hdPaths,
+        },
+      })
+      results.push({
+        index: i,
+        network: options.provider,
+        addresses: {
+          taproot: account.taproot.address,
+          nativeSegwit: account.nativeSegwit.address,
+          nestedSegwit: account.nestedSegwit.address,
+          legacy: account.legacy.address,
+        }
+      })
+    }
+    console.log(JSON.stringify(results, null, 2))
+  })
