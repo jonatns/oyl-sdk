@@ -4,6 +4,7 @@ import { Provider } from '../provider/provider';
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict';
 import { Account, Signer } from '..';
 import { GatheredUtxos, AlkanesPayload } from '../shared/interface';
+import { FormattedUtxo } from '@utxo/utxo';
 export interface ProtostoneMessage {
     protocolTag?: bigint;
     edicts?: ProtoruneEdict[];
@@ -15,10 +16,7 @@ export declare const encodeProtostone: ({ protocolTag, edicts, pointer, refundPo
 export declare const createExecutePsbt: ({ frontendFee, feeAddress, alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, fee, }: {
     frontendFee?: number;
     feeAddress?: string;
-    alkaneUtxos?: {
-        alkaneUtxos: any[];
-        totalSatoshis: number;
-    };
+    alkaneUtxos?: GatheredUtxos;
     gatheredUtxos: GatheredUtxos;
     account: Account;
     protostone: Buffer;
@@ -96,14 +94,7 @@ export declare const findAlkaneUtxos: ({ address, greatestToLeast, provider, alk
     };
     targetNumberOfAlkanes: number;
 }) => Promise<{
-    alkaneUtxos: {
-        txId: string;
-        txIndex: number;
-        script: string;
-        address: string;
-        amountOfAlkanes: string;
-        satoshis: number;
-    }[];
+    alkaneUtxos: FormattedUtxo[];
     totalSatoshis: number;
     totalBalanceBeingSent: number;
 }>;
@@ -125,10 +116,7 @@ export declare const actualExecuteFee: ({ gatheredUtxos, account, protostone, pr
     protostone: Buffer;
     provider: Provider;
     feeRate: number;
-    alkaneUtxos?: {
-        alkaneUtxos: any[];
-        totalSatoshis: number;
-    };
+    alkaneUtxos?: GatheredUtxos;
     frontendFee?: number;
     feeAddress?: string;
 }) => Promise<{
@@ -136,10 +124,7 @@ export declare const actualExecuteFee: ({ gatheredUtxos, account, protostone, pr
     vsize: number;
 }>;
 export declare const executePsbt: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, frontendFee, feeAddress, }: {
-    alkaneUtxos?: {
-        alkaneUtxos: any[];
-        totalSatoshis: number;
-    };
+    alkaneUtxos?: GatheredUtxos;
     gatheredUtxos: GatheredUtxos;
     account: Account;
     protostone: Buffer;
@@ -152,10 +137,7 @@ export declare const executePsbt: ({ alkaneUtxos, gatheredUtxos, account, protos
     fee: number;
 }>;
 export declare const execute: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, signer, frontendFee, feeAddress, }: {
-    alkaneUtxos?: {
-        alkaneUtxos: any[];
-        totalSatoshis: number;
-    };
+    alkaneUtxos?: GatheredUtxos;
     gatheredUtxos: GatheredUtxos;
     account: Account;
     protostone: Buffer;

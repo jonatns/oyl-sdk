@@ -68,10 +68,7 @@ export const createExecutePsbt = async ({
 }: {
   frontendFee?: number
   feeAddress?: string
-  alkaneUtxos?: {
-    alkaneUtxos: any[]
-    totalSatoshis: number
-  }
+  alkaneUtxos?: GatheredUtxos
   gatheredUtxos: GatheredUtxos
   account: Account
   protostone: Buffer
@@ -115,7 +112,7 @@ export const createExecutePsbt = async ({
     const psbt = new bitcoin.Psbt({ network: provider.network })
 
     if (alkaneUtxos) {
-      for (const utxo of alkaneUtxos.alkaneUtxos) {
+      for (const utxo of alkaneUtxos.utxos) {
         console.log('Adding alkane UTXO:', utxo)
         await addInputForUtxo(psbt, utxo, account, provider)
       }
@@ -132,7 +129,7 @@ export const createExecutePsbt = async ({
     }
 
     const inputsTotal =
-      gatheredUtxos.totalAmount + (alkaneUtxos?.totalSatoshis ?? 0)
+      gatheredUtxos.totalAmount + (alkaneUtxos.totalAmount ?? 0)
     const outputsTotal = psbt.txOutputs.reduce((sum, o) => sum + o.value, 0)
 
     let change = inputsTotal - outputsTotal - minerFee
@@ -613,14 +610,7 @@ export const findAlkaneUtxos = async ({
 
   let totalSatoshis: number = 0
   let totalBalanceBeingSent: number = 0
-  const alkaneUtxos: {
-    txId: string
-    txIndex: number
-    script: string
-    address: string
-    amountOfAlkanes: string
-    satoshis: number
-  }[] = []
+  const alkaneUtxos: FormattedUtxo[] = []
 
   for (const alkane of sortedRunesWithOutpoints) {
     if (
@@ -630,12 +620,12 @@ export const findAlkaneUtxos = async ({
       const satoshis = Number(alkane.outpoint.output.value)
       alkaneUtxos.push({
         txId: alkane.outpoint.outpoint.txid,
-        txIndex: alkane.outpoint.outpoint.vout,
-        script: alkane.outpoint.output.script,
+        outputIndex: alkane.outpoint.outpoint.vout,
+        scriptPk: alkane.outpoint.output.script,
         address,
-        amountOfAlkanes: alkane.rune.balance,
         satoshis,
-        ...alkane.rune.rune,
+        inscriptions: [],
+        confirmations: 0,
       })
       totalSatoshis += satoshis
       totalBalanceBeingSent +=
@@ -723,10 +713,7 @@ export const actualExecuteFee = async ({
   protostone: Buffer
   provider: Provider
   feeRate: number
-  alkaneUtxos?: {
-    alkaneUtxos: any[]
-    totalSatoshis: number
-  }
+  alkaneUtxos?: GatheredUtxos
   frontendFee?: number
   feeAddress?: string
 }) => {
@@ -782,10 +769,7 @@ export const executePsbt = async ({
   frontendFee,
   feeAddress,
 }: {
-  alkaneUtxos?: {
-    alkaneUtxos: any[]
-    totalSatoshis: number
-  }
+  alkaneUtxos?: GatheredUtxos
   gatheredUtxos: GatheredUtxos
   account: Account
   protostone: Buffer
@@ -831,10 +815,7 @@ export const execute = async ({
   frontendFee,
   feeAddress,
 }: {
-  alkaneUtxos?: {
-    alkaneUtxos: any[]
-    totalSatoshis: number
-  }
+  alkaneUtxos?: GatheredUtxos
   gatheredUtxos: GatheredUtxos
   account: Account
   protostone: Buffer

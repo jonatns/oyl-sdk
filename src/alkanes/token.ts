@@ -125,7 +125,7 @@ export const createSendPsbt = async ({
         const previousTxHex: string = await provider.esplora.getTxHex(utxo.txId)
         psbt.addInput({
           hash: utxo.txId,
-          index: utxo.txIndex,
+          index: utxo.outputIndex,
           nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
         })
       }
@@ -139,7 +139,7 @@ export const createSendPsbt = async ({
 
         psbt.addInput({
           hash: utxo.txId,
-          index: utxo.txIndex,
+          index: utxo.outputIndex,
           redeemScript: redeemScript,
           witnessUtxo: {
             value: utxo.satoshis,
@@ -157,10 +157,10 @@ export const createSendPsbt = async ({
       ) {
         psbt.addInput({
           hash: utxo.txId,
-          index: utxo.txIndex,
+          index: utxo.outputIndex,
           witnessUtxo: {
             value: utxo.satoshis,
-            script: Buffer.from(utxo.script, 'hex'),
+            script: Buffer.from(utxo.scriptPk, 'hex'),
           },
         })
       }

@@ -3,7 +3,7 @@ import { encodeRunestoneProtostone } from 'alkanes/lib/protorune/proto_runestone
 import { ProtoStone } from 'alkanes/lib/protorune/protostone'
 import { Account, alkanes, Provider, Signer, utxo } from '..'
 import { findAlkaneUtxos } from '../alkanes'
-import { AlkaneId, Utxo } from 'shared/interface'
+import { AlkaneId, GatheredUtxos, Utxo } from 'shared/interface'
 import { u128, u32 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
@@ -113,7 +113,7 @@ export const addLiquidityPsbt = async ({
     { alkaneId: token0, amount: token0Amount },
     { alkaneId: token1, amount: token1Amount },
   ]
-  const { edicts, alkaneUtxos, totalSatoshis } = await splitAlkaneUtxos(
+  const { edicts, utxos, totalAmount } = await splitAlkaneUtxos(
     tokens,
     account,
     provider
@@ -138,7 +138,7 @@ export const addLiquidityPsbt = async ({
   }).encodedRunestone
 
   const { psbt, fee } = await alkanes.executePsbt({
-    alkaneUtxos: { alkaneUtxos, totalSatoshis },
+    alkaneUtxos: { utxos, totalAmount },
     protostone,
     gatheredUtxos,
     feeRate,
@@ -249,11 +249,6 @@ export const removeLiquidityPsbt = async ({
     throw new Error('Cannot process zero tokens')
   }
 
-  let alkaneTokenUtxos: {
-    alkaneUtxos: any[]
-    totalSatoshis: number
-  }
-
   const tokenUtxos = await Promise.all([
     findAlkaneUtxos({
       address: account.taproot.address,
@@ -264,10 +259,6 @@ export const removeLiquidityPsbt = async ({
     }),
   ])
 
-  alkaneTokenUtxos = {
-    alkaneUtxos: tokenUtxos[0].alkaneUtxos,
-    totalSatoshis: tokenUtxos[0].totalSatoshis,
-  }
   const edicts: ProtoruneEdict[] = [
     {
       id: new ProtoruneRuneId(
@@ -296,6 +287,11 @@ export const removeLiquidityPsbt = async ({
       }),
     ],
   }).encodedRunestone
+
+  const alkaneTokenUtxos: GatheredUtxos = {
+    utxos: tokenUtxos[0].alkaneUtxos,
+    totalAmount: tokenUtxos[0].totalSatoshis,
+  }
 
   const { psbt, fee } = await alkanes.executePsbt({
     alkaneUtxos: alkaneTokenUtxos,
