@@ -78,19 +78,21 @@ export const createExecutePsbt = async ({
 }) => {
   try {
     const SAT_PER_VBYTE = feeRate ?? 1
-    const MIN_RELAY = 546
+    const MIN_RELAY = 546n
 
     if (frontendFee && !feeAddress) {
       throw new Error('feeAddress required when frontendFee is set')
     }
 
-    const spendTargets = 546 + (frontendFee ? Number(frontendFee) : 0)
+    const feeSatEffective: bigint =
+      frontendFee && frontendFee >= MIN_RELAY ? frontendFee : 0n
+
+    const spendTargets = 546 + Number(feeSatEffective)
 
     const minTxSize = minimumFee({
       taprootInputCount: 2,
       nonTaprootInputCount: 0,
-      outputCount:
-        2 + (frontendFee && frontendFee >= BigInt(MIN_RELAY) ? 1 : 0),
+      outputCount: 2 + (feeSatEffective > 0n ? 1 : 0),
     })
 
     const minFee = Math.max(minTxSize * SAT_PER_VBYTE, 250)
@@ -103,8 +105,7 @@ export const createExecutePsbt = async ({
       const newSize = minimumFee({
         taprootInputCount: gatheredUtxos.utxos.length,
         nonTaprootInputCount: 0,
-        outputCount:
-          2 + (frontendFee && frontendFee >= BigInt(MIN_RELAY) ? 1 : 0),
+        outputCount: 2 + (feeSatEffective > 0n ? 1 : 0),
       })
       minerFee = Math.max(newSize * SAT_PER_VBYTE, 250)
       if (gatheredUtxos.totalAmount < minerFee) {
@@ -126,10 +127,11 @@ export const createExecutePsbt = async ({
     psbt.addOutput({ address: account.taproot.address, value: 546 })
     psbt.addOutput({ script: protostone, value: 0 })
 
-    if (frontendFee && frontendFee >= BigInt(MIN_RELAY)) {
-      psbt.addOutput({ address: feeAddress!, value: Number(frontendFee) })
-    } else if (frontendFee) {
-      minerFee += Number(frontendFee)
+    if (feeSatEffective > 0n) {
+      psbt.addOutput({
+        address: feeAddress!,
+        value: Number(feeSatEffective),
+      })
     }
 
     const inputsTotal =
@@ -139,7 +141,7 @@ export const createExecutePsbt = async ({
     let change = inputsTotal - outputsTotal - minerFee
     if (change < 0) throw new OylTransactionError(Error('Insufficient balance'))
 
-    if (change >= MIN_RELAY) {
+    if (change >= Number(MIN_RELAY)) {
       psbt.addOutput({
         address: account[account.spendStrategy.changeAddress].address,
         value: change,
