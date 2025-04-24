@@ -205,15 +205,9 @@ export const alkaneTokenDeploy = new AlkanesCommand('new-token')
       BigInt(options.premine ?? 0),
       BigInt(options.amountPerMint),
       BigInt(options.cap),
-      BigInt(
-        '0x' + tokenName[0]
-      ),
-      BigInt(
-        tokenName.length > 1 ? '0x' + tokenName[1] : 0
-      ),
-      BigInt(
-        '0x' + tokenSymbol[0]
-      ),
+      BigInt('0x' + tokenName[0]),
+      BigInt(tokenName.length > 1 ? '0x' + tokenName[1] : 0),
+      BigInt('0x' + tokenSymbol[0]),
     ]
 
     const protostone = encodeRunestoneProtostone({
@@ -796,7 +790,9 @@ export const alkaneGetAllPoolsDetails = new AlkanesCommand(
 
  Previews the tokens that would be received when removing liquidity from a pool
 */
-export const alkanePreviewRemoveLiquidity = new AlkanesCommand('preview-remove-liquidity')
+export const alkanePreviewRemoveLiquidity = new AlkanesCommand(
+  'preview-remove-liquidity'
+)
   .requiredOption(
     '-token, --token <token>',
     'LP token ID in the format block:tx',
@@ -818,17 +814,24 @@ export const alkanePreviewRemoveLiquidity = new AlkanesCommand('preview-remove-l
     const wallet: Wallet = new Wallet(options)
 
     try {
-      const previewResult = await wallet.provider.alkanes.previewRemoveLiquidity({
-        token: options.token,
-        tokenAmount: options.amount,
-      })
+      const previewResult =
+        await wallet.provider.alkanes.previewRemoveLiquidity({
+          token: options.token,
+          tokenAmount: options.amount,
+        })
 
-      console.log(JSON.stringify({
-        token0: `${previewResult.token0.block}:${previewResult.token0.tx}`,
-        token1: `${previewResult.token1.block}:${previewResult.token1.tx}`,
-        token0Amount: previewResult.token0Amount.toString(),
-        token1Amount: previewResult.token1Amount.toString(),
-      }, null, 2))
+      console.log(
+        JSON.stringify(
+          {
+            token0: `${previewResult.token0.block}:${previewResult.token0.tx}`,
+            token1: `${previewResult.token1.block}:${previewResult.token1.tx}`,
+            token0Amount: previewResult.token0Amount.toString(),
+            token1Amount: previewResult.token1Amount.toString(),
+          },
+          null,
+          2
+        )
+      )
     } catch (error) {
       console.error('Error previewing liquidity removal:', error.message)
     }
