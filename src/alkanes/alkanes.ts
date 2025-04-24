@@ -116,6 +116,7 @@ export const createExecutePsbt = async ({
 
     if (alkaneUtxos) {
       for (const utxo of alkaneUtxos.alkaneUtxos) {
+        console.log('Adding alkane UTXO:', utxo)
         await addInputForUtxo(psbt, utxo, account, provider)
       }
     }
