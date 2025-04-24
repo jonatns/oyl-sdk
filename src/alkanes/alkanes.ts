@@ -25,6 +25,7 @@ import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import { Outpoint } from 'rpclient/alkanes'
 import { actualDeployCommitFee } from './contract'
+import { FormattedUtxo } from '@utxo/utxo'
 
 export interface ProtostoneMessage {
   protocolTag?: bigint
@@ -120,7 +121,6 @@ export const createExecutePsbt = async ({
     }
 
     for (const utxo of gatheredUtxos.utxos) {
-      console.log(utxo)
       await addInputForUtxo(psbt, utxo, account, provider)
     }
 
@@ -164,7 +164,7 @@ export const createExecutePsbt = async ({
 
 async function addInputForUtxo(
   psbt: bitcoin.Psbt,
-  utxo: any,
+  utxo: FormattedUtxo,
   account: Account,
   provider: Provider
 ) {
@@ -175,7 +175,7 @@ async function addInputForUtxo(
       const prevHex = await provider.esplora.getTxHex(utxo.txId)
       psbt.addInput({
         hash: utxo.txId,
-        index: +utxo.txIndex,
+        index: +utxo.outputIndex,
         nonWitnessUtxo: Buffer.from(prevHex, 'hex'),
       })
       break
@@ -188,7 +188,7 @@ async function addInputForUtxo(
       ])
       psbt.addInput({
         hash: utxo.txId,
-        index: +utxo.txIndex,
+        index: +utxo.outputIndex,
         redeemScript: redeem,
         witnessUtxo: {
           value: utxo.satoshis,
@@ -206,10 +206,10 @@ async function addInputForUtxo(
     default: {
       psbt.addInput({
         hash: utxo.txId,
-        index: +utxo.txIndex,
+        index: +utxo.outputIndex,
         witnessUtxo: {
           value: utxo.satoshis,
-          script: Buffer.from(utxo.script ?? utxo.scriptPk, 'hex'),
+          script: Buffer.from(utxo.scriptPk, 'hex'),
         },
       })
     }
