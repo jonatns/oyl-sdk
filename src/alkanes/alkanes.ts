@@ -120,6 +120,7 @@ export const createExecutePsbt = async ({
     }
 
     for (const utxo of gatheredUtxos.utxos) {
+      console.log(utxo)
       await addInputForUtxo(psbt, utxo, account, provider)
     }
 
