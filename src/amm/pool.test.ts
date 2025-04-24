@@ -246,7 +246,7 @@ describe('AMM Pool PSBT Tests', () => {
         feeRate: 10,
         account,
         provider,
-        frontendFee: 1000,
+        frontendFee: 1000n,
         feeAddress:
           'bc1p0000000000000000000000000000000000000000000000000000000000000000',
       })

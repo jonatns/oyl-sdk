@@ -66,7 +66,7 @@ export const createExecutePsbt = async ({
   feeRate,
   fee = 0,
 }: {
-  frontendFee?: number
+  frontendFee?: bigint
   feeAddress?: string
   alkaneUtxos?: GatheredUtxos
   gatheredUtxos: GatheredUtxos
@@ -82,7 +82,7 @@ export const createExecutePsbt = async ({
       throw new Error('feeAddress required when frontendFee is set')
     }
 
-    const spendTargets = 546 + (frontendFee ?? 0)
+    const spendTargets = 546 + (Number(frontendFee) ?? 0)
     const minTxSize = minimumFee({
       taprootInputCount: 2,
       nonTaprootInputCount: 0,
@@ -124,7 +124,7 @@ export const createExecutePsbt = async ({
     psbt.addOutput({ address: account.taproot.address, value: 546 }) // stone
     psbt.addOutput({ script: protostone, value: 0 }) // protocol
     if (frontendFee) {
-      psbt.addOutput({ address: feeAddress!, value: frontendFee })
+      psbt.addOutput({ address: feeAddress!, value: Number(frontendFee) })
     }
 
     const inputsTotal =
@@ -713,7 +713,7 @@ export const actualExecuteFee = async ({
   provider: Provider
   feeRate: number
   alkaneUtxos?: GatheredUtxos
-  frontendFee?: number
+  frontendFee?: bigint
   feeAddress?: string
 }) => {
   if (!feeRate) {
@@ -774,7 +774,7 @@ export const executePsbt = async ({
   protostone: Buffer
   provider: Provider
   feeRate?: number
-  frontendFee?: number
+  frontendFee?: bigint
   feeAddress?: string
 }) => {
   const { fee } = await actualExecuteFee({
@@ -821,7 +821,7 @@ export const execute = async ({
   provider: Provider
   feeRate?: number
   signer: Signer
-  frontendFee?: number
+  frontendFee?: bigint
   feeAddress?: string
 }) => {
   const { fee } = await actualExecuteFee({

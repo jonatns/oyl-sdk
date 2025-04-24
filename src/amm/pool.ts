@@ -364,7 +364,7 @@ export const swapPsbt = async ({
   feeRate: number
   account: Account
   provider: Provider
-  frontendFee?: number
+  frontendFee?: bigint
   feeAddress?: string
 }) => {
   if (tokenAmount <= 0n) {
@@ -456,7 +456,7 @@ export const swap = async ({
   account: Account
   provider: Provider
   signer: Signer
-  frontendFee?: number
+  frontendFee?: bigint
   feeAddress?: string
 }) => {
   const { psbt } = await swapPsbt({

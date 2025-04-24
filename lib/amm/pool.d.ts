@@ -104,7 +104,7 @@ export declare const swapPsbt: ({ calldata, token, tokenAmount, gatheredUtxos, f
     feeRate: number;
     account: Account;
     provider: Provider;
-    frontendFee?: number;
+    frontendFee?: bigint;
     feeAddress?: string;
 }) => Promise<{
     psbt: string;
@@ -122,7 +122,7 @@ export declare const swap: ({ calldata, token, tokenAmount, gatheredUtxos, feeRa
     account: Account;
     provider: Provider;
     signer: Signer;
-    frontendFee?: number;
+    frontendFee?: bigint;
     feeAddress?: string;
 }) => Promise<{
     txId: string;

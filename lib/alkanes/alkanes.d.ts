@@ -14,7 +14,7 @@ export interface ProtostoneMessage {
 }
 export declare const encodeProtostone: ({ protocolTag, edicts, pointer, refundPointer, calldata, }: ProtostoneMessage) => Buffer;
 export declare const createExecutePsbt: ({ frontendFee, feeAddress, alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, fee, }: {
-    frontendFee?: number;
+    frontendFee?: bigint;
     feeAddress?: string;
     alkaneUtxos?: GatheredUtxos;
     gatheredUtxos: GatheredUtxos;
@@ -117,7 +117,7 @@ export declare const actualExecuteFee: ({ gatheredUtxos, account, protostone, pr
     provider: Provider;
     feeRate: number;
     alkaneUtxos?: GatheredUtxos;
-    frontendFee?: number;
+    frontendFee?: bigint;
     feeAddress?: string;
 }) => Promise<{
     fee: number;
@@ -130,7 +130,7 @@ export declare const executePsbt: ({ alkaneUtxos, gatheredUtxos, account, protos
     protostone: Buffer;
     provider: Provider;
     feeRate?: number;
-    frontendFee?: number;
+    frontendFee?: bigint;
     feeAddress?: string;
 }) => Promise<{
     psbt: string;
@@ -144,7 +144,7 @@ export declare const execute: ({ alkaneUtxos, gatheredUtxos, account, protostone
     provider: Provider;
     feeRate?: number;
     signer: Signer;
-    frontendFee?: number;
+    frontendFee?: bigint;
     feeAddress?: string;
 }) => Promise<{
     txId: string;
