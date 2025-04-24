@@ -361,10 +361,6 @@ describe('CLI Integration Tests', () => {
       version: 'v1',
     })
 
-    console.log('Creating test account...')
-    console.log('Test account created:', testAccount)
-
-    console.log('Creating mock UTXO...')
     mockUtxo = {
       txId: 'mock_txid',
       outputIndex: 0,
@@ -374,7 +370,6 @@ describe('CLI Integration Tests', () => {
       inscriptions: [],
       confirmations: 1,
     }
-    console.log('Mock UTXO created:', mockUtxo)
 
     // Mock utxo module functions
     jest.spyOn(utxo, 'accountUtxos').mockResolvedValue({

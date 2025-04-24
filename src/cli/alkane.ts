@@ -16,7 +16,7 @@ import { metashrew } from '../rpclient/alkanes'
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer'
-import { createNewPool, splitAlkaneUtxos } from '../amm/factory'
+import { createNewPool } from '../amm/factory'
 import { removeLiquidity, addLiquidity, swap } from '../amm/pool'
 import { packUTF8 } from '../shared/utils'
 /* @dev example call

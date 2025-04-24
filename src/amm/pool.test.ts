@@ -2,11 +2,9 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { Account, mnemonicToAccount } from '../account/account'
 import { Provider } from '../provider/provider'
 import { swapPsbt, addLiquidityPsbt, removeLiquidityPsbt } from './pool'
-import { AlkaneId } from '../shared/interface'
+import { AlkaneId, GatheredUtxos } from '../shared/interface'
 import { FormattedUtxo } from '../utxo/utxo'
 import { findAlkaneUtxos } from '../alkanes'
-import { AlkanesRpc } from '../rpclient/alkanes'
-import { EsploraRpc } from '../rpclient/esplora'
 import { AlkanesAMMPoolDecoder, previewRemoveLiquidity } from './pool'
 import {
   PoolDetailsResult,
@@ -40,7 +38,7 @@ const mockToken1: AlkaneId = {
   tx: '012',
 }
 
-const mockGatheredUtxos = {
+const mockGatheredUtxos: GatheredUtxos = {
   utxos: [
     {
       txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b274',
@@ -51,7 +49,7 @@ const mockGatheredUtxos = {
       address: account.taproot.address,
       inscriptions: [],
     },
-  ] as FormattedUtxo[],
+  ],
   totalAmount: 100000,
 }
 
@@ -80,28 +78,26 @@ jest.mock('../alkanes', () => ({
             .map((rune) => ({ rune, outpoint }))
         )
 
-        const alkaneUtxos = matchingRunesWithOutpoints.map((alkane) => ({
+        const utxos = matchingRunesWithOutpoints.map((alkane) => ({
           txId: alkane.outpoint.outpoint.txid,
-          txIndex: alkane.outpoint.outpoint.vout,
-          script: alkane.outpoint.output.script,
+          outputIndex: alkane.outpoint.outpoint.vout,
+          scriptPk: alkane.outpoint.output.script,
           address,
           amountOfAlkanes: alkane.rune.balance,
           satoshis: Number(alkane.outpoint.output.value),
-          ...alkane.rune.rune,
+          inscriptions: [],
+          confirmations: 0, // Mock confirmations
         }))
 
         return {
-          alkaneUtxos,
-          totalSatoshis: alkaneUtxos.reduce(
-            (acc, utxo) => acc + utxo.satoshis,
-            0
-          ),
+          utxos,
+          totalAmount: utxos.reduce((acc, utxo) => acc + utxo.satoshis, 0),
         }
       }
     ),
   executePsbt: jest.fn().mockImplementation(async (options) => {
     if (
-      !options.alkaneUtxos?.alkaneUtxos?.length ||
+      !options.alkaneUtxos?.utxos?.length ||
       !options.gatheredUtxos?.utxos?.length
     ) {
       throw new Error('Insufficient UTXOs')
@@ -192,9 +188,9 @@ describe('AMM Pool PSBT Tests', () => {
     getAddressUtxos: jest.fn().mockResolvedValue([
       {
         txid: '1234',
-        vout: 0,
+        outputIndex: 0,
         value: 1000,
-        script: 'mock_script',
+        scriptPk: 'mock_script',
         address: 'bc1qtest',
       },
     ]),
@@ -206,7 +202,7 @@ describe('AMM Pool PSBT Tests', () => {
 
   // Setup mock data
   const mockAlkaneUtxos = {
-    alkaneUtxos: [
+    utxos: [
       {
         txid: '1234',
         vout: 0,
@@ -214,7 +210,7 @@ describe('AMM Pool PSBT Tests', () => {
         // ... other required UTXO fields
       },
     ],
-    totalSatoshis: 1000,
+    totalAmount: 1000,
   }
 
   beforeEach(() => {
@@ -594,7 +590,7 @@ describe('swapBuyAmount', () => {
       sellAmount: 1000n,
       sellTokenReserve: 10000n,
       buyTokenReserve: 20000n,
-      feeRate: 5n // 0.5%
+      feeRate: 5n, // 0.5%
     })
 
     // Expected calculations:
@@ -612,7 +608,7 @@ describe('swapBuyAmount', () => {
       sellAmount: 1000n,
       sellTokenReserve: 10000n,
       buyTokenReserve: 20000n,
-      feeRate: 10n // 1%
+      feeRate: 10n, // 1%
     })
 
     // Expected calculations:
@@ -626,28 +622,34 @@ describe('swapBuyAmount', () => {
   })
 
   it('should throw error for zero sell amount', () => {
-    expect(() => swapBuyAmount({
-      sellAmount: 0n,
-      sellTokenReserve: 10000n,
-      buyTokenReserve: 20000n,
-      feeRate: 5n
-    })).toThrow('swapBuyAmount: Insufficient sell amount')
+    expect(() =>
+      swapBuyAmount({
+        sellAmount: 0n,
+        sellTokenReserve: 10000n,
+        buyTokenReserve: 20000n,
+        feeRate: 5n,
+      })
+    ).toThrow('swapBuyAmount: Insufficient sell amount')
   })
 
   it('should throw error for insufficient liquidity', () => {
-    expect(() => swapBuyAmount({
-      sellAmount: 1000n,
-      sellTokenReserve: 0n,
-      buyTokenReserve: 20000n,
-      feeRate: 5n
-    })).toThrow('swapBuyAmount: Insufficient liquidity')
+    expect(() =>
+      swapBuyAmount({
+        sellAmount: 1000n,
+        sellTokenReserve: 0n,
+        buyTokenReserve: 20000n,
+        feeRate: 5n,
+      })
+    ).toThrow('swapBuyAmount: Insufficient liquidity')
 
-    expect(() => swapBuyAmount({
-      sellAmount: 1000n,
-      sellTokenReserve: 10000n,
-      buyTokenReserve: 0n,
-      feeRate: 5n
-    })).toThrow('swapBuyAmount: Insufficient liquidity')
+    expect(() =>
+      swapBuyAmount({
+        sellAmount: 1000n,
+        sellTokenReserve: 10000n,
+        buyTokenReserve: 0n,
+        feeRate: 5n,
+      })
+    ).toThrow('swapBuyAmount: Insufficient liquidity')
   })
 
   it('should handle very large numbers correctly', () => {
@@ -655,7 +657,7 @@ describe('swapBuyAmount', () => {
       sellAmount: 1000000000000n,
       sellTokenReserve: 10000000000000n,
       buyTokenReserve: 20000000000000n,
-      feeRate: 5n
+      feeRate: 5n,
     })
 
     // The calculation should still work with large numbers

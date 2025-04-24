@@ -289,8 +289,8 @@ export const removeLiquidityPsbt = async ({
   }).encodedRunestone
 
   const alkaneTokenUtxos: GatheredUtxos = {
-    utxos: tokenUtxos[0].alkaneUtxos,
-    totalAmount: tokenUtxos[0].totalSatoshis,
+    utxos: tokenUtxos[0].utxos,
+    totalAmount: tokenUtxos[0].totalAmount,
   }
 
   const { psbt, fee } = await alkanes.executePsbt({
@@ -360,7 +360,7 @@ export const swapPsbt = async ({
   calldata: bigint[]
   token: AlkaneId
   tokenAmount: bigint
-  gatheredUtxos: { utxos: Utxo[]; totalAmount: number }
+  gatheredUtxos: GatheredUtxos
   feeRate: number
   account: Account
   provider: Provider
@@ -369,11 +369,6 @@ export const swapPsbt = async ({
 }) => {
   if (tokenAmount <= 0n) {
     throw new Error('Cannot process zero tokens')
-  }
-
-  let alkaneTokenUtxos: {
-    alkaneUtxos: any[]
-    totalSatoshis: number
   }
 
   const tokenUtxos = await Promise.all([
@@ -386,10 +381,11 @@ export const swapPsbt = async ({
     }),
   ])
 
-  alkaneTokenUtxos = {
-    alkaneUtxos: tokenUtxos[0].alkaneUtxos,
-    totalSatoshis: tokenUtxos[0].totalSatoshis,
+  const alkaneUtxos: GatheredUtxos = {
+    utxos: tokenUtxos[0].utxos,
+    totalAmount: tokenUtxos[0].totalAmount,
   }
+
   const edicts: ProtoruneEdict[] = [
     {
       id: new ProtoruneRuneId(
@@ -419,13 +415,15 @@ export const swapPsbt = async ({
     ],
   }).encodedRunestone
 
-  let psbtOptions: any = {
-    alkaneUtxos: alkaneTokenUtxos,
+  const psbtOptions = {
+    alkaneUtxos,
     protostone,
     gatheredUtxos,
     feeRate,
     account,
     provider,
+    frontendFee: null,
+    feeAddress: null,
   }
 
   if (frontendFee && feeAddress) {

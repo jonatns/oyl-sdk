@@ -67,10 +67,7 @@ export declare const actualSendFee: ({ gatheredUtxos, account, alkaneId, provide
     vsize: number;
 }>;
 export declare const split: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, signer, }: {
-    alkaneUtxos?: {
-        alkaneUtxos: any[];
-        totalSatoshis: number;
-    };
+    alkaneUtxos?: GatheredUtxos;
     gatheredUtxos: GatheredUtxos;
     account: Account;
     protostone: Buffer;
@@ -86,10 +83,7 @@ export declare const split: ({ alkaneUtxos, gatheredUtxos, account, protostone, 
     satsPerVByte: string;
 }>;
 export declare const createSplitPsbt: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, fee, }: {
-    alkaneUtxos?: {
-        alkaneUtxos: any[];
-        totalSatoshis: number;
-    };
+    alkaneUtxos?: GatheredUtxos;
     gatheredUtxos: GatheredUtxos;
     account: Account;
     protostone: Buffer;
@@ -107,10 +101,7 @@ export declare const actualSplitFee: ({ gatheredUtxos, account, protostone, prov
     provider: Provider;
     feeRate: number;
     signer: Signer;
-    alkaneUtxos?: {
-        alkaneUtxos: any[];
-        totalSatoshis: number;
-    };
+    alkaneUtxos?: GatheredUtxos;
 }) => Promise<{
     fee: number;
 }>;

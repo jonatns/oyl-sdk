@@ -21,6 +21,7 @@ import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import { encodeRunestone } from '@magiceden-oss/runestone-lib'
 import { OrdOutput } from 'rpclient/ord'
+import { rune } from 'index'
 
 interface OrdOutputs {
   result: OrdOutput
@@ -135,7 +136,7 @@ export const createSendPsbt = async ({
           index: parseInt(utxo.outputIndex),
           witnessUtxo: {
             value: utxo.satoshis,
-            script: Buffer.from(utxo.outputIndex, 'hex'),
+            script: Buffer.from(utxo.scriptPk, 'hex'),
           },
         })
       }

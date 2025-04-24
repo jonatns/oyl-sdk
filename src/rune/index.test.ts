@@ -81,18 +81,18 @@ const testFormattedUtxos: FormattedUtxo[] = [
 const runeUtxos: RuneUTXO[] = [
   {
     txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b276',
-    txIndex: '0',
+    outputIndex: '0',
     satoshis: 10000,
     amountOfRunes: 500,
-    script: scriptPk,
+    scriptPk: scriptPk,
     address: account.taproot.address,
   },
   {
     txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b277',
-    txIndex: '0',
+    outputIndex: '0',
     satoshis: 3333,
     amountOfRunes: 1000,
-    script: scriptPk,
+    scriptPk: scriptPk,
     address: account.nativeSegwit.address,
   },
 ]

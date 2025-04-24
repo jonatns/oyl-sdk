@@ -608,9 +608,9 @@ export const findAlkaneUtxos = async ({
       : Number(a.rune.balance) - Number(b.rune.balance)
   )
 
-  let totalSatoshis: number = 0
+  let totalAmount: number = 0
   let totalBalanceBeingSent: number = 0
-  const alkaneUtxos: FormattedUtxo[] = []
+  const utxos: FormattedUtxo[] = []
 
   for (const alkane of sortedRunesWithOutpoints) {
     if (
@@ -618,7 +618,7 @@ export const findAlkaneUtxos = async ({
       Number(alkane.rune.balance) > 0
     ) {
       const satoshis = Number(alkane.outpoint.output.value)
-      alkaneUtxos.push({
+      utxos.push({
         txId: alkane.outpoint.outpoint.txid,
         outputIndex: alkane.outpoint.outpoint.vout,
         scriptPk: alkane.outpoint.output.script,
@@ -627,7 +627,7 @@ export const findAlkaneUtxos = async ({
         inscriptions: [],
         confirmations: 0,
       })
-      totalSatoshis += satoshis
+      totalAmount += satoshis
       totalBalanceBeingSent +=
         Number(alkane.rune.balance) /
         (alkane.rune.rune.divisibility == 1
@@ -638,7 +638,7 @@ export const findAlkaneUtxos = async ({
   if (totalBalanceBeingSent < targetNumberOfAlkanes) {
     throw new OylTransactionError(Error('Insuffiecient balance of alkanes.'))
   }
-  return { alkaneUtxos, totalSatoshis, totalBalanceBeingSent }
+  return { utxos, totalAmount, totalBalanceBeingSent }
 }
 
 export const actualTransactRevealFee = async ({

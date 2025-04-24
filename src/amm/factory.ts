@@ -367,12 +367,12 @@ export const splitAlkaneUtxos = async (
 
   gatheredUtxos = {
     utxos: allTokenUtxos
-      .flatMap((t) => t.alkaneUtxos)
+      .flatMap((t) => t.utxos)
       .filter(
         (utxo, index, self) =>
           index === self.findIndex((u) => u.txId === utxo.txId)
       ),
-    totalAmount: allTokenUtxos.reduce((acc, t) => acc + t.totalSatoshis, 0),
+    totalAmount: allTokenUtxos.reduce((acc, t) => acc + t.totalAmount, 0),
   }
   const edicts: ProtoruneEdict[] = tokens.flatMap((token) => {
     return [
