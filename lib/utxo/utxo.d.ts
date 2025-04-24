@@ -17,7 +17,7 @@ export interface FormattedUtxo {
     satoshis: number;
     scriptPk: string;
     address: string;
-    inscriptions: any[];
+    inscriptions: string[];
     confirmations: number;
 }
 export interface AddressUtxoPortfolio {

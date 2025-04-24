@@ -38,7 +38,7 @@ const mockGatheredUtxos = {
 }
 
 const mockAlkaneUtxos = {
-  alkaneUtxos: [
+  utxos: [
     {
       txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b275',
       outputIndex: 1,
@@ -49,7 +49,7 @@ const mockAlkaneUtxos = {
       inscriptions: [],
     },
   ],
-  totalSatoshis: 50000,
+  totalAmount: 50000,
 }
 
 // Mock the external modules

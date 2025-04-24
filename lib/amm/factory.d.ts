@@ -79,16 +79,13 @@ export declare const splitAlkaneUtxos: (tokens: {
     alkaneId: AlkaneId;
     amount: bigint;
 }[], account: Account, provider: Provider) => Promise<{
-    alkaneUtxos: any[];
-    totalSatoshis: number;
     protostone: Buffer;
     edicts: ProtoruneEdict[];
+    utxos: import("shared/interface").FormattedUtxo[];
+    totalAmount: number;
 }>;
 export declare const poolPsbt: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, fee, }: {
-    alkaneUtxos?: {
-        alkaneUtxos: any[];
-        totalSatoshis: number;
-    };
+    alkaneUtxos?: GatheredUtxos;
     gatheredUtxos: GatheredUtxos;
     account: Account;
     protostone: Buffer;

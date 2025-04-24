@@ -25,6 +25,7 @@ import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import { Outpoint } from 'rpclient/alkanes'
 import { actualDeployCommitFee } from './contract'
+import { FormattedUtxo } from '@utxo/utxo'
 
 export interface ProtostoneMessage {
   protocolTag?: bigint
@@ -65,12 +66,9 @@ export const createExecutePsbt = async ({
   feeRate,
   fee = 0,
 }: {
-  frontendFee?: number
+  frontendFee?: bigint
   feeAddress?: string
-  alkaneUtxos?: {
-    alkaneUtxos: any[]
-    totalSatoshis: number
-  }
+  alkaneUtxos?: GatheredUtxos
   gatheredUtxos: GatheredUtxos
   account: Account
   protostone: Buffer
@@ -79,177 +77,139 @@ export const createExecutePsbt = async ({
   fee?: number
 }) => {
   try {
-    const originalGatheredUtxos = gatheredUtxos
+    const SAT_PER_VBYTE = feeRate ?? 1
+    if (frontendFee && !feeAddress) {
+      throw new Error('feeAddress required when frontendFee is set')
+    }
 
+    const spendTargets = 546 + (Number(frontendFee) ?? 0)
     const minTxSize = minimumFee({
       taprootInputCount: 2,
       nonTaprootInputCount: 0,
-      outputCount: 2,
+      outputCount: 2 + (frontendFee ? 1 : 0),
     })
 
-    let calculatedFee = Math.max(minTxSize * feeRate, 250)
-    let finalFee = fee === 0 ? calculatedFee : fee
+    const minFee = Math.max(minTxSize * SAT_PER_VBYTE, 250)
+    let minerFee = fee === 0 ? minFee : fee
 
-    gatheredUtxos = findXAmountOfSats(
-      originalGatheredUtxos.utxos,
-      Number(finalFee) + 546 + (frontendFee || 0)
-    )
+    const satsNeeded = spendTargets + minerFee
+    const inputsNeeded = findXAmountOfSats(gatheredUtxos.utxos, satsNeeded)
 
-    let psbt = new bitcoin.Psbt({ network: provider.network })
-
-    if (alkaneUtxos) {
-      for await (const utxo of alkaneUtxos.alkaneUtxos) {
-        if (getAddressType(utxo.address) === 0) {
-          const previousTxHex: string = await provider.esplora.getTxHex(
-            utxo.txId
-          )
-          psbt.addInput({
-            hash: utxo.txId,
-            index: parseInt(utxo.txIndex),
-            nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
-          })
-        }
-        if (getAddressType(utxo.address) === 2) {
-          const redeemScript = bitcoin.script.compile([
-            bitcoin.opcodes.OP_0,
-            bitcoin.crypto.hash160(
-              Buffer.from(account.nestedSegwit.pubkey, 'hex')
-            ),
-          ])
-
-          psbt.addInput({
-            hash: utxo.txId,
-            index: parseInt(utxo.txIndex),
-            redeemScript: redeemScript,
-            witnessUtxo: {
-              value: utxo.satoshis,
-              script: bitcoin.script.compile([
-                bitcoin.opcodes.OP_HASH160,
-                bitcoin.crypto.hash160(redeemScript),
-                bitcoin.opcodes.OP_EQUAL,
-              ]),
-            },
-          })
-        }
-        if (
-          getAddressType(utxo.address) === 1 ||
-          getAddressType(utxo.address) === 3
-        ) {
-          psbt.addInput({
-            hash: utxo.txId,
-            index: parseInt(utxo.txIndex),
-            witnessUtxo: {
-              value: utxo.satoshis,
-              script: Buffer.from(utxo.script, 'hex'),
-            },
-          })
-        }
-      }
-    }
+    gatheredUtxos = inputsNeeded
 
     if (fee === 0 && gatheredUtxos.utxos.length > 1) {
-      const txSize = minimumFee({
+      const newSize = minimumFee({
         taprootInputCount: gatheredUtxos.utxos.length,
         nonTaprootInputCount: 0,
-        outputCount: 2,
+        outputCount: 2 + (frontendFee ? 1 : 0),
       })
-      finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
-
-      if (gatheredUtxos.totalAmount < finalFee) {
-        throw new OylTransactionError(Error('Insufficient Balance'))
+      minerFee = Math.max(newSize * SAT_PER_VBYTE, 250)
+      if (gatheredUtxos.totalAmount < minerFee) {
+        throw new OylTransactionError(Error('Insufficient balance'))
       }
     }
 
-    if (gatheredUtxos.totalAmount < finalFee) {
-      throw new OylTransactionError(Error('Insufficient Balance'))
-    }
-    for (let i = 0; i < gatheredUtxos.utxos.length; i++) {
-      if (getAddressType(gatheredUtxos.utxos[i].address) === 0) {
-        const previousTxHex: string = await provider.esplora.getTxHex(
-          gatheredUtxos.utxos[i].txId
-        )
-        psbt.addInput({
-          hash: gatheredUtxos.utxos[i].txId,
-          index: gatheredUtxos.utxos[i].outputIndex,
-          nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
-        })
-      }
-      if (getAddressType(gatheredUtxos.utxos[i].address) === 2) {
-        const redeemScript = bitcoin.script.compile([
-          bitcoin.opcodes.OP_0,
-          bitcoin.crypto.hash160(
-            Buffer.from(account.nestedSegwit.pubkey, 'hex')
-          ),
-        ])
+    const psbt = new bitcoin.Psbt({ network: provider.network })
 
-        psbt.addInput({
-          hash: gatheredUtxos.utxos[i].txId,
-          index: gatheredUtxos.utxos[i].outputIndex,
-          redeemScript: redeemScript,
-          witnessUtxo: {
-            value: gatheredUtxos.utxos[i].satoshis,
-            script: bitcoin.script.compile([
-              bitcoin.opcodes.OP_HASH160,
-              bitcoin.crypto.hash160(redeemScript),
-              bitcoin.opcodes.OP_EQUAL,
-            ]),
-          },
-        })
-      }
-      if (
-        getAddressType(gatheredUtxos.utxos[i].address) === 1 ||
-        getAddressType(gatheredUtxos.utxos[i].address) === 3
-      ) {
-        psbt.addInput({
-          hash: gatheredUtxos.utxos[i].txId,
-          index: gatheredUtxos.utxos[i].outputIndex,
-          witnessUtxo: {
-            value: gatheredUtxos.utxos[i].satoshis,
-            script: Buffer.from(gatheredUtxos.utxos[i].scriptPk, 'hex'),
-          },
-        })
+    if (alkaneUtxos) {
+      for (const utxo of alkaneUtxos.utxos) {
+        await addInputForUtxo(psbt, utxo, account, provider)
       }
     }
 
-    psbt.addOutput({
-      address: account.taproot.address,
-      value: 546,
-    })
+    for (const utxo of gatheredUtxos.utxos) {
+      await addInputForUtxo(psbt, utxo, account, provider)
+    }
 
-    const output = { script: protostone, value: 0 }
-    psbt.addOutput(output)
+    psbt.addOutput({ address: account.taproot.address, value: 546 }) // stone
+    psbt.addOutput({ script: protostone, value: 0 }) // protocol
+    if (frontendFee) {
+      psbt.addOutput({ address: feeAddress!, value: Number(frontendFee) })
+    }
 
-    const changeAmount =
-      gatheredUtxos.totalAmount +
-      (alkaneUtxos?.totalSatoshis || 0) -
-      finalFee -
-      546 -
-      (frontendFee || 0)
+    const inputsTotal =
+      gatheredUtxos.totalAmount + (alkaneUtxos.totalAmount ?? 0)
+    const outputsTotal = psbt.txOutputs.reduce((sum, o) => sum + o.value, 0)
 
-    psbt.addOutput({
-      address: account[account.spendStrategy.changeAddress].address,
-      value: changeAmount,
-    })
+    let change = inputsTotal - outputsTotal - minerFee
+    if (change < 0) throw new OylTransactionError(Error('Insufficient balance'))
 
-    if (frontendFee && feeAddress) {
+    if (change >= 546) {
       psbt.addOutput({
-        address: feeAddress,
-        value: frontendFee,
+        address: account[account.spendStrategy.changeAddress].address,
+        value: change,
       })
+    } else {
+      minerFee += change
+      change = 0
     }
 
-    const formattedPsbtTx = await formatInputsToSign({
+    const formatted = await formatInputsToSign({
       _psbt: psbt,
       senderPublicKey: account.taproot.pubkey,
       network: provider.network,
     })
 
     return {
-      psbt: formattedPsbtTx.toBase64(),
-      psbtHex: formattedPsbtTx.toHex(),
+      psbt: formatted.toBase64(),
+      psbtHex: formatted.toHex(),
     }
-  } catch (error) {
-    throw new OylTransactionError(error)
+  } catch (err) {
+    throw new OylTransactionError(err)
+  }
+}
+
+async function addInputForUtxo(
+  psbt: bitcoin.Psbt,
+  utxo: FormattedUtxo,
+  account: Account,
+  provider: Provider
+) {
+  const type = getAddressType(utxo.address)
+  switch (type) {
+    case 0: {
+      // legacy P2PKH
+      const prevHex = await provider.esplora.getTxHex(utxo.txId)
+      psbt.addInput({
+        hash: utxo.txId,
+        index: +utxo.outputIndex,
+        nonWitnessUtxo: Buffer.from(prevHex, 'hex'),
+      })
+      break
+    }
+    case 2: {
+      // nested SegWit
+      const redeem = bitcoin.script.compile([
+        bitcoin.opcodes.OP_0,
+        bitcoin.crypto.hash160(Buffer.from(account.nestedSegwit.pubkey, 'hex')),
+      ])
+      psbt.addInput({
+        hash: utxo.txId,
+        index: +utxo.outputIndex,
+        redeemScript: redeem,
+        witnessUtxo: {
+          value: utxo.satoshis,
+          script: bitcoin.script.compile([
+            bitcoin.opcodes.OP_HASH160,
+            bitcoin.crypto.hash160(redeem),
+            bitcoin.opcodes.OP_EQUAL,
+          ]),
+        },
+      })
+      break
+    }
+    case 1: // native P2WPKH
+    case 3: // P2TR
+    default: {
+      psbt.addInput({
+        hash: utxo.txId,
+        index: +utxo.outputIndex,
+        witnessUtxo: {
+          value: utxo.satoshis,
+          script: Buffer.from(utxo.scriptPk, 'hex'),
+        },
+      })
+    }
   }
 }
 
@@ -647,16 +607,9 @@ export const findAlkaneUtxos = async ({
       : Number(a.rune.balance) - Number(b.rune.balance)
   )
 
-  let totalSatoshis: number = 0
+  let totalAmount: number = 0
   let totalBalanceBeingSent: number = 0
-  const alkaneUtxos: {
-    txId: string
-    txIndex: number
-    script: string
-    address: string
-    amountOfAlkanes: string
-    satoshis: number
-  }[] = []
+  const utxos: FormattedUtxo[] = []
 
   for (const alkane of sortedRunesWithOutpoints) {
     if (
@@ -664,16 +617,16 @@ export const findAlkaneUtxos = async ({
       Number(alkane.rune.balance) > 0
     ) {
       const satoshis = Number(alkane.outpoint.output.value)
-      alkaneUtxos.push({
+      utxos.push({
         txId: alkane.outpoint.outpoint.txid,
-        txIndex: alkane.outpoint.outpoint.vout,
-        script: alkane.outpoint.output.script,
+        outputIndex: alkane.outpoint.outpoint.vout,
+        scriptPk: alkane.outpoint.output.script,
         address,
-        amountOfAlkanes: alkane.rune.balance,
         satoshis,
-        ...alkane.rune.rune,
+        inscriptions: [],
+        confirmations: 0,
       })
-      totalSatoshis += satoshis
+      totalAmount += satoshis
       totalBalanceBeingSent +=
         Number(alkane.rune.balance) /
         (alkane.rune.rune.divisibility == 1
@@ -684,7 +637,7 @@ export const findAlkaneUtxos = async ({
   if (totalBalanceBeingSent < targetNumberOfAlkanes) {
     throw new OylTransactionError(Error('Insuffiecient balance of alkanes.'))
   }
-  return { alkaneUtxos, totalSatoshis, totalBalanceBeingSent }
+  return { utxos, totalAmount, totalBalanceBeingSent }
 }
 
 export const actualTransactRevealFee = async ({
@@ -759,11 +712,8 @@ export const actualExecuteFee = async ({
   protostone: Buffer
   provider: Provider
   feeRate: number
-  alkaneUtxos?: {
-    alkaneUtxos: any[]
-    totalSatoshis: number
-  }
-  frontendFee?: number
+  alkaneUtxos?: GatheredUtxos
+  frontendFee?: bigint
   feeAddress?: string
 }) => {
   if (!feeRate) {
@@ -818,16 +768,13 @@ export const executePsbt = async ({
   frontendFee,
   feeAddress,
 }: {
-  alkaneUtxos?: {
-    alkaneUtxos: any[]
-    totalSatoshis: number
-  }
+  alkaneUtxos?: GatheredUtxos
   gatheredUtxos: GatheredUtxos
   account: Account
   protostone: Buffer
   provider: Provider
   feeRate?: number
-  frontendFee?: number
+  frontendFee?: bigint
   feeAddress?: string
 }) => {
   const { fee } = await actualExecuteFee({
@@ -867,17 +814,14 @@ export const execute = async ({
   frontendFee,
   feeAddress,
 }: {
-  alkaneUtxos?: {
-    alkaneUtxos: any[]
-    totalSatoshis: number
-  }
+  alkaneUtxos?: GatheredUtxos
   gatheredUtxos: GatheredUtxos
   account: Account
   protostone: Buffer
   provider: Provider
   feeRate?: number
   signer: Signer
-  frontendFee?: number
+  frontendFee?: bigint
   feeAddress?: string
 }) => {
   const { fee } = await actualExecuteFee({

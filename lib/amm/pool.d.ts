@@ -1,5 +1,5 @@
 import { Account, Provider, Signer } from '..';
-import { AlkaneId, Utxo } from 'shared/interface';
+import { AlkaneId, GatheredUtxos, Utxo } from 'shared/interface';
 import { PoolDetailsResult, RemoveLiquidityPreviewResult } from './utils';
 export type SwapSimulationResult = {
     amountOut: bigint;
@@ -100,14 +100,11 @@ export declare const swapPsbt: ({ calldata, token, tokenAmount, gatheredUtxos, f
     calldata: bigint[];
     token: AlkaneId;
     tokenAmount: bigint;
-    gatheredUtxos: {
-        utxos: Utxo[];
-        totalAmount: number;
-    };
+    gatheredUtxos: GatheredUtxos;
     feeRate: number;
     account: Account;
     provider: Provider;
-    frontendFee?: number;
+    frontendFee?: bigint;
     feeAddress?: string;
 }) => Promise<{
     psbt: string;
@@ -125,7 +122,7 @@ export declare const swap: ({ calldata, token, tokenAmount, gatheredUtxos, feeRa
     account: Account;
     provider: Provider;
     signer: Signer;
-    frontendFee?: number;
+    frontendFee?: bigint;
     feeAddress?: string;
 }) => Promise<{
     txId: string;

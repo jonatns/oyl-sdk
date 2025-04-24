@@ -23,7 +23,7 @@ export interface FormattedUtxo {
   satoshis: number
   scriptPk: string
   address: string
-  inscriptions: any[]
+  inscriptions: string[]
   confirmations: number
 }
 
@@ -266,7 +266,12 @@ export const addressUtxos = async ({
           scriptPk,
         })
       }
-      if (!hasInscriptions && !hasRunes && utxo.value !== 546 && utxo.value !== 330) {
+      if (
+        !hasInscriptions &&
+        !hasRunes &&
+        utxo.value !== 546 &&
+        utxo.value !== 330
+      ) {
         spendableUtxos.push({
           txId: utxo.txid,
           outputIndex: utxo.vout,

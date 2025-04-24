@@ -108,7 +108,7 @@ export const createSendPsbt = async ({
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
 
-    const { alkaneUtxos, totalSatoshis } = await findAlkaneUtxos({
+    const alkanesUtxos = await findAlkaneUtxos({
       address: account.taproot.address,
       greatestToLeast: account.spendStrategy.utxoSortGreatestToLeast,
       alkaneId,
@@ -116,16 +116,16 @@ export const createSendPsbt = async ({
       targetNumberOfAlkanes: amount,
     })
 
-    if (alkaneUtxos.length === 0) {
+    if (alkanesUtxos.utxos.length === 0) {
       throw new OylTransactionError(Error('No Alkane Utxos Found'))
     }
 
-    for await (const utxo of alkaneUtxos) {
+    for await (const utxo of alkanesUtxos.utxos) {
       if (getAddressType(utxo.address) === 0) {
         const previousTxHex: string = await provider.esplora.getTxHex(utxo.txId)
         psbt.addInput({
           hash: utxo.txId,
-          index: utxo.txIndex,
+          index: utxo.outputIndex,
           nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
         })
       }
@@ -139,7 +139,7 @@ export const createSendPsbt = async ({
 
         psbt.addInput({
           hash: utxo.txId,
-          index: utxo.txIndex,
+          index: utxo.outputIndex,
           redeemScript: redeemScript,
           witnessUtxo: {
             value: utxo.satoshis,
@@ -157,10 +157,10 @@ export const createSendPsbt = async ({
       ) {
         psbt.addInput({
           hash: utxo.txId,
-          index: utxo.txIndex,
+          index: utxo.outputIndex,
           witnessUtxo: {
             value: utxo.satoshis,
-            script: Buffer.from(utxo.script, 'hex'),
+            script: Buffer.from(utxo.scriptPk, 'hex'),
           },
         })
       }
@@ -254,7 +254,7 @@ export const createSendPsbt = async ({
     psbt.addOutput(output)
     const changeAmount =
       gatheredUtxos.totalAmount +
-      totalSatoshis -
+      alkanesUtxos.totalAmount -
       (finalFee + inscriptionSats * 2)
 
     psbt.addOutput({
@@ -392,10 +392,7 @@ export const split = async ({
   feeRate,
   signer,
 }: {
-  alkaneUtxos?: {
-    alkaneUtxos: any[]
-    totalSatoshis: number
-  }
+  alkaneUtxos?: GatheredUtxos
   gatheredUtxos: GatheredUtxos
   account: Account
   protostone: Buffer
@@ -444,10 +441,7 @@ export const createSplitPsbt = async ({
   feeRate,
   fee = 0,
 }: {
-  alkaneUtxos?: {
-    alkaneUtxos: any[]
-    totalSatoshis: number
-  }
+  alkaneUtxos?: GatheredUtxos
   gatheredUtxos: GatheredUtxos
   account: Account
   protostone: Buffer
@@ -469,20 +463,20 @@ export const createSplitPsbt = async ({
 
     gatheredUtxos = findXAmountOfSats(
       originalGatheredUtxos.utxos,
-      Number(finalFee) + 546 * alkaneUtxos.alkaneUtxos.length * 2
+      Number(finalFee) + 546 * alkaneUtxos.utxos.length * 2
     )
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
 
     if (alkaneUtxos) {
-      for await (const utxo of alkaneUtxos.alkaneUtxos) {
+      for await (const utxo of alkaneUtxos.utxos) {
         if (getAddressType(utxo.address) === 0) {
           const previousTxHex: string = await provider.esplora.getTxHex(
             utxo.txId
           )
           psbt.addInput({
             hash: utxo.txId,
-            index: parseInt(utxo.txIndex),
+            index: utxo.outputIndex,
             nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
           })
         }
@@ -496,7 +490,7 @@ export const createSplitPsbt = async ({
 
           psbt.addInput({
             hash: utxo.txId,
-            index: parseInt(utxo.txIndex),
+            index: utxo.outputIndex,
             redeemScript: redeemScript,
             witnessUtxo: {
               value: utxo.satoshis,
@@ -514,10 +508,10 @@ export const createSplitPsbt = async ({
         ) {
           psbt.addInput({
             hash: utxo.txId,
-            index: parseInt(utxo.txIndex),
+            index: utxo.outputIndex,
             witnessUtxo: {
               value: utxo.satoshis,
-              script: Buffer.from(utxo.script, 'hex'),
+              script: Buffer.from(utxo.scriptPk, 'hex'),
             },
           })
         }
@@ -588,7 +582,7 @@ export const createSplitPsbt = async ({
       }
     }
 
-    for (let i = 0; i < alkaneUtxos.alkaneUtxos.length * 2; i++) {
+    for (let i = 0; i < alkaneUtxos.utxos.length * 2; i++) {
       psbt.addOutput({
         address: account.taproot.address,
         value: 546,
@@ -600,9 +594,9 @@ export const createSplitPsbt = async ({
 
     const changeAmount =
       gatheredUtxos.totalAmount +
-      (alkaneUtxos?.totalSatoshis || 0) -
+      (alkaneUtxos?.totalAmount || 0) -
       finalFee -
-      546 * alkaneUtxos.alkaneUtxos.length * 2
+      546 * alkaneUtxos.utxos.length * 2
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
@@ -639,10 +633,7 @@ export const actualSplitFee = async ({
   provider: Provider
   feeRate: number
   signer: Signer
-  alkaneUtxos?: {
-    alkaneUtxos: any[]
-    totalSatoshis: number
-  }
+  alkaneUtxos?: GatheredUtxos
 }) => {
   if (!feeRate) {
     feeRate = (await provider.esplora.getFeeEstimates())['1']

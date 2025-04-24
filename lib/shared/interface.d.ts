@@ -329,15 +329,15 @@ export declare const addressNameToType: {
 export type RuneUtxo = {
     outpointId: string;
     amount: number;
-    script: string;
+    scriptPk: string;
     satoshis: number;
 };
 export type RuneUTXO = {
     txId: string;
-    txIndex: string;
+    outputIndex: string;
     amountOfRunes: number;
     address: string;
-    script: string;
+    scriptPk: string;
     satoshis: number;
 };
 export type AddressTypes = keyof typeof addressTypeToName;
