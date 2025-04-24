@@ -78,30 +78,33 @@ export const createExecutePsbt = async ({
 }) => {
   try {
     const SAT_PER_VBYTE = feeRate ?? 1
+    const MIN_RELAY = 546
+
     if (frontendFee && !feeAddress) {
       throw new Error('feeAddress required when frontendFee is set')
     }
 
-    const spendTargets = 546 + (Number(frontendFee) ?? 0)
+    const spendTargets = 546 + (frontendFee ? Number(frontendFee) : 0)
+
     const minTxSize = minimumFee({
       taprootInputCount: 2,
       nonTaprootInputCount: 0,
-      outputCount: 2 + (frontendFee ? 1 : 0),
+      outputCount:
+        2 + (frontendFee && frontendFee >= BigInt(MIN_RELAY) ? 1 : 0),
     })
 
     const minFee = Math.max(minTxSize * SAT_PER_VBYTE, 250)
     let minerFee = fee === 0 ? minFee : fee
 
     const satsNeeded = spendTargets + minerFee
-    const inputsNeeded = findXAmountOfSats(gatheredUtxos.utxos, satsNeeded)
-
-    gatheredUtxos = inputsNeeded
+    gatheredUtxos = findXAmountOfSats(gatheredUtxos.utxos, satsNeeded)
 
     if (fee === 0 && gatheredUtxos.utxos.length > 1) {
       const newSize = minimumFee({
         taprootInputCount: gatheredUtxos.utxos.length,
         nonTaprootInputCount: 0,
-        outputCount: 2 + (frontendFee ? 1 : 0),
+        outputCount:
+          2 + (frontendFee && frontendFee >= BigInt(MIN_RELAY) ? 1 : 0),
       })
       minerFee = Math.max(newSize * SAT_PER_VBYTE, 250)
       if (gatheredUtxos.totalAmount < minerFee) {
@@ -116,25 +119,27 @@ export const createExecutePsbt = async ({
         await addInputForUtxo(psbt, utxo, account, provider)
       }
     }
-
     for (const utxo of gatheredUtxos.utxos) {
       await addInputForUtxo(psbt, utxo, account, provider)
     }
 
-    psbt.addOutput({ address: account.taproot.address, value: 546 }) // stone
-    psbt.addOutput({ script: protostone, value: 0 }) // protocol
-    if (frontendFee) {
+    psbt.addOutput({ address: account.taproot.address, value: 546 })
+    psbt.addOutput({ script: protostone, value: 0 })
+
+    if (frontendFee && frontendFee >= BigInt(MIN_RELAY)) {
       psbt.addOutput({ address: feeAddress!, value: Number(frontendFee) })
+    } else if (frontendFee) {
+      minerFee += Number(frontendFee)
     }
 
     const inputsTotal =
-      gatheredUtxos.totalAmount + (alkaneUtxos.totalAmount ?? 0)
+      gatheredUtxos.totalAmount + (alkaneUtxos?.totalAmount ?? 0)
     const outputsTotal = psbt.txOutputs.reduce((sum, o) => sum + o.value, 0)
 
     let change = inputsTotal - outputsTotal - minerFee
     if (change < 0) throw new OylTransactionError(Error('Insufficient balance'))
 
-    if (change >= 546) {
+    if (change >= MIN_RELAY) {
       psbt.addOutput({
         address: account[account.spendStrategy.changeAddress].address,
         value: change,
