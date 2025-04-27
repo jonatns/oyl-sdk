@@ -17,8 +17,7 @@ import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
-import { GatheredUtxos } from 'shared/interface'
-import { accountUtxos } from '../utxo'
+import { GatheredUtxos } from '@utxo/utxo'
 
 export const transferEstimate = async ({
   gatheredUtxos,
@@ -36,7 +35,7 @@ export const transferEstimate = async ({
   fee?: number
 }) => {
   try {
-    const originalGatheredUtxos = gatheredUtxos;
+    const originalGatheredUtxos = gatheredUtxos
 
     if (!feeRate) {
       feeRate = (await provider.esplora.getFeeEstimates())['1']

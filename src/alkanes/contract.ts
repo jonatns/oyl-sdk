@@ -1,9 +1,14 @@
 import { Account, Signer, Provider } from '..'
 import * as bitcoin from 'bitcoinjs-lib'
-import { AlkanesPayload, GatheredUtxos } from '../shared/interface'
+import { AlkanesPayload } from '../shared/interface'
 import { timeout, tweakSigner } from '../shared/utils'
-import { createDeployCommitPsbt, createDeployRevealPsbt, deployCommit } from './alkanes'
+import {
+  createDeployCommitPsbt,
+  createDeployRevealPsbt,
+  deployCommit,
+} from './alkanes'
 import { getEstimatedFee } from '../psbt'
+import { GatheredUtxos } from '@utxo/utxo'
 export const contractDeployment = async ({
   payload,
   gatheredUtxos,

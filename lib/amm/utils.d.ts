@@ -1,4 +1,4 @@
-import { AlkaneId } from 'shared/interface';
+import { AlkaneId } from '@alkanes/types';
 /**
  * Operation codes for pool interactions
  */

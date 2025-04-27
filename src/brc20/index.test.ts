@@ -1,7 +1,6 @@
 import { walletInit } from '../signer/signer'
 import {
   Account,
-  GatheredUtxos,
   Provider,
   Signer,
   brc20,
@@ -12,6 +11,7 @@ import {
 } from '..'
 import * as bitcoin from 'bitcoinjs-lib'
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
+import { GatheredUtxos } from '../utxo'
 
 const account: Account = mnemonicToAccount({
   mnemonic:
@@ -73,6 +73,7 @@ const testFormattedUtxos: GatheredUtxos = {
       scriptPk: outputScript.toString('hex'),
       address: account.taproot.address,
       inscriptions: [],
+      alkanes: {},
     },
     {
       txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b275',
@@ -82,6 +83,7 @@ const testFormattedUtxos: GatheredUtxos = {
       scriptPk: output!.toString('hex'),
       address: account.taproot.address,
       inscriptions: [],
+      alkanes: {},
     },
   ],
   totalAmount: 200000,

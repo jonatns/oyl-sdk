@@ -15,12 +15,13 @@ import {
   Provider,
   Signer,
 } from '..'
-import { AlkaneId, GatheredUtxos, Utxo } from 'shared/interface'
 import * as bitcoin from 'bitcoinjs-lib'
 import { getEstimatedFee } from '../psbt'
 import { minimumFee } from '../btc'
 import { AlkanesAMMPoolDecoder } from './pool'
 import { PoolDetailsResult, PoolOpcodes } from './utils'
+import { GatheredUtxos } from '@utxo/utxo'
+import { AlkaneId } from '@alkanes/types'
 
 export type CreateNewPoolSimulationResult = {
   lpTokens: string
@@ -231,7 +232,7 @@ export const createNewPoolPsbt = async ({
   token0Amount: bigint
   token1: AlkaneId
   token1Amount: bigint
-  gatheredUtxos: { utxos: Utxo[]; totalAmount: number }
+  gatheredUtxos: GatheredUtxos
   feeRate: number
   account: Account
   provider: Provider
@@ -242,8 +243,7 @@ export const createNewPoolPsbt = async ({
   ]
   const { utxos, edicts, totalAmount } = await splitAlkaneUtxos(
     tokens,
-    account,
-    provider
+    gatheredUtxos
   )
 
   const protostone: Buffer = encodeRunestoneProtostone({
@@ -314,7 +314,7 @@ export const createNewPool = async ({
   token0Amount: bigint
   token1: AlkaneId
   token1Amount: bigint
-  gatheredUtxos: { utxos: Utxo[]; totalAmount: number }
+  gatheredUtxos: GatheredUtxos
   feeRate: number
   account: Account
   provider: Provider
@@ -348,17 +348,13 @@ export const createNewPool = async ({
 
 export const splitAlkaneUtxos = async (
   tokens: { alkaneId: AlkaneId; amount: bigint }[],
-  account: Account,
-  provider: Provider
+  gatheredUtxos: GatheredUtxos
 ) => {
-  let gatheredUtxos: GatheredUtxos = { utxos: [], totalAmount: 0 }
-
   const allTokenUtxos = await Promise.all(
     tokens.map(async (token) => {
       return findAlkaneUtxos({
-        address: account.taproot.address,
+        gatheredUtxos,
         greatestToLeast: false,
-        provider,
         targetNumberOfAlkanes: Number(token.amount),
         alkaneId: token.alkaneId,
       })

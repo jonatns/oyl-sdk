@@ -1,8 +1,13 @@
 import { Provider } from '../provider/provider'
 import * as dotenv from 'dotenv'
 import * as bitcoin from 'bitcoinjs-lib'
-import { EsploraUtxo, addressUtxos, selectUtxos, accountUtxos } from './utxo'
-import { FormattedUtxo } from '../shared/interface'
+import {
+  EsploraUtxo,
+  addressUtxos,
+  selectUtxos,
+  accountUtxos,
+  FormattedUtxo,
+} from './utxo'
 import { accountUtxos as accountUtxosFixture } from '../__fixtures__/utxos'
 import { Account } from '../account/account'
 
@@ -25,6 +30,7 @@ const testFormattedUtxos: FormattedUtxo[] = [
       'b7fbbedbe61b51bf4e41e3517b8232f31c64f3b67ffd2d8eecff12fc7db4cae5',
     address: 'bc1pklamaklxrdgm7njpudghhq3j7vwxfuak0l7jmrhvluf0cld5etjsga00nj',
     inscriptions: [],
+    alkanes: {},
   },
   {
     txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b275',
@@ -35,6 +41,7 @@ const testFormattedUtxos: FormattedUtxo[] = [
       'b7fbbedbe61b51bf4e41e3517b8232f31c64f3b67ffd2d8eecff12fc7db4cae5',
     address: 'bc1pklamaklxrdgm7njpudghhq3j7vwxfuak0l7jmrhvluf0cld5etjsga00nj',
     inscriptions: [],
+    alkanes: {},
   },
 ]
 
@@ -613,6 +620,7 @@ describe('utxo', () => {
           satoshis: 50000,
           address: testAccount.nativeSegwit.address,
           inscriptions: [],
+          alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script1',
         },
@@ -622,6 +630,7 @@ describe('utxo', () => {
           satoshis: 100000,
           address: testAccount.taproot.address,
           inscriptions: [],
+          alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script2',
         },
@@ -631,6 +640,7 @@ describe('utxo', () => {
           satoshis: 75000,
           address: testAccount.nativeSegwit.address,
           inscriptions: [],
+          alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script3',
         },
@@ -640,6 +650,7 @@ describe('utxo', () => {
           satoshis: 25000,
           address: testAccount.taproot.address,
           inscriptions: [],
+          alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script4',
         },
@@ -686,6 +697,7 @@ describe('utxo', () => {
           satoshis: 50000,
           address: testAccount.nativeSegwit.address,
           inscriptions: [],
+          alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script1',
         },
@@ -695,6 +707,7 @@ describe('utxo', () => {
           satoshis: 75000,
           address: testAccount.nativeSegwit.address,
           inscriptions: [],
+          alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script2',
         },
@@ -705,6 +718,7 @@ describe('utxo', () => {
           satoshis: 100000,
           address: testAccount.nestedSegwit.address,
           inscriptions: [],
+          alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script3',
         },
@@ -714,6 +728,7 @@ describe('utxo', () => {
           satoshis: 25000,
           address: testAccount.nestedSegwit.address,
           inscriptions: [],
+          alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script4',
         },
@@ -724,6 +739,7 @@ describe('utxo', () => {
           satoshis: 150000,
           address: testAccount.taproot.address,
           inscriptions: [],
+          alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script5',
         },
@@ -733,6 +749,7 @@ describe('utxo', () => {
           satoshis: 50000,
           address: testAccount.taproot.address,
           inscriptions: [],
+          alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script6',
         },
@@ -743,6 +760,7 @@ describe('utxo', () => {
           satoshis: 200000,
           address: testAccount.legacy.address,
           inscriptions: [],
+          alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script7',
         },
@@ -752,6 +770,7 @@ describe('utxo', () => {
           satoshis: 100000,
           address: testAccount.legacy.address,
           inscriptions: [],
+          alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script8',
         },

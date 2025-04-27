@@ -2,7 +2,7 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { Account, mnemonicToAccount } from '../account/account'
 import { Provider } from '../provider/provider'
 import { executePsbt, createExecutePsbt } from './alkanes'
-import { FormattedUtxo } from '../utxo/utxo'
+import { FormattedUtxo, GatheredUtxos } from '../utxo/utxo'
 import { encipher } from 'alkanes/lib/bytes'
 import { encodeRunestoneProtostone } from 'alkanes/lib/protorune/proto_runestone_upgrade'
 import { ProtoStone } from 'alkanes/lib/protorune/protostone'
@@ -32,12 +32,13 @@ const mockGatheredUtxos = {
       scriptPk: account.taproot.pubkey,
       address: account.taproot.address,
       inscriptions: [],
+      alkanes: {},
     },
   ] as FormattedUtxo[],
   totalAmount: 100000,
 }
 
-const mockAlkaneUtxos = {
+const mockAlkaneUtxos: GatheredUtxos = {
   utxos: [
     {
       txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b275',
@@ -47,6 +48,7 @@ const mockAlkaneUtxos = {
       scriptPk: account.taproot.pubkey,
       address: account.taproot.address,
       inscriptions: [],
+      alkanes: {},
     },
   ],
   totalAmount: 50000,

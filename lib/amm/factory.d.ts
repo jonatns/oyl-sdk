@@ -2,8 +2,9 @@
 /// <reference types="node" />
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict';
 import { Account, Provider, Signer } from '..';
-import { AlkaneId, GatheredUtxos, Utxo } from 'shared/interface';
 import { PoolDetailsResult } from './utils';
+import { GatheredUtxos } from '@utxo/utxo';
+import { AlkaneId } from '@alkanes/types';
 export type CreateNewPoolSimulationResult = {
     lpTokens: string;
     alkaneId: AlkaneId;
@@ -42,10 +43,7 @@ export declare const createNewPoolPsbt: ({ calldata, token0, token0Amount, token
     token0Amount: bigint;
     token1: AlkaneId;
     token1Amount: bigint;
-    gatheredUtxos: {
-        utxos: Utxo[];
-        totalAmount: number;
-    };
+    gatheredUtxos: GatheredUtxos;
     feeRate: number;
     account: Account;
     provider: Provider;
@@ -59,10 +57,7 @@ export declare const createNewPool: ({ calldata, token0, token0Amount, token1, t
     token0Amount: bigint;
     token1: AlkaneId;
     token1Amount: bigint;
-    gatheredUtxos: {
-        utxos: Utxo[];
-        totalAmount: number;
-    };
+    gatheredUtxos: GatheredUtxos;
     feeRate: number;
     account: Account;
     provider: Provider;
@@ -78,10 +73,10 @@ export declare const createNewPool: ({ calldata, token0, token0Amount, token1, t
 export declare const splitAlkaneUtxos: (tokens: {
     alkaneId: AlkaneId;
     amount: bigint;
-}[], account: Account, provider: Provider) => Promise<{
+}[], gatheredUtxos: GatheredUtxos) => Promise<{
     protostone: Buffer;
     edicts: ProtoruneEdict[];
-    utxos: import("shared/interface").FormattedUtxo[];
+    utxos: import("@utxo/utxo").FormattedUtxo[];
     totalAmount: number;
 }>;
 export declare const poolPsbt: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, fee, }: {

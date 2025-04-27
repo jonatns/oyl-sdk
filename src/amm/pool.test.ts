@@ -2,9 +2,8 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { Account, mnemonicToAccount } from '../account/account'
 import { Provider } from '../provider/provider'
 import { swapPsbt, addLiquidityPsbt, removeLiquidityPsbt } from './pool'
-import { AlkaneId, GatheredUtxos } from '../shared/interface'
-import { FormattedUtxo } from '../utxo/utxo'
-import { findAlkaneUtxos } from '../alkanes'
+import { FormattedUtxo, GatheredUtxos } from '../utxo/utxo'
+import { findAlkaneUtxos, AlkaneId } from '../alkanes'
 import { AlkanesAMMPoolDecoder, previewRemoveLiquidity } from './pool'
 import {
   PoolDetailsResult,
@@ -48,6 +47,18 @@ const mockGatheredUtxos: GatheredUtxos = {
       scriptPk: account.taproot.pubkey,
       address: account.taproot.address,
       inscriptions: [],
+      alkanes: {
+        [`${mockToken0.block}:${mockToken0.tx}`]: {
+          name: 'TestToken0',
+          symbol: 'TT0',
+          value: '100000',
+        },
+        [`${mockToken1.block}:${mockToken1.tx}`]: {
+          name: 'TestToken1',
+          symbol: 'TT1',
+          value: '10000',
+        },
+      },
     },
   ],
   totalAmount: 100000,
@@ -55,46 +66,17 @@ const mockGatheredUtxos: GatheredUtxos = {
 
 // Mock the external modules
 jest.mock('../alkanes', () => ({
-  findAlkaneUtxos: jest
-    .fn()
-    .mockImplementation(
-      async ({ targetNumberOfAlkanes, alkaneId, provider, address }) => {
-        if (targetNumberOfAlkanes === 0) {
-          throw new Error('Cannot process zero tokens')
-        }
-
-        const res = await provider.alkanes.getAlkanesByAddress({
-          address,
-          protocolTag: '1',
-        })
-
-        const matchingRunesWithOutpoints = res.flatMap((outpoint) =>
-          outpoint.runes
-            .filter(
-              (value) =>
-                Number(value.rune.id.block) === Number(alkaneId.block) &&
-                Number(value.rune.id.tx) === Number(alkaneId.tx)
-            )
-            .map((rune) => ({ rune, outpoint }))
-        )
-
-        const utxos = matchingRunesWithOutpoints.map((alkane) => ({
-          txId: alkane.outpoint.outpoint.txid,
-          outputIndex: alkane.outpoint.outpoint.vout,
-          scriptPk: alkane.outpoint.output.script,
-          address,
-          amountOfAlkanes: alkane.rune.balance,
-          satoshis: Number(alkane.outpoint.output.value),
-          inscriptions: [],
-          confirmations: 0, // Mock confirmations
-        }))
-
-        return {
-          utxos,
-          totalAmount: utxos.reduce((acc, utxo) => acc + utxo.satoshis, 0),
-        }
-      }
-    ),
+  findAlkaneUtxos: jest.fn().mockReturnValue({
+    txId: '1234',
+    outputIndex: 0,
+    scriptPk: '',
+    address: '',
+    amountOfAlkanes: '345',
+    satoshis: 546,
+    inscriptions: [],
+    alkanes: {},
+    confirmations: 0,
+  }),
   executePsbt: jest.fn().mockImplementation(async (options) => {
     if (
       !options.alkaneUtxos?.utxos?.length ||

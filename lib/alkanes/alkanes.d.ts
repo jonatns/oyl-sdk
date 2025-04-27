@@ -3,8 +3,8 @@
 import { Provider } from '../provider/provider';
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict';
 import { Account, Signer } from '..';
-import { GatheredUtxos, AlkanesPayload } from '../shared/interface';
-import { FormattedUtxo } from '@utxo/utxo';
+import { AlkanesPayload } from '../shared/interface';
+import type { FormattedUtxo, GatheredUtxos } from '@utxo/utxo';
 export interface ProtostoneMessage {
     protocolTag?: bigint;
     edicts?: ProtoruneEdict[];
@@ -84,10 +84,9 @@ export declare const deployReveal: ({ protostone, commitTxId, script, account, p
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const findAlkaneUtxos: ({ address, greatestToLeast, provider, alkaneId, targetNumberOfAlkanes, }: {
-    address: string;
+export declare const findAlkaneUtxos: ({ gatheredUtxos, greatestToLeast, alkaneId, targetNumberOfAlkanes, }: {
+    gatheredUtxos: GatheredUtxos;
     greatestToLeast: boolean;
-    provider: Provider;
     alkaneId: {
         block: string;
         tx: string;
@@ -96,7 +95,7 @@ export declare const findAlkaneUtxos: ({ address, greatestToLeast, provider, alk
 }) => Promise<{
     utxos: FormattedUtxo[];
     totalAmount: number;
-    totalBalanceBeingSent: number;
+    totalBalance: number;
 }>;
 export declare const actualTransactRevealFee: ({ protostone, tweakedPublicKey, commitTxId, receiverAddress, script, provider, feeRate, }: {
     protostone: Buffer;

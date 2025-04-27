@@ -1,6 +1,7 @@
 import { Account, Provider, Signer } from '..';
-import { AlkaneId, GatheredUtxos, Utxo } from 'shared/interface';
+import { AlkaneId } from '@alkanes/types';
 import { PoolDetailsResult, RemoveLiquidityPreviewResult } from './utils';
+import { GatheredUtxos } from '@utxo/utxo';
 export type SwapSimulationResult = {
     amountOut: bigint;
 };
@@ -16,10 +17,7 @@ export declare const addLiquidityPsbt: ({ calldata, token0, token0Amount, token1
     token0Amount: bigint;
     token1: AlkaneId;
     token1Amount: bigint;
-    gatheredUtxos: {
-        utxos: Utxo[];
-        totalAmount: number;
-    };
+    gatheredUtxos: GatheredUtxos;
     feeRate: number;
     account: Account;
     provider: Provider;
@@ -33,10 +31,7 @@ export declare const addLiquidity: ({ calldata, token0, token0Amount, token1, to
     token0Amount: bigint;
     token1: AlkaneId;
     token1Amount: bigint;
-    gatheredUtxos: {
-        utxos: Utxo[];
-        totalAmount: number;
-    };
+    gatheredUtxos: GatheredUtxos;
     feeRate: number;
     account: Account;
     provider: Provider;
@@ -65,10 +60,7 @@ export declare const removeLiquidityPsbt: ({ calldata, token, tokenAmount, gathe
     calldata: bigint[];
     token: AlkaneId;
     tokenAmount: bigint;
-    gatheredUtxos: {
-        utxos: Utxo[];
-        totalAmount: number;
-    };
+    gatheredUtxos: GatheredUtxos;
     feeRate: number;
     account: Account;
     provider: Provider;
@@ -80,10 +72,7 @@ export declare const removeLiquidity: ({ calldata, token, tokenAmount, gatheredU
     calldata: bigint[];
     token: AlkaneId;
     tokenAmount: bigint;
-    gatheredUtxos: {
-        utxos: Utxo[];
-        totalAmount: number;
-    };
+    gatheredUtxos: GatheredUtxos;
     feeRate: number;
     account: Account;
     provider: Provider;
@@ -114,10 +103,7 @@ export declare const swap: ({ calldata, token, tokenAmount, gatheredUtxos, feeRa
     calldata: bigint[];
     token: AlkaneId;
     tokenAmount: bigint;
-    gatheredUtxos: {
-        utxos: Utxo[];
-        totalAmount: number;
-    };
+    gatheredUtxos: GatheredUtxos;
     feeRate: number;
     account: Account;
     provider: Provider;

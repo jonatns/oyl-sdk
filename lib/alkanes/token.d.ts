@@ -1,7 +1,8 @@
 /// <reference types="node" />
 /// <reference types="node" />
-import { Account, Signer, Provider } from '..';
-import { AlkaneId, AlkanesPayload, GatheredUtxos } from '../shared/interface';
+import { Account, Signer, Provider, AlkanesPayload } from '..';
+import { AlkaneId } from '@alkanes/types';
+import { GatheredUtxos } from '@utxo/utxo';
 export declare const tokenDeployment: ({ payload, gatheredUtxos, account, protostone, provider, feeRate, signer, }: {
     payload: AlkanesPayload;
     gatheredUtxos: GatheredUtxos;

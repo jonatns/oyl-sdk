@@ -1,17 +1,11 @@
 import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider/provider'
-import {
-  Account,
-  mnemonicToAccount,
-  getWalletPrivateKeys,
-} from '../account/account'
-import { DEFAULT_PROVIDER, TEST_WALLET } from './constants'
+import { Account, mnemonicToAccount } from '../account/account'
 import * as alkanes from '../alkanes/alkanes'
 import path from 'path'
 import fs from 'fs-extra'
 import { FormattedUtxo } from '../utxo/utxo'
-import { genBlocks, sendFromFaucet } from './regtest'
-import { alkanesTrace, alkaneContractDeploy, alkaneTokenDeploy } from './alkane'
+
 import * as utxo from '../utxo/utxo'
 
 const testAccount = mnemonicToAccount({
@@ -368,6 +362,7 @@ describe('CLI Integration Tests', () => {
       scriptPk: 'mock_script',
       address: testAccount.taproot.address,
       inscriptions: [],
+      alkanes: {},
       confirmations: 1,
     }
 
@@ -452,6 +447,7 @@ describe('CLI Integration Tests', () => {
         scriptPk: 'mock_script',
         address: testAccount.taproot.address,
         inscriptions: [],
+        alkanes: {},
         confirmations: 1,
       }
 
@@ -549,6 +545,7 @@ describe('CLI Integration Tests', () => {
       scriptPk: 'mock_script',
       address: testAccount.taproot.address,
       inscriptions: [],
+      alkanes: {},
       confirmations: 1,
     }
 

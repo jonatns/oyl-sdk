@@ -1,7 +1,8 @@
 /// <reference types="node" />
 /// <reference types="node" />
 import { Account, Signer, Provider } from '..';
-import { AlkanesPayload, GatheredUtxos } from '../shared/interface';
+import { AlkanesPayload } from '../shared/interface';
+import { GatheredUtxos } from '@utxo/utxo';
 export declare const contractDeployment: ({ payload, gatheredUtxos, account, protostone, provider, feeRate, signer, }: {
     payload: AlkanesPayload;
     gatheredUtxos: GatheredUtxos;

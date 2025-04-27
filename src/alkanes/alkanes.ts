@@ -19,13 +19,12 @@ import {
 } from '../shared/utils'
 import { getEstimatedFee } from '../psbt'
 import { OylTransactionError } from '../errors'
-import { GatheredUtxos, AlkanesPayload } from '../shared/interface'
+import { AlkanesPayload } from '../shared/interface'
 import { getAddressType } from '../shared/utils'
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
-import { Outpoint } from 'rpclient/alkanes'
 import { actualDeployCommitFee } from './contract'
-import { FormattedUtxo } from '@utxo/utxo'
+import type { FormattedUtxo, GatheredUtxos } from '@utxo/utxo'
 
 export interface ProtostoneMessage {
   protocolTag?: bigint
@@ -581,70 +580,44 @@ export const deployReveal = async ({
 }
 
 export const findAlkaneUtxos = async ({
-  address,
+  gatheredUtxos,
   greatestToLeast,
-  provider,
   alkaneId,
   targetNumberOfAlkanes,
 }: {
-  address: string
+  gatheredUtxos: GatheredUtxos
   greatestToLeast: boolean
-  provider: Provider
   alkaneId: { block: string; tx: string }
   targetNumberOfAlkanes: number
 }) => {
-  const res: Outpoint[] = await provider.alkanes.getAlkanesByAddress({
-    address: address,
-    protocolTag: '1',
-  })
+  const idKey = `${alkaneId.block}:${alkaneId.tx}`
+  const withBalance = gatheredUtxos.utxos.map((u) => ({
+    utxo: u,
+    balance: Number(u.alkanes[idKey]?.value),
+  }))
 
-  const matchingRunesWithOutpoints = res.flatMap((outpoint) =>
-    outpoint.runes
-      .filter(
-        (value) =>
-          Number(value.rune.id.block) === Number(alkaneId.block) &&
-          Number(value.rune.id.tx) === Number(alkaneId.tx)
-      )
-      .map((rune) => ({ rune, outpoint }))
+  withBalance.sort((a, b) =>
+    greatestToLeast ? b.balance - a.balance : a.balance - b.balance
   )
 
-  const sortedRunesWithOutpoints = matchingRunesWithOutpoints.sort((a, b) =>
-    greatestToLeast
-      ? Number(b.rune.balance) - Number(a.rune.balance)
-      : Number(a.rune.balance) - Number(b.rune.balance)
-  )
-
-  let totalAmount: number = 0
-  let totalBalanceBeingSent: number = 0
+  let totalAmount = 0
+  let totalBalance = 0
   const utxos: FormattedUtxo[] = []
 
-  for (const alkane of sortedRunesWithOutpoints) {
-    if (
-      totalBalanceBeingSent < targetNumberOfAlkanes &&
-      Number(alkane.rune.balance) > 0
-    ) {
-      const satoshis = Number(alkane.outpoint.output.value)
-      utxos.push({
-        txId: alkane.outpoint.outpoint.txid,
-        outputIndex: alkane.outpoint.outpoint.vout,
-        scriptPk: alkane.outpoint.output.script,
-        address,
-        satoshis,
-        inscriptions: [],
-        confirmations: 0,
-      })
-      totalAmount += satoshis
-      totalBalanceBeingSent +=
-        Number(alkane.rune.balance) /
-        (alkane.rune.rune.divisibility == 1
-          ? 1
-          : 10 ** alkane.rune.rune.divisibility)
+  for (const { utxo, balance } of withBalance) {
+    if (totalBalance >= targetNumberOfAlkanes) break
+    if (balance > 0) {
+      utxos.push(utxo)
+      totalAmount += utxo.satoshis
+      totalBalance += balance
     }
   }
-  if (totalBalanceBeingSent < targetNumberOfAlkanes) {
-    throw new OylTransactionError(Error('Insuffiecient balance of alkanes.'))
+
+  if (totalBalance < targetNumberOfAlkanes) {
+    throw new OylTransactionError(new Error('Insufficient balance of alkanes.'))
   }
-  return { utxos, totalAmount, totalBalanceBeingSent }
+
+  return { utxos, totalAmount, totalBalance }
 }
 
 export const actualTransactRevealFee = async ({

@@ -11,6 +11,10 @@ export interface EsploraUtxo {
     };
     value: number;
 }
+export interface GatheredUtxos {
+    utxos: FormattedUtxo[];
+    totalAmount: number;
+}
 export interface FormattedUtxo {
     txId: string;
     outputIndex: number;
@@ -18,6 +22,7 @@ export interface FormattedUtxo {
     scriptPk: string;
     address: string;
     inscriptions: string[];
+    alkanes: Record<string, AlkanesUtxoEntry>;
     confirmations: number;
 }
 export interface AddressUtxoPortfolio {
@@ -38,6 +43,11 @@ export interface AccountUtxoPortfolio {
     accountPendingTotalBalance: number;
     accounts: Record<AddressKey, AddressUtxoPortfolio>;
 }
+export type AlkanesUtxoEntry = {
+    value: string;
+    name: string;
+    symbol: string;
+};
 export declare const accountBalance: ({ account, provider, }: {
     account: Account;
     provider: Provider;

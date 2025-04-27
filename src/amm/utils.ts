@@ -1,4 +1,4 @@
-import { AlkaneId } from 'shared/interface'
+import { AlkaneId } from '@alkanes/types'
 
 /**
  * Operation codes for pool interactions
@@ -62,8 +62,8 @@ export function estimateRemoveLiquidityAmounts(
 }
 
 export interface SwapBuyAmountResult {
-  buyAmount: bigint,
-  sellTokenFeeAmount: bigint,
+  buyAmount: bigint
+  sellTokenFeeAmount: bigint
 }
 /**
  * Calculates the expected amount of tokens received after a swap
@@ -78,17 +78,19 @@ export function swapBuyAmount({
   buyTokenReserve,
   feeRate,
 }: {
-  sellAmount: bigint,
-  sellTokenReserve: bigint,
-  buyTokenReserve: bigint,
+  sellAmount: bigint
+  sellTokenReserve: bigint
+  buyTokenReserve: bigint
   feeRate: bigint
 }): SwapBuyAmountResult {
-  if (sellAmount <= 0) throw new Error("swapBuyAmount: Insufficient sell amount");
-  if (sellTokenReserve <= 0 || buyTokenReserve <= 0) throw new Error("swapBuyAmount: Insufficient liquidity");
-  const sellAmountWithFee = sellAmount * (1000n - feeRate);
-  const numerator = sellAmountWithFee * buyTokenReserve;
-  const denominator = (sellTokenReserve * 1000n) + sellAmountWithFee;
-  const buyAmount: bigint = numerator / denominator;
-  const sellTokenFeeAmount = (sellAmount * feeRate) / 1000n;
-  return {buyAmount, sellTokenFeeAmount};
+  if (sellAmount <= 0)
+    throw new Error('swapBuyAmount: Insufficient sell amount')
+  if (sellTokenReserve <= 0 || buyTokenReserve <= 0)
+    throw new Error('swapBuyAmount: Insufficient liquidity')
+  const sellAmountWithFee = sellAmount * (1000n - feeRate)
+  const numerator = sellAmountWithFee * buyTokenReserve
+  const denominator = sellTokenReserve * 1000n + sellAmountWithFee
+  const buyAmount: bigint = numerator / denominator
+  const sellTokenFeeAmount = (sellAmount * feeRate) / 1000n
+  return { buyAmount, sellTokenFeeAmount }
 }

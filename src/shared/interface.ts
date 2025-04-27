@@ -11,15 +11,6 @@ export interface InscriptionResponse {
   transaction: string
   value: string
 }
-export type Utxo = {
-  txId: string
-  outputIndex: number
-  satoshis: number
-  scriptPk: string
-  address: string
-  inscriptions: any[]
-  confirmations: number
-}
 
 export type Network = 'mainnet' | 'testnet' | 'regtest' | 'signet'
 
@@ -196,21 +187,6 @@ export interface OkxBid {
   buyerPsbt: string
   orderId: number
   brc20: boolean
-}
-
-export interface GatheredUtxos {
-  utxos: FormattedUtxo[]
-  totalAmount: number
-}
-
-export interface FormattedUtxo {
-  txId: string
-  outputIndex: number
-  satoshis: number
-  scriptPk: string
-  address: string
-  inscriptions: any[]
-  confirmations: number
 }
 
 export interface MarketplaceAccount {
@@ -652,9 +628,4 @@ export interface AlkanesPayload {
   body: Uint8Array
   cursed: boolean
   tags: { contentType: string }
-}
-
-export interface AlkaneId {
-  block: string
-  tx: string
 }

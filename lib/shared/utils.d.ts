@@ -1,11 +1,12 @@
 /// <reference types="node" />
 /// <reference types="node" />
 import * as bitcoin from 'bitcoinjs-lib';
-import { AddressType, DecodedCBOR, FormattedUtxo, IBlockchainInfoUTXO, Network, RuneUtxo, ToSignInput, TxInput, UnspentOutput, Utxo } from './interface';
+import { AddressType, DecodedCBOR, IBlockchainInfoUTXO, Network, RuneUtxo, ToSignInput, TxInput, UnspentOutput } from './interface';
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew';
 import { EsploraRpc } from '../rpclient/esplora';
 import { Provider } from '../provider/provider';
 import { AddressKey } from '@account/account';
+import { FormattedUtxo } from '@utxo/utxo';
 export interface IBISWalletIx {
     validity: any;
     isBrc: boolean;
@@ -61,7 +62,7 @@ export declare const validator: (pubkey: Buffer, msghash: Buffer, signature: Buf
 export declare function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput;
 export declare const getWitnessDataChunk: (content: string, encodeType?: BufferEncoding) => Buffer[];
 export declare function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]): number;
-export declare function calculateAmountGatheredUtxo(utxoArray: Utxo[]): number;
+export declare function calculateAmountGatheredUtxo(utxoArray: FormattedUtxo[]): number;
 export declare const formatInputsToSign: ({ _psbt, senderPublicKey, network, }: {
     _psbt: bitcoin.Psbt;
     senderPublicKey: string;

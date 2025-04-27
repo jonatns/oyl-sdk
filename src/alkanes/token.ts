@@ -1,10 +1,10 @@
 import { minimumFee } from '../btc'
 import { u128, u32 } from '@magiceden-oss/runestone-lib/dist/src/integer'
-import { Account, Signer, Provider } from '..'
+import { Account, Signer, Provider, AlkanesPayload } from '..'
 import { ProtoStone, encodeRunestoneProtostone } from 'alkanes/lib/index.js'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { OylTransactionError } from '../errors'
-import { AlkaneId, AlkanesPayload, GatheredUtxos } from '../shared/interface'
+import { AlkaneId } from '@alkanes/types'
 import * as bitcoin from 'bitcoinjs-lib'
 import {
   timeout,
@@ -15,6 +15,7 @@ import {
 } from '../shared/utils'
 import { getEstimatedFee } from '../psbt'
 import { deployCommit, deployReveal, findAlkaneUtxos } from './alkanes'
+import { GatheredUtxos } from '@utxo/utxo'
 
 export const tokenDeployment = async ({
   payload,
@@ -109,10 +110,9 @@ export const createSendPsbt = async ({
     let psbt = new bitcoin.Psbt({ network: provider.network })
 
     const alkanesUtxos = await findAlkaneUtxos({
-      address: account.taproot.address,
-      greatestToLeast: account.spendStrategy.utxoSortGreatestToLeast,
       alkaneId,
-      provider,
+      gatheredUtxos,
+      greatestToLeast: account.spendStrategy.utxoSortGreatestToLeast,
       targetNumberOfAlkanes: amount,
     })
 
