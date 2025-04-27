@@ -32,7 +32,6 @@ export interface AddressUtxoPortfolio {
     runeUtxos: FormattedUtxo[];
     ordUtxos: FormattedUtxo[];
     pendingUtxos: FormattedUtxo[];
-    otherUtxos: FormattedUtxo[];
     pendingTotalBalance: number;
     totalBalance: number;
 }

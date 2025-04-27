@@ -924,11 +924,6 @@ describe('utxo', () => {
       expect(result.spendableUtxos).toHaveLength(1)
       expect(result.spendableUtxos[0].satoshis).toBe(1000)
 
-      expect(result.otherUtxos).toHaveLength(2)
-      expect(result.otherUtxos.map((utxo) => utxo.satoshis)).toEqual(
-        expect.arrayContaining([546, 330])
-      )
-
       // Verify total balances
       expect(result.spendableTotalBalance).toBe(1000)
       expect(result.totalBalance).toBe(1876) // 546 + 330 + 1000

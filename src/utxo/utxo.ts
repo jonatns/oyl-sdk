@@ -40,7 +40,6 @@ export interface AddressUtxoPortfolio {
   runeUtxos: FormattedUtxo[]
   ordUtxos: FormattedUtxo[]
   pendingUtxos: FormattedUtxo[]
-  otherUtxos: FormattedUtxo[]
   pendingTotalBalance: number
   totalBalance: number
 }
@@ -158,7 +157,6 @@ export const addressUtxos = async ({
   const pendingUtxos: FormattedUtxo[] = []
   const ordUtxos: FormattedUtxo[] = []
   const runeUtxos: FormattedUtxo[] = []
-  const otherUtxos: FormattedUtxo[] = []
   let alkaneUtxos: FormattedUtxo[] = []
   const multiCall = await provider.sandshrew.multiCall([
     ['esplora_address::utxo', [address]],
@@ -170,7 +168,6 @@ export const addressUtxos = async ({
 
   if (utxos.length === 0) {
     return {
-      otherUtxos,
       alkaneUtxos,
       spendableTotalBalance,
       spendableUtxos,
@@ -328,18 +325,6 @@ export const addressUtxos = async ({
         spendableTotalBalance += utxo.value
         continue
       }
-      if (!hasInscriptions && !hasRunes && !hasAlkanes) {
-        otherUtxos.push({
-          txId: utxo.txid,
-          outputIndex: utxo.vout,
-          satoshis: utxo.value,
-          address: address,
-          inscriptions: txOutput.inscriptions,
-          alkanes: alkanesById,
-          confirmations,
-          scriptPk,
-        })
-      }
     }
   }
 
@@ -350,7 +335,6 @@ export const addressUtxos = async ({
     runeUtxos,
     ordUtxos,
     pendingUtxos,
-    otherUtxos,
     pendingTotalBalance,
     totalBalance,
   }
@@ -379,7 +363,6 @@ export const accountUtxos = async ({
     const addressKey = addresses[i].addressKey
     const {
       alkaneUtxos,
-      otherUtxos,
       spendableTotalBalance,
       spendableUtxos,
       runeUtxos,
@@ -399,7 +382,6 @@ export const accountUtxos = async ({
 
     accounts[addressKey] = {
       alkaneUtxos,
-      otherUtxos,
       spendableTotalBalance,
       spendableUtxos,
       runeUtxos,
