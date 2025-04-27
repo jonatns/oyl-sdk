@@ -923,6 +923,9 @@ describe('utxo', () => {
       // Verify that 546 and 330 satoshi UTXOs are in otherUtxos, not spendableUtxos
       expect(result.spendableUtxos).toHaveLength(1)
       expect(result.spendableUtxos[0].satoshis).toBe(1000)
+      expect(result.spendableUtxos.map((utxo) => utxo.satoshis)).toEqual(
+        expect.not.arrayContaining([546, 330])
+      )
 
       // Verify total balances
       expect(result.spendableTotalBalance).toBe(1000)
