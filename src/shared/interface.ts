@@ -156,6 +156,7 @@ export enum AssetType {
   BRC20,
   COLLECTIBLE,
   RUNES,
+  ALKANES,
 }
 
 export type OrdCollectibleData = {
