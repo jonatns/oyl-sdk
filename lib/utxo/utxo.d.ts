@@ -27,7 +27,7 @@ export declare const accountUtxos: ({ account, provider, }: {
     provider: Provider;
 }) => Promise<AccountUtxoPortfolio>;
 export declare const selectUtxos: (utxos: FormattedUtxo[], spendStrategy: SpendStrategy) => FormattedUtxo[];
-export declare const selectPaymentUtxos: (utxos: FormattedUtxo[], spendStrategy: SpendStrategy) => GatheredUtxos;
+export declare const selectSpendableUtxos: (utxos: FormattedUtxo[], spendStrategy: SpendStrategy) => GatheredUtxos;
 export declare const selectAlkanesUtxos: ({ utxos, greatestToLeast, alkaneId, targetNumberOfAlkanes, }: {
     utxos: FormattedUtxo[];
     greatestToLeast: boolean;
