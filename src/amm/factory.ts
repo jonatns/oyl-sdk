@@ -268,7 +268,7 @@ export const createNewPoolPsbt = async ({
   const { psbt } = await poolPsbt({
     alkanesUtxos,
     protostone,
-    utxos: alkanesUtxos,
+    utxos,
     feeRate,
     account,
     provider,

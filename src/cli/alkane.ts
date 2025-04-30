@@ -475,7 +475,7 @@ export const alkaneSend = new AlkanesCommand('send')
   })
 
 /* @dev example call 
- oyl alkane create-pool -data "2,1,1" -tokens "2:2:50000,2:3:50000" -feeRate 5 -p alkanes
+ oyl alkane create-pool -data "2,1,1" -tokens "2:12:1500,2:29:1500" -feeRate 5 -p oylnet
 
 Creates a new pool with the given tokens and amounts
 */
