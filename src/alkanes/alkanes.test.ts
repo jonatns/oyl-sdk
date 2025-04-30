@@ -2,10 +2,10 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { Account, mnemonicToAccount } from '../account/account'
 import { Provider } from '../provider/provider'
 import { executePsbt, createExecutePsbt } from './alkanes'
-import { FormattedUtxo } from '../utxo/utxo'
 import { encipher } from 'alkanes/lib/bytes'
 import { encodeRunestoneProtostone } from 'alkanes/lib/protorune/proto_runestone_upgrade'
 import { ProtoStone } from 'alkanes/lib/protorune/protostone'
+import { FormattedUtxo } from '../utxo'
 
 // Test setup
 const provider = new Provider({
@@ -31,6 +31,7 @@ const mockUtxos: FormattedUtxo[] = [
     scriptPk: account.taproot.pubkey,
     address: account.taproot.address,
     inscriptions: [],
+    runes: {},
     alkanes: {},
     indexed: true,
   },
@@ -45,6 +46,7 @@ const mockAlkanesUtxos: FormattedUtxo[] = [
     scriptPk: account.taproot.pubkey,
     address: account.taproot.address,
     inscriptions: [],
+    runes: {},
     alkanes: {},
     indexed: true,
   },
@@ -197,7 +199,6 @@ describe('Alkanes PSBT Tests', () => {
       }).encodedRunestone
 
       const result = await createExecutePsbt({
-        alkanesUtxos: mockAlkanesUtxos,
         utxos: mockUtxos,
         account,
         protostone,
@@ -222,7 +223,6 @@ describe('Alkanes PSBT Tests', () => {
       }).encodedRunestone
 
       const result = await createExecutePsbt({
-        alkanesUtxos: mockAlkanesUtxos,
         utxos: mockUtxos,
         account,
         protostone,

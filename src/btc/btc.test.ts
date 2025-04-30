@@ -2,7 +2,7 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { createPsbt } from './btc'
 import { Account, mnemonicToAccount } from '../account/account'
 import { Provider } from '../provider/provider'
-import { FormattedUtxo } from '../utxo/utxo'
+import { FormattedUtxo } from '../utxo'
 
 const provider = new Provider({
   url: '',
@@ -36,6 +36,7 @@ const testFormattedUtxos: FormattedUtxo[] = [
     scriptPk,
     address: account.nativeSegwit.address,
     inscriptions: [],
+    runes: {},
     alkanes: {},
     indexed: true,
   },
@@ -47,6 +48,7 @@ const testFormattedUtxos: FormattedUtxo[] = [
     scriptPk,
     address: account.nativeSegwit.address,
     inscriptions: [],
+    runes: {},
     alkanes: {},
     indexed: true,
   },

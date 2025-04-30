@@ -1,3 +1,4 @@
+import { RuneName } from '@utxo/types';
 export type OrdOutputRune = {
     amount: number;
     divisibility: number;
@@ -6,7 +7,7 @@ export interface OrdOutput {
     address: string;
     indexed: boolean;
     inscriptions: string[];
-    runes: Record<string, OrdOutputRune> | OrdOutputRune[][];
+    runes: Record<RuneName, OrdOutputRune>;
     sat_ranges: number[][];
     script_pubkey: string;
     spent: boolean;

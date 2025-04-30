@@ -1,16 +1,11 @@
 import { Provider } from '../provider/provider'
 import * as dotenv from 'dotenv'
 import * as bitcoin from 'bitcoinjs-lib'
-import {
-  EsploraUtxo,
-  addressUtxos,
-  selectUtxos,
-  accountUtxos,
-  FormattedUtxo,
-} from './utxo'
+import { addressUtxos, selectUtxos, accountUtxos } from './utxo'
 import { accountUtxos as accountUtxosFixture } from '../__fixtures__/utxos'
 import { Account } from '../account/account'
 import { toTxId } from '../alkanes'
+import { EsploraUtxo, FormattedUtxo } from './types'
 
 dotenv.config()
 
@@ -31,6 +26,7 @@ const testFormattedUtxos: FormattedUtxo[] = [
       'b7fbbedbe61b51bf4e41e3517b8232f31c64f3b67ffd2d8eecff12fc7db4cae5',
     address: 'bc1pklamaklxrdgm7njpudghhq3j7vwxfuak0l7jmrhvluf0cld5etjsga00nj',
     inscriptions: [],
+    runes: {},
     alkanes: {},
     indexed: true,
   },
@@ -43,6 +39,7 @@ const testFormattedUtxos: FormattedUtxo[] = [
       'b7fbbedbe61b51bf4e41e3517b8232f31c64f3b67ffd2d8eecff12fc7db4cae5',
     address: 'bc1pklamaklxrdgm7njpudghhq3j7vwxfuak0l7jmrhvluf0cld5etjsga00nj',
     inscriptions: [],
+    runes: {},
     alkanes: {},
     indexed: true,
   },
@@ -614,6 +611,7 @@ describe('utxo', () => {
           satoshis: 50000,
           address: testAccount.nativeSegwit.address,
           inscriptions: [],
+          runes: {},
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script1',
@@ -625,6 +623,7 @@ describe('utxo', () => {
           satoshis: 100000,
           address: testAccount.taproot.address,
           inscriptions: [],
+          runes: {},
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script2',
@@ -636,6 +635,7 @@ describe('utxo', () => {
           satoshis: 75000,
           address: testAccount.nativeSegwit.address,
           inscriptions: [],
+          runes: {},
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script3',
@@ -647,6 +647,7 @@ describe('utxo', () => {
           satoshis: 25000,
           address: testAccount.taproot.address,
           inscriptions: [],
+          runes: {},
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script4',
@@ -695,6 +696,7 @@ describe('utxo', () => {
           satoshis: 50000,
           address: testAccount.nativeSegwit.address,
           inscriptions: [],
+          runes: {},
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script1',
@@ -706,6 +708,7 @@ describe('utxo', () => {
           satoshis: 75000,
           address: testAccount.nativeSegwit.address,
           inscriptions: [],
+          runes: {},
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script2',
@@ -718,6 +721,7 @@ describe('utxo', () => {
           satoshis: 100000,
           address: testAccount.nestedSegwit.address,
           inscriptions: [],
+          runes: {},
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script3',
@@ -729,6 +733,7 @@ describe('utxo', () => {
           satoshis: 25000,
           address: testAccount.nestedSegwit.address,
           inscriptions: [],
+          runes: {},
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script4',
@@ -741,6 +746,7 @@ describe('utxo', () => {
           satoshis: 150000,
           address: testAccount.taproot.address,
           inscriptions: [],
+          runes: {},
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script5',
@@ -752,6 +758,7 @@ describe('utxo', () => {
           satoshis: 50000,
           address: testAccount.taproot.address,
           inscriptions: [],
+          runes: {},
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script6',
@@ -764,6 +771,7 @@ describe('utxo', () => {
           satoshis: 200000,
           address: testAccount.legacy.address,
           inscriptions: [],
+          runes: {},
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script7',
@@ -775,6 +783,7 @@ describe('utxo', () => {
           satoshis: 100000,
           address: testAccount.legacy.address,
           inscriptions: [],
+          runes: {},
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script8',
@@ -945,7 +954,7 @@ describe('utxo', () => {
       expect(result.totalBalance).toBe(1876) // 546 + 330 + 1000
     })
 
-    it('should filter out alkanes from spendable utxos', async () => {
+    it('should filter out alkanes and runes from spendable utxos', async () => {
       const specialValueUtxos: EsploraUtxo[] = [
         {
           txid: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b277',
@@ -958,6 +967,18 @@ describe('utxo', () => {
             block_time: 1719240702,
           },
           value: 1234,
+        },
+        {
+          txid: '72e22e25fa587c01cbd0a86a5927090c9cdf12e47126c99e35b24185c395b257',
+          vout: 0,
+          status: {
+            confirmed: true,
+            block_height: 280,
+            block_hash:
+              '519a8fa6b439da658a83b231486958a26c76ca92811d1e5cc7bcb94bd574c20f',
+            block_time: 1719240702,
+          },
+          value: 5000,
         },
         {
           txid: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b278',
@@ -1009,9 +1030,49 @@ describe('utxo', () => {
           (utxo) => `${utxo.txid}:${utxo.vout}` === txIdVout
         )
 
-        if (index >= 0) {
+        // Spendable UTXO
+        if (index === 0) {
           return Promise.resolve([
-            { result: { indexed: true, inscriptions: [], runes: {} } }, // ord_output
+            {
+              result: {
+                indexed: true,
+                inscriptions: [],
+                runes: {},
+              },
+            }, // ord_output
+            { result: { vout: [{ scriptpubkey: 'mock_script' }] } }, // esplora_tx
+          ])
+        }
+
+        // UTXO with Runes
+        if (index === 1) {
+          return Promise.resolve([
+            {
+              result: {
+                indexed: true,
+                inscriptions: [],
+                runes: {
+                  DIESEL: {
+                    amount: 1000000,
+                    divisibilty: 5,
+                  },
+                },
+              },
+            }, // ord_output
+            { result: { vout: [{ scriptpubkey: 'mock_script' }] } }, // esplora_tx
+          ])
+        }
+
+        // UTXO with Alkanes
+        if (index === 2) {
+          return Promise.resolve([
+            {
+              result: {
+                indexed: true,
+                inscriptions: [],
+                runes: {},
+              },
+            }, // ord_output
             { result: { vout: [{ scriptpubkey: 'mock_script' }] } }, // esplora_tx
           ])
         }
@@ -1031,7 +1092,7 @@ describe('utxo', () => {
       )
 
       expect(result.spendableTotalBalance).toBe(1234)
-      expect(result.totalBalance).toBe(2234)
+      expect(result.totalBalance).toBe(7234)
     })
   })
 

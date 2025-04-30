@@ -13,10 +13,10 @@ export interface ProtostoneMessage {
     calldata: bigint[];
 }
 export declare const encodeProtostone: ({ protocolTag, edicts, pointer, refundPointer, calldata, }: ProtostoneMessage) => Buffer;
-export declare const createExecutePsbt: ({ frontendFee, feeAddress, alkanesUtxos, utxos, account, protostone, provider, feeRate, fee, }: {
+export declare const createExecutePsbt: ({ alkanesUtxos, frontendFee, feeAddress, utxos, account, protostone, provider, feeRate, fee, }: {
+    alkanesUtxos?: FormattedUtxo[];
     frontendFee?: bigint;
     feeAddress?: string;
-    alkanesUtxos?: FormattedUtxo[];
     utxos: FormattedUtxo[];
     account: Account;
     protostone: Buffer;
@@ -96,13 +96,13 @@ export declare const actualTransactRevealFee: ({ protostone, tweakedPublicKey, c
     fee: number;
     vsize: number;
 }>;
-export declare const actualExecuteFee: ({ utxos, account, protostone, provider, feeRate, alkanesUtxos, frontendFee, feeAddress, }: {
+export declare const actualExecuteFee: ({ alkanesUtxos, utxos, account, protostone, provider, feeRate, frontendFee, feeAddress, }: {
+    alkanesUtxos?: FormattedUtxo[];
     utxos: FormattedUtxo[];
     account: Account;
     protostone: Buffer;
     provider: Provider;
     feeRate: number;
-    alkanesUtxos?: FormattedUtxo[];
     frontendFee?: bigint;
     feeAddress?: string;
 }) => Promise<{

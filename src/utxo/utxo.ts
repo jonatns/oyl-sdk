@@ -6,62 +6,14 @@ import { getAddressKey } from '../shared/utils'
 import { AlkanesByAddressResponse, AlkanesOutpoint } from '@alkanes/types'
 import { toTxId } from '../alkanes'
 import { OylTransactionError } from '../errors'
-
-export interface EsploraUtxo {
-  txid: string
-  vout: number
-  status: {
-    confirmed: boolean
-    block_height?: number
-    block_hash?: string
-    block_time?: number
-  }
-  value: number
-}
-
-export interface GatheredUtxos {
-  utxos: FormattedUtxo[]
-  totalAmount: number
-}
-
-export interface FormattedUtxo {
-  txId: string
-  outputIndex: number
-  satoshis: number
-  scriptPk: string
-  address: string
-  inscriptions: string[]
-  alkanes: Record<string, AlkanesUtxoEntry>
-  confirmations: number
-  indexed: boolean
-}
-
-export interface AddressUtxoPortfolio {
-  utxos: FormattedUtxo[]
-  alkaneUtxos: FormattedUtxo[]
-  spendableTotalBalance: number
-  spendableUtxos: FormattedUtxo[]
-  runeUtxos: FormattedUtxo[]
-  ordUtxos: FormattedUtxo[]
-  pendingUtxos: FormattedUtxo[]
-  pendingTotalBalance: number
-  totalBalance: number
-}
-
-export interface AccountUtxoPortfolio {
-  accountUtxos: FormattedUtxo[]
-  accountTotalBalance: number
-  accountSpendableTotalUtxos: FormattedUtxo[]
-  accountSpendableTotalBalance: number
-  accountPendingTotalBalance: number
-  accounts: Record<AddressKey, AddressUtxoPortfolio>
-}
-
-export type AlkanesUtxoEntry = {
-  value: string
-  name: string
-  symbol: string
-}
+import { EsploraUtxo } from 'rpclient/esplora'
+import {
+  AlkanesUtxoEntry,
+  AddressUtxoPortfolio,
+  FormattedUtxo,
+  AccountUtxoPortfolio,
+  GatheredUtxos,
+} from './types'
 
 export const accountBalance = async ({
   account,
@@ -263,6 +215,7 @@ export const addressUtxos = async ({
     const confirmations = blockCount - utxo.status.block_height
     const indexed = txOutput.indexed
     const inscriptions = txOutput.inscriptions
+    const runes = txOutput.runes
     const alkanes = mapAlkanesById(alkanesOutpoints)
 
     totalBalance += utxo.value
@@ -272,6 +225,7 @@ export const addressUtxos = async ({
       satoshis: utxo.value,
       address,
       inscriptions,
+      runes,
       alkanes,
       confirmations,
       indexed,
@@ -286,6 +240,7 @@ export const addressUtxos = async ({
           satoshis: utxo.value,
           address,
           inscriptions,
+          runes,
           alkanes,
           confirmations,
           indexed,
@@ -302,6 +257,7 @@ export const addressUtxos = async ({
           satoshis: utxo.value,
           address,
           inscriptions,
+          runes,
           alkanes,
           confirmations,
           indexed,
@@ -316,6 +272,7 @@ export const addressUtxos = async ({
           satoshis: utxo.value,
           address,
           inscriptions,
+          runes,
           alkanes,
           confirmations,
           indexed,
@@ -329,6 +286,7 @@ export const addressUtxos = async ({
           satoshis: utxo.value,
           address,
           inscriptions,
+          runes,
           alkanes,
           confirmations,
           indexed,
@@ -348,6 +306,7 @@ export const addressUtxos = async ({
           satoshis: utxo.value,
           address,
           inscriptions,
+          runes,
           alkanes,
           confirmations,
           indexed,
@@ -463,15 +422,16 @@ export const selectUtxos = (
   })
 }
 
-export const selectPaymentUtxos = (
+export const selectSpendableUtxos = (
   utxos: FormattedUtxo[],
   spendStrategy: SpendStrategy
 ): GatheredUtxos => {
   const paymentUtxos = utxos.filter(
     (u) =>
       u.indexed &&
-      u.inscriptions.length === 0 &&
-      Object.keys(u.alkanes).length === 0 &&
+      u.inscriptions.length <= 0 &&
+      Object.keys(u.runes).length <= 0 &&
+      Object.keys(u.alkanes).length <= 0 &&
       u.satoshis !== 546 &&
       u.satoshis !== 330
   )
@@ -501,7 +461,7 @@ export const selectPaymentUtxos = (
   return { utxos: orderedUtxos, totalAmount }
 }
 
-export const selectAlkanesUtxos = async ({
+export const selectAlkanesUtxos = ({
   utxos,
   greatestToLeast,
   alkaneId,

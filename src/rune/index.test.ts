@@ -11,8 +11,7 @@ import {
   mnemonicToAccount,
 } from '../account/account'
 import { Provider } from '../provider/provider'
-import { FormattedUtxo } from '../utxo/utxo'
-import { RuneUTXO, tweakSigner } from '..'
+import { FormattedUtxo, RuneUTXO, tweakSigner } from '..'
 import { Signer, walletInit } from '../signer/signer'
 
 const provider = new Provider({
@@ -66,6 +65,7 @@ const testFormattedUtxos: FormattedUtxo[] = [
     scriptPk,
     address: account.taproot.address,
     inscriptions: [],
+    runes: {},
     alkanes: {},
     indexed: true,
   },
@@ -77,6 +77,7 @@ const testFormattedUtxos: FormattedUtxo[] = [
     scriptPk,
     address: account.nativeSegwit.address,
     inscriptions: [],
+    runes: {},
     alkanes: {},
     indexed: true,
   },

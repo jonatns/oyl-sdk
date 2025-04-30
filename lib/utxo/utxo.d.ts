@@ -1,55 +1,6 @@
 import { Provider } from '../provider';
-import { Account, AddressKey, SpendStrategy } from '../account';
-export interface EsploraUtxo {
-    txid: string;
-    vout: number;
-    status: {
-        confirmed: boolean;
-        block_height?: number;
-        block_hash?: string;
-        block_time?: number;
-    };
-    value: number;
-}
-export interface GatheredUtxos {
-    utxos: FormattedUtxo[];
-    totalAmount: number;
-}
-export interface FormattedUtxo {
-    txId: string;
-    outputIndex: number;
-    satoshis: number;
-    scriptPk: string;
-    address: string;
-    inscriptions: string[];
-    alkanes: Record<string, AlkanesUtxoEntry>;
-    confirmations: number;
-    indexed: boolean;
-}
-export interface AddressUtxoPortfolio {
-    utxos: FormattedUtxo[];
-    alkaneUtxos: FormattedUtxo[];
-    spendableTotalBalance: number;
-    spendableUtxos: FormattedUtxo[];
-    runeUtxos: FormattedUtxo[];
-    ordUtxos: FormattedUtxo[];
-    pendingUtxos: FormattedUtxo[];
-    pendingTotalBalance: number;
-    totalBalance: number;
-}
-export interface AccountUtxoPortfolio {
-    accountUtxos: FormattedUtxo[];
-    accountTotalBalance: number;
-    accountSpendableTotalUtxos: FormattedUtxo[];
-    accountSpendableTotalBalance: number;
-    accountPendingTotalBalance: number;
-    accounts: Record<AddressKey, AddressUtxoPortfolio>;
-}
-export type AlkanesUtxoEntry = {
-    value: string;
-    name: string;
-    symbol: string;
-};
+import { Account, SpendStrategy } from '../account';
+import { AddressUtxoPortfolio, FormattedUtxo, AccountUtxoPortfolio, GatheredUtxos } from './types';
 export declare const accountBalance: ({ account, provider, }: {
     account: Account;
     provider: Provider;
@@ -85,8 +36,8 @@ export declare const selectAlkanesUtxos: ({ utxos, greatestToLeast, alkaneId, ta
         tx: string;
     };
     targetNumberOfAlkanes: number;
-}) => Promise<{
+}) => {
     utxos: FormattedUtxo[];
     totalAmount: number;
     totalBalance: number;
-}>;
+};

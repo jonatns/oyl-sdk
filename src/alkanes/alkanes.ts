@@ -8,7 +8,7 @@ import {
   ProtoStone,
 } from 'alkanes/lib/index'
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
-import { Account, Signer } from '..'
+import { Account, AlkaneId, Signer } from '..'
 import {
   findXAmountOfSats,
   formatInputsToSign,
@@ -24,7 +24,7 @@ import { getAddressType } from '../shared/utils'
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import { actualDeployCommitFee } from './contract'
-import { selectPaymentUtxos, type FormattedUtxo } from '../utxo'
+import { selectSpendableUtxos, type FormattedUtxo } from '../utxo'
 
 export interface ProtostoneMessage {
   protocolTag?: bigint
@@ -55,9 +55,9 @@ export const encodeProtostone = ({
 }
 
 export const createExecutePsbt = async ({
+  alkanesUtxos,
   frontendFee,
   feeAddress,
-  alkanesUtxos,
   utxos,
   account,
   protostone,
@@ -65,9 +65,9 @@ export const createExecutePsbt = async ({
   feeRate,
   fee = 0,
 }: {
+  alkanesUtxos?: FormattedUtxo[]
   frontendFee?: bigint
   feeAddress?: string
-  alkanesUtxos?: FormattedUtxo[]
   utxos: FormattedUtxo[]
   account: Account
   protostone: Buffer
@@ -245,7 +245,7 @@ export const createDeployCommitPsbt = async ({
   fee?: number
 }) => {
   try {
-    let gatheredUtxos = selectPaymentUtxos(utxos, account.spendStrategy)
+    let gatheredUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
 
     const minFee = minimumFee({
       taprootInputCount: 2,
@@ -645,29 +645,26 @@ export const actualTransactRevealFee = async ({
 }
 
 export const actualExecuteFee = async ({
+  alkanesUtxos,
   utxos,
   account,
   protostone,
   provider,
   feeRate,
-  alkanesUtxos,
   frontendFee,
   feeAddress,
 }: {
+  alkanesUtxos?: FormattedUtxo[]
   utxos: FormattedUtxo[]
   account: Account
   protostone: Buffer
   provider: Provider
   feeRate: number
-  alkanesUtxos?: FormattedUtxo[]
   frontendFee?: bigint
   feeAddress?: string
 }) => {
-  if (!feeRate) {
-    feeRate = (await provider.esplora.getFeeEstimates())['1']
-  }
-
   const { psbt } = await createExecutePsbt({
+    alkanesUtxos,
     frontendFee,
     feeAddress,
     utxos,
@@ -675,7 +672,6 @@ export const actualExecuteFee = async ({
     protostone,
     provider,
     feeRate,
-    alkanesUtxos,
   })
 
   const { fee: estimatedFee } = await getEstimatedFee({
@@ -685,6 +681,7 @@ export const actualExecuteFee = async ({
   })
 
   const { psbt: finalPsbt } = await createExecutePsbt({
+    alkanesUtxos,
     frontendFee,
     feeAddress,
     utxos,
@@ -692,7 +689,6 @@ export const actualExecuteFee = async ({
     protostone,
     provider,
     feeRate,
-    alkanesUtxos,
     fee: estimatedFee,
   })
 
@@ -725,9 +721,9 @@ export const executePsbt = async ({
   feeAddress?: string
 }) => {
   const { fee } = await actualExecuteFee({
+    alkanesUtxos,
     frontendFee,
     feeAddress,
-    alkanesUtxos,
     utxos,
     account,
     protostone,
@@ -736,9 +732,9 @@ export const executePsbt = async ({
   })
 
   const { psbt: finalPsbt } = await createExecutePsbt({
+    alkanesUtxos,
     frontendFee,
     feeAddress,
-    alkanesUtxos,
     utxos,
     account,
     protostone,
@@ -772,9 +768,9 @@ export const execute = async ({
   feeAddress?: string
 }) => {
   const { fee } = await actualExecuteFee({
+    alkanesUtxos,
     frontendFee,
     feeAddress,
-    alkanesUtxos,
     utxos,
     account,
     protostone,
@@ -783,9 +779,9 @@ export const execute = async ({
   })
 
   const { psbt: finalPsbt } = await createExecutePsbt({
+    alkanesUtxos,
     frontendFee,
     feeAddress,
-    alkanesUtxos,
     utxos,
     account,
     protostone,
