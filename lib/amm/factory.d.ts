@@ -2,8 +2,9 @@
 /// <reference types="node" />
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict';
 import { Account, Provider, Signer } from '..';
-import { AlkaneId, GatheredUtxos, Utxo } from 'shared/interface';
 import { PoolDetailsResult } from './utils';
+import { FormattedUtxo } from '../utxo';
+import { AlkaneId } from '@alkanes/types';
 export type CreateNewPoolSimulationResult = {
     lpTokens: string;
     alkaneId: AlkaneId;
@@ -36,16 +37,13 @@ export declare class AlkanesAMMPoolFactoryDecoder {
     static decodeSimulation(result: any, opcode: number): any;
 }
 export declare const getPoolId: () => Promise<void>;
-export declare const createNewPoolPsbt: ({ calldata, token0, token0Amount, token1, token1Amount, gatheredUtxos, feeRate, account, provider, }: {
+export declare const createNewPoolPsbt: ({ calldata, token0, token0Amount, token1, token1Amount, utxos, feeRate, account, provider, }: {
     calldata: bigint[];
     token0: AlkaneId;
     token0Amount: bigint;
     token1: AlkaneId;
     token1Amount: bigint;
-    gatheredUtxos: {
-        utxos: Utxo[];
-        totalAmount: number;
-    };
+    utxos: FormattedUtxo[];
     feeRate: number;
     account: Account;
     provider: Provider;
@@ -53,16 +51,13 @@ export declare const createNewPoolPsbt: ({ calldata, token0, token0Amount, token
     psbt: string;
     fee: number;
 }>;
-export declare const createNewPool: ({ calldata, token0, token0Amount, token1, token1Amount, gatheredUtxos, feeRate, account, signer, provider, }: {
+export declare const createNewPool: ({ calldata, token0, token0Amount, token1, token1Amount, utxos, feeRate, account, signer, provider, }: {
     calldata: bigint[];
     token0: AlkaneId;
     token0Amount: bigint;
     token1: AlkaneId;
     token1Amount: bigint;
-    gatheredUtxos: {
-        utxos: Utxo[];
-        totalAmount: number;
-    };
+    utxos: FormattedUtxo[];
     feeRate: number;
     account: Account;
     provider: Provider;
@@ -78,15 +73,15 @@ export declare const createNewPool: ({ calldata, token0, token0Amount, token1, t
 export declare const splitAlkaneUtxos: (tokens: {
     alkaneId: AlkaneId;
     amount: bigint;
-}[], account: Account, provider: Provider) => Promise<{
+}[], utxos: FormattedUtxo[]) => Promise<{
     protostone: Buffer;
     edicts: ProtoruneEdict[];
-    utxos: import("shared/interface").FormattedUtxo[];
+    utxos: FormattedUtxo[];
     totalAmount: number;
 }>;
-export declare const poolPsbt: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, fee, }: {
-    alkaneUtxos?: GatheredUtxos;
-    gatheredUtxos: GatheredUtxos;
+export declare const poolPsbt: ({ alkanesUtxos, utxos, account, protostone, provider, feeRate, fee, }: {
+    alkanesUtxos?: FormattedUtxo[];
+    utxos: FormattedUtxo[];
     account: Account;
     protostone: Buffer;
     provider: Provider;

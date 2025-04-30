@@ -74,10 +74,9 @@ export const addressUtxosToSpend = new Command('addressUtxos')
   */
   .action(async (options) => {
     const wallet: Wallet = new Wallet({ networkType: options.provider })
-    console.log(
-      await utxo.addressUtxos({
-        address: options.address,
-        provider: wallet.provider,
-      })
-    )
+
+    await utxo.addressUtxos({
+      address: options.address,
+      provider: wallet.provider,
+    })
   })

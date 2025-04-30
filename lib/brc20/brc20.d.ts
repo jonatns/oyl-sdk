@@ -4,7 +4,7 @@ import { Provider } from '../provider/provider';
 import * as bitcoin from 'bitcoinjs-lib';
 import { Account } from '../account/account';
 import { Signer } from '../signer';
-import { GatheredUtxos } from 'shared/interface';
+import { GatheredUtxos } from '../utxo';
 export declare const transferEstimate: ({ gatheredUtxos, toAddress, feeRate, account, provider, fee, }: {
     gatheredUtxos: GatheredUtxos;
     toAddress: string;

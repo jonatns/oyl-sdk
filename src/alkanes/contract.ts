@@ -1,12 +1,17 @@
 import { Account, Signer, Provider } from '..'
 import * as bitcoin from 'bitcoinjs-lib'
-import { AlkanesPayload, GatheredUtxos } from '../shared/interface'
+import { AlkanesPayload } from '../shared/interface'
 import { timeout, tweakSigner } from '../shared/utils'
-import { createDeployCommitPsbt, createDeployRevealPsbt, deployCommit } from './alkanes'
+import {
+  createDeployCommitPsbt,
+  createDeployRevealPsbt,
+  deployCommit,
+} from './alkanes'
 import { getEstimatedFee } from '../psbt'
+import { FormattedUtxo } from '../utxo'
 export const contractDeployment = async ({
   payload,
-  gatheredUtxos,
+  utxos,
   account,
   protostone,
   provider,
@@ -14,7 +19,7 @@ export const contractDeployment = async ({
   signer,
 }: {
   payload: AlkanesPayload
-  gatheredUtxos: GatheredUtxos
+  utxos: FormattedUtxo[]
   account: Account
   protostone: Buffer
   provider: Provider
@@ -23,7 +28,7 @@ export const contractDeployment = async ({
 }) => {
   const { script, txId } = await deployCommit({
     payload,
-    gatheredUtxos,
+    utxos,
     account,
     provider,
     feeRate,
@@ -48,14 +53,14 @@ export const contractDeployment = async ({
 export const actualDeployCommitFee = async ({
   payload,
   tweakedPublicKey,
-  gatheredUtxos,
+  utxos,
   account,
   provider,
   feeRate,
 }: {
   payload: AlkanesPayload
   tweakedPublicKey: string
-  gatheredUtxos: GatheredUtxos
+  utxos: FormattedUtxo[]
   account: Account
   provider: Provider
   feeRate?: number
@@ -66,7 +71,7 @@ export const actualDeployCommitFee = async ({
 
   const { psbt } = await createDeployCommitPsbt({
     payload,
-    gatheredUtxos,
+    utxos,
     tweakedPublicKey,
     account,
     provider,
@@ -81,7 +86,7 @@ export const actualDeployCommitFee = async ({
 
   const { psbt: finalPsbt } = await createDeployCommitPsbt({
     payload,
-    gatheredUtxos,
+    utxos,
     tweakedPublicKey,
     account,
     provider,

@@ -22,35 +22,33 @@ const account: Account = mnemonicToAccount({
 })
 
 // Mock data
-const mockGatheredUtxos = {
-  utxos: [
-    {
-      txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b274',
-      outputIndex: 0,
-      satoshis: 100000,
-      confirmations: 3,
-      scriptPk: account.taproot.pubkey,
-      address: account.taproot.address,
-      inscriptions: [],
-    },
-  ] as FormattedUtxo[],
-  totalAmount: 100000,
-}
+const mockUtxos: FormattedUtxo[] = [
+  {
+    txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b274',
+    outputIndex: 0,
+    satoshis: 100000,
+    confirmations: 3,
+    scriptPk: account.taproot.pubkey,
+    address: account.taproot.address,
+    inscriptions: [],
+    alkanes: {},
+    indexed: true,
+  },
+]
 
-const mockAlkaneUtxos = {
-  utxos: [
-    {
-      txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b275',
-      outputIndex: 1,
-      satoshis: 50000,
-      confirmations: 3,
-      scriptPk: account.taproot.pubkey,
-      address: account.taproot.address,
-      inscriptions: [],
-    },
-  ],
-  totalAmount: 50000,
-}
+const mockAlkanesUtxos: FormattedUtxo[] = [
+  {
+    txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b275',
+    outputIndex: 1,
+    satoshis: 50000,
+    confirmations: 3,
+    scriptPk: account.taproot.pubkey,
+    address: account.taproot.address,
+    inscriptions: [],
+    alkanes: {},
+    indexed: true,
+  },
+]
 
 // Mock the external modules
 jest.mock('../rpclient/alkanes')
@@ -73,7 +71,7 @@ jest.mock('./alkanes', () => ({
     ) {
       throw new Error('Empty protostone')
     }
-    if (!options.gatheredUtxos?.utxos?.length) {
+    if (!options?.utxos?.length) {
       throw new Error('Insufficient UTXOs')
     }
     return {
@@ -125,8 +123,8 @@ describe('Alkanes PSBT Tests', () => {
       }).encodedRunestone
 
       const result = await executePsbt({
-        alkaneUtxos: mockAlkaneUtxos,
-        gatheredUtxos: mockGatheredUtxos,
+        alkanesUtxos: mockAlkanesUtxos,
+        utxos: mockUtxos,
         account,
         protostone,
         provider: mockProvider,
@@ -150,7 +148,7 @@ describe('Alkanes PSBT Tests', () => {
       }).encodedRunestone
 
       const result = await executePsbt({
-        gatheredUtxos: mockGatheredUtxos,
+        utxos: mockUtxos,
         account,
         protostone,
         provider: mockProvider,
@@ -173,14 +171,9 @@ describe('Alkanes PSBT Tests', () => {
         ],
       }).encodedRunestone
 
-      const insufficientUtxos = {
-        utxos: [] as FormattedUtxo[],
-        totalAmount: 0,
-      }
-
       await expect(
         executePsbt({
-          gatheredUtxos: insufficientUtxos,
+          utxos: [],
           account,
           protostone,
           provider: mockProvider,
@@ -204,8 +197,8 @@ describe('Alkanes PSBT Tests', () => {
       }).encodedRunestone
 
       const result = await createExecutePsbt({
-        alkaneUtxos: mockAlkaneUtxos,
-        gatheredUtxos: mockGatheredUtxos,
+        alkanesUtxos: mockAlkanesUtxos,
+        utxos: mockUtxos,
         account,
         protostone,
         provider: mockProvider,
@@ -229,8 +222,8 @@ describe('Alkanes PSBT Tests', () => {
       }).encodedRunestone
 
       const result = await createExecutePsbt({
-        alkaneUtxos: mockAlkaneUtxos,
-        gatheredUtxos: mockGatheredUtxos,
+        alkanesUtxos: mockAlkanesUtxos,
+        utxos: mockUtxos,
         account,
         protostone,
         provider: mockProvider,
@@ -251,7 +244,7 @@ describe('Alkanes PSBT Tests', () => {
 
       await expect(
         executePsbt({
-          gatheredUtxos: mockGatheredUtxos,
+          utxos: mockUtxos,
           account,
           protostone,
           provider: mockProvider,
@@ -273,8 +266,8 @@ describe('Alkanes PSBT Tests', () => {
       }).encodedRunestone
 
       const result = await executePsbt({
-        alkaneUtxos: mockAlkaneUtxos,
-        gatheredUtxos: mockGatheredUtxos,
+        alkanesUtxos: mockAlkanesUtxos,
+        utxos: mockUtxos,
         account,
         protostone,
         provider: mockProvider,
@@ -304,8 +297,8 @@ describe('Alkanes PSBT Tests', () => {
       }).encodedRunestone
 
       const result = await executePsbt({
-        alkaneUtxos: mockAlkaneUtxos,
-        gatheredUtxos: mockGatheredUtxos,
+        alkanesUtxos: mockAlkanesUtxos,
+        utxos: mockUtxos,
         account,
         protostone,
         provider: mockProvider,

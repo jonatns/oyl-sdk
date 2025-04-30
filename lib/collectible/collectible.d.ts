@@ -1,7 +1,7 @@
 import { Provider } from '../provider';
 import { Account } from '../account/account';
 import { Signer } from '../signer';
-import { GatheredUtxos } from '../shared/interface';
+import { GatheredUtxos } from '../utxo';
 export declare const createPsbt: ({ gatheredUtxos, account, inscriptionId, provider, inscriptionAddress, toAddress, feeRate, fee, }: {
     gatheredUtxos: GatheredUtxos;
     account: Account;

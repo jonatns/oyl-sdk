@@ -2,7 +2,7 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { createPsbt, findCollectible } from './collectible'
 import { Account, mnemonicToAccount } from '../account/account'
 import { Provider } from '../provider/provider'
-import { GatheredUtxos } from '../shared/interface'
+import { GatheredUtxos } from '../utxo'
 
 const provider = new Provider({
   url: '',
@@ -38,6 +38,8 @@ const testFormattedUtxos: GatheredUtxos = {
       scriptPk,
       address: account.nativeSegwit.address,
       inscriptions: [],
+      alkanes: {},
+      indexed: true,
     },
     {
       txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b275',
@@ -47,6 +49,8 @@ const testFormattedUtxos: GatheredUtxos = {
       scriptPk,
       address: account.nativeSegwit.address,
       inscriptions: [],
+      alkanes: {},
+      indexed: true,
     },
   ],
   totalAmount: 200000,

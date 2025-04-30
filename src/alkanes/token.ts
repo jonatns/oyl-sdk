@@ -1,10 +1,10 @@
 import { minimumFee } from '../btc'
 import { u128, u32 } from '@magiceden-oss/runestone-lib/dist/src/integer'
-import { Account, Signer, Provider } from '..'
+import { Account, Signer, Provider, AlkanesPayload } from '..'
 import { ProtoStone, encodeRunestoneProtostone } from 'alkanes/lib/index.js'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { OylTransactionError } from '../errors'
-import { AlkaneId, AlkanesPayload, GatheredUtxos } from '../shared/interface'
+import { AlkaneId } from '@alkanes/types'
 import * as bitcoin from 'bitcoinjs-lib'
 import {
   timeout,
@@ -14,11 +14,17 @@ import {
   getAddressType,
 } from '../shared/utils'
 import { getEstimatedFee } from '../psbt'
-import { deployCommit, deployReveal, findAlkaneUtxos } from './alkanes'
+import { deployCommit, deployReveal } from './alkanes'
+import {
+  FormattedUtxo,
+  GatheredUtxos,
+  selectAlkanesUtxos,
+  selectPaymentUtxos,
+} from '../utxo'
 
 export const tokenDeployment = async ({
   payload,
-  gatheredUtxos,
+  utxos,
   account,
   protostone,
   provider,
@@ -26,7 +32,7 @@ export const tokenDeployment = async ({
   signer,
 }: {
   payload: AlkanesPayload
-  gatheredUtxos: GatheredUtxos
+  utxos: FormattedUtxo[]
   account: Account
   protostone: Buffer
   provider: Provider
@@ -35,7 +41,7 @@ export const tokenDeployment = async ({
 }) => {
   const { script, txId } = await deployCommit({
     payload,
-    gatheredUtxos,
+    utxos,
     account,
     provider,
     feeRate,
@@ -58,7 +64,7 @@ export const tokenDeployment = async ({
 }
 
 export const createSendPsbt = async ({
-  gatheredUtxos,
+  utxos,
   account,
   alkaneId,
   provider,
@@ -67,7 +73,7 @@ export const createSendPsbt = async ({
   feeRate,
   fee,
 }: {
-  gatheredUtxos: GatheredUtxos
+  utxos: FormattedUtxo[]
   account: Account
   alkaneId: { block: string; tx: string }
   provider: Provider
@@ -77,7 +83,7 @@ export const createSendPsbt = async ({
   fee?: number
 }) => {
   try {
-    const originalGatheredUtxos = gatheredUtxos
+    let gatheredUtxos = selectPaymentUtxos(utxos, account.spendStrategy)
 
     const minFee = minimumFee({
       taprootInputCount: 2,
@@ -88,7 +94,7 @@ export const createSendPsbt = async ({
     let finalFee = fee ? fee : calculatedFee
 
     gatheredUtxos = findXAmountOfSats(
-      originalGatheredUtxos.utxos,
+      [...gatheredUtxos.utxos],
       Number(finalFee) + Number(inscriptionSats)
     )
 
@@ -101,18 +107,17 @@ export const createSendPsbt = async ({
 
       finalFee = Math.max(txSize * feeRate, 250)
       gatheredUtxos = findXAmountOfSats(
-        originalGatheredUtxos.utxos,
+        [...gatheredUtxos.utxos],
         Number(finalFee) + Number(inscriptionSats)
       )
     }
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
 
-    const alkanesUtxos = await findAlkaneUtxos({
-      address: account.taproot.address,
-      greatestToLeast: account.spendStrategy.utxoSortGreatestToLeast,
+    const alkanesUtxos = await selectAlkanesUtxos({
+      utxos,
       alkaneId,
-      provider,
+      greatestToLeast: account.spendStrategy.utxoSortGreatestToLeast,
       targetNumberOfAlkanes: amount,
     })
 
@@ -275,7 +280,7 @@ export const createSendPsbt = async ({
 }
 
 export const send = async ({
-  gatheredUtxos,
+  utxos,
   toAddress,
   amount,
   alkaneId,
@@ -284,7 +289,7 @@ export const send = async ({
   provider,
   signer,
 }: {
-  gatheredUtxos: GatheredUtxos
+  utxos: FormattedUtxo[]
   toAddress: string
   amount: number
   alkaneId: AlkaneId
@@ -294,7 +299,7 @@ export const send = async ({
   signer: Signer
 }) => {
   const { fee } = await actualSendFee({
-    gatheredUtxos,
+    utxos,
     account,
     alkaneId,
     amount,
@@ -304,7 +309,7 @@ export const send = async ({
   })
 
   const { psbt: finalPsbt } = await createSendPsbt({
-    gatheredUtxos,
+    utxos,
     account,
     alkaneId,
     amount,
@@ -327,7 +332,7 @@ export const send = async ({
 }
 
 export const actualSendFee = async ({
-  gatheredUtxos,
+  utxos,
   account,
   alkaneId,
   provider,
@@ -335,20 +340,16 @@ export const actualSendFee = async ({
   amount,
   feeRate,
 }: {
-  gatheredUtxos: GatheredUtxos
+  utxos: FormattedUtxo[]
   account: Account
   alkaneId: { block: string; tx: string }
   provider: Provider
   toAddress: string
   amount: number
-  feeRate?: number
+  feeRate: number
 }) => {
-  if (!feeRate) {
-    feeRate = (await provider.esplora.getFeeEstimates())['1']
-  }
-
   const { psbt } = await createSendPsbt({
-    gatheredUtxos,
+    utxos,
     account,
     alkaneId,
     provider,
@@ -364,7 +365,7 @@ export const actualSendFee = async ({
   })
 
   const { psbt: finalPsbt } = await createSendPsbt({
-    gatheredUtxos,
+    utxos,
     account,
     alkaneId,
     provider,

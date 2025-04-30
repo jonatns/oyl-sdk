@@ -14,7 +14,7 @@ import {
   tweakSigner,
 } from '../shared/utils'
 import { OylTransactionError } from '../errors'
-import { GatheredUtxos, RuneUTXO } from '../shared/interface'
+import { RuneUTXO } from '../shared/interface'
 import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
@@ -22,6 +22,7 @@ import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import { encodeRunestone } from '@magiceden-oss/runestone-lib'
 import { OrdOutput } from 'rpclient/ord'
 import { rune } from 'index'
+import { GatheredUtxos } from '../utxo'
 
 interface OrdOutputs {
   result: OrdOutput

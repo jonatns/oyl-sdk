@@ -1,14 +1,19 @@
-import fetch from 'node-fetch'
 import asyncPool from 'tiny-async-pool'
-import { EsploraRpc, EsploraUtxo } from './esplora'
+import { EsploraRpc } from './esplora'
 import * as alkanes_rpc from 'alkanes/lib/rpc'
-import { AlkaneId } from 'shared/interface'
 import {
   estimateRemoveLiquidityAmounts,
   RemoveLiquidityPreviewResult,
   PoolOpcodes,
 } from '../amm/utils'
 import { AlkanesAMMPoolDecoder } from '../amm/pool'
+import {
+  AlkaneId,
+  AlkaneSimulateRequest,
+  AlkanesOutpoint,
+  AlkanesResponse,
+  AlkaneToken,
+} from '@alkanes/types'
 
 export class MetashrewOverride {
   public override: any
@@ -72,56 +77,6 @@ export function unmapFromPrimitives(v: any): any {
   }
 }
 
-export interface Rune {
-  rune: {
-    id: { block: string; tx: string }
-    name: string
-    spacedName: string
-    divisibility: number
-    spacers: number
-    symbol: string
-  }
-  balance: string
-}
-export interface Outpoint {
-  runes: Rune[]
-  outpoint: { txid: string; vout: number }
-  output: { value: string; script: string }
-  txindex: number
-  height: number
-}
-export interface AlkanesResponse {
-  outpoints: Outpoint[]
-  balanceSheet: []
-}
-
-interface AlkaneSimulateRequest {
-  alkanes: any[]
-  transaction: string
-  block: string
-  height: string
-  txindex: number
-  target: {
-    block: string
-    tx: string
-  }
-  inputs: string[]
-  pointer: number
-  refundPointer: number
-  vout: number
-}
-
-interface AlkaneToken {
-  name: string
-  symbol: string
-  totalSupply: number
-  cap: number
-  minted: number
-  mintActive: boolean
-  percentageMinted: number
-  mintAmount: number
-}
-
 const opcodes: string[] = ['99', '100', '101', '102', '103', '104', '1000']
 const opcodesHRV: string[] = [
   'name',
@@ -158,7 +113,7 @@ export class AlkanesRpc {
       id: id++,
     }
 
-    const requestOptions = {
+    const requestOptions: RequestInit = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -208,43 +163,43 @@ export class AlkanesRpc {
     address: string
     protocolTag?: string
     name?: string
-  }): Promise<Outpoint[]> {
-    try {   
+  }): Promise<AlkanesOutpoint[]> {
+    try {
       const ret = await this._call('alkanes_protorunesbyaddress', [
         {
           address,
-        protocolTag,
-      },
-    ])
-
-    const alkanesList = ret.outpoints
-      .filter((outpoint) => outpoint.runes.length > 0)
-      .map((outpoint) => ({
-        ...outpoint,
-        outpoint: {
-          vout: outpoint.outpoint.vout,
-          txid: Buffer.from(outpoint.outpoint.txid, 'hex')
-            .reverse()
-            .toString('hex'),
+          protocolTag,
         },
-        runes: outpoint.runes.map((rune) => ({
-          ...rune,
-          balance: parseInt(rune.balance, 16).toString(),
-          rune: {
-            ...rune.rune,
-            id: {
-              block: parseInt(rune.rune.id.block, 16).toString(),
-              tx: parseInt(rune.rune.id.tx, 16).toString(),
-            },
-          },
-        })),
-      }))
+      ])
 
-    if (name) {
-      return alkanesList.flatMap((outpoints) =>
-        outpoints.runes.filter((item) => item.rune.name === name)
-      )
-    }
+      const alkanesList = ret.outpoints
+        .filter((outpoint) => outpoint.runes.length > 0)
+        .map((outpoint) => ({
+          ...outpoint,
+          outpoint: {
+            vout: outpoint.outpoint.vout,
+            txid: Buffer.from(outpoint.outpoint.txid, 'hex')
+              .reverse()
+              .toString('hex'),
+          },
+          runes: outpoint.runes.map((rune) => ({
+            ...rune,
+            balance: parseInt(rune.balance, 16).toString(),
+            rune: {
+              ...rune.rune,
+              id: {
+                block: parseInt(rune.rune.id.block, 16).toString(),
+                tx: parseInt(rune.rune.id.tx, 16).toString(),
+              },
+            },
+          })),
+        }))
+
+      if (name) {
+        return alkanesList.flatMap((outpoints) =>
+          outpoints.runes.filter((item) => item.rune.name === name)
+        )
+      }
 
       return alkanesList
     } catch (error) {

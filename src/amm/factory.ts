@@ -1,4 +1,3 @@
-import { findAlkaneUtxos } from '../alkanes/alkanes'
 import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer/u128'
 import { u32 } from '@magiceden-oss/runestone-lib/dist/src/integer/u32'
 import { encipher } from 'alkanes/lib/bytes'
@@ -15,12 +14,18 @@ import {
   Provider,
   Signer,
 } from '..'
-import { AlkaneId, GatheredUtxos, Utxo } from 'shared/interface'
 import * as bitcoin from 'bitcoinjs-lib'
 import { getEstimatedFee } from '../psbt'
 import { minimumFee } from '../btc'
 import { AlkanesAMMPoolDecoder } from './pool'
 import { PoolDetailsResult, PoolOpcodes } from './utils'
+import {
+  FormattedUtxo,
+  GatheredUtxos,
+  selectAlkanesUtxos,
+  selectPaymentUtxos,
+} from '../utxo'
+import { AlkaneId } from '@alkanes/types'
 
 export type CreateNewPoolSimulationResult = {
   lpTokens: string
@@ -221,7 +226,7 @@ export const createNewPoolPsbt = async ({
   token0Amount,
   token1,
   token1Amount,
-  gatheredUtxos,
+  utxos,
   feeRate,
   account,
   provider,
@@ -231,7 +236,7 @@ export const createNewPoolPsbt = async ({
   token0Amount: bigint
   token1: AlkaneId
   token1Amount: bigint
-  gatheredUtxos: { utxos: Utxo[]; totalAmount: number }
+  utxos: FormattedUtxo[]
   feeRate: number
   account: Account
   provider: Provider
@@ -240,11 +245,7 @@ export const createNewPoolPsbt = async ({
     { alkaneId: token0, amount: token0Amount },
     { alkaneId: token1, amount: token1Amount },
   ]
-  const { utxos, edicts, totalAmount } = await splitAlkaneUtxos(
-    tokens,
-    account,
-    provider
-  )
+  const { utxos: alkanesUtxos, edicts } = await splitAlkaneUtxos(tokens, utxos)
 
   const protostone: Buffer = encodeRunestoneProtostone({
     protostones: [
@@ -264,15 +265,10 @@ export const createNewPoolPsbt = async ({
     ],
   }).encodedRunestone
 
-  const alkaneUtxos = {
-    utxos,
-    totalAmount,
-  }
-
   const { psbt } = await poolPsbt({
-    alkaneUtxos,
+    alkanesUtxos,
     protostone,
-    gatheredUtxos,
+    utxos,
     feeRate,
     account,
     provider,
@@ -285,9 +281,9 @@ export const createNewPoolPsbt = async ({
   })
 
   const { psbt: finalPsbt } = await poolPsbt({
-    alkaneUtxos,
+    alkanesUtxos,
     fee,
-    gatheredUtxos,
+    utxos,
     account,
     protostone,
     provider,
@@ -303,7 +299,7 @@ export const createNewPool = async ({
   token0Amount,
   token1,
   token1Amount,
-  gatheredUtxos,
+  utxos,
   feeRate,
   account,
   signer,
@@ -314,7 +310,7 @@ export const createNewPool = async ({
   token0Amount: bigint
   token1: AlkaneId
   token1Amount: bigint
-  gatheredUtxos: { utxos: Utxo[]; totalAmount: number }
+  utxos: FormattedUtxo[]
   feeRate: number
   account: Account
   provider: Provider
@@ -326,7 +322,7 @@ export const createNewPool = async ({
     token0Amount,
     token1,
     token1Amount,
-    gatheredUtxos,
+    utxos,
     feeRate,
     account,
     provider,
@@ -348,24 +344,20 @@ export const createNewPool = async ({
 
 export const splitAlkaneUtxos = async (
   tokens: { alkaneId: AlkaneId; amount: bigint }[],
-  account: Account,
-  provider: Provider
+  utxos: FormattedUtxo[]
 ) => {
-  let gatheredUtxos: GatheredUtxos = { utxos: [], totalAmount: 0 }
-
   const allTokenUtxos = await Promise.all(
     tokens.map(async (token) => {
-      return findAlkaneUtxos({
-        address: account.taproot.address,
+      return selectAlkanesUtxos({
+        utxos,
         greatestToLeast: false,
-        provider,
         targetNumberOfAlkanes: Number(token.amount),
         alkaneId: token.alkaneId,
       })
     })
   )
 
-  gatheredUtxos = {
+  const gatheredUtxos = {
     utxos: allTokenUtxos
       .flatMap((t) => t.utxos)
       .filter(
@@ -404,16 +396,16 @@ export const splitAlkaneUtxos = async (
 }
 
 export const poolPsbt = async ({
-  alkaneUtxos,
-  gatheredUtxos,
+  alkanesUtxos,
+  utxos,
   account,
   protostone,
   provider,
   feeRate,
   fee = 0,
 }: {
-  alkaneUtxos?: GatheredUtxos
-  gatheredUtxos: GatheredUtxos
+  alkanesUtxos?: FormattedUtxo[]
+  utxos: FormattedUtxo[]
   account: Account
   protostone: Buffer
   provider: Provider
@@ -421,7 +413,7 @@ export const poolPsbt = async ({
   fee?: number
 }) => {
   try {
-    const originalGatheredUtxos = gatheredUtxos
+    let gatheredUtxos = selectPaymentUtxos(utxos, account.spendStrategy)
 
     const minTxSize = minimumFee({
       taprootInputCount: 2,
@@ -432,15 +424,12 @@ export const poolPsbt = async ({
     let calculatedFee = Math.max(minTxSize * feeRate, 250)
     let finalFee = fee === 0 ? calculatedFee : fee
 
-    gatheredUtxos = findXAmountOfSats(
-      originalGatheredUtxos.utxos,
-      Number(finalFee) + 546
-    )
+    gatheredUtxos = findXAmountOfSats([...utxos], Number(finalFee) + 546)
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
 
-    if (alkaneUtxos) {
-      for await (const utxo of alkaneUtxos.utxos) {
+    if (alkanesUtxos) {
+      for await (const utxo of alkanesUtxos) {
         if (getAddressType(utxo.address) === 0) {
           const previousTxHex: string = await provider.esplora.getTxHex(
             utxo.txId
@@ -560,11 +549,13 @@ export const poolPsbt = async ({
     const output = { script: protostone, value: 0 }
     psbt.addOutput(output)
 
+    const alkanesTotalAmount = alkanesUtxos.reduce(
+      (acc, utxo) => acc + utxo.satoshis,
+      0
+    )
+
     const changeAmount =
-      gatheredUtxos.totalAmount +
-      (alkaneUtxos?.totalAmount || 0) -
-      finalFee -
-      546
+      gatheredUtxos.totalAmount + alkanesTotalAmount - finalFee - 546
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,

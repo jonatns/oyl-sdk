@@ -3,16 +3,13 @@ import ECPairFactory from 'ecpair'
 import ecc from '@bitcoinerlab/secp256k1'
 import {
   AddressType,
-  AlkanesPayload,
   DecodedCBOR,
-  FormattedUtxo,
   IBlockchainInfoUTXO,
   Network,
   RuneUtxo,
   ToSignInput,
   TxInput,
   UnspentOutput,
-  Utxo,
 } from './interface'
 import BigNumber from 'bignumber.js'
 import { maximumScriptBytes } from './constants'
@@ -24,6 +21,7 @@ import { addressFormats } from '@sadoprotocol/ordit-sdk'
 import { encodeRunestone, RunestoneSpec } from '@magiceden-oss/runestone-lib'
 import { AddressKey } from '@account/account'
 import * as CBOR from 'cbor-x'
+import { FormattedUtxo } from '../utxo'
 
 bitcoin.initEccLib(ecc)
 
@@ -259,7 +257,7 @@ export function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]) {
   return utxoArray?.reduce((prev, currentValue) => prev + currentValue.value, 0)
 }
 
-export function calculateAmountGatheredUtxo(utxoArray: Utxo[]) {
+export function calculateAmountGatheredUtxo(utxoArray: FormattedUtxo[]) {
   return utxoArray?.reduce(
     (prev, currentValue) => prev + currentValue.satoshis,
     0
@@ -773,18 +771,23 @@ export const getVSize = (data: Buffer) => {
 }
 
 export const packUTF8 = function (s) {
-  const result = [''];
-  let b = 0;
+  const result = ['']
+  let b = 0
   for (let i = 0; i < s.length; i++) {
-    const length = Buffer.from(s[i]).length;
+    const length = Buffer.from(s[i]).length
     if (b + length > 15) {
-      b = 0;
-      result.push('');
-      i--;
+      b = 0
+      result.push('')
+      i--
     } else {
-      b += length;
-      result[result.length - 1] += s[i];
+      b += length
+      result[result.length - 1] += s[i]
     }
   }
-  return result.map((v) => v && Buffer.from(Array.from(Buffer.from(v)).reverse()).toString('hex') || '')
+  return result.map(
+    (v) =>
+      (v &&
+        Buffer.from(Array.from(Buffer.from(v)).reverse()).toString('hex')) ||
+      ''
+  )
 }

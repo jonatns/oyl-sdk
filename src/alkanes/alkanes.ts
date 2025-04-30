@@ -19,13 +19,12 @@ import {
 } from '../shared/utils'
 import { getEstimatedFee } from '../psbt'
 import { OylTransactionError } from '../errors'
-import { GatheredUtxos, AlkanesPayload } from '../shared/interface'
+import { AlkanesPayload } from '../shared/interface'
 import { getAddressType } from '../shared/utils'
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
-import { Outpoint } from 'rpclient/alkanes'
 import { actualDeployCommitFee } from './contract'
-import { FormattedUtxo } from '@utxo/utxo'
+import { selectPaymentUtxos, type FormattedUtxo } from '../utxo'
 
 export interface ProtostoneMessage {
   protocolTag?: bigint
@@ -58,8 +57,8 @@ export const encodeProtostone = ({
 export const createExecutePsbt = async ({
   frontendFee,
   feeAddress,
-  alkaneUtxos,
-  gatheredUtxos,
+  alkanesUtxos,
+  utxos,
   account,
   protostone,
   provider,
@@ -68,8 +67,8 @@ export const createExecutePsbt = async ({
 }: {
   frontendFee?: bigint
   feeAddress?: string
-  alkaneUtxos?: GatheredUtxos
-  gatheredUtxos: GatheredUtxos
+  alkanesUtxos?: FormattedUtxo[]
+  utxos: FormattedUtxo[]
   account: Account
   protostone: Buffer
   provider: Provider
@@ -98,6 +97,11 @@ export const createExecutePsbt = async ({
     const minFee = Math.max(minTxSize * SAT_PER_VBYTE, 250)
     let minerFee = fee === 0 ? minFee : fee
 
+    let gatheredUtxos = {
+      utxos: utxos,
+      totalAmount: utxos.reduce((acc, utxo) => acc + utxo.satoshis, 0),
+    }
+
     const satsNeeded = spendTargets + minerFee
     gatheredUtxos = findXAmountOfSats(gatheredUtxos.utxos, satsNeeded)
 
@@ -115,8 +119,8 @@ export const createExecutePsbt = async ({
 
     const psbt = new bitcoin.Psbt({ network: provider.network })
 
-    if (alkaneUtxos) {
-      for (const utxo of alkaneUtxos.utxos) {
+    if (alkanesUtxos) {
+      for (const utxo of alkanesUtxos) {
         await addInputForUtxo(psbt, utxo, account, provider)
       }
     }
@@ -134,8 +138,11 @@ export const createExecutePsbt = async ({
       })
     }
 
-    const inputsTotal =
-      gatheredUtxos.totalAmount + (alkaneUtxos?.totalAmount ?? 0)
+    const totalAlkanesAmount = alkanesUtxos
+      ? alkanesUtxos.reduce((acc, utxo) => acc + utxo.satoshis, 0)
+      : 0
+
+    const inputsTotal = gatheredUtxos.totalAmount + (totalAlkanesAmount ?? 0)
     const outputsTotal = psbt.txOutputs.reduce((sum, o) => sum + o.value, 0)
 
     let change = inputsTotal - outputsTotal - minerFee
@@ -222,7 +229,7 @@ async function addInputForUtxo(
 
 export const createDeployCommitPsbt = async ({
   payload,
-  gatheredUtxos,
+  utxos,
   tweakedPublicKey,
   account,
   provider,
@@ -230,7 +237,7 @@ export const createDeployCommitPsbt = async ({
   fee,
 }: {
   payload: AlkanesPayload
-  gatheredUtxos: GatheredUtxos
+  utxos: FormattedUtxo[]
   tweakedPublicKey: string
   account: Account
   provider: Provider
@@ -238,7 +245,7 @@ export const createDeployCommitPsbt = async ({
   fee?: number
 }) => {
   try {
-    const originalGatheredUtxos = gatheredUtxos
+    let gatheredUtxos = selectPaymentUtxos(utxos, account.spendStrategy)
 
     const minFee = minimumFee({
       taprootInputCount: 2,
@@ -266,7 +273,7 @@ export const createDeployCommitPsbt = async ({
     const wasmDeploySize = getVSize(Buffer.from(payload.body)) * feeRate
 
     gatheredUtxos = findXAmountOfSats(
-      originalGatheredUtxos.utxos,
+      [...utxos],
       wasmDeploySize + Number(inscriptionSats) + finalFee * 2
     )
 
@@ -280,7 +287,7 @@ export const createDeployCommitPsbt = async ({
 
       if (gatheredUtxos.totalAmount < finalFee) {
         gatheredUtxos = findXAmountOfSats(
-          originalGatheredUtxos.utxos,
+          [...utxos],
           wasmDeploySize + Number(inscriptionSats) + finalFee * 2
         )
       }
@@ -369,14 +376,14 @@ export const createDeployCommitPsbt = async ({
 
 export const deployCommit = async ({
   payload,
-  gatheredUtxos,
+  utxos,
   account,
   provider,
   feeRate,
   signer,
 }: {
   payload: AlkanesPayload
-  gatheredUtxos: GatheredUtxos
+  utxos: FormattedUtxo[]
   account: Account
   provider: Provider
   feeRate?: number
@@ -393,7 +400,7 @@ export const deployCommit = async ({
 
   const { fee: commitFee } = await actualDeployCommitFee({
     payload,
-    gatheredUtxos,
+    utxos,
     tweakedPublicKey,
     account,
     provider,
@@ -402,7 +409,7 @@ export const deployCommit = async ({
 
   const { psbt: finalPsbt, script } = await createDeployCommitPsbt({
     payload,
-    gatheredUtxos,
+    utxos,
     tweakedPublicKey,
     account,
     provider,
@@ -580,73 +587,6 @@ export const deployReveal = async ({
   return revealResult
 }
 
-export const findAlkaneUtxos = async ({
-  address,
-  greatestToLeast,
-  provider,
-  alkaneId,
-  targetNumberOfAlkanes,
-}: {
-  address: string
-  greatestToLeast: boolean
-  provider: Provider
-  alkaneId: { block: string; tx: string }
-  targetNumberOfAlkanes: number
-}) => {
-  const res: Outpoint[] = await provider.alkanes.getAlkanesByAddress({
-    address: address,
-    protocolTag: '1',
-  })
-
-  const matchingRunesWithOutpoints = res.flatMap((outpoint) =>
-    outpoint.runes
-      .filter(
-        (value) =>
-          Number(value.rune.id.block) === Number(alkaneId.block) &&
-          Number(value.rune.id.tx) === Number(alkaneId.tx)
-      )
-      .map((rune) => ({ rune, outpoint }))
-  )
-
-  const sortedRunesWithOutpoints = matchingRunesWithOutpoints.sort((a, b) =>
-    greatestToLeast
-      ? Number(b.rune.balance) - Number(a.rune.balance)
-      : Number(a.rune.balance) - Number(b.rune.balance)
-  )
-
-  let totalAmount: number = 0
-  let totalBalanceBeingSent: number = 0
-  const utxos: FormattedUtxo[] = []
-
-  for (const alkane of sortedRunesWithOutpoints) {
-    if (
-      totalBalanceBeingSent < targetNumberOfAlkanes &&
-      Number(alkane.rune.balance) > 0
-    ) {
-      const satoshis = Number(alkane.outpoint.output.value)
-      utxos.push({
-        txId: alkane.outpoint.outpoint.txid,
-        outputIndex: alkane.outpoint.outpoint.vout,
-        scriptPk: alkane.outpoint.output.script,
-        address,
-        satoshis,
-        inscriptions: [],
-        confirmations: 0,
-      })
-      totalAmount += satoshis
-      totalBalanceBeingSent +=
-        Number(alkane.rune.balance) /
-        (alkane.rune.rune.divisibility == 1
-          ? 1
-          : 10 ** alkane.rune.rune.divisibility)
-    }
-  }
-  if (totalBalanceBeingSent < targetNumberOfAlkanes) {
-    throw new OylTransactionError(Error('Insuffiecient balance of alkanes.'))
-  }
-  return { utxos, totalAmount, totalBalanceBeingSent }
-}
-
 export const actualTransactRevealFee = async ({
   protostone,
   tweakedPublicKey,
@@ -705,21 +645,21 @@ export const actualTransactRevealFee = async ({
 }
 
 export const actualExecuteFee = async ({
-  gatheredUtxos,
+  utxos,
   account,
   protostone,
   provider,
   feeRate,
-  alkaneUtxos,
+  alkanesUtxos,
   frontendFee,
   feeAddress,
 }: {
-  gatheredUtxos: GatheredUtxos
+  utxos: FormattedUtxo[]
   account: Account
   protostone: Buffer
   provider: Provider
   feeRate: number
-  alkaneUtxos?: GatheredUtxos
+  alkanesUtxos?: FormattedUtxo[]
   frontendFee?: bigint
   feeAddress?: string
 }) => {
@@ -730,12 +670,12 @@ export const actualExecuteFee = async ({
   const { psbt } = await createExecutePsbt({
     frontendFee,
     feeAddress,
-    gatheredUtxos,
+    utxos,
     account,
     protostone,
     provider,
     feeRate,
-    alkaneUtxos,
+    alkanesUtxos,
   })
 
   const { fee: estimatedFee } = await getEstimatedFee({
@@ -747,12 +687,12 @@ export const actualExecuteFee = async ({
   const { psbt: finalPsbt } = await createExecutePsbt({
     frontendFee,
     feeAddress,
-    gatheredUtxos,
+    utxos,
     account,
     protostone,
     provider,
     feeRate,
-    alkaneUtxos,
+    alkanesUtxos,
     fee: estimatedFee,
   })
 
@@ -766,8 +706,8 @@ export const actualExecuteFee = async ({
 }
 
 export const executePsbt = async ({
-  alkaneUtxos,
-  gatheredUtxos,
+  alkanesUtxos,
+  utxos,
   account,
   protostone,
   provider,
@@ -775,8 +715,8 @@ export const executePsbt = async ({
   frontendFee,
   feeAddress,
 }: {
-  alkaneUtxos?: GatheredUtxos
-  gatheredUtxos: GatheredUtxos
+  alkanesUtxos?: FormattedUtxo[]
+  utxos: FormattedUtxo[]
   account: Account
   protostone: Buffer
   provider: Provider
@@ -787,8 +727,8 @@ export const executePsbt = async ({
   const { fee } = await actualExecuteFee({
     frontendFee,
     feeAddress,
-    alkaneUtxos,
-    gatheredUtxos,
+    alkanesUtxos,
+    utxos,
     account,
     protostone,
     provider,
@@ -798,8 +738,8 @@ export const executePsbt = async ({
   const { psbt: finalPsbt } = await createExecutePsbt({
     frontendFee,
     feeAddress,
-    alkaneUtxos,
-    gatheredUtxos,
+    alkanesUtxos,
+    utxos,
     account,
     protostone,
     provider,
@@ -811,8 +751,8 @@ export const executePsbt = async ({
 }
 
 export const execute = async ({
-  alkaneUtxos,
-  gatheredUtxos,
+  alkanesUtxos,
+  utxos,
   account,
   protostone,
   provider,
@@ -821,8 +761,8 @@ export const execute = async ({
   frontendFee,
   feeAddress,
 }: {
-  alkaneUtxos?: GatheredUtxos
-  gatheredUtxos: GatheredUtxos
+  alkanesUtxos?: FormattedUtxo[]
+  utxos: FormattedUtxo[]
   account: Account
   protostone: Buffer
   provider: Provider
@@ -834,8 +774,8 @@ export const execute = async ({
   const { fee } = await actualExecuteFee({
     frontendFee,
     feeAddress,
-    alkaneUtxos,
-    gatheredUtxos,
+    alkanesUtxos,
+    utxos,
     account,
     protostone,
     provider,
@@ -845,8 +785,8 @@ export const execute = async ({
   const { psbt: finalPsbt } = await createExecutePsbt({
     frontendFee,
     feeAddress,
-    alkaneUtxos,
-    gatheredUtxos,
+    alkanesUtxos,
+    utxos,
     account,
     protostone,
     provider,
@@ -960,3 +900,6 @@ export const createTransactReveal = async ({
     throw new OylTransactionError(error)
   }
 }
+
+export const toTxId = (rawLeTxid: string) =>
+  Buffer.from(rawLeTxid, 'hex').reverse().toString('hex')

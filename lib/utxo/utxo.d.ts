@@ -11,6 +11,10 @@ export interface EsploraUtxo {
     };
     value: number;
 }
+export interface GatheredUtxos {
+    utxos: FormattedUtxo[];
+    totalAmount: number;
+}
 export interface FormattedUtxo {
     txId: string;
     outputIndex: number;
@@ -18,26 +22,34 @@ export interface FormattedUtxo {
     scriptPk: string;
     address: string;
     inscriptions: string[];
+    alkanes: Record<string, AlkanesUtxoEntry>;
     confirmations: number;
+    indexed: boolean;
 }
 export interface AddressUtxoPortfolio {
+    utxos: FormattedUtxo[];
     alkaneUtxos: FormattedUtxo[];
     spendableTotalBalance: number;
     spendableUtxos: FormattedUtxo[];
     runeUtxos: FormattedUtxo[];
     ordUtxos: FormattedUtxo[];
     pendingUtxos: FormattedUtxo[];
-    otherUtxos: FormattedUtxo[];
     pendingTotalBalance: number;
     totalBalance: number;
 }
 export interface AccountUtxoPortfolio {
+    accountUtxos: FormattedUtxo[];
     accountTotalBalance: number;
     accountSpendableTotalUtxos: FormattedUtxo[];
     accountSpendableTotalBalance: number;
     accountPendingTotalBalance: number;
     accounts: Record<AddressKey, AddressUtxoPortfolio>;
 }
+export type AlkanesUtxoEntry = {
+    value: string;
+    name: string;
+    symbol: string;
+};
 export declare const accountBalance: ({ account, provider, }: {
     account: Account;
     provider: Provider;
@@ -64,3 +76,17 @@ export declare const accountUtxos: ({ account, provider, }: {
     provider: Provider;
 }) => Promise<AccountUtxoPortfolio>;
 export declare const selectUtxos: (utxos: FormattedUtxo[], spendStrategy: SpendStrategy) => FormattedUtxo[];
+export declare const selectPaymentUtxos: (utxos: FormattedUtxo[], spendStrategy: SpendStrategy) => GatheredUtxos;
+export declare const selectAlkanesUtxos: ({ utxos, greatestToLeast, alkaneId, targetNumberOfAlkanes, }: {
+    utxos: FormattedUtxo[];
+    greatestToLeast: boolean;
+    alkaneId: {
+        block: string;
+        tx: string;
+    };
+    targetNumberOfAlkanes: number;
+}) => Promise<{
+    utxos: FormattedUtxo[];
+    totalAmount: number;
+    totalBalance: number;
+}>;

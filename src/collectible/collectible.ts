@@ -6,7 +6,8 @@ import { findXAmountOfSats, formatInputsToSign } from '../shared/utils'
 import { OylTransactionError } from '../errors'
 import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
-import { GatheredUtxos, OrdCollectibleData } from '../shared/interface'
+import { OrdCollectibleData } from '../shared/interface'
+import { GatheredUtxos } from '../utxo'
 
 export const createPsbt = async ({
   gatheredUtxos,
@@ -207,15 +208,15 @@ export const findCollectible = async ({
   const outputId = `${inscriptionTxId}:${inscriptionTxVOutIndex}`
   const [inscriptionsOnOutput, isSpentArray] = await Promise.all([
     provider.ord.getTxOutput(outputId),
-    provider.esplora.getTxOutspends(inscriptionTxId)
+    provider.esplora.getTxOutspends(inscriptionTxId),
   ])
   const isSpent = isSpentArray[inscriptionTxVOutIndex]
   //NOTE: The inscriptionsOnOutput.runes array check is only for sandshrew v1
   if (
     inscriptionsOnOutput.inscriptions.length > 1 ||
     Array.isArray(inscriptionsOnOutput.runes)
-    ? Number(inscriptionsOnOutput.runes.length) > 0
-    : Object.keys(inscriptionsOnOutput.runes).length > 0 
+      ? Number(inscriptionsOnOutput.runes.length) > 0
+      : Object.keys(inscriptionsOnOutput.runes).length > 0
   ) {
     throw new Error(
       'Unable to send from UTXO with multiple inscriptions. Split UTXO before sending.'
