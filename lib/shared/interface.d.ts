@@ -133,7 +133,8 @@ export interface MarketplaceOffer {
 export declare enum AssetType {
     BRC20 = 0,
     COLLECTIBLE = 1,
-    RUNES = 2
+    RUNES = 2,
+    ALKANES = 3
 }
 export type OrdCollectibleData = {
     address: string;
