@@ -933,3 +933,6 @@ export const createTransactReveal = async ({
     throw new OylTransactionError(error)
   }
 }
+
+export const toTxId = (rawLeTxid: string) =>
+  Buffer.from(rawLeTxid, 'hex').reverse().toString('hex')

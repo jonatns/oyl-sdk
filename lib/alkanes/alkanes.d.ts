@@ -166,3 +166,4 @@ export declare const createTransactReveal: ({ protostone, receiverAddress, scrip
     psbt: string;
     fee: number;
 }>;
+export declare const toTxId: (rawLeTxid: string) => string;

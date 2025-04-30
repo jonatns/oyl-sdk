@@ -4,6 +4,7 @@ import asyncPool from 'tiny-async-pool'
 import { OrdOutput } from 'rpclient/ord'
 import { getAddressKey } from '../shared/utils'
 import { AlkanesByAddressResponse, AlkanesOutpoint } from '@alkanes/types'
+import { toTxId } from '../alkanes'
 
 export interface EsploraUtxo {
   txid: string
@@ -122,11 +123,10 @@ export const addressBalance = async ({
   }
 }
 
-function mapAlkanesById(
+const mapAlkanesById = (
   outpoints: AlkanesOutpoint[]
-): Record<string, AlkanesUtxoEntry> {
+): Record<string, AlkanesUtxoEntry> => {
   const toBigInt = (hex: string) => BigInt(hex)
-
   return outpoints
     .flatMap(({ runes }) => runes)
     .reduce<Record<string, AlkanesUtxoEntry>>((acc, { rune, balance }) => {
@@ -192,9 +192,7 @@ export const addressUtxos = async ({
   }
 
   alkanesByAddress.outpoints.forEach((alkane) => {
-    alkane.outpoint.txid = Buffer.from(alkane.outpoint.txid, 'hex')
-      .reverse()
-      .toString('hex')
+    alkane.outpoint.txid = toTxId(alkane.outpoint.txid)
   })
 
   const concurrencyLimit = 50
