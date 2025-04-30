@@ -3,7 +3,7 @@ import { Account, AddressKey, SpendStrategy } from '../account'
 import asyncPool from 'tiny-async-pool'
 import { OrdOutput } from 'rpclient/ord'
 import { getAddressKey } from '../shared/utils'
-import { ProtoRunesOutpoint } from '@alkanes/types'
+import { AlkanesByAddressResponse, AlkanesOutpoint } from '@alkanes/types'
 
 export interface EsploraUtxo {
   txid: string
@@ -123,22 +123,23 @@ export const addressBalance = async ({
 }
 
 function mapAlkanesById(
-  outpointAlkanes: ProtoRunesOutpoint[]
+  outpoints: AlkanesOutpoint[]
 ): Record<string, AlkanesUtxoEntry> {
-  return outpointAlkanes.reduce<Record<string, AlkanesUtxoEntry>>(
-    (acc, { token, value }) => {
-      const block = parseInt(token.id.block, 16).toString()
-      const tx = parseInt(token.id.tx, 16).toString()
-      const key = `${block}:${tx}`
+  const toBigInt = (hex: string) => BigInt(hex)
+
+  return outpoints
+    .flatMap(({ runes }) => runes)
+    .reduce<Record<string, AlkanesUtxoEntry>>((acc, { rune, balance }) => {
+      const key = `${toBigInt(rune.id.block)}:${toBigInt(rune.id.tx)}`
+      const previous = acc[key]?.value ? BigInt(acc[key].value) : 0n
       acc[key] = {
-        value: parseInt(value, 16).toString(),
-        name: token.name,
-        symbol: token.symbol,
+        value: (previous + toBigInt(balance)).toString(),
+        name: rune.name,
+        symbol: rune.symbol,
       }
+
       return acc
-    },
-    {}
-  )
+    }, {})
 }
 
 export const addressUtxos = async ({
@@ -158,13 +159,24 @@ export const addressUtxos = async ({
   const ordUtxos: FormattedUtxo[] = []
   const runeUtxos: FormattedUtxo[] = []
   let alkaneUtxos: FormattedUtxo[] = []
+
   const multiCall = await provider.sandshrew.multiCall([
     ['esplora_address::utxo', [address]],
     ['btc_getblockcount', []],
+    [
+      'alkanes_protorunesbyaddress',
+      [
+        {
+          address,
+          protocolTag: '1',
+        },
+      ],
+    ],
   ])
 
+  const utxos = multiCall[0].result as EsploraUtxo[]
   const blockCount = multiCall[1].result
-  let utxos = multiCall[0].result as EsploraUtxo[]
+  const alkanesByAddress = multiCall[2].result as AlkanesByAddressResponse
 
   if (utxos.length === 0) {
     return {
@@ -179,12 +191,18 @@ export const addressUtxos = async ({
     }
   }
 
+  alkanesByAddress.outpoints.forEach((alkane) => {
+    alkane.outpoint.txid = Buffer.from(alkane.outpoint.txid, 'hex')
+      .reverse()
+      .toString('hex')
+  })
+
   const concurrencyLimit = 50
   const processedUtxos: {
     utxo: EsploraUtxo
     txOutput: OrdOutput
     scriptPk: string
-    alkanesByOutpoint: ProtoRunesOutpoint[]
+    alkanesOutpoints: AlkanesOutpoint[]
   }[] = []
 
   const processUtxo = async (utxo: EsploraUtxo) => {
@@ -194,28 +212,21 @@ export const addressUtxos = async ({
       const multiCall = await provider.sandshrew.multiCall([
         ['ord_output', [txIdVout]],
         ['esplora_tx', [utxo.txid]],
-        [
-          'alkanes_protorunesbyoutpoint',
-          [
-            {
-              txid: Buffer.from(utxo.txid, 'hex').reverse().toString('hex'),
-              vout: utxo.vout,
-              protocolTag: '1',
-            },
-            'latest',
-          ],
-        ],
       ])
 
       const txOutput = multiCall[0].result as OrdOutput
       const txDetails = multiCall[1].result
-      const alkanesByOutpoint = multiCall[2].result as ProtoRunesOutpoint[]
+
+      const alkanesOutpoints = alkanesByAddress.outpoints.filter(
+        ({ outpoint }) =>
+          outpoint.txid === utxo.txid && outpoint.vout === utxo.vout
+      )
 
       return {
         utxo,
         txOutput,
         scriptPk: txDetails.vout[utxo.vout].scriptpubkey,
-        alkanesByOutpoint,
+        alkanesOutpoints,
       }
     } catch (error) {
       console.error(`Error processing UTXO ${utxo.txid}:${utxo.vout}`, error)
@@ -237,21 +248,16 @@ export const addressUtxos = async ({
       : a.utxo.value - b.utxo.value
   )
 
-  for (const {
-    utxo,
-    txOutput,
-    scriptPk,
-    alkanesByOutpoint,
-  } of processedUtxos) {
+  for (const { utxo, txOutput, scriptPk, alkanesOutpoints } of processedUtxos) {
     totalBalance += utxo.value
 
     if (txOutput.indexed) {
       const hasInscriptions = txOutput.inscriptions.length > 0
       const hasRunes = Object.keys(txOutput.runes).length > 0
-      const hasAlkanes = alkanesByOutpoint.length > 0
+      const hasAlkanes = alkanesOutpoints.length > 0
       const confirmations = blockCount - utxo.status.block_height
 
-      const alkanesById = mapAlkanesById(alkanesByOutpoint)
+      const alkanesById = mapAlkanesById(alkanesOutpoints)
 
       if (!utxo.status.confirmed) {
         pendingUtxos.push({

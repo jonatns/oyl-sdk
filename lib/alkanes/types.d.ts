@@ -16,10 +16,6 @@ export interface Rune {
     };
     balance: string;
 }
-export interface ProtoRunesOutpoint {
-    token: ProtoRunesToken;
-    value: string;
-}
 export interface ProtoRunesToken {
     id: AlkaneId;
     name: string;
@@ -67,3 +63,6 @@ export interface AlkaneToken {
     percentageMinted: number;
     mintAmount: number;
 }
+export type AlkanesByAddressResponse = {
+    outpoints: AlkanesOutpoint[];
+};
