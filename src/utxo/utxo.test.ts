@@ -32,6 +32,7 @@ const testFormattedUtxos: FormattedUtxo[] = [
     address: 'bc1pklamaklxrdgm7njpudghhq3j7vwxfuak0l7jmrhvluf0cld5etjsga00nj',
     inscriptions: [],
     alkanes: {},
+    indexed: true,
   },
   {
     txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b275',
@@ -43,6 +44,7 @@ const testFormattedUtxos: FormattedUtxo[] = [
     address: 'bc1pklamaklxrdgm7njpudghhq3j7vwxfuak0l7jmrhvluf0cld5etjsga00nj',
     inscriptions: [],
     alkanes: {},
+    indexed: true,
   },
 ]
 
@@ -615,6 +617,7 @@ describe('utxo', () => {
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script1',
+          indexed: true,
         },
         {
           txId: 'tx2',
@@ -625,6 +628,7 @@ describe('utxo', () => {
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script2',
+          indexed: true,
         },
         {
           txId: 'tx3',
@@ -635,6 +639,7 @@ describe('utxo', () => {
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script3',
+          indexed: true,
         },
         {
           txId: 'tx4',
@@ -645,6 +650,7 @@ describe('utxo', () => {
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script4',
+          indexed: true,
         },
       ]
 
@@ -692,6 +698,7 @@ describe('utxo', () => {
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script1',
+          indexed: true,
         },
         {
           txId: 'native_tx2',
@@ -702,6 +709,7 @@ describe('utxo', () => {
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script2',
+          indexed: true,
         },
         // Nested SegWit UTXOs (should be spent second)
         {
@@ -713,6 +721,7 @@ describe('utxo', () => {
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script3',
+          indexed: true,
         },
         {
           txId: 'nested_tx2',
@@ -723,6 +732,7 @@ describe('utxo', () => {
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script4',
+          indexed: true,
         },
         // Taproot UTXOs (should be spent third)
         {
@@ -734,6 +744,7 @@ describe('utxo', () => {
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script5',
+          indexed: true,
         },
         {
           txId: 'taproot_tx2',
@@ -744,6 +755,7 @@ describe('utxo', () => {
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script6',
+          indexed: true,
         },
         // Legacy UTXOs (should be spent last)
         {
@@ -755,6 +767,7 @@ describe('utxo', () => {
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script7',
+          indexed: true,
         },
         {
           txId: 'legacy_tx2',
@@ -765,6 +778,7 @@ describe('utxo', () => {
           alkanes: {},
           confirmations: 1,
           scriptPk: 'mock_script8',
+          indexed: true,
         },
       ]
 

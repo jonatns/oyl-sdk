@@ -5,6 +5,7 @@ import { OrdOutput } from 'rpclient/ord'
 import { getAddressKey } from '../shared/utils'
 import { AlkanesByAddressResponse, AlkanesOutpoint } from '@alkanes/types'
 import { toTxId } from '../alkanes'
+import { OylTransactionError } from '../errors'
 
 export interface EsploraUtxo {
   txid: string
@@ -32,9 +33,11 @@ export interface FormattedUtxo {
   inscriptions: string[]
   alkanes: Record<string, AlkanesUtxoEntry>
   confirmations: number
+  indexed: boolean
 }
 
 export interface AddressUtxoPortfolio {
+  utxos: FormattedUtxo[]
   alkaneUtxos: FormattedUtxo[]
   spendableTotalBalance: number
   spendableUtxos: FormattedUtxo[]
@@ -46,6 +49,7 @@ export interface AddressUtxoPortfolio {
 }
 
 export interface AccountUtxoPortfolio {
+  accountUtxos: FormattedUtxo[]
   accountTotalBalance: number
   accountSpendableTotalUtxos: FormattedUtxo[]
   accountSpendableTotalBalance: number
@@ -154,11 +158,12 @@ export const addressUtxos = async ({
   let spendableTotalBalance: number = 0
   let pendingTotalBalance: number = 0
   let totalBalance: number = 0
+  const utxos: FormattedUtxo[] = []
   const spendableUtxos: FormattedUtxo[] = []
   const pendingUtxos: FormattedUtxo[] = []
   const ordUtxos: FormattedUtxo[] = []
   const runeUtxos: FormattedUtxo[] = []
-  let alkaneUtxos: FormattedUtxo[] = []
+  const alkaneUtxos: FormattedUtxo[] = []
 
   const multiCall = await provider.sandshrew.multiCall([
     ['esplora_address::utxo', [address]],
@@ -174,12 +179,13 @@ export const addressUtxos = async ({
     ],
   ])
 
-  const utxos = multiCall[0].result as EsploraUtxo[]
+  const esploraUtxos = multiCall[0].result as EsploraUtxo[]
   const blockCount = multiCall[1].result
   const alkanesByAddress = multiCall[2].result as AlkanesByAddressResponse
 
-  if (utxos.length === 0) {
+  if (esploraUtxos.length === 0) {
     return {
+      utxos,
       alkaneUtxos,
       spendableTotalBalance,
       spendableUtxos,
@@ -232,7 +238,11 @@ export const addressUtxos = async ({
     }
   }
 
-  for await (const result of asyncPool(concurrencyLimit, utxos, processUtxo)) {
+  for await (const result of asyncPool(
+    concurrencyLimit,
+    esploraUtxos,
+    processUtxo
+  )) {
     if (result !== null) {
       processedUtxos.push(result)
     }
@@ -247,25 +257,38 @@ export const addressUtxos = async ({
   )
 
   for (const { utxo, txOutput, scriptPk, alkanesOutpoints } of processedUtxos) {
+    const hasInscriptions = txOutput.inscriptions.length > 0
+    const hasRunes = Object.keys(txOutput.runes).length > 0
+    const hasAlkanes = alkanesOutpoints.length > 0
+    const confirmations = blockCount - utxo.status.block_height
+    const indexed = txOutput.indexed
+    const inscriptions = txOutput.inscriptions
+    const alkanes = mapAlkanesById(alkanesOutpoints)
+
     totalBalance += utxo.value
+    utxos.push({
+      txId: utxo.txid,
+      outputIndex: utxo.vout,
+      satoshis: utxo.value,
+      address,
+      inscriptions,
+      alkanes,
+      confirmations,
+      indexed,
+      scriptPk,
+    })
 
     if (txOutput.indexed) {
-      const hasInscriptions = txOutput.inscriptions.length > 0
-      const hasRunes = Object.keys(txOutput.runes).length > 0
-      const hasAlkanes = alkanesOutpoints.length > 0
-      const confirmations = blockCount - utxo.status.block_height
-
-      const alkanesById = mapAlkanesById(alkanesOutpoints)
-
       if (!utxo.status.confirmed) {
         pendingUtxos.push({
           txId: utxo.txid,
           outputIndex: utxo.vout,
           satoshis: utxo.value,
-          address: address,
-          inscriptions: txOutput.inscriptions,
-          alkanes: alkanesById,
-          confirmations: 0,
+          address,
+          inscriptions,
+          alkanes,
+          confirmations,
+          indexed,
           scriptPk,
         })
         pendingTotalBalance += utxo.value
@@ -277,10 +300,11 @@ export const addressUtxos = async ({
           txId: utxo.txid,
           outputIndex: utxo.vout,
           satoshis: utxo.value,
-          address: address,
-          inscriptions: txOutput.inscriptions,
-          alkanes: alkanesById,
+          address,
+          inscriptions,
+          alkanes,
           confirmations,
+          indexed,
           scriptPk,
         })
       }
@@ -290,10 +314,11 @@ export const addressUtxos = async ({
           txId: utxo.txid,
           outputIndex: utxo.vout,
           satoshis: utxo.value,
-          address: address,
-          inscriptions: txOutput.inscriptions,
-          alkanes: alkanesById,
+          address,
+          inscriptions,
+          alkanes,
           confirmations,
+          indexed,
           scriptPk,
         })
       }
@@ -302,10 +327,11 @@ export const addressUtxos = async ({
           txId: utxo.txid,
           outputIndex: utxo.vout,
           satoshis: utxo.value,
-          address: address,
-          inscriptions: txOutput.inscriptions,
-          alkanes: alkanesById,
+          address,
+          inscriptions,
+          alkanes,
           confirmations,
+          indexed,
           scriptPk,
         })
       }
@@ -320,10 +346,11 @@ export const addressUtxos = async ({
           txId: utxo.txid,
           outputIndex: utxo.vout,
           satoshis: utxo.value,
-          address: address,
-          inscriptions: txOutput.inscriptions,
-          alkanes: alkanesById,
+          address,
+          inscriptions,
+          alkanes,
           confirmations,
+          indexed,
           scriptPk,
         })
         spendableTotalBalance += utxo.value
@@ -333,6 +360,7 @@ export const addressUtxos = async ({
   }
 
   return {
+    utxos,
     alkaneUtxos,
     spendableTotalBalance,
     spendableUtxos,
@@ -351,7 +379,8 @@ export const accountUtxos = async ({
   account: Account
   provider: Provider
 }): Promise<AccountUtxoPortfolio> => {
-  let accountSpendableTotalUtxos = []
+  const accountUtxos: FormattedUtxo[] = []
+  const accountSpendableTotalUtxos = []
   let accountSpendableTotalBalance = 0
   let accountPendingTotalBalance = 0
   let accountTotalBalance = 0
@@ -366,6 +395,7 @@ export const accountUtxos = async ({
     const address = addresses[i].address
     const addressKey = addresses[i].addressKey
     const {
+      utxos,
       alkaneUtxos,
       spendableTotalBalance,
       spendableUtxos,
@@ -382,9 +412,11 @@ export const accountUtxos = async ({
     accountSpendableTotalBalance += spendableTotalBalance
     accountSpendableTotalUtxos.push(...spendableUtxos)
     accountPendingTotalBalance += pendingTotalBalance
+    accountUtxos.push(...utxos)
     accountTotalBalance += totalBalance
 
     accounts[addressKey] = {
+      utxos,
       alkaneUtxos,
       spendableTotalBalance,
       spendableUtxos,
@@ -396,6 +428,7 @@ export const accountUtxos = async ({
     }
   }
   return {
+    accountUtxos,
     accountTotalBalance,
     accountSpendableTotalUtxos,
     accountSpendableTotalBalance,
@@ -428,4 +461,83 @@ export const selectUtxos = (
         (spendStrategy.utxoSortGreatestToLeast ? a.satoshis : b.satoshis)
     )
   })
+}
+
+export const selectPaymentUtxos = (
+  utxos: FormattedUtxo[],
+  spendStrategy: SpendStrategy
+): GatheredUtxos => {
+  const paymentUtxos = utxos.filter(
+    (u) =>
+      u.indexed &&
+      u.inscriptions.length === 0 &&
+      Object.keys(u.alkanes).length === 0 &&
+      u.satoshis !== 546 &&
+      u.satoshis !== 330
+  )
+
+  const buckets = new Map<string, FormattedUtxo[]>()
+
+  for (const u of paymentUtxos) {
+    const key = getAddressKey(u.address)
+    if (!spendStrategy.addressOrder.includes(key)) continue
+    ;(buckets.get(key) ?? buckets.set(key, []).get(key)!).push(u)
+  }
+
+  const orderedUtxos = spendStrategy.addressOrder.flatMap((key) => {
+    const list = buckets.get(key) ?? []
+    return list.sort((a, b) =>
+      spendStrategy.utxoSortGreatestToLeast
+        ? b.satoshis - a.satoshis
+        : a.satoshis - b.satoshis
+    )
+  })
+
+  const totalAmount = orderedUtxos.reduce(
+    (sum, { satoshis }) => sum + satoshis,
+    0
+  )
+
+  return { utxos: orderedUtxos, totalAmount }
+}
+
+export const selectAlkanesUtxos = async ({
+  utxos,
+  greatestToLeast,
+  alkaneId,
+  targetNumberOfAlkanes,
+}: {
+  utxos: FormattedUtxo[]
+  greatestToLeast: boolean
+  alkaneId: { block: string; tx: string }
+  targetNumberOfAlkanes: number
+}) => {
+  const idKey = `${alkaneId.block}:${alkaneId.tx}`
+  const withBalance = utxos.map((u) => ({
+    utxo: u,
+    balance: Number(u.alkanes[idKey]?.value),
+  }))
+
+  withBalance.sort((a, b) =>
+    greatestToLeast ? b.balance - a.balance : a.balance - b.balance
+  )
+
+  let totalAmount = 0
+  let totalBalance = 0
+  const alkanesUtxos: FormattedUtxo[] = []
+
+  for (const { utxo, balance } of withBalance) {
+    if (totalBalance >= targetNumberOfAlkanes) break
+    if (balance > 0) {
+      alkanesUtxos.push(utxo)
+      totalAmount += utxo.satoshis
+      totalBalance += balance
+    }
+  }
+
+  if (totalBalance < targetNumberOfAlkanes) {
+    throw new OylTransactionError(new Error('Insufficient balance of alkanes.'))
+  }
+
+  return { utxos: alkanesUtxos, totalAmount, totalBalance }
 }

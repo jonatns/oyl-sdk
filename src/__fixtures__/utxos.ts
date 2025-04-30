@@ -11,6 +11,7 @@ export const accountUtxos: FormattedUtxo[] = [
     address: 'bcrt1pklamaklxrdgm7njpudghhq3j7vwxfuak0l7jmrhvluf0cld5etjsga00nj', // Taproot (P2TR)
     inscriptions: [],
     alkanes: {},
+    indexed: true,
   },
   {
     txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b274',
@@ -22,6 +23,7 @@ export const accountUtxos: FormattedUtxo[] = [
     address: 'bcrt1pklamaklxrdgm7njpudghhq3j7vwxfuak0l7jmrhvluf0cld5etjsga00nj', // Taproot (P2TR)
     inscriptions: [],
     alkanes: {},
+    indexed: true,
   },
   {
     txId: '7c34e62d6f9d01e7693f9a722df6c0e74e1b7b0c3e8f6de01b9f6a6b2fd848ac',
@@ -33,6 +35,7 @@ export const accountUtxos: FormattedUtxo[] = [
     address: 'bcrt1qrz9sy68vnqfddkqkq4xh56dd9tj0ldypkqyxhs', // Native SegWit (P2WPKH)
     inscriptions: [],
     alkanes: {},
+    indexed: true,
   },
   {
     txId: '7c34e62d6f9d01e7693f9a722df6c0e74e1b7b0c3e8f6de01b9f6a6b2fd848ac',
@@ -44,6 +47,7 @@ export const accountUtxos: FormattedUtxo[] = [
     address: 'bcrt1qrz9sy68vnqfddkqkq4xh56dd9tj0ldypkqyxhs', // Native SegWit (P2WPKH)
     inscriptions: [],
     alkanes: {},
+    indexed: true,
   },
   {
     txId: '3f5e5b6d2c987645c3e1e3a7cbf048d6a59d7c921d55c8e1d5a96b3f2f60eb6a',
@@ -55,6 +59,7 @@ export const accountUtxos: FormattedUtxo[] = [
     address: '2N3dtsJjqbXWLEK2Np6JePpKHyy5ph6wYPy', // Nested SegWit (P2SH-P2WPKH)
     inscriptions: [],
     alkanes: {},
+    indexed: true,
   },
   {
     txId: '3f5e5b6d2c987645c3e1e3a7cbf048d6a59d7c921d55c8e1d5a96b3f2f60eb6a',
@@ -66,6 +71,7 @@ export const accountUtxos: FormattedUtxo[] = [
     address: '2N3dtsJjqbXWLEK2Np6JePpKHyy5ph6wYPy', // Nested SegWit (P2SH-P2WPKH)
     inscriptions: [],
     alkanes: {},
+    indexed: true,
   },
   {
     txId: '4a8e2b5a2e76df3a5c3e2c4a75b3f0e7b59a7d1c9b1f6f2d1d0e4f1b9c3e7b9a',
@@ -77,6 +83,7 @@ export const accountUtxos: FormattedUtxo[] = [
     address: 'mxbBHPuZmf8Ve5pBgdbwDjLP1cR3mqZZQM', // Legacy (P2PKH)
     inscriptions: [],
     alkanes: {},
+    indexed: true,
   },
   {
     txId: '4a8e2b5a2e76df3a5c3e2c4a75b3f0e7b59a7d1c9b1f6f2d1d0e4f1b9c3e7b9a',
@@ -88,5 +95,6 @@ export const accountUtxos: FormattedUtxo[] = [
     address: 'mxbBHPuZmf8Ve5pBgdbwDjLP1cR3mqZZQM', // Legacy (P2PKH)
     inscriptions: [],
     alkanes: {},
+    indexed: true,
   },
 ]

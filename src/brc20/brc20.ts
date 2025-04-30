@@ -17,7 +17,7 @@ import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
-import { GatheredUtxos } from '@utxo/utxo'
+import { GatheredUtxos } from '../utxo'
 
 export const transferEstimate = async ({
   gatheredUtxos,

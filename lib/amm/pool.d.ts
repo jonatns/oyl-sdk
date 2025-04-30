@@ -1,7 +1,7 @@
 import { Account, Provider, Signer } from '..';
 import { AlkaneId } from '@alkanes/types';
 import { PoolDetailsResult, RemoveLiquidityPreviewResult } from './utils';
-import { GatheredUtxos } from '@utxo/utxo';
+import { FormattedUtxo } from '../utxo';
 export type SwapSimulationResult = {
     amountOut: bigint;
 };
@@ -11,13 +11,13 @@ export declare class AlkanesAMMPoolDecoder {
     decodeName(data: string): string | undefined;
     static decodeSimulation(result: any, opcode: number): any;
 }
-export declare const addLiquidityPsbt: ({ calldata, token0, token0Amount, token1, token1Amount, gatheredUtxos, feeRate, account, provider, }: {
+export declare const addLiquidityPsbt: ({ calldata, token0, token0Amount, token1, token1Amount, utxos, feeRate, account, provider, }: {
     calldata: bigint[];
     token0: AlkaneId;
     token0Amount: bigint;
     token1: AlkaneId;
     token1Amount: bigint;
-    gatheredUtxos: GatheredUtxos;
+    utxos: FormattedUtxo[];
     feeRate: number;
     account: Account;
     provider: Provider;
@@ -25,13 +25,13 @@ export declare const addLiquidityPsbt: ({ calldata, token0, token0Amount, token1
     psbt: string;
     fee: number;
 }>;
-export declare const addLiquidity: ({ calldata, token0, token0Amount, token1, token1Amount, gatheredUtxos, feeRate, account, signer, provider, }: {
+export declare const addLiquidity: ({ calldata, token0, token0Amount, token1, token1Amount, utxos, feeRate, account, signer, provider, }: {
     calldata: bigint[];
     token0: AlkaneId;
     token0Amount: bigint;
     token1: AlkaneId;
     token1Amount: bigint;
-    gatheredUtxos: GatheredUtxos;
+    utxos: FormattedUtxo[];
     feeRate: number;
     account: Account;
     provider: Provider;
@@ -56,11 +56,11 @@ export declare const previewRemoveLiquidity: ({ token, tokenAmount, provider, }:
     tokenAmount: bigint;
     provider: Provider;
 }) => Promise<RemoveLiquidityPreviewResult>;
-export declare const removeLiquidityPsbt: ({ calldata, token, tokenAmount, gatheredUtxos, feeRate, account, provider, }: {
+export declare const removeLiquidityPsbt: ({ calldata, token, tokenAmount, utxos, feeRate, account, provider, }: {
     calldata: bigint[];
     token: AlkaneId;
     tokenAmount: bigint;
-    gatheredUtxos: GatheredUtxos;
+    utxos: FormattedUtxo[];
     feeRate: number;
     account: Account;
     provider: Provider;
@@ -68,11 +68,11 @@ export declare const removeLiquidityPsbt: ({ calldata, token, tokenAmount, gathe
     psbt: string;
     fee: number;
 }>;
-export declare const removeLiquidity: ({ calldata, token, tokenAmount, gatheredUtxos, feeRate, account, signer, provider, }: {
+export declare const removeLiquidity: ({ calldata, token, tokenAmount, utxos, feeRate, account, signer, provider, }: {
     calldata: bigint[];
     token: AlkaneId;
     tokenAmount: bigint;
-    gatheredUtxos: GatheredUtxos;
+    utxos: FormattedUtxo[];
     feeRate: number;
     account: Account;
     provider: Provider;
@@ -85,11 +85,11 @@ export declare const removeLiquidity: ({ calldata, token, tokenAmount, gatheredU
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const swapPsbt: ({ calldata, token, tokenAmount, gatheredUtxos, feeRate, account, provider, frontendFee, feeAddress, }: {
+export declare const swapPsbt: ({ calldata, token, tokenAmount, utxos, feeRate, account, provider, frontendFee, feeAddress, }: {
     calldata: bigint[];
     token: AlkaneId;
     tokenAmount: bigint;
-    gatheredUtxos: GatheredUtxos;
+    utxos: FormattedUtxo[];
     feeRate: number;
     account: Account;
     provider: Provider;
@@ -99,11 +99,11 @@ export declare const swapPsbt: ({ calldata, token, tokenAmount, gatheredUtxos, f
     psbt: string;
     fee: number;
 }>;
-export declare const swap: ({ calldata, token, tokenAmount, gatheredUtxos, feeRate, account, signer, provider, frontendFee, feeAddress, }: {
+export declare const swap: ({ calldata, token, tokenAmount, utxos, feeRate, account, signer, provider, frontendFee, feeAddress, }: {
     calldata: bigint[];
     token: AlkaneId;
     tokenAmount: bigint;
-    gatheredUtxos: GatheredUtxos;
+    utxos: FormattedUtxo[];
     feeRate: number;
     account: Account;
     provider: Provider;

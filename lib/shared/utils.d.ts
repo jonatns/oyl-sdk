@@ -6,7 +6,7 @@ import { SandshrewBitcoinClient } from '../rpclient/sandshrew';
 import { EsploraRpc } from '../rpclient/esplora';
 import { Provider } from '../provider/provider';
 import { AddressKey } from '@account/account';
-import { FormattedUtxo } from '@utxo/utxo';
+import { FormattedUtxo } from '../utxo';
 export interface IBISWalletIx {
     validity: any;
     isBrc: boolean;

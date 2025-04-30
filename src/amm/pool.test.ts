@@ -2,8 +2,8 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { Account, mnemonicToAccount } from '../account/account'
 import { Provider } from '../provider/provider'
 import { swapPsbt, addLiquidityPsbt, removeLiquidityPsbt } from './pool'
-import { FormattedUtxo, GatheredUtxos } from '../utxo/utxo'
-import { findAlkaneUtxos, AlkaneId } from '../alkanes'
+import { FormattedUtxo, selectAlkanesUtxos } from '../utxo/utxo'
+import { AlkaneId } from '../alkanes'
 import { AlkanesAMMPoolDecoder, previewRemoveLiquidity } from './pool'
 import {
   PoolDetailsResult,
@@ -37,32 +37,30 @@ const mockToken1: AlkaneId = {
   tx: '012',
 }
 
-const mockGatheredUtxos: GatheredUtxos = {
-  utxos: [
-    {
-      txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b274',
-      outputIndex: 0,
-      satoshis: 100000,
-      confirmations: 3,
-      scriptPk: account.taproot.pubkey,
-      address: account.taproot.address,
-      inscriptions: [],
-      alkanes: {
-        [`${mockToken0.block}:${mockToken0.tx}`]: {
-          name: 'TestToken0',
-          symbol: 'TT0',
-          value: '100000',
-        },
-        [`${mockToken1.block}:${mockToken1.tx}`]: {
-          name: 'TestToken1',
-          symbol: 'TT1',
-          value: '10000',
-        },
+const mockUtxos: FormattedUtxo[] = [
+  {
+    txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b274',
+    outputIndex: 0,
+    satoshis: 100000,
+    confirmations: 3,
+    scriptPk: account.taproot.pubkey,
+    address: account.taproot.address,
+    inscriptions: [],
+    indexed: true,
+    alkanes: {
+      [`${mockToken0.block}:${mockToken0.tx}`]: {
+        name: 'TestToken0',
+        symbol: 'TT0',
+        value: '100000',
+      },
+      [`${mockToken1.block}:${mockToken1.tx}`]: {
+        name: 'TestToken1',
+        symbol: 'TT1',
+        value: '10000',
       },
     },
-  ],
-  totalAmount: 100000,
-}
+  },
+]
 
 // Mock the external modules
 jest.mock('../alkanes', () => ({
@@ -78,10 +76,7 @@ jest.mock('../alkanes', () => ({
     confirmations: 0,
   }),
   executePsbt: jest.fn().mockImplementation(async (options) => {
-    if (
-      !options.alkaneUtxos?.utxos?.length ||
-      !options.gatheredUtxos?.utxos?.length
-    ) {
+    if (!options?.alkanesUtxos.length || !options?.utxos.length) {
       throw new Error('Insufficient UTXOs')
     }
     return {
@@ -94,6 +89,22 @@ jest.mock('../alkanes', () => ({
     psbtHex: 'mock_psbt_hex',
   })),
 }))
+
+jest.mock('../utxo/utxo', () => ({
+  selectAlkanesUtxos: jest.fn().mockReturnValue({
+    txId: '1234',
+    outputIndex: 0,
+    scriptPk: '',
+    address: '',
+    amountOfAlkanes: '345',
+    satoshis: 546,
+    inscriptions: [],
+    alkanes: {},
+    confirmations: 0,
+    indexed: true,
+  }),
+}))
+
 jest.mock('../rpclient/alkanes')
 jest.mock('../rpclient/esplora')
 
@@ -200,7 +211,7 @@ describe('AMM Pool PSBT Tests', () => {
     jest.clearAllMocks()
 
     // Mock findAlkaneUtxos to return test data
-    ;(findAlkaneUtxos as jest.Mock).mockResolvedValue(mockAlkaneUtxos)
+    ;(selectAlkanesUtxos as jest.Mock).mockResolvedValue(mockAlkaneUtxos)
   })
 
   describe('swapPsbt', () => {
@@ -209,13 +220,13 @@ describe('AMM Pool PSBT Tests', () => {
         calldata: [1n],
         token: { block: '1', tx: '1' },
         tokenAmount: 1000n,
-        gatheredUtxos: mockGatheredUtxos,
+        utxos: mockUtxos,
         feeRate: 1,
         account,
         provider: mockProvider,
       })
 
-      expect(findAlkaneUtxos).toHaveBeenCalled()
+      expect(selectAlkanesUtxos).toHaveBeenCalled()
       expect(result).toHaveProperty('psbt')
     })
 
@@ -224,7 +235,7 @@ describe('AMM Pool PSBT Tests', () => {
         calldata: [1n, 2n, 3n],
         token: mockToken0,
         tokenAmount: 1000n,
-        gatheredUtxos: mockGatheredUtxos,
+        utxos: mockUtxos,
         feeRate: 10,
         account,
         provider,
@@ -242,7 +253,7 @@ describe('AMM Pool PSBT Tests', () => {
           calldata: [1n, 2n, 3n],
           token: mockToken0,
           tokenAmount: 0n,
-          gatheredUtxos: mockGatheredUtxos,
+          utxos: mockUtxos,
           feeRate: 10,
           account,
           provider,
@@ -259,7 +270,7 @@ describe('AMM Pool PSBT Tests', () => {
         token0Amount: 1000n,
         token1: mockToken1,
         token1Amount: 2000n,
-        gatheredUtxos: mockGatheredUtxos,
+        utxos: mockUtxos,
         feeRate: 10,
         account,
         provider,
@@ -277,7 +288,7 @@ describe('AMM Pool PSBT Tests', () => {
           token0Amount: 0n,
           token1: mockToken1,
           token1Amount: 0n,
-          gatheredUtxos: mockGatheredUtxos,
+          utxos: mockUtxos,
           feeRate: 10,
           account,
           provider,
@@ -286,11 +297,6 @@ describe('AMM Pool PSBT Tests', () => {
     })
 
     it('should handle insufficient UTXOs', async () => {
-      const insufficientUtxos = {
-        utxos: [] as FormattedUtxo[],
-        totalAmount: 0,
-      }
-
       await expect(
         addLiquidityPsbt({
           calldata: [1n, 2n, 3n],
@@ -298,7 +304,7 @@ describe('AMM Pool PSBT Tests', () => {
           token0Amount: 1000n,
           token1: mockToken1,
           token1Amount: 2000n,
-          gatheredUtxos: insufficientUtxos,
+          utxos: [],
           feeRate: 10,
           account,
           provider,
@@ -313,7 +319,7 @@ describe('AMM Pool PSBT Tests', () => {
         calldata: [1n, 2n, 3n],
         token: mockToken0,
         tokenAmount: 1000n,
-        gatheredUtxos: mockGatheredUtxos,
+        utxos: mockUtxos,
         feeRate: 10,
         account,
         provider,
@@ -328,7 +334,7 @@ describe('AMM Pool PSBT Tests', () => {
           calldata: [1n, 2n, 3n],
           token: mockToken0,
           tokenAmount: 0n,
-          gatheredUtxos: mockGatheredUtxos,
+          utxos: mockUtxos,
           feeRate: 10,
           account,
           provider,
@@ -347,7 +353,7 @@ describe('AMM Pool PSBT Tests', () => {
           calldata: [1n, 2n, 3n],
           token: mockToken0,
           tokenAmount: 1000n,
-          gatheredUtxos: insufficientUtxos,
+          utxos: [],
           feeRate: 10,
           account,
           provider,
@@ -362,7 +368,7 @@ describe('AMM Pool PSBT Tests', () => {
         calldata: [1n, 2n, 3n],
         token: mockToken0,
         tokenAmount: BigInt(Number.MAX_SAFE_INTEGER),
-        gatheredUtxos: mockGatheredUtxos,
+        utxos: mockUtxos,
         feeRate: 10,
         account,
         provider,
@@ -376,7 +382,7 @@ describe('AMM Pool PSBT Tests', () => {
         calldata: [1n, 2n, 3n],
         token: mockToken0,
         tokenAmount: 1000n,
-        gatheredUtxos: mockGatheredUtxos,
+        utxos: mockUtxos,
         feeRate: 1000,
         account,
         provider,
@@ -390,7 +396,7 @@ describe('AMM Pool PSBT Tests', () => {
         calldata: [],
         token: mockToken0,
         tokenAmount: 1000n,
-        gatheredUtxos: mockGatheredUtxos,
+        utxos: mockUtxos,
         feeRate: 10,
         account,
         provider,

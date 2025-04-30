@@ -22,7 +22,7 @@ import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import { encodeRunestone } from '@magiceden-oss/runestone-lib'
 import { OrdOutput } from 'rpclient/ord'
 import { rune } from 'index'
-import { GatheredUtxos } from '@utxo/utxo'
+import { GatheredUtxos } from '../utxo'
 
 interface OrdOutputs {
   result: OrdOutput

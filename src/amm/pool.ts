@@ -1,8 +1,7 @@
 import { encipher } from 'alkanes/lib/bytes'
 import { encodeRunestoneProtostone } from 'alkanes/lib/protorune/proto_runestone_upgrade'
 import { ProtoStone } from 'alkanes/lib/protorune/protostone'
-import { Account, alkanes, Provider, Signer } from '..'
-import { findAlkaneUtxos } from '../alkanes'
+import { Account, alkanes, OylTransactionError, Provider, Signer } from '..'
 import { AlkaneId } from '@alkanes/types'
 import { u128, u32 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
@@ -14,7 +13,7 @@ import {
   PoolOpcodes,
   estimateRemoveLiquidityAmounts,
 } from './utils'
-import { GatheredUtxos } from '@utxo/utxo'
+import { FormattedUtxo, GatheredUtxos, selectAlkanesUtxos } from '../utxo'
 
 export type SwapSimulationResult = {
   amountOut: bigint
@@ -95,7 +94,7 @@ export const addLiquidityPsbt = async ({
   token0Amount,
   token1,
   token1Amount,
-  gatheredUtxos,
+  utxos,
   feeRate,
   account,
   provider,
@@ -105,19 +104,21 @@ export const addLiquidityPsbt = async ({
   token0Amount: bigint
   token1: AlkaneId
   token1Amount: bigint
-  gatheredUtxos: GatheredUtxos
+  utxos: FormattedUtxo[]
   feeRate: number
   account: Account
   provider: Provider
 }) => {
+  if (token0Amount <= 0n || token1Amount <= 0n) {
+    throw new OylTransactionError(Error('Cannot process zero tokens'))
+  }
+
   const tokens = [
     { alkaneId: token0, amount: token0Amount },
     { alkaneId: token1, amount: token1Amount },
   ]
-  const { edicts, utxos, totalAmount } = await splitAlkaneUtxos(
-    tokens,
-    gatheredUtxos
-  )
+
+  const { edicts, utxos: alkanesUtxos } = await splitAlkaneUtxos(tokens, utxos)
 
   const protostone: Buffer = encodeRunestoneProtostone({
     protostones: [
@@ -138,9 +139,9 @@ export const addLiquidityPsbt = async ({
   }).encodedRunestone
 
   const { psbt, fee } = await alkanes.executePsbt({
-    alkaneUtxos: { utxos, totalAmount },
+    utxos,
+    alkanesUtxos,
     protostone,
-    gatheredUtxos,
     feeRate,
     account,
     provider,
@@ -155,7 +156,7 @@ export const addLiquidity = async ({
   token0Amount,
   token1,
   token1Amount,
-  gatheredUtxos,
+  utxos,
   feeRate,
   account,
   signer,
@@ -166,7 +167,7 @@ export const addLiquidity = async ({
   token0Amount: bigint
   token1: AlkaneId
   token1Amount: bigint
-  gatheredUtxos: GatheredUtxos
+  utxos: FormattedUtxo[]
   feeRate: number
   account: Account
   provider: Provider
@@ -178,7 +179,7 @@ export const addLiquidity = async ({
     token0Amount,
     token1,
     token1Amount,
-    gatheredUtxos,
+    utxos,
     feeRate,
     account,
     provider,
@@ -232,7 +233,7 @@ export const removeLiquidityPsbt = async ({
   calldata,
   token,
   tokenAmount,
-  gatheredUtxos,
+  utxos,
   feeRate,
   account,
   provider,
@@ -240,7 +241,7 @@ export const removeLiquidityPsbt = async ({
   calldata: bigint[]
   token: AlkaneId
   tokenAmount: bigint
-  gatheredUtxos: GatheredUtxos
+  utxos: FormattedUtxo[]
   feeRate: number
   account: Account
   provider: Provider
@@ -250,8 +251,8 @@ export const removeLiquidityPsbt = async ({
   }
 
   const tokenUtxos = await Promise.all([
-    findAlkaneUtxos({
-      gatheredUtxos,
+    selectAlkanesUtxos({
+      utxos,
       greatestToLeast: false,
       targetNumberOfAlkanes: Number(tokenAmount),
       alkaneId: token,
@@ -287,15 +288,10 @@ export const removeLiquidityPsbt = async ({
     ],
   }).encodedRunestone
 
-  const alkaneTokenUtxos: GatheredUtxos = {
-    utxos: tokenUtxos[0].utxos,
-    totalAmount: tokenUtxos[0].totalAmount,
-  }
-
   const { psbt, fee } = await alkanes.executePsbt({
-    alkaneUtxos: alkaneTokenUtxos,
+    alkanesUtxos: tokenUtxos[0].utxos,
     protostone,
-    gatheredUtxos,
+    utxos,
     feeRate,
     account,
     provider,
@@ -308,7 +304,7 @@ export const removeLiquidity = async ({
   calldata,
   token,
   tokenAmount,
-  gatheredUtxos,
+  utxos,
   feeRate,
   account,
   signer,
@@ -317,7 +313,7 @@ export const removeLiquidity = async ({
   calldata: bigint[]
   token: AlkaneId
   tokenAmount: bigint
-  gatheredUtxos: GatheredUtxos
+  utxos: FormattedUtxo[]
   feeRate: number
   account: Account
   provider: Provider
@@ -327,7 +323,7 @@ export const removeLiquidity = async ({
     calldata,
     token,
     tokenAmount,
-    gatheredUtxos,
+    utxos,
     feeRate,
     account,
     provider,
@@ -349,7 +345,7 @@ export const swapPsbt = async ({
   calldata,
   token,
   tokenAmount,
-  gatheredUtxos,
+  utxos,
   feeRate,
   account,
   provider,
@@ -359,7 +355,7 @@ export const swapPsbt = async ({
   calldata: bigint[]
   token: AlkaneId
   tokenAmount: bigint
-  gatheredUtxos: GatheredUtxos
+  utxos: FormattedUtxo[]
   feeRate: number
   account: Account
   provider: Provider
@@ -371,18 +367,13 @@ export const swapPsbt = async ({
   }
 
   const tokenUtxos = await Promise.all([
-    findAlkaneUtxos({
-      gatheredUtxos,
+    selectAlkanesUtxos({
+      utxos,
       greatestToLeast: false,
       targetNumberOfAlkanes: Number(tokenAmount),
       alkaneId: token,
     }),
   ])
-
-  const alkaneUtxos: GatheredUtxos = {
-    utxos: tokenUtxos[0].utxos,
-    totalAmount: tokenUtxos[0].totalAmount,
-  }
 
   const edicts: ProtoruneEdict[] = [
     {
@@ -414,9 +405,9 @@ export const swapPsbt = async ({
   }).encodedRunestone
 
   const psbtOptions = {
-    alkaneUtxos,
+    alkanesUtxos: tokenUtxos[0].utxos,
     protostone,
-    gatheredUtxos,
+    utxos,
     feeRate,
     account,
     provider,
@@ -438,7 +429,7 @@ export const swap = async ({
   calldata,
   token,
   tokenAmount,
-  gatheredUtxos,
+  utxos,
   feeRate,
   account,
   signer,
@@ -449,7 +440,7 @@ export const swap = async ({
   calldata: bigint[]
   token: AlkaneId
   tokenAmount: bigint
-  gatheredUtxos: GatheredUtxos
+  utxos: FormattedUtxo[]
   feeRate: number
   account: Account
   provider: Provider
@@ -461,7 +452,7 @@ export const swap = async ({
     calldata,
     token,
     tokenAmount,
-    gatheredUtxos,
+    utxos,
     feeRate,
     account,
     provider,

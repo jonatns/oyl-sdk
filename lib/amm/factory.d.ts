@@ -3,7 +3,7 @@
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict';
 import { Account, Provider, Signer } from '..';
 import { PoolDetailsResult } from './utils';
-import { GatheredUtxos } from '@utxo/utxo';
+import { FormattedUtxo } from '../utxo';
 import { AlkaneId } from '@alkanes/types';
 export type CreateNewPoolSimulationResult = {
     lpTokens: string;
@@ -37,13 +37,13 @@ export declare class AlkanesAMMPoolFactoryDecoder {
     static decodeSimulation(result: any, opcode: number): any;
 }
 export declare const getPoolId: () => Promise<void>;
-export declare const createNewPoolPsbt: ({ calldata, token0, token0Amount, token1, token1Amount, gatheredUtxos, feeRate, account, provider, }: {
+export declare const createNewPoolPsbt: ({ calldata, token0, token0Amount, token1, token1Amount, utxos, feeRate, account, provider, }: {
     calldata: bigint[];
     token0: AlkaneId;
     token0Amount: bigint;
     token1: AlkaneId;
     token1Amount: bigint;
-    gatheredUtxos: GatheredUtxos;
+    utxos: FormattedUtxo[];
     feeRate: number;
     account: Account;
     provider: Provider;
@@ -51,13 +51,13 @@ export declare const createNewPoolPsbt: ({ calldata, token0, token0Amount, token
     psbt: string;
     fee: number;
 }>;
-export declare const createNewPool: ({ calldata, token0, token0Amount, token1, token1Amount, gatheredUtxos, feeRate, account, signer, provider, }: {
+export declare const createNewPool: ({ calldata, token0, token0Amount, token1, token1Amount, utxos, feeRate, account, signer, provider, }: {
     calldata: bigint[];
     token0: AlkaneId;
     token0Amount: bigint;
     token1: AlkaneId;
     token1Amount: bigint;
-    gatheredUtxos: GatheredUtxos;
+    utxos: FormattedUtxo[];
     feeRate: number;
     account: Account;
     provider: Provider;
@@ -73,15 +73,15 @@ export declare const createNewPool: ({ calldata, token0, token0Amount, token1, t
 export declare const splitAlkaneUtxos: (tokens: {
     alkaneId: AlkaneId;
     amount: bigint;
-}[], gatheredUtxos: GatheredUtxos) => Promise<{
+}[], utxos: FormattedUtxo[]) => Promise<{
     protostone: Buffer;
     edicts: ProtoruneEdict[];
-    utxos: import("@utxo/utxo").FormattedUtxo[];
+    utxos: FormattedUtxo[];
     totalAmount: number;
 }>;
-export declare const poolPsbt: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, fee, }: {
-    alkaneUtxos?: GatheredUtxos;
-    gatheredUtxos: GatheredUtxos;
+export declare const poolPsbt: ({ alkanesUtxos, utxos, account, protostone, provider, feeRate, fee, }: {
+    alkanesUtxos?: FormattedUtxo[];
+    utxos: FormattedUtxo[];
     account: Account;
     protostone: Buffer;
     provider: Provider;

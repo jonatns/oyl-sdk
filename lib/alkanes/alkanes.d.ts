@@ -4,7 +4,7 @@ import { Provider } from '../provider/provider';
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict';
 import { Account, Signer } from '..';
 import { AlkanesPayload } from '../shared/interface';
-import type { FormattedUtxo, GatheredUtxos } from '@utxo/utxo';
+import { type FormattedUtxo } from '../utxo';
 export interface ProtostoneMessage {
     protocolTag?: bigint;
     edicts?: ProtoruneEdict[];
@@ -13,11 +13,11 @@ export interface ProtostoneMessage {
     calldata: bigint[];
 }
 export declare const encodeProtostone: ({ protocolTag, edicts, pointer, refundPointer, calldata, }: ProtostoneMessage) => Buffer;
-export declare const createExecutePsbt: ({ frontendFee, feeAddress, alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, fee, }: {
+export declare const createExecutePsbt: ({ frontendFee, feeAddress, alkanesUtxos, utxos, account, protostone, provider, feeRate, fee, }: {
     frontendFee?: bigint;
     feeAddress?: string;
-    alkaneUtxos?: GatheredUtxos;
-    gatheredUtxos: GatheredUtxos;
+    alkanesUtxos?: FormattedUtxo[];
+    utxos: FormattedUtxo[];
     account: Account;
     protostone: Buffer;
     provider: Provider;
@@ -27,9 +27,9 @@ export declare const createExecutePsbt: ({ frontendFee, feeAddress, alkaneUtxos,
     psbt: string;
     psbtHex: string;
 }>;
-export declare const createDeployCommitPsbt: ({ payload, gatheredUtxos, tweakedPublicKey, account, provider, feeRate, fee, }: {
+export declare const createDeployCommitPsbt: ({ payload, utxos, tweakedPublicKey, account, provider, feeRate, fee, }: {
     payload: AlkanesPayload;
-    gatheredUtxos: GatheredUtxos;
+    utxos: FormattedUtxo[];
     tweakedPublicKey: string;
     account: Account;
     provider: Provider;
@@ -39,9 +39,9 @@ export declare const createDeployCommitPsbt: ({ payload, gatheredUtxos, tweakedP
     psbt: string;
     script: Buffer;
 }>;
-export declare const deployCommit: ({ payload, gatheredUtxos, account, provider, feeRate, signer, }: {
+export declare const deployCommit: ({ payload, utxos, account, provider, feeRate, signer, }: {
     payload: AlkanesPayload;
-    gatheredUtxos: GatheredUtxos;
+    utxos: FormattedUtxo[];
     account: Account;
     provider: Provider;
     feeRate?: number;
@@ -84,19 +84,6 @@ export declare const deployReveal: ({ protostone, commitTxId, script, account, p
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const findAlkaneUtxos: ({ gatheredUtxos, greatestToLeast, alkaneId, targetNumberOfAlkanes, }: {
-    gatheredUtxos: GatheredUtxos;
-    greatestToLeast: boolean;
-    alkaneId: {
-        block: string;
-        tx: string;
-    };
-    targetNumberOfAlkanes: number;
-}) => Promise<{
-    utxos: FormattedUtxo[];
-    totalAmount: number;
-    totalBalance: number;
-}>;
 export declare const actualTransactRevealFee: ({ protostone, tweakedPublicKey, commitTxId, receiverAddress, script, provider, feeRate, }: {
     protostone: Buffer;
     tweakedPublicKey: string;
@@ -109,22 +96,22 @@ export declare const actualTransactRevealFee: ({ protostone, tweakedPublicKey, c
     fee: number;
     vsize: number;
 }>;
-export declare const actualExecuteFee: ({ gatheredUtxos, account, protostone, provider, feeRate, alkaneUtxos, frontendFee, feeAddress, }: {
-    gatheredUtxos: GatheredUtxos;
+export declare const actualExecuteFee: ({ utxos, account, protostone, provider, feeRate, alkanesUtxos, frontendFee, feeAddress, }: {
+    utxos: FormattedUtxo[];
     account: Account;
     protostone: Buffer;
     provider: Provider;
     feeRate: number;
-    alkaneUtxos?: GatheredUtxos;
+    alkanesUtxos?: FormattedUtxo[];
     frontendFee?: bigint;
     feeAddress?: string;
 }) => Promise<{
     fee: number;
     vsize: number;
 }>;
-export declare const executePsbt: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, frontendFee, feeAddress, }: {
-    alkaneUtxos?: GatheredUtxos;
-    gatheredUtxos: GatheredUtxos;
+export declare const executePsbt: ({ alkanesUtxos, utxos, account, protostone, provider, feeRate, frontendFee, feeAddress, }: {
+    alkanesUtxos?: FormattedUtxo[];
+    utxos: FormattedUtxo[];
     account: Account;
     protostone: Buffer;
     provider: Provider;
@@ -135,9 +122,9 @@ export declare const executePsbt: ({ alkaneUtxos, gatheredUtxos, account, protos
     psbt: string;
     fee: number;
 }>;
-export declare const execute: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, signer, frontendFee, feeAddress, }: {
-    alkaneUtxos?: GatheredUtxos;
-    gatheredUtxos: GatheredUtxos;
+export declare const execute: ({ alkanesUtxos, utxos, account, protostone, provider, feeRate, signer, frontendFee, feeAddress, }: {
+    alkanesUtxos?: FormattedUtxo[];
+    utxos: FormattedUtxo[];
     account: Account;
     protostone: Buffer;
     provider: Provider;

@@ -21,7 +21,7 @@ import { addressFormats } from '@sadoprotocol/ordit-sdk'
 import { encodeRunestone, RunestoneSpec } from '@magiceden-oss/runestone-lib'
 import { AddressKey } from '@account/account'
 import * as CBOR from 'cbor-x'
-import { FormattedUtxo } from '@utxo/utxo'
+import { FormattedUtxo } from '../utxo'
 
 bitcoin.initEccLib(ecc)
 

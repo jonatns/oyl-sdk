@@ -39,6 +39,7 @@ const testFormattedUtxos: GatheredUtxos = {
       address: account.nativeSegwit.address,
       inscriptions: [],
       alkanes: {},
+      indexed: true,
     },
     {
       txId: '72e22e25fa587c01cbd0a86a5727090c9cdf12e47126c99e35b24185c395b275',
@@ -49,6 +50,7 @@ const testFormattedUtxos: GatheredUtxos = {
       address: account.nativeSegwit.address,
       inscriptions: [],
       alkanes: {},
+      indexed: true,
     },
   ],
   totalAmount: 200000,

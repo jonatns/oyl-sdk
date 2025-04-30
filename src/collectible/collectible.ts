@@ -7,7 +7,7 @@ import { OylTransactionError } from '../errors'
 import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
 import { OrdCollectibleData } from '../shared/interface'
-import { GatheredUtxos } from '@utxo/utxo'
+import { GatheredUtxos } from '../utxo'
 
 export const createPsbt = async ({
   gatheredUtxos,

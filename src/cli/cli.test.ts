@@ -364,10 +364,12 @@ describe('CLI Integration Tests', () => {
       inscriptions: [],
       alkanes: {},
       confirmations: 1,
+      indexed: true,
     }
 
     // Mock utxo module functions
     jest.spyOn(utxo, 'accountUtxos').mockResolvedValue({
+      accountUtxos: [mockUtxo],
       accountTotalBalance: 1000000,
       accountSpendableTotalUtxos: [mockUtxo],
       accountSpendableTotalBalance: 1000000,
@@ -382,6 +384,7 @@ describe('CLI Integration Tests', () => {
           pendingUtxos: [],
           pendingTotalBalance: 0,
           totalBalance: 1000000,
+          utxos: [mockUtxo],
         },
         nativeSegwit: {
           alkaneUtxos: [],
@@ -392,6 +395,7 @@ describe('CLI Integration Tests', () => {
           pendingUtxos: [],
           pendingTotalBalance: 0,
           totalBalance: 0,
+          utxos: [],
         },
         nestedSegwit: {
           alkaneUtxos: [],
@@ -402,6 +406,7 @@ describe('CLI Integration Tests', () => {
           pendingUtxos: [],
           pendingTotalBalance: 0,
           totalBalance: 0,
+          utxos: [],
         },
         legacy: {
           alkaneUtxos: [],
@@ -412,6 +417,7 @@ describe('CLI Integration Tests', () => {
           pendingUtxos: [],
           pendingTotalBalance: 0,
           totalBalance: 0,
+          utxos: [],
         },
       },
     })
@@ -445,9 +451,11 @@ describe('CLI Integration Tests', () => {
         inscriptions: [],
         alkanes: {},
         confirmations: 1,
+        indexed: true,
       }
 
       jest.spyOn(utxo, 'accountUtxos').mockResolvedValue({
+        accountUtxos: [mockUtxo],
         accountTotalBalance: 1000000,
         accountSpendableTotalUtxos: [mockUtxo],
         accountSpendableTotalBalance: 1000000,
@@ -462,6 +470,7 @@ describe('CLI Integration Tests', () => {
             pendingUtxos: [],
             pendingTotalBalance: 0,
             totalBalance: 1000000,
+            utxos: [mockUtxo],
           },
           nativeSegwit: {
             alkaneUtxos: [],
@@ -472,6 +481,7 @@ describe('CLI Integration Tests', () => {
             pendingUtxos: [],
             pendingTotalBalance: 0,
             totalBalance: 0,
+            utxos: [],
           },
           nestedSegwit: {
             alkaneUtxos: [],
@@ -482,6 +492,7 @@ describe('CLI Integration Tests', () => {
             pendingUtxos: [],
             pendingTotalBalance: 0,
             totalBalance: 0,
+            utxos: [],
           },
           legacy: {
             alkaneUtxos: [],
@@ -492,6 +503,7 @@ describe('CLI Integration Tests', () => {
             pendingUtxos: [],
             pendingTotalBalance: 0,
             totalBalance: 0,
+            utxos: [],
           },
         },
       })
@@ -539,10 +551,12 @@ describe('CLI Integration Tests', () => {
       inscriptions: [],
       alkanes: {},
       confirmations: 1,
+      indexed: true,
     }
 
     beforeEach(() => {
       jest.spyOn(utxo, 'accountUtxos').mockResolvedValue({
+        accountUtxos: [mockUtxo],
         accountTotalBalance: 1000000,
         accountSpendableTotalUtxos: [mockUtxo],
         accountSpendableTotalBalance: 1000000,
@@ -557,6 +571,7 @@ describe('CLI Integration Tests', () => {
             pendingUtxos: [],
             pendingTotalBalance: 0,
             totalBalance: 1000000,
+            utxos: [mockUtxo],
           },
           nativeSegwit: {
             alkaneUtxos: [],
@@ -567,6 +582,7 @@ describe('CLI Integration Tests', () => {
             pendingUtxos: [],
             pendingTotalBalance: 0,
             totalBalance: 0,
+            utxos: [],
           },
           nestedSegwit: {
             alkaneUtxos: [],
@@ -577,6 +593,7 @@ describe('CLI Integration Tests', () => {
             pendingUtxos: [],
             pendingTotalBalance: 0,
             totalBalance: 0,
+            utxos: [],
           },
           legacy: {
             alkaneUtxos: [],
@@ -587,6 +604,7 @@ describe('CLI Integration Tests', () => {
             pendingUtxos: [],
             pendingTotalBalance: 0,
             totalBalance: 0,
+            utxos: [],
           },
         },
       })
@@ -626,10 +644,7 @@ describe('CLI Integration Tests', () => {
 
       // Mock contract deployment directly
       await alkanes.executePsbt({
-        gatheredUtxos: {
-          utxos: [mockUtxo],
-          totalAmount: 1000000,
-        },
+        utxos: [mockUtxo],
         account: testAccount,
         provider,
         protostone: Buffer.from('mock_protostone'),
@@ -692,10 +707,7 @@ describe('CLI Integration Tests', () => {
 
       // Mock token deployment directly
       await alkanes.executePsbt({
-        gatheredUtxos: {
-          utxos: [mockUtxo],
-          totalAmount: 1000000,
-        },
+        utxos: [mockUtxo],
         account: testAccount,
         provider,
         protostone: Buffer.from('mock_protostone'),
@@ -770,7 +782,7 @@ describe('CLI Integration Tests', () => {
 
       await expect(
         alkanes.executePsbt({
-          gatheredUtxos: { utxos: [], totalAmount: 0 },
+          utxos: [],
           account: testAccount,
           provider,
           protostone: Buffer.from([]),
@@ -789,7 +801,7 @@ describe('CLI Integration Tests', () => {
 
       await expect(
         alkanes.executePsbt({
-          gatheredUtxos: { utxos: [], totalAmount: 0 },
+          utxos: [],
           account: testAccount,
           provider,
           protostone: Buffer.from([]),
@@ -805,7 +817,7 @@ describe('CLI Integration Tests', () => {
 
       await expect(
         alkanes.executePsbt({
-          gatheredUtxos: { utxos: [], totalAmount: 0 },
+          utxos: [],
           account: testAccount,
           provider,
           protostone: Buffer.from([]),

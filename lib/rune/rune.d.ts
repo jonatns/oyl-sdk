@@ -5,7 +5,7 @@ import * as bitcoin from 'bitcoinjs-lib';
 import { Account } from '../account/account';
 import { RuneUTXO } from '../shared/interface';
 import { Signer } from '../signer';
-import { GatheredUtxos } from '@utxo/utxo';
+import { GatheredUtxos } from '../utxo';
 interface SingleRuneOutpoint {
     output: string;
     wallet_addr: string;

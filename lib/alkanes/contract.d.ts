@@ -2,10 +2,10 @@
 /// <reference types="node" />
 import { Account, Signer, Provider } from '..';
 import { AlkanesPayload } from '../shared/interface';
-import { GatheredUtxos } from '@utxo/utxo';
-export declare const contractDeployment: ({ payload, gatheredUtxos, account, protostone, provider, feeRate, signer, }: {
+import { FormattedUtxo } from '../utxo';
+export declare const contractDeployment: ({ payload, utxos, account, protostone, provider, feeRate, signer, }: {
     payload: AlkanesPayload;
-    gatheredUtxos: GatheredUtxos;
+    utxos: FormattedUtxo[];
     account: Account;
     protostone: Buffer;
     provider: Provider;
@@ -20,10 +20,10 @@ export declare const contractDeployment: ({ payload, gatheredUtxos, account, pro
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const actualDeployCommitFee: ({ payload, tweakedPublicKey, gatheredUtxos, account, provider, feeRate, }: {
+export declare const actualDeployCommitFee: ({ payload, tweakedPublicKey, utxos, account, provider, feeRate, }: {
     payload: AlkanesPayload;
     tweakedPublicKey: string;
-    gatheredUtxos: GatheredUtxos;
+    utxos: FormattedUtxo[];
     account: Account;
     provider: Provider;
     feeRate?: number;

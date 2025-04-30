@@ -92,11 +92,10 @@ export const alkaneContractDeploy = new AlkanesCommand('new-contract')
 
   .action(async (options) => {
     const wallet: Wallet = new Wallet(options)
-    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
-      await utxo.accountUtxos({
-        account: wallet.account,
-        provider: wallet.provider,
-      })
+    const { accountUtxos } = await utxo.accountUtxos({
+      account: wallet.account,
+      provider: wallet.provider,
+    })
 
     const contract = new Uint8Array(
       Array.from(
@@ -132,10 +131,7 @@ export const alkaneContractDeploy = new AlkanesCommand('new-contract')
       await contractDeployment({
         protostone,
         payload,
-        gatheredUtxos: {
-          utxos: accountSpendableTotalUtxos,
-          totalAmount: accountSpendableTotalBalance,
-        },
+        utxos: accountUtxos,
         feeRate: wallet.feeRate,
         account: wallet.account,
         signer: wallet.signer,
@@ -182,11 +178,10 @@ export const alkaneTokenDeploy = new AlkanesCommand('new-token')
   .action(async (options) => {
     const wallet: Wallet = new Wallet(options)
 
-    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
-      await utxo.accountUtxos({
-        account: wallet.account,
-        provider: wallet.provider,
-      })
+    const { accountUtxos } = await utxo.accountUtxos({
+      account: wallet.account,
+      provider: wallet.provider,
+    })
     const tokenName = packUTF8(options.tokenName)
     const tokenSymbol = packUTF8(options.tokenSymbol)
 
@@ -240,10 +235,7 @@ export const alkaneTokenDeploy = new AlkanesCommand('new-token')
         await tokenDeployment({
           payload,
           protostone,
-          gatheredUtxos: {
-            utxos: accountSpendableTotalUtxos,
-            totalAmount: accountSpendableTotalBalance,
-          },
+          utxos: accountUtxos,
           feeRate: wallet.feeRate,
           account: wallet.account,
           signer: wallet.signer,
@@ -256,10 +248,7 @@ export const alkaneTokenDeploy = new AlkanesCommand('new-token')
     console.log(
       await alkanes.execute({
         protostone,
-        gatheredUtxos: {
-          utxos: accountSpendableTotalUtxos,
-          totalAmount: accountSpendableTotalBalance,
-        },
+        utxos: accountUtxos,
         feeRate: wallet.feeRate,
         account: wallet.account,
         signer: wallet.signer,
@@ -310,11 +299,10 @@ export const alkaneExecute = new AlkanesCommand('execute')
   .action(async (options) => {
     const wallet: Wallet = new Wallet(options)
 
-    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
-      await utxo.accountUtxos({
-        account: wallet.account,
-        provider: wallet.provider,
-      })
+    const { accountUtxos } = await utxo.accountUtxos({
+      account: wallet.account,
+      provider: wallet.provider,
+    })
     const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
 
     const edicts: ProtoruneEdict[] = options.edicts.map((item) => {
@@ -342,10 +330,7 @@ export const alkaneExecute = new AlkanesCommand('execute')
     console.log(
       await alkanes.execute({
         protostone,
-        gatheredUtxos: {
-          utxos: accountSpendableTotalUtxos,
-          totalAmount: accountSpendableTotalBalance,
-        },
+        utxos: accountUtxos,
         feeRate: wallet.feeRate,
         account: wallet.account,
         signer: wallet.signer,
@@ -380,11 +365,10 @@ export const alkaneRemoveLiquidity = new AlkanesCommand('remove-liquidity')
   .action(async (options) => {
     const wallet: Wallet = new Wallet(options)
 
-    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
-      await utxo.accountUtxos({
-        account: wallet.account,
-        provider: wallet.provider,
-      })
+    const { accountUtxos } = await utxo.accountUtxos({
+      account: wallet.account,
+      provider: wallet.provider,
+    })
 
     const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
 
@@ -393,10 +377,7 @@ export const alkaneRemoveLiquidity = new AlkanesCommand('remove-liquidity')
         calldata,
         token: { block: options.block, tx: options.txNum },
         tokenAmount: BigInt(options.amount),
-        gatheredUtxos: {
-          utxos: accountSpendableTotalUtxos,
-          totalAmount: accountSpendableTotalBalance,
-        },
+        utxos: accountUtxos,
         feeRate: wallet.feeRate,
         account: wallet.account,
         signer: wallet.signer,
@@ -431,11 +412,10 @@ export const alkaneSwap = new AlkanesCommand('swap')
   .action(async (options) => {
     const wallet: Wallet = new Wallet(options)
 
-    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
-      await utxo.accountUtxos({
-        account: wallet.account,
-        provider: wallet.provider,
-      })
+    const { accountUtxos } = await utxo.accountUtxos({
+      account: wallet.account,
+      provider: wallet.provider,
+    })
 
     const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
 
@@ -444,10 +424,7 @@ export const alkaneSwap = new AlkanesCommand('swap')
         calldata,
         token: { block: options.block, tx: options.txNum },
         tokenAmount: BigInt(options.amount),
-        gatheredUtxos: {
-          utxos: accountSpendableTotalUtxos,
-          totalAmount: accountSpendableTotalBalance,
-        },
+        utxos: accountUtxos,
         feeRate: wallet.feeRate,
         account: wallet.account,
         signer: wallet.signer,
@@ -478,21 +455,17 @@ export const alkaneSend = new AlkanesCommand('send')
   .action(async (options) => {
     const wallet: Wallet = new Wallet(options)
 
-    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
-      await utxo.accountUtxos({
-        account: wallet.account,
-        provider: wallet.provider,
-      })
+    const { accountUtxos } = await utxo.accountUtxos({
+      account: wallet.account,
+      provider: wallet.provider,
+    })
 
     console.log(
       await send({
+        utxos: accountUtxos,
         alkaneId: { block: options.block, tx: options.txNum },
         toAddress: options.to,
         amount: Number(options.amount),
-        gatheredUtxos: {
-          utxos: accountSpendableTotalUtxos,
-          totalAmount: accountSpendableTotalBalance,
-        },
         account: wallet.account,
         signer: wallet.signer,
         provider: wallet.provider,
@@ -537,11 +510,10 @@ export const alkaneCreatePool = new AlkanesCommand('create-pool')
   .action(async (options) => {
     const wallet: Wallet = new Wallet(options)
 
-    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
-      await utxo.accountUtxos({
-        account: wallet.account,
-        provider: wallet.provider,
-      })
+    const { accountUtxos } = await utxo.accountUtxos({
+      account: wallet.account,
+      provider: wallet.provider,
+    })
 
     const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
 
@@ -560,10 +532,7 @@ export const alkaneCreatePool = new AlkanesCommand('create-pool')
         token0Amount: alkaneTokensToPool[0].amount,
         token1: alkaneTokensToPool[1].alkaneId,
         token1Amount: alkaneTokensToPool[1].amount,
-        gatheredUtxos: {
-          utxos: accountSpendableTotalUtxos,
-          totalAmount: accountSpendableTotalBalance,
-        },
+        utxos: accountUtxos,
         feeRate: wallet.feeRate,
         account: wallet.account,
         signer: wallet.signer,
@@ -608,11 +577,10 @@ export const alkaneAddLiquidity = new AlkanesCommand('add-liquidity')
   .action(async (options) => {
     const wallet: Wallet = new Wallet(options)
 
-    const { accountSpendableTotalUtxos, accountSpendableTotalBalance } =
-      await utxo.accountUtxos({
-        account: wallet.account,
-        provider: wallet.provider,
-      })
+    const { accountUtxos } = await utxo.accountUtxos({
+      account: wallet.account,
+      provider: wallet.provider,
+    })
 
     const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
 
@@ -631,10 +599,7 @@ export const alkaneAddLiquidity = new AlkanesCommand('add-liquidity')
         token0Amount: alkaneTokensToMint[0].amount,
         token1: alkaneTokensToMint[1].alkaneId,
         token1Amount: alkaneTokensToMint[1].amount,
-        gatheredUtxos: {
-          utxos: accountSpendableTotalUtxos,
-          totalAmount: accountSpendableTotalBalance,
-        },
+        utxos: accountUtxos,
         feeRate: wallet.feeRate,
         account: wallet.account,
         signer: wallet.signer,

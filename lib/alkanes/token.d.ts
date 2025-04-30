@@ -2,10 +2,10 @@
 /// <reference types="node" />
 import { Account, Signer, Provider, AlkanesPayload } from '..';
 import { AlkaneId } from '@alkanes/types';
-import { GatheredUtxos } from '@utxo/utxo';
-export declare const tokenDeployment: ({ payload, gatheredUtxos, account, protostone, provider, feeRate, signer, }: {
+import { FormattedUtxo, GatheredUtxos } from '../utxo';
+export declare const tokenDeployment: ({ payload, utxos, account, protostone, provider, feeRate, signer, }: {
     payload: AlkanesPayload;
-    gatheredUtxos: GatheredUtxos;
+    utxos: FormattedUtxo[];
     account: Account;
     protostone: Buffer;
     provider: Provider;
@@ -20,8 +20,8 @@ export declare const tokenDeployment: ({ payload, gatheredUtxos, account, protos
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const createSendPsbt: ({ gatheredUtxos, account, alkaneId, provider, toAddress, amount, feeRate, fee, }: {
-    gatheredUtxos: GatheredUtxos;
+export declare const createSendPsbt: ({ utxos, account, alkaneId, provider, toAddress, amount, feeRate, fee, }: {
+    utxos: FormattedUtxo[];
     account: Account;
     alkaneId: {
         block: string;
@@ -35,8 +35,8 @@ export declare const createSendPsbt: ({ gatheredUtxos, account, alkaneId, provid
 }) => Promise<{
     psbt: string;
 }>;
-export declare const send: ({ gatheredUtxos, toAddress, amount, alkaneId, feeRate, account, provider, signer, }: {
-    gatheredUtxos: GatheredUtxos;
+export declare const send: ({ utxos, toAddress, amount, alkaneId, feeRate, account, provider, signer, }: {
+    utxos: FormattedUtxo[];
     toAddress: string;
     amount: number;
     alkaneId: AlkaneId;
@@ -52,8 +52,8 @@ export declare const send: ({ gatheredUtxos, toAddress, amount, alkaneId, feeRat
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const actualSendFee: ({ gatheredUtxos, account, alkaneId, provider, toAddress, amount, feeRate, }: {
-    gatheredUtxos: GatheredUtxos;
+export declare const actualSendFee: ({ utxos, account, alkaneId, provider, toAddress, amount, feeRate, }: {
+    utxos: FormattedUtxo[];
     account: Account;
     alkaneId: {
         block: string;
@@ -62,7 +62,7 @@ export declare const actualSendFee: ({ gatheredUtxos, account, alkaneId, provide
     provider: Provider;
     toAddress: string;
     amount: number;
-    feeRate?: number;
+    feeRate: number;
 }) => Promise<{
     fee: number;
     vsize: number;

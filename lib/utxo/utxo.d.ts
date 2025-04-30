@@ -24,8 +24,10 @@ export interface FormattedUtxo {
     inscriptions: string[];
     alkanes: Record<string, AlkanesUtxoEntry>;
     confirmations: number;
+    indexed: boolean;
 }
 export interface AddressUtxoPortfolio {
+    utxos: FormattedUtxo[];
     alkaneUtxos: FormattedUtxo[];
     spendableTotalBalance: number;
     spendableUtxos: FormattedUtxo[];
@@ -36,6 +38,7 @@ export interface AddressUtxoPortfolio {
     totalBalance: number;
 }
 export interface AccountUtxoPortfolio {
+    accountUtxos: FormattedUtxo[];
     accountTotalBalance: number;
     accountSpendableTotalUtxos: FormattedUtxo[];
     accountSpendableTotalBalance: number;
@@ -73,3 +76,17 @@ export declare const accountUtxos: ({ account, provider, }: {
     provider: Provider;
 }) => Promise<AccountUtxoPortfolio>;
 export declare const selectUtxos: (utxos: FormattedUtxo[], spendStrategy: SpendStrategy) => FormattedUtxo[];
+export declare const selectPaymentUtxos: (utxos: FormattedUtxo[], spendStrategy: SpendStrategy) => GatheredUtxos;
+export declare const selectAlkanesUtxos: ({ utxos, greatestToLeast, alkaneId, targetNumberOfAlkanes, }: {
+    utxos: FormattedUtxo[];
+    greatestToLeast: boolean;
+    alkaneId: {
+        block: string;
+        tx: string;
+    };
+    targetNumberOfAlkanes: number;
+}) => Promise<{
+    utxos: FormattedUtxo[];
+    totalAmount: number;
+    totalBalance: number;
+}>;
