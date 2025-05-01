@@ -2,7 +2,7 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { Account, mnemonicToAccount } from '../account/account'
 import { Provider } from '../provider/provider'
 import { swapPsbt, addLiquidityPsbt, removeLiquidityPsbt } from './pool'
-import { FormattedUtxo, selectAlkanesUtxos } from '../utxo/utxo'
+import { selectAlkanesUtxos } from '../utxo/utxo'
 import { AlkaneId } from '../alkanes'
 import { AlkanesAMMPoolDecoder, previewRemoveLiquidity } from './pool'
 import {
@@ -11,14 +11,7 @@ import {
   estimateRemoveLiquidityAmounts,
   swapBuyAmount,
 } from './utils'
-
-// Test setup
-const provider = new Provider({
-  url: '',
-  projectId: '',
-  network: bitcoin.networks.regtest,
-  networkType: 'mainnet',
-})
+import { FormattedUtxo } from '../utxo'
 
 const account: Account = mnemonicToAccount({
   mnemonic:
@@ -26,7 +19,6 @@ const account: Account = mnemonicToAccount({
   opts: { index: 0, network: bitcoin.networks.regtest },
 })
 
-// Mock data
 const mockToken0: AlkaneId = {
   block: '123',
   tx: '456',
@@ -46,6 +38,7 @@ const mockUtxos: FormattedUtxo[] = [
     scriptPk: account.taproot.pubkey,
     address: account.taproot.address,
     inscriptions: [],
+    runes: {},
     indexed: true,
     alkanes: {
       [`${mockToken0.block}:${mockToken0.tx}`]: {
@@ -62,19 +55,21 @@ const mockUtxos: FormattedUtxo[] = [
   },
 ]
 
-// Mock the external modules
-jest.mock('../alkanes', () => ({
-  findAlkaneUtxos: jest.fn().mockReturnValue({
-    txId: '1234',
-    outputIndex: 0,
-    scriptPk: '',
-    address: '',
-    amountOfAlkanes: '345',
-    satoshis: 546,
-    inscriptions: [],
-    alkanes: {},
-    confirmations: 0,
-  }),
+const mockAlkanesUtxos = {
+  utxos: [
+    {
+      txId: '1234',
+      vout: 0,
+      value: 10000,
+    },
+  ],
+  totalAmount: 12345,
+}
+
+jest.mock('../rpclient/alkanes')
+jest.mock('../rpclient/esplora')
+jest.mock('../utxo/utxo')
+jest.mock('../alkanes/alkanes', () => ({
   executePsbt: jest.fn().mockImplementation(async (options) => {
     if (!options?.alkanesUtxos.length || !options?.utxos.length) {
       throw new Error('Insufficient UTXOs')
@@ -84,134 +79,39 @@ jest.mock('../alkanes', () => ({
       fee: 1000,
     }
   }),
-  createExecutePsbt: jest.fn().mockImplementation(async (options) => ({
+  createExecutePsbt: jest.fn().mockImplementation(() => ({
     psbt: new bitcoin.Psbt(),
     psbtHex: 'mock_psbt_hex',
   })),
 }))
 
-jest.mock('../utxo/utxo', () => ({
-  selectAlkanesUtxos: jest.fn().mockReturnValue({
-    txId: '1234',
-    outputIndex: 0,
-    scriptPk: '',
-    address: '',
-    amountOfAlkanes: '345',
-    satoshis: 546,
-    inscriptions: [],
-    alkanes: {},
-    confirmations: 0,
-    indexed: true,
-  }),
-}))
-
-jest.mock('../rpclient/alkanes')
-jest.mock('../rpclient/esplora')
+const provider = new Provider({
+  url: '',
+  projectId: '',
+  network: bitcoin.networks.regtest,
+  networkType: 'mainnet',
+})
 
 describe('AMM Pool PSBT Tests', () => {
   const mockProvider = {
     ...provider,
     alkanes: {
       ...provider.alkanes,
-      getAlkanesByAddress: jest.fn().mockResolvedValue([
-        {
-          runes: [
-            {
-              rune: {
-                id: {
-                  block: '123',
-                  tx: '456',
-                },
-                name: 'TestRune',
-                spacedName: 'TestRune',
-                divisibility: 1,
-                spacers: 0,
-                symbol: 'TR',
-              },
-              balance: '1000',
-            },
-          ],
-          outpoint: {
-            txid: '1234',
-            vout: 0,
-          },
-          output: {
-            value: '1000',
-            script: 'mock_script',
-          },
-          height: 123,
-          txindex: 456,
-        },
-        {
-          runes: [
-            {
-              rune: {
-                id: {
-                  block: '789',
-                  tx: '012',
-                },
-                name: 'TestRune2',
-                spacedName: 'TestRune2',
-                divisibility: 1,
-                spacers: 0,
-                symbol: 'TR2',
-              },
-              balance: '2000',
-            },
-          ],
-          outpoint: {
-            txid: '5678',
-            vout: 1,
-          },
-          output: {
-            value: '2000',
-            script: 'mock_script_2',
-          },
-          height: 789,
-          txindex: 12,
-        },
-      ]),
     },
     esplora: {
       ...provider.esplora,
       getTxHex: jest.fn().mockResolvedValue('mock_tx_hex'),
-      getFeeEstimates: jest.fn().mockResolvedValue({ '1': 1 }),
-    } as any,
+    },
     pushPsbt: jest.fn().mockResolvedValue({ txid: 'mock_txid' }),
-    getAddressUtxos: jest.fn().mockResolvedValue([
-      {
-        txid: '1234',
-        outputIndex: 0,
-        value: 1000,
-        scriptPk: 'mock_script',
-        address: 'bc1qtest',
-      },
-    ]),
     getTransaction: jest.fn().mockResolvedValue({
       txid: '1234',
       hex: 'mock_tx_hex',
     }),
   } as any
 
-  // Setup mock data
-  const mockAlkaneUtxos = {
-    utxos: [
-      {
-        txid: '1234',
-        vout: 0,
-        value: 1000,
-        // ... other required UTXO fields
-      },
-    ],
-    totalAmount: 1000,
-  }
-
   beforeEach(() => {
-    // Reset all mocks before each test
     jest.clearAllMocks()
-
-    // Mock findAlkaneUtxos to return test data
-    ;(selectAlkanesUtxos as jest.Mock).mockResolvedValue(mockAlkaneUtxos)
+    ;(selectAlkanesUtxos as jest.Mock).mockReturnValue(mockAlkanesUtxos)
   })
 
   describe('swapPsbt', () => {

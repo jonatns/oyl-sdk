@@ -13,7 +13,7 @@ import {
   PoolOpcodes,
   estimateRemoveLiquidityAmounts,
 } from './utils'
-import { FormattedUtxo, GatheredUtxos, selectAlkanesUtxos } from '../utxo'
+import { FormattedUtxo, selectAlkanesUtxos } from '../utxo'
 
 export type SwapSimulationResult = {
   amountOut: bigint
@@ -363,17 +363,15 @@ export const swapPsbt = async ({
   feeAddress?: string
 }) => {
   if (tokenAmount <= 0n) {
-    throw new Error('Cannot process zero tokens')
+    throw new OylTransactionError(Error('Cannot process zero tokens'))
   }
 
-  const tokenUtxos = await Promise.all([
-    selectAlkanesUtxos({
-      utxos,
-      greatestToLeast: false,
-      targetNumberOfAlkanes: Number(tokenAmount),
-      alkaneId: token,
-    }),
-  ])
+  const { utxos: alkanesUtxos } = selectAlkanesUtxos({
+    utxos,
+    greatestToLeast: false,
+    targetNumberOfAlkanes: Number(tokenAmount),
+    alkaneId: token,
+  })
 
   const edicts: ProtoruneEdict[] = [
     {
@@ -405,7 +403,7 @@ export const swapPsbt = async ({
   }).encodedRunestone
 
   const psbtOptions = {
-    alkanesUtxos: tokenUtxos[0].utxos,
+    alkanesUtxos,
     protostone,
     utxos,
     feeRate,

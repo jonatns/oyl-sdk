@@ -21,9 +21,8 @@ import { AlkanesAMMPoolDecoder } from './pool'
 import { PoolDetailsResult, PoolOpcodes } from './utils'
 import {
   FormattedUtxo,
-  GatheredUtxos,
   selectAlkanesUtxos,
-  selectPaymentUtxos,
+  selectSpendableUtxos,
 } from '../utxo'
 import { AlkaneId } from '@alkanes/types'
 
@@ -342,20 +341,20 @@ export const createNewPool = async ({
 
 //@dev we use output 5 for because that is the virtual output for the 2nd protostone. The index count starts after the total number of outputs in the txn.
 
-export const splitAlkaneUtxos = async (
+export const splitAlkaneUtxos = (
   tokens: { alkaneId: AlkaneId; amount: bigint }[],
   utxos: FormattedUtxo[]
 ) => {
-  const allTokenUtxos = await Promise.all(
-    tokens.map(async (token) => {
-      return selectAlkanesUtxos({
-        utxos,
-        greatestToLeast: false,
-        targetNumberOfAlkanes: Number(token.amount),
-        alkaneId: token.alkaneId,
-      })
+  const allTokenUtxos = tokens.map((token) => {
+    const selected = selectAlkanesUtxos({
+      utxos,
+      greatestToLeast: false,
+      targetNumberOfAlkanes: Number(token.amount),
+      alkaneId: token.alkaneId,
     })
-  )
+
+    return selected
+  })
 
   const gatheredUtxos = {
     utxos: allTokenUtxos
@@ -366,6 +365,7 @@ export const splitAlkaneUtxos = async (
       ),
     totalAmount: allTokenUtxos.reduce((acc, t) => acc + t.totalAmount, 0),
   }
+
   const edicts: ProtoruneEdict[] = tokens.flatMap((token) => {
     return [
       {
@@ -413,7 +413,7 @@ export const poolPsbt = async ({
   fee?: number
 }) => {
   try {
-    let gatheredUtxos = selectPaymentUtxos(utxos, account.spendStrategy)
+    let gatheredUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
 
     const minTxSize = minimumFee({
       taprootInputCount: 2,

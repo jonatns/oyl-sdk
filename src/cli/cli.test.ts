@@ -2,11 +2,10 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '../provider/provider'
 import { Account, mnemonicToAccount } from '../account/account'
 import * as alkanes from '../alkanes/alkanes'
-import path from 'path'
 import fs from 'fs-extra'
-import { FormattedUtxo } from '../utxo/utxo'
 
 import * as utxo from '../utxo/utxo'
+import { FormattedUtxo } from '../utxo'
 
 const testAccount = mnemonicToAccount({
   mnemonic:
@@ -362,6 +361,7 @@ describe('CLI Integration Tests', () => {
       scriptPk: 'mock_script',
       address: testAccount.taproot.address,
       inscriptions: [],
+      runes: {},
       alkanes: {},
       confirmations: 1,
       indexed: true,
@@ -449,6 +449,7 @@ describe('CLI Integration Tests', () => {
         scriptPk: 'mock_script',
         address: testAccount.taproot.address,
         inscriptions: [],
+        runes: {},
         alkanes: {},
         confirmations: 1,
         indexed: true,
@@ -549,6 +550,7 @@ describe('CLI Integration Tests', () => {
       scriptPk: 'mock_script',
       address: testAccount.taproot.address,
       inscriptions: [],
+      runes: {},
       alkanes: {},
       confirmations: 1,
       indexed: true,

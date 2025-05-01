@@ -21,8 +21,7 @@ import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import { encodeRunestone } from '@magiceden-oss/runestone-lib'
 import { OrdOutput } from 'rpclient/ord'
-import { rune } from 'index'
-import { GatheredUtxos } from '../utxo'
+import { GatheredUtxos, rune } from 'index'
 
 interface OrdOutputs {
   result: OrdOutput

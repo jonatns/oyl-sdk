@@ -19,7 +19,7 @@ import {
   FormattedUtxo,
   GatheredUtxos,
   selectAlkanesUtxos,
-  selectPaymentUtxos,
+  selectSpendableUtxos,
 } from '../utxo'
 
 export const tokenDeployment = async ({
@@ -83,7 +83,7 @@ export const createSendPsbt = async ({
   fee?: number
 }) => {
   try {
-    let gatheredUtxos = selectPaymentUtxos(utxos, account.spendStrategy)
+    let gatheredUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
 
     const minFee = minimumFee({
       taprootInputCount: 2,

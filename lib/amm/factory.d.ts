@@ -73,12 +73,12 @@ export declare const createNewPool: ({ calldata, token0, token0Amount, token1, t
 export declare const splitAlkaneUtxos: (tokens: {
     alkaneId: AlkaneId;
     amount: bigint;
-}[], utxos: FormattedUtxo[]) => Promise<{
+}[], utxos: FormattedUtxo[]) => {
     protostone: Buffer;
     edicts: ProtoruneEdict[];
     utxos: FormattedUtxo[];
     totalAmount: number;
-}>;
+};
 export declare const poolPsbt: ({ alkanesUtxos, utxos, account, protostone, provider, feeRate, fee, }: {
     alkanesUtxos?: FormattedUtxo[];
     utxos: FormattedUtxo[];
