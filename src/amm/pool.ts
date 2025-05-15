@@ -373,6 +373,10 @@ export const swapPsbt = async ({
     alkaneId: token,
   })
 
+  // If there is a frontendFee, there is an extra utxo
+  const MIN_RELAY = 546n
+  const virtualOut = feeAddress && frontendFee && frontendFee >= MIN_RELAY ? 6 : 5
+
   const edicts: ProtoruneEdict[] = [
     {
       id: new ProtoruneRuneId(
@@ -380,7 +384,7 @@ export const swapPsbt = async ({
         u128(BigInt(token.tx))
       ),
       amount: u128(tokenAmount),
-      output: u32(5),
+      output: u32(virtualOut),
     },
   ]
 
