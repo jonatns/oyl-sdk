@@ -140,6 +140,10 @@ export class AlkanesRpc {
     }
   }
 
+  async metashrewHeight() {
+    return (await this._call('metashrew_height', [])) as AlkanesResponse
+  }
+
   async getAlkanesByHeight({
     height,
     protocolTag = '1',
