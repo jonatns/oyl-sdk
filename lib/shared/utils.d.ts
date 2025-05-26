@@ -48,7 +48,7 @@ export declare const addressTypeMap: {
 export declare const inscriptionSats = 546;
 export declare const ECPair: import("ecpair").ECPairAPI;
 export declare const assertHex: (pubKey: Buffer) => Buffer;
-export declare function getNetwork(value: Network | 'main' | 'mainnet' | 'regtest' | 'testnet' | 'signet'): bitcoin.networks.Network;
+export declare function getNetwork(value: Network | 'main' | 'mainnet' | 'regtest' | 'testnet' | 'signet'): any;
 export declare function getFee({ provider, psbt, feeRate, }: {
     provider: Provider;
     psbt: string;
