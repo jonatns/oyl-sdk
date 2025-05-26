@@ -12,7 +12,7 @@ export interface InscriptionResponse {
     transaction: string;
     value: string;
 }
-export type Network = 'mainnet' | 'testnet' | 'regtest' | 'signet';
+export type Network = 'mainnet' | 'testnet' | 'regtest' | 'signet' | 'oylnet';
 export type WitnessScriptOptions = {
     pubKeyHex: string;
     mediaContent: string;
