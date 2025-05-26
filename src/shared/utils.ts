@@ -74,7 +74,7 @@ function tapTweakHash(pubKey: Buffer, h: Buffer | undefined): Buffer {
   )
 }
 
-export function getNetwork(value: Network) {
+export function getNetwork(value: Network): bitcoin.Network {
   if (value === 'mainnet') {
     return bitcoin.networks['bitcoin']
   }
