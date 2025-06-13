@@ -79,7 +79,7 @@ export const addressBalance = async ({
   }
 }
 
-const mapAlkanesById = (
+export const mapAlkanesById = (
   outpoints: AlkanesOutpoint[]
 ): Record<string, AlkanesUtxoEntry> => {
   const toBigInt = (hex: string) => BigInt(hex)

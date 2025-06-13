@@ -1,6 +1,7 @@
 import { Provider } from '../provider';
 import { Account, SpendStrategy } from '../account';
-import { AddressUtxoPortfolio, FormattedUtxo, AccountUtxoPortfolio, GatheredUtxos } from './types';
+import { AlkanesOutpoint } from '@alkanes/types';
+import { AlkanesUtxoEntry, AddressUtxoPortfolio, FormattedUtxo, AccountUtxoPortfolio, GatheredUtxos } from './types';
 export declare const accountBalance: ({ account, provider, }: {
     account: Account;
     provider: Provider;
@@ -17,6 +18,7 @@ export declare const addressBalance: ({ address, provider, }: {
     pendingAmount: number;
     amount: number;
 }>;
+export declare const mapAlkanesById: (outpoints: AlkanesOutpoint[]) => Record<string, AlkanesUtxoEntry>;
 export declare const addressUtxos: ({ address, provider, spendStrategy, }: {
     address: string;
     provider: Provider;
