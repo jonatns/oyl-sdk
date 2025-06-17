@@ -343,7 +343,8 @@ export const createNewPool = async ({
 
 export const splitAlkaneUtxos = (
   tokens: { alkaneId: AlkaneId; amount: bigint }[],
-  utxos: FormattedUtxo[]
+  utxos: FormattedUtxo[],
+  virtualOut?: number
 ) => {
   const allTokenUtxos = tokens.map((token) => {
     const selected = selectAlkanesUtxos({
@@ -374,7 +375,7 @@ export const splitAlkaneUtxos = (
           u128(BigInt(token.alkaneId.tx))
         ),
         amount: u128(token.amount),
-        output: u32(5),
+        output: u32(virtualOut ?? 5),
       },
     ]
   })
