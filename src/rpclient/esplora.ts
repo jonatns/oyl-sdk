@@ -1,5 +1,5 @@
 import fetch from 'node-fetch'
-
+import { AbstractFetchResponse } from 'shared/interface'
 export interface EsploraTx {
   txid: string
   version: number
@@ -76,7 +76,7 @@ export class EsploraRpc {
 
     try {
       const response = await fetch(this.esploraUrl, requestOptions)
-      const responseData = await response.json()
+      const responseData = (await response.json()) as AbstractFetchResponse
 
       if (responseData.error) {
         console.error('Esplora JSON-RPC Error:', responseData.error)
@@ -129,7 +129,9 @@ export class EsploraRpc {
     ])) as EsploraTx[]
   }
   async getAddressUtxo(address: string): Promise<EsploraUtxo[]> {
-    const response = await this._call('esplora_address::utxo', [address])
+    const response = (await this._call('esplora_address::utxo', [
+      address,
+    ])) as EsploraUtxo[]
     return response
   }
   async getFeeEstimates() {
