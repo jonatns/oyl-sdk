@@ -1,15 +1,9 @@
 import fetch from 'node-fetch'
-import { AbstractFetchResponse, IRpcMethods } from '../shared/interface'
-import { sleep } from '../shared/utils'
+import { IRpcMethods } from '../shared/interface'
 
 export class SandshrewBitcoinClient {
   public apiUrl: string
   public bitcoindRpc: IRpcMethods = {}
-
-  private queueLength: number = 0
-
-  //consts
-  static readonly DEBOUNCE_MS = 100
 
   constructor(apiUrl) {
     this.apiUrl = apiUrl
@@ -17,7 +11,6 @@ export class SandshrewBitcoinClient {
   }
 
   async _call(method: string, params = []) {
-    this.queueLength++
     const requestData = {
       jsonrpc: '2.0',
       method: method,
@@ -33,28 +26,17 @@ export class SandshrewBitcoinClient {
       body: JSON.stringify(requestData),
     }
 
-    let responseBodyText: string | undefined = undefined
-
     try {
-      await sleep(SandshrewBitcoinClient.DEBOUNCE_MS * this.queueLength)
       const response = await fetch(this.apiUrl, requestOptions)
 
-      responseBodyText = await response.text()
-
-      let responseData: AbstractFetchResponse = JSON.parse(responseBodyText)
-
+      const responseData = await response.json()
       if (responseData.error) {
         console.error('JSON-RPC Error:', responseData.error)
         throw new Error(responseData.error)
       }
-      this.queueLength--
 
       return responseData.result
     } catch (error) {
-      this.queueLength--
-      console.error('(debug) Request Options:', requestOptions)
-      console.error('(debug) Response Body:', responseBodyText)
-
       if (error.name === 'AbortError') {
         console.error('Request Timeout:', error)
         throw new Error('Request timed out')
@@ -68,7 +50,7 @@ export class SandshrewBitcoinClient {
   async getBlockTimeByHeight(blockHeight: number) {
     const blockData = await this._call('getblockhash', [blockHeight])
     const block = await this._call('getblock', [blockData])
-    return (block as unknown as { time: number }).time
+    return block.time
   }
 
   async multiCall(parameters: (string | string[] | object | object[])[][]) {
