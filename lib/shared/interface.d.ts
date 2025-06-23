@@ -5,10 +5,6 @@ import * as bitcoin from 'bitcoinjs-lib';
 import { Provider } from '../provider';
 import { Signer } from '@signer/signer';
 import { Account } from '@account/account';
-export interface AbstractFetchResponse {
-    error?: string;
-    result?: any;
-}
 export interface InscriptionResponse {
     address: string;
     inscriptions?: string;
