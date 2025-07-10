@@ -217,7 +217,7 @@ export class AlkanesAMMPoolFactoryDecoder {
   }
 }
 
-export const getPoolId = async () => {}
+export const getPoolId = async () => { }
 
 export const createNewPoolPsbt = async ({
   calldata,
@@ -248,13 +248,6 @@ export const createNewPoolPsbt = async ({
 
   const protostone: Buffer = encodeRunestoneProtostone({
     protostones: [
-      ProtoStone.message({
-        edicts,
-        protocolTag: 1n,
-        pointer: 0,
-        refundPointer: 0,
-        calldata: encipher([]),
-      }),
       ProtoStone.message({
         protocolTag: 1n,
         pointer: 0,

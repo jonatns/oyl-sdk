@@ -307,6 +307,15 @@ export const alkaneExecute = new AlkanesCommand('execute')
     []
   )
   .option(
+    '-a, --alkanes <alkanes>',
+    'alkanes to spend for transaction',
+    (value, previous) => {
+      const items = value.split(',')
+      return previous ? previous.concat(items) : items
+    },
+    []
+  )
+  .option(
     '-m, --mnemonic <mnemonic>',
     '(optional) Mnemonic used for signing transactions (default = TEST_WALLET)'
   )
@@ -318,7 +327,7 @@ export const alkaneExecute = new AlkanesCommand('execute')
   .action(async (options) => {
     const wallet: Wallet = new Wallet(options)
 
-    const { accountUtxos } = await utxo.accountUtxos({
+    const { accountSpendableTotalUtxos, accounts } = await utxo.accountUtxos({
       account: wallet.account,
       provider: wallet.provider,
     })
@@ -334,6 +343,43 @@ export const alkaneExecute = new AlkanesCommand('execute')
         output: output ? Number(output) : undefined,
       }
     })
+
+    const alkanesToSpend = options.alkanes.map((item) => {
+      const [block, tx, amount] = item.split(':').map((part) => part.trim())
+      if (!block || !tx || !amount) {
+        throw new Error('Invalid format for --alkanes. Expected format is block:tx:amount.')
+      }
+      return {
+        alkaneId: { block, tx },
+        amount: Number(amount)
+      }
+    })
+
+    let availableAlkaneUtxos: utxo.FormattedUtxo[] = [];
+    for (const key in accounts) {
+      availableAlkaneUtxos.push(...accounts[key].alkaneUtxos);
+    }
+
+    const alkaneUtxosToSpend: utxo.FormattedUtxo[] = [];
+    const spentUtxoIds = new Set<string>();
+
+    for (const alkaneToSpend of alkanesToSpend) {
+      const { utxos: selectedUtxos } = utxo.selectAlkanesUtxos({
+        utxos: availableAlkaneUtxos.filter(u => !spentUtxoIds.has(`${u.txId}:${u.outputIndex}`)),
+        greatestToLeast: true,
+        alkaneId: alkaneToSpend.alkaneId,
+        targetNumberOfAlkanes: alkaneToSpend.amount
+      });
+
+      for (const u of selectedUtxos) {
+        const utxoId = `${u.txId}:${u.outputIndex}`;
+        if (!spentUtxoIds.has(utxoId)) {
+          alkaneUtxosToSpend.push(u);
+          spentUtxoIds.add(utxoId);
+        }
+      }
+    }
+
     const protostone: Buffer = encodeRunestoneProtostone({
       protostones: [
         ProtoStone.message({
@@ -349,7 +395,8 @@ export const alkaneExecute = new AlkanesCommand('execute')
     console.log(
       await alkanes.execute({
         protostone,
-        utxos: accountUtxos,
+        utxos: accountSpendableTotalUtxos,
+        alkanesUtxos: alkaneUtxosToSpend,
         feeRate: wallet.feeRate,
         account: wallet.account,
         signer: wallet.signer,
