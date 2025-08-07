@@ -353,8 +353,8 @@ export const mapSandshrewAlkanesById = (
 // }
 
 const processSandshrewUtxo = (
-  utxo: SandShrewBalancesUTXO, 
-  address: string, 
+  utxo: SandShrewBalancesUTXO,
+  address: string,
   scriptPk: string,
   blockCount: number,
   metashrewHeight: number
@@ -369,7 +369,7 @@ const processSandshrewUtxo = (
     runes: utxo?.ord_runes || {},
     alkanes: utxo?.runes?.length > 0 ? mapSandshrewAlkanesById(utxo.runes) : {},
     confirmations: utxo?.height ? blockCount - utxo.height : 0,
-    indexed: utxo?.height ? metashrewHeight >= utxo.height  : false
+    indexed: utxo?.height ? metashrewHeight >= utxo.height : false
   }
 }
 
@@ -387,58 +387,58 @@ export const addressUtxos = async ({
   let totalBalance: number = 0
   const blockCount = await provider.sandshrew.bitcoindRpc.getBlockCount();
 
-  const sandshrewBalances: SandShrewBalancesAddressInfo = await provider.sandshrew.balance({address});
+  const sandshrewBalances: SandShrewBalancesAddressInfo = await provider.sandshrew.balance({ address });
 
   const scriptPk = addressToScriptPk(address, provider.network)
-  
+
   const spendableUtxos = sandshrewBalances.spendable.map((utxo) => {
-       return processSandshrewUtxo(
-        utxo, 
-        address, 
-        scriptPk, 
-        blockCount, 
-        sandshrewBalances.metashrewHeight
-      )
+    return processSandshrewUtxo(
+      utxo,
+      address,
+      scriptPk,
+      blockCount,
+      sandshrewBalances.metashrewHeight
+    )
   });
 
   const pendingUtxos = sandshrewBalances.pending.map((utxo) => {
-       return processSandshrewUtxo(
-        utxo, 
-        address, 
-        scriptPk, 
-        blockCount, 
-        sandshrewBalances.metashrewHeight
-      )
+    return processSandshrewUtxo(
+      utxo,
+      address,
+      scriptPk,
+      blockCount,
+      sandshrewBalances.metashrewHeight
+    )
   }).filter((utxo) => utxo.indexed);
 
   const ordUtxos = sandshrewBalances.assets.map((utxo) => {
-       return processSandshrewUtxo(
-        utxo, 
-        address, 
-        scriptPk, 
-        blockCount, 
-        sandshrewBalances.metashrewHeight
-      )
+    return processSandshrewUtxo(
+      utxo,
+      address,
+      scriptPk,
+      blockCount,
+      sandshrewBalances.metashrewHeight
+    )
   }).filter((utxo) => utxo.inscriptions.length > 0 && utxo.indexed);
 
   const runeUtxos = sandshrewBalances.assets.map((utxo) => {
-       return processSandshrewUtxo(
-        utxo, 
-        address, 
-        scriptPk, 
-        blockCount, 
-        sandshrewBalances.metashrewHeight
-      )
+    return processSandshrewUtxo(
+      utxo,
+      address,
+      scriptPk,
+      blockCount,
+      sandshrewBalances.metashrewHeight
+    )
   }).filter((utxo) => Object.keys(utxo.runes).length > 0 && utxo.indexed);
 
   const alkaneUtxos = sandshrewBalances.assets.map((utxo) => {
-       return processSandshrewUtxo(
-        utxo, 
-        address, 
-        scriptPk, 
-        blockCount, 
-        sandshrewBalances.metashrewHeight
-      )
+    return processSandshrewUtxo(
+      utxo,
+      address,
+      scriptPk,
+      blockCount,
+      sandshrewBalances.metashrewHeight
+    )
   }).filter((utxo) => Object.keys(utxo.alkanes).length > 0 && utxo.indexed);
 
   const utxos = [...spendableUtxos, ...pendingUtxos, ...ordUtxos, ...runeUtxos, ...alkaneUtxos]
@@ -452,7 +452,7 @@ export const addressUtxos = async ({
   )
 
   spendableUtxos.forEach((utxo) => spendableTotalBalance += utxo.satoshis);
-  
+
   pendingUtxos.forEach((utxo) => pendingTotalBalance += utxo.satoshis);
 
   totalBalance = spendableTotalBalance + pendingTotalBalance;
@@ -582,7 +582,7 @@ export const selectSpendableUtxos = (
   for (const u of paymentUtxos) {
     const key = getAddressKey(u.address)
     if (!spendStrategy.addressOrder.includes(key)) continue
-    ;(buckets.get(key) ?? buckets.set(key, []).get(key)!).push(u)
+      ; (buckets.get(key) ?? buckets.set(key, []).get(key)!).push(u)
   }
 
   const orderedUtxos = spendStrategy.addressOrder.flatMap((key) => {
