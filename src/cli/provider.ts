@@ -126,7 +126,7 @@ export const balancesSandshrewProviderCall = new Command('sandShrewBalance')
     const requestParam = {address: addr}
 
     const provider: Provider = DEFAULT_PROVIDER[options.provider]
-    console.log(JSON.stringify(await provider.sandshrew.balance(requestParam), null, 2))
+    console.log(await provider.sandshrew.balance(requestParam))
   } catch (error) {
     console.log(error)
   }

@@ -385,7 +385,10 @@ export const addressUtxos = async ({
   let spendableTotalBalance: number = 0
   let pendingTotalBalance: number = 0
   let totalBalance: number = 0
-  const blockCount = await provider.sandshrew.bitcoindRpc.getBlockCount();
+   const multiCall = await provider.sandshrew.multiCall([
+    ['btc_getblockcount', []]
+  ])
+  const blockCount = multiCall[0].result
 
   const sandshrewBalances: SandShrewBalancesAddressInfo = await provider.sandshrew.balance({ address });
 
