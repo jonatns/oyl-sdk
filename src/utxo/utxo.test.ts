@@ -79,6 +79,12 @@ const testSandshrewBalances: SandShrewBalancesAddressInfo = {
       outpoint: '3a7f22842a6ffc0135d76ffd2ad3add1ee72753ead36d21f22e7ef89afb1fc43:0',
       value: 546,
       height: 280,
+      ord_runes: {
+        "RUNE": {
+          amount: 0,
+          divisibility: 1
+        },
+      },
       runes: [
         {
           rune: {
@@ -134,7 +140,7 @@ describe('utxo', () => {
     expect(result.spendableTotalBalance).toBe(150000)
     expect(result.spendableUtxos.length).toBe(2)
     expect(result.ordUtxos.length).toBe(1)
-    expect(result.runeUtxos.length).toBe(1)
+    expect(result.runeUtxos.length).toBe(2)
     expect(result.alkaneUtxos.length).toBe(1)
     expect(result.pendingUtxos.length).toBe(0) // pending is not indexed
     expect(result.utxos.length).toBe(5)
