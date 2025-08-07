@@ -13,6 +13,23 @@ export interface EsploraUtxo {
   value: number
 }
 
+export interface SandShrewBalancesUTXO {
+  outpoint: string;
+  value: number;
+  height?: number;
+  runes?: any[];
+  inscriptions?: string[];
+  ord_runes?: Record<RuneName, OrdOutputRune>;
+}
+
+export interface SandShrewBalancesAddressInfo {
+  spendable: SandShrewBalancesUTXO[];
+  assets: SandShrewBalancesUTXO[];
+  pending: SandShrewBalancesUTXO[];
+  ordHeight: number;
+  metashrewHeight: number;
+}
+
 export interface GatheredUtxos {
   utxos: FormattedUtxo[]
   totalAmount: number

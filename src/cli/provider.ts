@@ -103,3 +103,32 @@ export const multiCallSandshrewProviderCall = new Command('sandShrewMulticall')
     console.log(error)
   }
 })
+
+
+/* @dev example call
+  oyl provider sandShrewBalance -a bc1q...... -p bitcoin
+*/
+export const balancesSandshrewProviderCall = new Command('sandShrewBalance')
+.description('Send multiple calls to sandshrew provider')
+.requiredOption(
+  '-p, --provider <provider>',
+  'Network provider type (regtest, bitcoin)'
+)
+.requiredOption(
+  '-a, --address <address>',
+  'calls in this format: {method: string, params: string[]}'
+)
+.action(async (options) => {
+  
+  try {
+    const addr = options.address
+
+    const requestParam = {address: addr}
+
+    const provider: Provider = DEFAULT_PROVIDER[options.provider]
+    console.log(JSON.stringify(await provider.sandshrew.balance(requestParam), null, 2))
+  } catch (error) {
+    console.log(error)
+  }
+})
+

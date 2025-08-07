@@ -34,6 +34,7 @@ import {
 } from './account'
 import {
   alkanesProvider,
+  balancesSandshrewProviderCall,
   multiCallSandshrewProviderCall,
   ordProviderCall,
 } from './provider'
@@ -104,6 +105,7 @@ const providerCommand = new Command('provider')
   .addCommand(ordProviderCall)
   .addCommand(multiCallSandshrewProviderCall)
   .addCommand(alkanesProvider)
+  .addCommand(balancesSandshrewProviderCall)
 
 program.addCommand(regtestCommand)
 program.addCommand(alkaneCommand)

@@ -3,3 +3,4 @@ import { AlkanesCommand } from "./alkane";
 export declare const alkanesProvider: AlkanesCommand;
 export declare const ordProviderCall: Command;
 export declare const multiCallSandshrewProviderCall: Command;
+export declare const balancesSandshrewProviderCall: Command;

@@ -57,6 +57,10 @@ export class SandshrewBitcoinClient {
     return await this._call('sandshrew_multicall', parameters)
   }
 
+  async balance (parameters: any ){
+    return await this._call('sandshrew_balances', [parameters])
+  }
+
   _initializeRpcMethods() {
     const rpcMethods = {
       abandonTransaction: 'str',

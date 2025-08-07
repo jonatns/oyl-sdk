@@ -6,6 +6,7 @@ export declare class SandshrewBitcoinClient {
     _call(method: string, params?: any[]): Promise<any>;
     getBlockTimeByHeight(blockHeight: number): Promise<any>;
     multiCall(parameters: (string | string[] | object | object[])[][]): Promise<any>;
+    balance(parameters: any): Promise<any>;
     _initializeRpcMethods(): void;
     _createRpcMethod(methodName: any, argType: any): void;
     _convertArg(arg: any, argType: any): any;
