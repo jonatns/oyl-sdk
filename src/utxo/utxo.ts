@@ -406,7 +406,7 @@ export const addressUtxos = async ({
       blockCount,
       sandshrewBalances.metashrewHeight
     )
-  });
+  }).filter((utxo) => checkSpendableBalance(utxo));
 
    const totalPendingUtxos = sandshrewBalances.pending.map((utxo) => {
     return processSandshrewUtxo(
