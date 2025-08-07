@@ -105,6 +105,11 @@ const testSandshrewBalances: SandShrewBalancesAddressInfo = {
       outpoint: 'ad90d820fc7f25e32c775ccf9f90d3669864fef436abcd44776f03d4a11540c4:0',
       value: 50000,
     },
+    {
+      outpoint: 'ad90d820fc7f25e32c775ccf9f90d3669864fef436abcd44776f03d4a11540c4:1',
+      value: 50000,
+      height: 280
+    },
   ],
   ordHeight: 283,
   metashrewHeight: 283,
@@ -138,12 +143,14 @@ describe('utxo', () => {
       provider,
     })
     expect(result.spendableTotalBalance).toBe(150000)
+    expect(result.pendingTotalBalance).toBe(50000)
+     expect(result.totalBalance).toBe(200000)
     expect(result.spendableUtxos.length).toBe(2)
     expect(result.ordUtxos.length).toBe(1)
     expect(result.runeUtxos.length).toBe(2)
     expect(result.alkaneUtxos.length).toBe(1)
-    expect(result.pendingUtxos.length).toBe(0) // pending is not indexed
-    expect(result.utxos.length).toBe(5)
+    expect(result.pendingUtxos.length).toBe(1)
+    expect(result.utxos.length).toBe(6)
   })
 
   describe('selectSpendableUtxos', () => {
@@ -197,10 +204,10 @@ describe('utxo', () => {
         provider,
       })
 
-      expect(result.accountTotalBalance).toBe(600000)
+      expect(result.accountTotalBalance).toBe(800000)
       expect(result.accountSpendableTotalBalance).toBe(600000)
       expect(result.accountSpendableTotalUtxos.length).toBe(8)
-      expect(result.accountPendingTotalBalance).toBe(0)
+      expect(result.accountPendingTotalBalance).toBe(200000)
       expect(Object.keys(result.accounts).length).toBe(4)
     })
   })
