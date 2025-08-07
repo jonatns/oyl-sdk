@@ -81,6 +81,10 @@ export const addressBalance = async ({
   }
 }
 
+const checkSpendableBalance = (utxo: FormattedUtxo): boolean => {
+  return utxo.satoshis !== 546 && utxo.satoshis !== 330
+}
+
 export const mapAlkanesById = (
   outpoints: AlkanesOutpoint[]
 ): Record<string, AlkanesUtxoEntry> => {
@@ -385,7 +389,7 @@ export const addressUtxos = async ({
   let spendableTotalBalance: number = 0
   let pendingTotalBalance: number = 0
   let totalBalance: number = 0
-   const multiCall = await provider.sandshrew.multiCall([
+  const multiCall = await provider.sandshrew.multiCall([
     ['btc_getblockcount', []]
   ])
   const blockCount = multiCall[0].result
@@ -454,9 +458,13 @@ export const addressUtxos = async ({
       : a.satoshis - b.satoshis
   )
 
-  spendableUtxos.forEach((utxo) => spendableTotalBalance += utxo.satoshis);
+  spendableUtxos.forEach((utxo) => {
+    if (checkSpendableBalance(utxo)) spendableTotalBalance += utxo.satoshis
+  });
 
-  pendingUtxos.forEach((utxo) => pendingTotalBalance += utxo.satoshis);
+  pendingUtxos.forEach((utxo) => {
+    if (checkSpendableBalance(utxo)) pendingTotalBalance += utxo.satoshis
+  })
 
   totalBalance = spendableTotalBalance + pendingTotalBalance;
 
