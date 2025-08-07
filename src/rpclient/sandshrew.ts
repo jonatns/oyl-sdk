@@ -57,7 +57,7 @@ export class SandshrewBitcoinClient {
     return await this._call('sandshrew_multicall', parameters)
   }
 
-  async walletBalance(parameters: any ){
+  async sandShrewBalances(parameters: {address: string}) {
     return await this._call('sandshrew_balances', [parameters])
   }
 
