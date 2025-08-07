@@ -394,7 +394,7 @@ export const addressUtxos = async ({
   ])
   const blockCount = multiCall[0].result
 
-  const sandshrewBalances: SandShrewBalancesAddressInfo = await provider.sandshrew.balance({ address });
+  const sandshrewBalances: SandShrewBalancesAddressInfo = await provider.sandshrew.walletBalance({ address });
 
   const scriptPk = addressToScriptPk(address, provider.network)
 
