@@ -418,7 +418,7 @@ export const addressUtxos = async ({
     )
   }).filter((utxo) => utxo.indexed);
 
-  const ordUtxos = sandshrewBalances.assets.map((utxo) => {
+  const assetUtxos = sandshrewBalances.assets.map((utxo) => {
     return processSandshrewUtxo(
       utxo,
       address,
@@ -426,29 +426,15 @@ export const addressUtxos = async ({
       blockCount,
       sandshrewBalances.metashrewHeight
     )
-  }).filter((utxo) => utxo.inscriptions.length > 0 && utxo.indexed);
+  });
 
-  const runeUtxos = sandshrewBalances.assets.map((utxo) => {
-    return processSandshrewUtxo(
-      utxo,
-      address,
-      scriptPk,
-      blockCount,
-      sandshrewBalances.metashrewHeight
-    )
-  }).filter((utxo) => Object.keys(utxo.runes).length > 0 && utxo.indexed);
+  const ordUtxos = assetUtxos.filter((utxo) => utxo.inscriptions.length > 0 && utxo.indexed);
 
-  const alkaneUtxos = sandshrewBalances.assets.map((utxo) => {
-    return processSandshrewUtxo(
-      utxo,
-      address,
-      scriptPk,
-      blockCount,
-      sandshrewBalances.metashrewHeight
-    )
-  }).filter((utxo) => Object.keys(utxo.alkanes).length > 0 && utxo.indexed);
+  const runeUtxos = assetUtxos.filter((utxo) => Object.keys(utxo.runes).length > 0 && utxo.indexed);
 
-  const utxos = [...spendableUtxos, ...pendingUtxos, ...ordUtxos, ...runeUtxos, ...alkaneUtxos]
+  const alkaneUtxos = assetUtxos.filter((utxo) => Object.keys(utxo.alkanes).length > 0 && utxo.indexed);
+
+  const utxos = [...spendableUtxos, ...pendingUtxos, ...assetUtxos]
 
   const utxoSortGreatestToLeast = spendStrategy?.utxoSortGreatestToLeast ?? true
 
