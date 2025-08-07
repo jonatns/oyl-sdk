@@ -97,10 +97,7 @@ export const createExecutePsbt = async ({
     const minFee = Math.max(minTxSize * SAT_PER_VBYTE, 250)
     let minerFee = fee === 0 ? minFee : fee
 
-    let gatheredUtxos = {
-      utxos: utxos,
-      totalAmount: utxos.reduce((acc, utxo) => acc + utxo.satoshis, 0),
-    }
+    let gatheredUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
 
     const satsNeeded = spendTargets + minerFee
     gatheredUtxos = findXAmountOfSats(gatheredUtxos.utxos, satsNeeded)

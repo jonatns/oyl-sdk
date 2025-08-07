@@ -262,6 +262,10 @@ export function calculateAmountGatheredUtxo(utxoArray: FormattedUtxo[]) {
   )
 }
 
+export function addressToScriptPk(address: string, network: bitcoin.Network) {
+  return bitcoin.address.toOutputScript(address, network).toString('hex');
+}
+
 export const formatInputsToSign = async ({
   _psbt,
   senderPublicKey,

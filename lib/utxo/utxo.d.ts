@@ -1,6 +1,6 @@
 import { Provider } from '../provider';
 import { Account, SpendStrategy } from '../account';
-import { AlkanesOutpoint } from '@alkanes/types';
+import { AlkanesOutpoint, Rune } from '@alkanes/types';
 import { AlkanesUtxoEntry, AddressUtxoPortfolio, FormattedUtxo, AccountUtxoPortfolio, GatheredUtxos } from './types';
 export declare const accountBalance: ({ account, provider, }: {
     account: Account;
@@ -19,6 +19,7 @@ export declare const addressBalance: ({ address, provider, }: {
     amount: number;
 }>;
 export declare const mapAlkanesById: (outpoints: AlkanesOutpoint[]) => Record<string, AlkanesUtxoEntry>;
+export declare const mapSandshrewAlkanesById: (outpoints: Rune[]) => Record<string, AlkanesUtxoEntry>;
 export declare const addressUtxos: ({ address, provider, spendStrategy, }: {
     address: string;
     provider: Provider;

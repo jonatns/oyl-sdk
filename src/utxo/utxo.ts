@@ -2,8 +2,8 @@ import { Provider } from '../provider'
 import { Account, AddressKey, SpendStrategy } from '../account'
 import asyncPool from 'tiny-async-pool'
 import { OrdOutput } from 'rpclient/ord'
-import { getAddressKey } from '../shared/utils'
-import { AlkanesByAddressResponse, AlkanesOutpoint } from '@alkanes/types'
+import { addressToScriptPk, getAddressKey } from '../shared/utils'
+import { AlkanesByAddressResponse, AlkanesOutpoint, Rune } from '@alkanes/types'
 import { toTxId } from '../alkanes'
 import { OylTransactionError } from '../errors'
 import { EsploraUtxo } from 'rpclient/esplora'
@@ -13,6 +13,8 @@ import {
   FormattedUtxo,
   AccountUtxoPortfolio,
   GatheredUtxos,
+  SandShrewBalancesAddressInfo,
+  SandShrewBalancesUTXO,
 } from './types'
 
 export const accountBalance = async ({
@@ -79,6 +81,10 @@ export const addressBalance = async ({
   }
 }
 
+const checkSpendableBalance = (utxo: FormattedUtxo): boolean => {
+  return utxo.satoshis !== 546 && utxo.satoshis !== 330
+}
+
 export const mapAlkanesById = (
   outpoints: AlkanesOutpoint[]
 ): Record<string, AlkanesUtxoEntry> => {
@@ -98,6 +104,279 @@ export const mapAlkanesById = (
     }, {})
 }
 
+export const mapSandshrewAlkanesById = (
+  outpoints: Rune[]
+): Record<string, AlkanesUtxoEntry> => {
+  const toBigInt = (hex: string) => BigInt(hex)
+  return outpoints
+    .reduce<Record<string, AlkanesUtxoEntry>>((acc, { rune, balance }) => {
+      const key = `${toBigInt(rune.id.block)}:${toBigInt(rune.id.tx)}`
+      const previous = acc[key]?.value ? BigInt(acc[key].value) : 0n
+      acc[key] = {
+        value: (previous + toBigInt(balance)).toString(),
+        name: rune.name,
+        symbol: rune.symbol,
+      }
+
+      return acc
+    }, {})
+}
+
+
+// export const addressUtxos = async ({
+//   address,
+//   provider,
+//   spendStrategy,
+// }: {
+//   address: string
+//   provider: Provider
+//   spendStrategy?: SpendStrategy
+// }): Promise<AddressUtxoPortfolio> => {
+//   let spendableTotalBalance: number = 0
+//   let pendingTotalBalance: number = 0
+//   let totalBalance: number = 0
+//   const utxos: FormattedUtxo[] = []
+//   const spendableUtxos: FormattedUtxo[] = []
+//   const pendingUtxos: FormattedUtxo[] = []
+//   const ordUtxos: FormattedUtxo[] = []
+//   const runeUtxos: FormattedUtxo[] = []
+//   const alkaneUtxos: FormattedUtxo[] = []
+
+//   const multiCall = await provider.sandshrew.multiCall([
+//     ['esplora_address::utxo', [address]],
+//     ['btc_getblockcount', []],
+//     [
+//       'alkanes_protorunesbyaddress',
+//       [
+//         {
+//           address,
+//           protocolTag: '1',
+//         },
+//       ],
+//     ],
+//   ])
+
+//   const esploraUtxos = multiCall[0].result as EsploraUtxo[]
+//   const blockCount = multiCall[1].result
+//   const alkanesByAddress = multiCall[2].result as AlkanesByAddressResponse
+
+//   if (esploraUtxos.length === 0) {
+//     return {
+//       utxos,
+//       alkaneUtxos,
+//       spendableTotalBalance,
+//       spendableUtxos,
+//       runeUtxos,
+//       ordUtxos,
+//       pendingUtxos,
+//       pendingTotalBalance,
+//       totalBalance,
+//     }
+//   }
+
+//   alkanesByAddress.outpoints.forEach((alkane) => {
+//     alkane.outpoint.txid = toTxId(alkane.outpoint.txid)
+//   })
+
+//   const concurrencyLimit = 50
+//   const processedUtxos: {
+//     utxo: EsploraUtxo
+//     txOutput: OrdOutput
+//     scriptPk: string
+//     alkanesOutpoints: AlkanesOutpoint[]
+//   }[] = []
+
+//   const processUtxo = async (utxo: EsploraUtxo) => {
+//     try {
+//       const txIdVout = `${utxo.txid}:${utxo.vout}`
+
+//       const multiCall = await provider.sandshrew.multiCall([
+//         ['ord_output', [txIdVout]],
+//         ['esplora_tx', [utxo.txid]],
+//       ])
+
+//       const txOutput = multiCall[0].result as OrdOutput
+//       const txDetails = multiCall[1].result
+
+//       const alkanesOutpoints = alkanesByAddress.outpoints.filter(
+//         ({ outpoint }) =>
+//           outpoint.txid === utxo.txid && outpoint.vout === utxo.vout
+//       )
+
+//       return {
+//         utxo,
+//         txOutput,
+//         scriptPk: txDetails.vout[utxo.vout].scriptpubkey,
+//         alkanesOutpoints,
+//       }
+//     } catch (error) {
+//       console.error(`Error processing UTXO ${utxo.txid}:${utxo.vout}`, error)
+//       throw error
+//     }
+//   }
+
+//   for await (const result of asyncPool(
+//     concurrencyLimit,
+//     esploraUtxos,
+//     processUtxo
+//   )) {
+//     if (result !== null) {
+//       processedUtxos.push(result)
+//     }
+//   }
+
+//   const utxoSortGreatestToLeast = spendStrategy?.utxoSortGreatestToLeast ?? true
+
+//   processedUtxos.sort((a, b) =>
+//     utxoSortGreatestToLeast
+//       ? b.utxo.value - a.utxo.value
+//       : a.utxo.value - b.utxo.value
+//   )
+
+//   for (const { utxo, txOutput, scriptPk, alkanesOutpoints } of processedUtxos) {
+//     const hasInscriptions = txOutput.inscriptions.length > 0
+//     const hasRunes = Object.keys(txOutput.runes).length > 0
+//     const hasAlkanes = alkanesOutpoints.length > 0
+//     const confirmations = blockCount - utxo.status.block_height
+//     const indexed = txOutput.indexed
+//     const inscriptions = txOutput.inscriptions
+//     const runes = txOutput.runes
+//     const alkanes = mapAlkanesById(alkanesOutpoints)
+
+//     totalBalance += utxo.value
+//     utxos.push({
+//       txId: utxo.txid,
+//       outputIndex: utxo.vout,
+//       satoshis: utxo.value,
+//       address,
+//       inscriptions,
+//       runes,
+//       alkanes,
+//       confirmations,
+//       indexed,
+//       scriptPk,
+//     })
+
+//     if (txOutput.indexed) {
+//       if (!utxo.status.confirmed) {
+//         pendingUtxos.push({
+//           txId: utxo.txid,
+//           outputIndex: utxo.vout,
+//           satoshis: utxo.value,
+//           address,
+//           inscriptions,
+//           runes,
+//           alkanes,
+//           confirmations,
+//           indexed,
+//           scriptPk,
+//         })
+//         pendingTotalBalance += utxo.value
+//         continue
+//       }
+
+//       if (hasAlkanes) {
+//         alkaneUtxos.push({
+//           txId: utxo.txid,
+//           outputIndex: utxo.vout,
+//           satoshis: utxo.value,
+//           address,
+//           inscriptions,
+//           runes,
+//           alkanes,
+//           confirmations,
+//           indexed,
+//           scriptPk,
+//         })
+//       }
+
+//       if (hasRunes) {
+//         runeUtxos.push({
+//           txId: utxo.txid,
+//           outputIndex: utxo.vout,
+//           satoshis: utxo.value,
+//           address,
+//           inscriptions,
+//           runes,
+//           alkanes,
+//           confirmations,
+//           indexed,
+//           scriptPk,
+//         })
+//       }
+//       if (hasInscriptions) {
+//         ordUtxos.push({
+//           txId: utxo.txid,
+//           outputIndex: utxo.vout,
+//           satoshis: utxo.value,
+//           address,
+//           inscriptions,
+//           runes,
+//           alkanes,
+//           confirmations,
+//           indexed,
+//           scriptPk,
+//         })
+//       }
+//       if (
+//         !hasInscriptions &&
+//         !hasRunes &&
+//         !hasAlkanes &&
+//         utxo.value !== 546 &&
+//         utxo.value !== 330
+//       ) {
+//         spendableUtxos.push({
+//           txId: utxo.txid,
+//           outputIndex: utxo.vout,
+//           satoshis: utxo.value,
+//           address,
+//           inscriptions,
+//           runes,
+//           alkanes,
+//           confirmations,
+//           indexed,
+//           scriptPk,
+//         })
+//         spendableTotalBalance += utxo.value
+//         continue
+//       }
+//     }
+//   }
+
+//   return {
+//     utxos,
+//     alkaneUtxos,
+//     spendableTotalBalance,
+//     spendableUtxos,
+//     runeUtxos,
+//     ordUtxos,
+//     pendingUtxos,
+//     pendingTotalBalance,
+//     totalBalance,
+//   }
+// }
+
+const processSandshrewUtxo = (
+  utxo: SandShrewBalancesUTXO,
+  address: string,
+  scriptPk: string,
+  blockCount: number,
+  metashrewHeight: number
+): FormattedUtxo => {
+  return {
+    txId: utxo.outpoint.split(':')[0],
+    outputIndex: parseInt(utxo.outpoint.split(':')[1]),
+    satoshis: utxo.value,
+    scriptPk,
+    address,
+    inscriptions: utxo?.inscriptions || [],
+    runes: utxo?.ord_runes || {},
+    alkanes: utxo?.runes?.length > 0 ? mapSandshrewAlkanesById(utxo.runes) : {},
+    confirmations: utxo?.height ? blockCount - utxo.height : 0,
+    indexed: utxo?.height ? metashrewHeight >= utxo.height : false
+  }
+}
+
 export const addressUtxos = async ({
   address,
   provider,
@@ -110,213 +389,73 @@ export const addressUtxos = async ({
   let spendableTotalBalance: number = 0
   let pendingTotalBalance: number = 0
   let totalBalance: number = 0
-  const utxos: FormattedUtxo[] = []
-  const spendableUtxos: FormattedUtxo[] = []
-  const pendingUtxos: FormattedUtxo[] = []
-  const ordUtxos: FormattedUtxo[] = []
-  const runeUtxos: FormattedUtxo[] = []
-  const alkaneUtxos: FormattedUtxo[] = []
-
   const multiCall = await provider.sandshrew.multiCall([
-    ['esplora_address::utxo', [address]],
-    ['btc_getblockcount', []],
-    [
-      'alkanes_protorunesbyaddress',
-      [
-        {
-          address,
-          protocolTag: '1',
-        },
-      ],
-    ],
+    ['btc_getblockcount', []]
   ])
+  const blockCount = multiCall[0].result
 
-  const esploraUtxos = multiCall[0].result as EsploraUtxo[]
-  const blockCount = multiCall[1].result
-  const alkanesByAddress = multiCall[2].result as AlkanesByAddressResponse
+  const sandshrewBalances: SandShrewBalancesAddressInfo = await provider.sandshrew.sandShrewBalances({ address })
 
-  if (esploraUtxos.length === 0) {
-    return {
-      utxos,
-      alkaneUtxos,
-      spendableTotalBalance,
-      spendableUtxos,
-      runeUtxos,
-      ordUtxos,
-      pendingUtxos,
-      pendingTotalBalance,
-      totalBalance,
-    }
-  }
+  const scriptPk = addressToScriptPk(address, provider.network)
 
-  alkanesByAddress.outpoints.forEach((alkane) => {
-    alkane.outpoint.txid = toTxId(alkane.outpoint.txid)
-  })
+  const spendableUtxos = sandshrewBalances.spendable.map((utxo) => {
+    return processSandshrewUtxo(
+      utxo,
+      address,
+      scriptPk,
+      blockCount,
+      sandshrewBalances.metashrewHeight
+    )
+  });
 
-  const concurrencyLimit = 50
-  const processedUtxos: {
-    utxo: EsploraUtxo
-    txOutput: OrdOutput
-    scriptPk: string
-    alkanesOutpoints: AlkanesOutpoint[]
-  }[] = []
+   const totalPendingUtxos = sandshrewBalances.pending.map((utxo) => {
+    return processSandshrewUtxo(
+      utxo,
+      address,
+      scriptPk,
+      blockCount,
+      sandshrewBalances.metashrewHeight
+    )
+  });
 
-  const processUtxo = async (utxo: EsploraUtxo) => {
-    try {
-      const txIdVout = `${utxo.txid}:${utxo.vout}`
+  const assetUtxos = sandshrewBalances.assets.map((utxo) => {
+    return processSandshrewUtxo(
+      utxo,
+      address,
+      scriptPk,
+      blockCount,
+      sandshrewBalances.metashrewHeight
+    )
+  });
 
-      const multiCall = await provider.sandshrew.multiCall([
-        ['ord_output', [txIdVout]],
-        ['esplora_tx', [utxo.txid]],
-      ])
+  const ordUtxos = assetUtxos.filter((utxo) => utxo.inscriptions.length > 0 && utxo.indexed);
 
-      const txOutput = multiCall[0].result as OrdOutput
-      const txDetails = multiCall[1].result
+  const runeUtxos = assetUtxos.filter((utxo) => Object.keys(utxo.runes).length > 0 && utxo.indexed);
 
-      const alkanesOutpoints = alkanesByAddress.outpoints.filter(
-        ({ outpoint }) =>
-          outpoint.txid === utxo.txid && outpoint.vout === utxo.vout
-      )
+  const alkaneUtxos = assetUtxos.filter((utxo) => Object.keys(utxo.alkanes).length > 0 && utxo.indexed);
 
-      return {
-        utxo,
-        txOutput,
-        scriptPk: txDetails.vout[utxo.vout].scriptpubkey,
-        alkanesOutpoints,
-      }
-    } catch (error) {
-      console.error(`Error processing UTXO ${utxo.txid}:${utxo.vout}`, error)
-      throw error
-    }
-  }
+  const utxos = [...spendableUtxos, ...totalPendingUtxos, ...assetUtxos]
 
-  for await (const result of asyncPool(
-    concurrencyLimit,
-    esploraUtxos,
-    processUtxo
-  )) {
-    if (result !== null) {
-      processedUtxos.push(result)
-    }
-  }
+  const pendingUtxos = totalPendingUtxos.filter((utxo) => utxo.indexed);
 
   const utxoSortGreatestToLeast = spendStrategy?.utxoSortGreatestToLeast ?? true
 
-  processedUtxos.sort((a, b) =>
+  utxos.sort((a, b) =>
     utxoSortGreatestToLeast
-      ? b.utxo.value - a.utxo.value
-      : a.utxo.value - b.utxo.value
+      ? b.satoshis - a.satoshis
+      : a.satoshis - b.satoshis
   )
 
-  for (const { utxo, txOutput, scriptPk, alkanesOutpoints } of processedUtxos) {
-    const hasInscriptions = txOutput.inscriptions.length > 0
-    const hasRunes = Object.keys(txOutput.runes).length > 0
-    const hasAlkanes = alkanesOutpoints.length > 0
-    const confirmations = blockCount - utxo.status.block_height
-    const indexed = txOutput.indexed
-    const inscriptions = txOutput.inscriptions
-    const runes = txOutput.runes
-    const alkanes = mapAlkanesById(alkanesOutpoints)
+  spendableUtxos.forEach((utxo) => {
+    if (checkSpendableBalance(utxo)) spendableTotalBalance += utxo.satoshis
+  });
 
-    totalBalance += utxo.value
-    utxos.push({
-      txId: utxo.txid,
-      outputIndex: utxo.vout,
-      satoshis: utxo.value,
-      address,
-      inscriptions,
-      runes,
-      alkanes,
-      confirmations,
-      indexed,
-      scriptPk,
-    })
+  pendingUtxos.forEach((utxo) => {
+    if (checkSpendableBalance(utxo)) pendingTotalBalance += utxo.satoshis
+  })
 
-    if (txOutput.indexed) {
-      if (!utxo.status.confirmed) {
-        pendingUtxos.push({
-          txId: utxo.txid,
-          outputIndex: utxo.vout,
-          satoshis: utxo.value,
-          address,
-          inscriptions,
-          runes,
-          alkanes,
-          confirmations,
-          indexed,
-          scriptPk,
-        })
-        pendingTotalBalance += utxo.value
-        continue
-      }
+  totalBalance = spendableTotalBalance + pendingTotalBalance;
 
-      if (hasAlkanes) {
-        alkaneUtxos.push({
-          txId: utxo.txid,
-          outputIndex: utxo.vout,
-          satoshis: utxo.value,
-          address,
-          inscriptions,
-          runes,
-          alkanes,
-          confirmations,
-          indexed,
-          scriptPk,
-        })
-      }
-
-      if (hasRunes) {
-        runeUtxos.push({
-          txId: utxo.txid,
-          outputIndex: utxo.vout,
-          satoshis: utxo.value,
-          address,
-          inscriptions,
-          runes,
-          alkanes,
-          confirmations,
-          indexed,
-          scriptPk,
-        })
-      }
-      if (hasInscriptions) {
-        ordUtxos.push({
-          txId: utxo.txid,
-          outputIndex: utxo.vout,
-          satoshis: utxo.value,
-          address,
-          inscriptions,
-          runes,
-          alkanes,
-          confirmations,
-          indexed,
-          scriptPk,
-        })
-      }
-      if (
-        !hasInscriptions &&
-        !hasRunes &&
-        !hasAlkanes &&
-        utxo.value !== 546 &&
-        utxo.value !== 330
-      ) {
-        spendableUtxos.push({
-          txId: utxo.txid,
-          outputIndex: utxo.vout,
-          satoshis: utxo.value,
-          address,
-          inscriptions,
-          runes,
-          alkanes,
-          confirmations,
-          indexed,
-          scriptPk,
-        })
-        spendableTotalBalance += utxo.value
-        continue
-      }
-    }
-  }
 
   return {
     utxos,
@@ -330,6 +469,7 @@ export const addressUtxos = async ({
     totalBalance,
   }
 }
+
 
 export const accountUtxos = async ({
   account,
@@ -441,7 +581,7 @@ export const selectSpendableUtxos = (
   for (const u of paymentUtxos) {
     const key = getAddressKey(u.address)
     if (!spendStrategy.addressOrder.includes(key)) continue
-    ;(buckets.get(key) ?? buckets.set(key, []).get(key)!).push(u)
+      ; (buckets.get(key) ?? buckets.set(key, []).get(key)!).push(u)
   }
 
   const orderedUtxos = spendStrategy.addressOrder.flatMap((key) => {
