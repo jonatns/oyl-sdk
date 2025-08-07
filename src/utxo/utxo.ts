@@ -408,7 +408,7 @@ export const addressUtxos = async ({
     )
   });
 
-  const pendingUtxos = sandshrewBalances.pending.map((utxo) => {
+   const totalPendingUtxos = sandshrewBalances.pending.map((utxo) => {
     return processSandshrewUtxo(
       utxo,
       address,
@@ -416,7 +416,7 @@ export const addressUtxos = async ({
       blockCount,
       sandshrewBalances.metashrewHeight
     )
-  }).filter((utxo) => utxo.indexed);
+  });
 
   const assetUtxos = sandshrewBalances.assets.map((utxo) => {
     return processSandshrewUtxo(
@@ -434,7 +434,9 @@ export const addressUtxos = async ({
 
   const alkaneUtxos = assetUtxos.filter((utxo) => Object.keys(utxo.alkanes).length > 0 && utxo.indexed);
 
-  const utxos = [...spendableUtxos, ...pendingUtxos, ...assetUtxos]
+  const utxos = [...spendableUtxos, ...totalPendingUtxos, ...assetUtxos]
+
+  const pendingUtxos = totalPendingUtxos.filter((utxo) => utxo.indexed);
 
   const utxoSortGreatestToLeast = spendStrategy?.utxoSortGreatestToLeast ?? true
 
