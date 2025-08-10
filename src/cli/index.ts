@@ -14,6 +14,8 @@ import {
   alkaneSimulate,
   alkaneGetAllPoolsDetails,
   alkanePreviewRemoveLiquidity,
+  initMerkleRoot,
+  merkleClaim,
 } from './alkane'
 import { init, genBlocks, sendFromFaucet } from './regtest'
 import { runeSend, runeMint, runeEtchCommit, runeEtchReveal } from './rune'
@@ -98,8 +100,10 @@ const alkaneCommand = new Command('alkane')
   .addCommand(alkaneSimulate)
   .addCommand(alkaneGetAllPoolsDetails)
   .addCommand(alkanePreviewRemoveLiquidity)
-  
-  
+  .addCommand(initMerkleRoot)
+  .addCommand(merkleClaim)
+
+
 const providerCommand = new Command('provider')
   .description('Functions avaialble for all provider services')
   .addCommand(ordProviderCall)

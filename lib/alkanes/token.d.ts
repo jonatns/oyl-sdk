@@ -3,7 +3,7 @@
 import { Account, Signer, Provider, AlkanesPayload } from '..';
 import { AlkaneId } from '@alkanes/types';
 import { FormattedUtxo, GatheredUtxos } from '../utxo';
-export declare const tokenDeployment: ({ payload, utxos, account, protostone, provider, feeRate, signer, }: {
+export declare const inscribePayload: ({ payload, utxos, account, protostone, provider, feeRate, signer, }: {
     payload: AlkanesPayload;
     utxos: FormattedUtxo[];
     account: Account;

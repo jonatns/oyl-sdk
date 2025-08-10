@@ -7,7 +7,7 @@ import * as alkanes from '../alkanes/alkanes'
 import * as utxo from '../utxo'
 import { Wallet } from './wallet'
 import { contractDeployment } from '../alkanes/contract'
-import { send, split, tokenDeployment } from '../alkanes/token'
+import { send, split, inscribePayload } from '../alkanes/token'
 import { AlkanesPayload } from 'shared/interface'
 import { encodeRunestoneProtostone } from 'alkanes/lib/protorune/proto_runestone_upgrade'
 import { ProtoStone } from 'alkanes/lib/protorune/protostone'
@@ -18,7 +18,10 @@ import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 import { createNewPool } from '../amm/factory'
 import { removeLiquidity, addLiquidity, swap } from '../amm/pool'
-import { packUTF8 } from '../shared/utils'
+import { packUTF8 } from '../shared/utils';
+import { sha256 } from '@noble/hashes/sha256';
+import { parse } from 'csv-parse/sync';
+import * as borsh from 'borsh';
 /* @dev example call
   oyl alkane trace -params '{"txid":"e6561c7a8f80560c30a113c418bb56bde65694ac2b309a68549f35fdf2e785cb","vout":0}'
 
@@ -251,7 +254,7 @@ export const alkaneTokenDeploy = new AlkanesCommand('new-token')
       }
 
       console.log(
-        await tokenDeployment({
+        await inscribePayload({
           payload,
           protostone,
           utxos: accountUtxos,
@@ -867,3 +870,252 @@ export const alkanePreviewRemoveLiquidity = new AlkanesCommand(
       console.error('Error previewing liquidity removal:', error.message)
     }
   })
+
+class SchemaMerkleLeaf {
+  address: string;
+  amount: bigint;
+
+  constructor({ address, amount }: { address: string; amount: bigint }) {
+    this.address = address;
+    this.amount = amount;
+  }
+}
+
+class SchemaMerkleProof {
+  leaf: Uint8Array;
+  proofs: Uint8Array[];
+
+  constructor({ leaf, proofs }: { leaf: Uint8Array; proofs: Uint8Array[] }) {
+    this.leaf = leaf;
+    this.proofs = proofs;
+  }
+}
+
+const leafSchema = {
+  struct: {
+    address: 'string',
+    amount: 'u128'
+  }
+};
+
+const proofSchema = {
+  struct: {
+    leaf: { array: { type: 'u8' } },
+    proofs: { array: { type: { array: { type: 'u8' } } } }
+  }
+};
+
+function calculateMerkleRoot(leafHashes: Uint8Array[]): Uint8Array {
+  if (leafHashes.length === 0) {
+    return new Uint8Array(32);
+  }
+  let nodes = [...leafHashes];
+  while (nodes.length > 1) {
+    if (nodes.length % 2 !== 0) {
+      nodes.push(nodes[nodes.length - 1]);
+    }
+    const nextLevel: Uint8Array[] = [];
+    for (let i = 0; i < nodes.length; i += 2) {
+      const left = nodes[i];
+      const right = nodes[i + 1];
+      let sorted: Uint8Array[];
+      if (Buffer.compare(left, right) <= 0) {
+        sorted = [left, right];
+      } else {
+        sorted = [right, left];
+      }
+      const parent = sha256(Buffer.concat(sorted));
+      nextLevel.push(parent);
+    }
+    nodes = nextLevel;
+  }
+  return nodes[0];
+}
+
+function generateProof(leafHashes: Uint8Array[], leafIndex: number): Uint8Array[] {
+  if (leafHashes.length <= 1) {
+    return [];
+  }
+
+  const proof: Uint8Array[] = [];
+  let nodes = [...leafHashes];
+  let currentIndex = leafIndex;
+
+  while (nodes.length > 1) {
+    if (nodes.length % 2 !== 0) {
+      nodes.push(nodes[nodes.length - 1]);
+    }
+
+    const siblingIndex = currentIndex % 2 === 0 ? currentIndex + 1 : currentIndex - 1;
+    proof.push(nodes[siblingIndex]);
+
+    const nextLevel: Uint8Array[] = [];
+    for (let i = 0; i < nodes.length; i += 2) {
+      const left = nodes[i];
+      const right = nodes[i + 1];
+      let sorted: Uint8Array[];
+      if (Buffer.compare(left, right) <= 0) {
+        sorted = [left, right];
+      } else {
+        sorted = [right, left];
+      }
+      const parent = sha256(Buffer.concat(sorted));
+      nextLevel.push(parent);
+    }
+    nodes = nextLevel;
+    currentIndex = Math.floor(currentIndex / 2);
+  }
+  return proof;
+}
+
+export const initMerkleRoot = new AlkanesCommand('init-merkle-root')
+  .description('Initializes a merkle distributor contract.')
+  .requiredOption('-f, --file <file>', 'Path to the CSV file.')
+  .requiredOption('-d, --deadline <deadline>', 'Latest block to claim rewards')
+  .requiredOption('-t, --target <target>', 'The alkane id of the merkle distributor contract to initialize.')
+  .option('-p, --provider <provider>', 'Network provider type (regtest, bitcoin)')
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .action(async (options) => {
+    const wallet: Wallet = new Wallet(options);
+    const { accountUtxos } = await utxo.accountUtxos({
+      account: wallet.account,
+      provider: wallet.provider,
+    });
+
+    const fileContent = await fs.readFile(options.file, 'utf-8');
+    const records: { address: string, amount: string }[] = parse(fileContent, {
+      columns: true,
+      skip_empty_lines: true,
+    });
+
+    const leaves = records.map(record => new SchemaMerkleLeaf({
+      address: record.address,
+      amount: BigInt(record.amount),
+    }));
+
+    const leafHashes = leaves.map(leaf => {
+      const serializedLeaf = borsh.serialize(leafSchema, leaf);
+      return sha256(serializedLeaf);
+    });
+
+    const root = calculateMerkleRoot(leafHashes);
+    const rootFirstHalf = BigInt('0x' + Buffer.from(root.slice(0, 16)).toString('hex'));
+    const rootSecondHalf = BigInt('0x' + Buffer.from(root.slice(16, 32)).toString('hex'));
+
+    const [block, tx] = options.target.split(':');
+
+    const calldata = [
+      BigInt(block),
+      BigInt(tx),
+      BigInt(0), // initialize opcode
+      BigInt(leaves.length),
+      BigInt(options.deadline),
+      rootFirstHalf,
+      rootSecondHalf
+    ];
+
+    const protostone = encodeRunestoneProtostone({
+      protostones: [
+        ProtoStone.message({
+          protocolTag: 1n,
+          edicts: [],
+          pointer: 0,
+          refundPointer: 0,
+          calldata: encipher(calldata),
+        }),
+      ],
+    }).encodedRunestone;
+
+    console.log(
+      await alkanes.execute({
+        protostone,
+        utxos: accountUtxos,
+        feeRate: wallet.feeRate,
+        account: wallet.account,
+        signer: wallet.signer,
+        provider: wallet.provider,
+      })
+    );
+  });
+
+export const merkleClaim = new AlkanesCommand('merkle-claim')
+  .description('Inscribes a merkle proof and claims tokens.')
+  .requiredOption('-f, --file <file>', 'Path to the CSV file with all leaves.')
+  .requiredOption('-c, --claim-address <claimAddress>', 'The address to claim for.')
+  .requiredOption('-t, --target <target>', 'The alkane id of the merkle distributor contract.')
+  .option('-p, --provider <provider>', 'Network provider type (regtest, bitcoin)')
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .action(async (options) => {
+    const wallet: Wallet = new Wallet(options);
+    const { accountUtxos } = await utxo.accountUtxos({
+      account: wallet.account,
+      provider: wallet.provider,
+    });
+
+    const fileContent = await fs.readFile(options.file, 'utf-8');
+    const records: { address: string, amount: string }[] = parse(fileContent, {
+      columns: true,
+      skip_empty_lines: true,
+    });
+
+    const leaves = records.map(record => new SchemaMerkleLeaf({
+      address: record.address,
+      amount: BigInt(record.amount),
+    }));
+
+    const leafIndex = leaves.findIndex(leaf => leaf.address === options.claimAddress);
+    if (leafIndex === -1) {
+      throw new Error(`Address ${options.claimAddress} not found in the CSV file.`);
+    }
+
+    const leafToClaim = leaves[leafIndex];
+    const serializedLeaf = borsh.serialize(leafSchema, leafToClaim);
+
+    const leafHashes = leaves.map(leaf => {
+      const serialized = borsh.serialize(leafSchema, leaf);
+      return sha256(serialized);
+    });
+
+    const proofHashes = generateProof(leafHashes, leafIndex);
+
+    const merkleProof = new SchemaMerkleProof({
+      leaf: serializedLeaf,
+      proofs: proofHashes,
+    });
+
+    const witnessData = borsh.serialize(proofSchema, merkleProof);
+
+    const [block, tx] = options.target.split(':');
+
+    const calldata = [BigInt(1), BigInt(block), BigInt(tx)]; // Opcode 1 for claim
+
+    const protostone = encodeRunestoneProtostone({
+      protostones: [
+        ProtoStone.message({
+          protocolTag: 1n,
+          edicts: [],
+          pointer: 0,
+          refundPointer: 0,
+          calldata: encipher(calldata),
+        }),
+      ],
+    }).encodedRunestone;
+
+    const payload: AlkanesPayload = {
+      body: witnessData,
+      cursed: false,
+      tags: { contentType: 'application/octet-stream' },
+    };
+
+    console.log(
+      await inscribePayload({
+        protostone,
+        payload,
+        utxos: accountUtxos,
+        feeRate: wallet.feeRate,
+        account: wallet.account,
+        signer: wallet.signer,
+        provider: wallet.provider,
+      })
+    );
+  });

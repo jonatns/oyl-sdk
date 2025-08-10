@@ -22,7 +22,7 @@ import {
   selectSpendableUtxos,
 } from '../utxo'
 
-export const tokenDeployment = async ({
+export const inscribePayload = async ({
   payload,
   utxos,
   account,
