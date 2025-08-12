@@ -14,6 +14,7 @@ import {
   alkaneSimulate,
   alkaneGetAllPoolsDetails,
   alkanePreviewRemoveLiquidity,
+  subfrostWrapAddress
 } from './alkane'
 import { init, genBlocks, sendFromFaucet } from './regtest'
 import { runeSend, runeMint, runeEtchCommit, runeEtchReveal } from './rune'
@@ -98,6 +99,7 @@ const alkaneCommand = new Command('alkane')
   .addCommand(alkaneSimulate)
   .addCommand(alkaneGetAllPoolsDetails)
   .addCommand(alkanePreviewRemoveLiquidity)
+  .addCommand(subfrostWrapAddress)
   
   
 const providerCommand = new Command('provider')

@@ -17,6 +17,7 @@ import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 import { createNewPool } from '../amm/factory'
+import { getWrapAddress } from '../amm/subfrost'
 import { removeLiquidity, addLiquidity, swap } from '../amm/pool'
 import { packUTF8 } from '../shared/utils'
 /* @dev example call
@@ -866,4 +867,54 @@ export const alkanePreviewRemoveLiquidity = new AlkanesCommand(
     } catch (error) {
       console.error('Error previewing liquidity removal:', error.message)
     }
+  })
+
+
+/* @dev example call
+ AMM factory:
+ oyl alkane wrap-address -target "2:1" -inputs "32"
+
+  Simulates an operation to get wrap address for subfrost frBtc
+  First input is the opcode
+*/
+export const subfrostWrapAddress = new AlkanesCommand('wrap-address')
+  .requiredOption(
+    '-target, --target <target>',
+    'target block:tx for simulation',
+    (value) => {
+      const [block, tx] = value.split(':').map((part) => part.trim())
+      return { block: block.toString(), tx: tx.toString() }
+    }
+  )
+  .requiredOption(
+    '-inputs, --inputs <inputs>',
+    'inputs for simulation (comma-separated)',
+    (value) => value.split(',').map((item) => item.trim())
+  )
+  .option(
+    '-p, --provider <provider>',
+    'Network provider type (regtest, bitcoin)'
+  )
+  .action(async (options) => {
+    const wallet: Wallet = new Wallet(options)
+
+    const request = {
+      alkanes: [],
+      transaction: '0x',
+      block: '0x',
+      height: '20000',
+      txindex: 0,
+      target: options.target,
+      inputs: options.inputs,
+      pointer: 0,
+      refundPointer: 0,
+      vout: 0,
+    }
+    console.log(
+      JSON.stringify(
+        await getWrapAddress(wallet.provider, request),
+        null,
+        2
+      )
+    )
   })
