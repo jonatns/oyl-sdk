@@ -578,15 +578,15 @@ export const deployReveal = async ({
     network: provider.network,
   });
 
+  finalReveal.signInput(0, tweakedTaprootKeyPair);
   for (let i = 1; i < finalReveal.inputCount; i++) {
     formatInputToSign({
       v: finalReveal.data.inputs[i],
       senderPublicKey: account.taproot.pubkey,
       network: provider.network,
     })
+    finalReveal.signInput(i, tweakedTaprootKeyPair);
   }
-  finalReveal.signInput(0, tweakedTaprootKeyPair);
-  finalReveal.signInput(1, tweakedTaprootKeyPair);
 
   // Finalize all inputs
   finalReveal.finalizeAllInputs();
