@@ -70,6 +70,7 @@ export declare const formatInputToSign: ({ v, senderPublicKey, network, }: {
     senderPublicKey: string;
     network: bitcoin.Network;
 }) => Promise<void>;
+export declare function internalPubKeyToTaprootAddress(internalPubkey: Buffer, network: bitcoin.Network): string;
 export declare const formatInputsToSign: ({ _psbt, senderPublicKey, network, }: {
     _psbt: bitcoin.Psbt;
     senderPublicKey: string;

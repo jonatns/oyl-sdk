@@ -291,6 +291,14 @@ export const formatInputToSign = async ({
     }
   }
 }
+export function internalPubKeyToTaprootAddress(internalPubkey: Buffer, network: bitcoin.Network) {
+  const { address } = bitcoin.payments.p2tr({
+    internalPubkey,
+    network,
+  });
+
+  return address;
+}
 
 export const formatInputsToSign = async ({
   _psbt,
