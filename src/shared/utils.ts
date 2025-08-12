@@ -806,3 +806,10 @@ export const packUTF8 = function (s) {
       ''
   )
 }
+
+export function readU128LE(buffer: Uint8Array): bigint {
+  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  const low = view.getBigUint64(0, true);
+  const high = view.getBigUint64(8, true);
+  return (high << 64n) | low;
+}

@@ -18,7 +18,7 @@ import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 import { createNewPool } from '../amm/factory'
 import { removeLiquidity, addLiquidity, swap } from '../amm/pool'
-import { packUTF8 } from '../shared/utils';
+import { packUTF8, readU128LE } from '../shared/utils';
 import { sha256 } from '@noble/hashes/sha2';
 import { parse } from 'csv-parse/sync';
 import * as borsh from 'borsh';
@@ -1009,8 +1009,8 @@ export const initMerkleRoot = new AlkanesCommand('init-merkle-root')
     });
 
     const root = calculateMerkleRoot(leafHashes);
-    const rootFirstHalf = BigInt('0x' + Buffer.from(root.slice(0, 16)).toString('hex'));
-    const rootSecondHalf = BigInt('0x' + Buffer.from(root.slice(16, 32)).toString('hex'));
+    const rootFirstHalf = readU128LE(root.slice(0, 16));
+    const rootSecondHalf = readU128LE(root.slice(16, 32));
 
     const [block, tx] = options.target.split(':');
 
@@ -1022,7 +1022,7 @@ export const initMerkleRoot = new AlkanesCommand('init-merkle-root')
       BigInt(reward.alkaneId.block),
       BigInt(reward.alkaneId.tx),
       BigInt(reward.amount),
-      BigInt(0), // remove
+      BigInt(0), //remove
       BigInt(options.deadline),
       rootFirstHalf,
       rootSecondHalf
@@ -1130,7 +1130,7 @@ export const merkleClaim = new AlkanesCommand('merkle-claim')
 
     const [block, tx] = options.target.split(':');
 
-    const calldata = [BigInt(1), BigInt(block), BigInt(tx)]; // Opcode 1 for claim
+    const calldata = [BigInt(block), BigInt(tx), BigInt(1)]; // Opcode 1 for claim
 
     const protostone = encodeRunestoneProtostone({
       protostones: [
@@ -1147,7 +1147,7 @@ export const merkleClaim = new AlkanesCommand('merkle-claim')
     const payload: AlkanesPayload = {
       body: witnessData,
       cursed: false,
-      tags: { contentType: 'application/octet-stream' },
+      tags: { contentType: '' },
     };
 
     console.log(
