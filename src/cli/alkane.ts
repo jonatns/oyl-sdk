@@ -19,7 +19,7 @@ import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 import { createNewPool } from '../amm/factory'
 import { removeLiquidity, addLiquidity, swap } from '../amm/pool'
 import { packUTF8 } from '../shared/utils';
-import { sha256 } from '@noble/hashes/sha256';
+import { sha256 } from '@noble/hashes/sha2';
 import { parse } from 'csv-parse/sync';
 import * as borsh from 'borsh';
 /* @dev example call
@@ -347,16 +347,7 @@ export const alkaneExecute = new AlkanesCommand('execute')
       }
     })
 
-    const alkanesToSpend = options.alkanes.map((item) => {
-      const [block, tx, amount] = item.split(':').map((part) => part.trim())
-      if (!block || !tx || !amount) {
-        throw new Error('Invalid format for --alkanes. Expected format is block:tx:amount.')
-      }
-      return {
-        alkaneId: { block, tx },
-        amount: Number(amount)
-      }
-    })
+    const alkanesToSpend = options.alkanes.map(alkanes.toAlkaneId)
 
     let availableAlkaneUtxos: utxo.FormattedUtxo[] = [];
     for (const key in accounts) {
@@ -972,15 +963,34 @@ export const initMerkleRoot = new AlkanesCommand('init-merkle-root')
   .description('Initializes a merkle distributor contract.')
   .requiredOption('-f, --file <file>', 'Path to the CSV file.')
   .requiredOption('-d, --deadline <deadline>', 'Latest block to claim rewards')
-  .requiredOption('-t, --target <target>', 'The alkane id of the merkle distributor contract to initialize.')
+  .requiredOption('-t, --target <target>', 'The alkane id of the merkle distributor contract to initialize. Format in "block:tx".')
+  .requiredOption('-a, --alkane <alkane>', 'The alkane id and amount of the reward token to use. Expected format is block:tx:amount')
+  .option('-wp, --witness-proxy <witnessProxy>', 'The alkane id of the witness proxy contract if opreturn too large. Expected format is block:tx')
   .option('-p, --provider <provider>', 'Network provider type (regtest, bitcoin)')
   .option('-feeRate, --feeRate <feeRate>', 'fee rate')
   .action(async (options) => {
     const wallet: Wallet = new Wallet(options);
-    const { accountUtxos } = await utxo.accountUtxos({
+    const { accountUtxos, accounts } = await utxo.accountUtxos({
       account: wallet.account,
       provider: wallet.provider,
     });
+
+    let allAlkaneUtxos: utxo.FormattedUtxo[] = [];
+    for (const address in accounts) {
+      if (accounts[address].alkaneUtxos) {
+        allAlkaneUtxos.push(...accounts[address].alkaneUtxos);
+      }
+    }
+
+    let reward = alkanes.toAlkaneId(options.alkane);
+
+    const { utxos: tokenUtxos } =
+      utxo.selectAlkanesUtxos({
+        utxos: allAlkaneUtxos,
+        greatestToLeast: false,
+        targetNumberOfAlkanes: reward.amount,
+        alkaneId: reward.alkaneId,
+      });
 
     const fileContent = await fs.readFile(options.file, 'utf-8');
     const records: { address: string, amount: string }[] = parse(fileContent, {
@@ -1004,15 +1014,25 @@ export const initMerkleRoot = new AlkanesCommand('init-merkle-root')
 
     const [block, tx] = options.target.split(':');
 
-    const calldata = [
+
+    const merkleCalldata = [
       BigInt(block),
       BigInt(tx),
       BigInt(0), // initialize opcode
-      BigInt(leaves.length),
+      BigInt(reward.alkaneId.block),
+      BigInt(reward.alkaneId.tx),
+      BigInt(reward.amount),
+      BigInt(0), // remove
       BigInt(options.deadline),
       rootFirstHalf,
       rootSecondHalf
     ];
+
+
+    let calldata = options.witnessProxy ? [
+      ...options.witnessProxy.split(':').map(s => BigInt(s)),
+      BigInt(0)
+    ] : merkleCalldata;
 
     const protostone = encodeRunestoneProtostone({
       protostones: [
@@ -1026,16 +1046,39 @@ export const initMerkleRoot = new AlkanesCommand('init-merkle-root')
       ],
     }).encodedRunestone;
 
-    console.log(
-      await alkanes.execute({
-        protostone,
-        utxos: accountUtxos,
-        feeRate: wallet.feeRate,
-        account: wallet.account,
-        signer: wallet.signer,
-        provider: wallet.provider,
-      })
-    );
+    if (options.witnessProxy) {
+      const payload: AlkanesPayload = {
+        body: encipher(merkleCalldata),
+        cursed: false,
+        tags: { contentType: 'application/octet-stream' },
+      };
+
+      console.log(
+        await inscribePayload({
+          protostone,
+          payload,
+          alkanesUtxos: tokenUtxos,
+          utxos: accountUtxos,
+          feeRate: wallet.feeRate,
+          account: wallet.account,
+          signer: wallet.signer,
+          provider: wallet.provider,
+        })
+      );
+    } else {
+      console.log(
+        await alkanes.execute({
+          protostone,
+          utxos: accountUtxos,
+          alkanesUtxos: tokenUtxos,
+          feeRate: wallet.feeRate,
+          account: wallet.account,
+          signer: wallet.signer,
+          provider: wallet.provider,
+        })
+      );
+    }
+
   });
 
 export const merkleClaim = new AlkanesCommand('merkle-claim')

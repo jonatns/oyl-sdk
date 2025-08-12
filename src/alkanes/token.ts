@@ -23,6 +23,7 @@ import {
 } from '../utxo'
 
 export const inscribePayload = async ({
+  alkanesUtxos,
   payload,
   utxos,
   account,
@@ -31,6 +32,7 @@ export const inscribePayload = async ({
   feeRate,
   signer,
 }: {
+  alkanesUtxos?: FormattedUtxo[]
   payload: AlkanesPayload
   utxos: FormattedUtxo[]
   account: Account
@@ -51,6 +53,7 @@ export const inscribePayload = async ({
   await timeout(3000)
 
   const reveal = await deployReveal({
+    alkanesUtxos,
     protostone,
     script,
     commitTxId: txId,

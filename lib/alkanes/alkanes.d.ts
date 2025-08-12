@@ -70,7 +70,8 @@ export declare const createDeployRevealPsbt: ({ protostone, receiverAddress, scr
     psbt: string;
     fee: number;
 }>;
-export declare const deployReveal: ({ protostone, commitTxId, script, account, provider, feeRate, signer, }: {
+export declare const deployReveal: ({ alkanesUtxos, protostone, commitTxId, script, account, provider, feeRate, signer, }: {
+    alkanesUtxos?: FormattedUtxo[];
     protostone: Buffer;
     commitTxId: string;
     script: string;
@@ -86,7 +87,7 @@ export declare const deployReveal: ({ protostone, commitTxId, script, account, p
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const actualTransactRevealFee: ({ protostone, tweakedPublicKey, commitTxId, receiverAddress, script, provider, feeRate, }: {
+export declare const actualTransactRevealFee: ({ protostone, tweakedPublicKey, commitTxId, receiverAddress, script, provider, feeRate, account, }: {
     protostone: Buffer;
     tweakedPublicKey: string;
     commitTxId: string;
@@ -94,6 +95,7 @@ export declare const actualTransactRevealFee: ({ protostone, tweakedPublicKey, c
     script: Buffer;
     provider: Provider;
     feeRate?: number;
+    account: Account;
 }) => Promise<{
     fee: number;
     vsize: number;
@@ -142,7 +144,8 @@ export declare const execute: ({ alkanesUtxos, utxos, account, protostone, provi
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const createTransactReveal: ({ protostone, receiverAddress, script, feeRate, tweakedPublicKey, provider, fee, commitTxId, }: {
+export declare const createTransactReveal: ({ alkanesUtxos, protostone, receiverAddress, script, feeRate, tweakedPublicKey, provider, fee, commitTxId, account, }: {
+    alkanesUtxos?: FormattedUtxo[];
     protostone: Buffer;
     receiverAddress: string;
     script: Buffer;
@@ -151,8 +154,16 @@ export declare const createTransactReveal: ({ protostone, receiverAddress, scrip
     provider: Provider;
     fee?: number;
     commitTxId: string;
+    account: Account;
 }) => Promise<{
     psbt: string;
     fee: number;
 }>;
 export declare const toTxId: (rawLeTxid: string) => string;
+export declare const toAlkaneId: (item: string) => {
+    alkaneId: {
+        block: string;
+        tx: string;
+    };
+    amount: number;
+};
