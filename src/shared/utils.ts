@@ -22,6 +22,7 @@ import { encodeRunestone, RunestoneSpec } from '@magiceden-oss/runestone-lib'
 import { AddressKey } from '@account/account'
 import * as CBOR from 'cbor-x'
 import { FormattedUtxo } from '../utxo'
+import { PsbtInput } from 'bip174/src/lib/interfaces';
 
 bitcoin.initEccLib(ecc)
 
@@ -266,6 +267,31 @@ export function addressToScriptPk(address: string, network: bitcoin.Network) {
   return bitcoin.address.toOutputScript(address, network).toString('hex');
 }
 
+export const formatInputToSign = async ({
+  v,
+  senderPublicKey,
+  network,
+}: {
+  v: PsbtInput
+  senderPublicKey: string
+  network: bitcoin.Network
+}) => {
+  const isSigned = v.finalScriptSig || v.finalScriptWitness
+  const lostInternalPubkey = !v.tapInternalKey
+  if (!isSigned || lostInternalPubkey) {
+    const tapInternalKey = toXOnly(Buffer.from(senderPublicKey, 'hex'))
+    const p2tr = bitcoin.payments.p2tr({
+      internalPubkey: tapInternalKey,
+      network: network,
+    })
+    if (
+      v.witnessUtxo?.script.toString('hex') === p2tr.output?.toString('hex')
+    ) {
+      v.tapInternalKey = tapInternalKey
+    }
+  }
+}
+
 export const formatInputsToSign = async ({
   _psbt,
   senderPublicKey,
@@ -277,20 +303,7 @@ export const formatInputsToSign = async ({
 }) => {
   let index = 0
   for await (const v of _psbt.data.inputs) {
-    const isSigned = v.finalScriptSig || v.finalScriptWitness
-    const lostInternalPubkey = !v.tapInternalKey
-    if (!isSigned || lostInternalPubkey) {
-      const tapInternalKey = toXOnly(Buffer.from(senderPublicKey, 'hex'))
-      const p2tr = bitcoin.payments.p2tr({
-        internalPubkey: tapInternalKey,
-        network: network,
-      })
-      if (
-        v.witnessUtxo?.script.toString('hex') === p2tr.output?.toString('hex')
-      ) {
-        v.tapInternalKey = tapInternalKey
-      }
-    }
+    formatInputToSign({ v, senderPublicKey, network });
     index++
   }
 

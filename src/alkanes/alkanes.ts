@@ -12,6 +12,7 @@ import { Account, AlkaneId, Signer } from '..'
 import {
   findXAmountOfSats,
   formatInputsToSign,
+  formatInputToSign,
   getOutputValueByVOutIndex,
   getVSize,
   inscriptionSats,
@@ -577,9 +578,15 @@ export const deployReveal = async ({
     network: provider.network,
   });
 
-  for (let i = 0; i < finalReveal.inputCount; i++) {
-    finalReveal.signInput(i, tweakedTaprootKeyPair);
+  for (let i = 1; i < finalReveal.inputCount; i++) {
+    formatInputToSign({
+      v: finalReveal.data.inputs[i],
+      senderPublicKey: account.taproot.pubkey,
+      network: provider.network,
+    })
   }
+  finalReveal.signInput(0, tweakedTaprootKeyPair);
+  finalReveal.signInput(1, tweakedTaprootKeyPair);
 
   // Finalize all inputs
   finalReveal.finalizeAllInputs();

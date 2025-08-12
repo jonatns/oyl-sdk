@@ -1050,7 +1050,7 @@ export const initMerkleRoot = new AlkanesCommand('init-merkle-root')
       const payload: AlkanesPayload = {
         body: encipher(merkleCalldata),
         cursed: false,
-        tags: { contentType: 'application/octet-stream' },
+        tags: { contentType: '' },
       };
 
       console.log(
