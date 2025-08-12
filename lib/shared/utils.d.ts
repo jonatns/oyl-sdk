@@ -64,6 +64,7 @@ export declare const getWitnessDataChunk: (content: string, encodeType?: BufferE
 export declare function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]): number;
 export declare function calculateAmountGatheredUtxo(utxoArray: FormattedUtxo[]): number;
 export declare function addressToScriptPk(address: string, network: bitcoin.Network): string;
+export declare function internalPubKeyToTaprootAddress(internalPubkey: Buffer, network: bitcoin.Network): string;
 export declare const formatInputsToSign: ({ _psbt, senderPublicKey, network, }: {
     _psbt: bitcoin.Psbt;
     senderPublicKey: string;
