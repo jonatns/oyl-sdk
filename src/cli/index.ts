@@ -14,6 +14,8 @@ import {
   alkaneSimulate,
   alkaneGetAllPoolsDetails,
   alkanePreviewRemoveLiquidity,
+  initMerkleRoot,
+  merkleClaim,
   subfrostWrapAddress
 } from './alkane'
 import { init, genBlocks, sendFromFaucet } from './regtest'
@@ -99,9 +101,11 @@ const alkaneCommand = new Command('alkane')
   .addCommand(alkaneSimulate)
   .addCommand(alkaneGetAllPoolsDetails)
   .addCommand(alkanePreviewRemoveLiquidity)
+  .addCommand(initMerkleRoot)
+  .addCommand(merkleClaim)
   .addCommand(subfrostWrapAddress)
-  
-  
+
+
 const providerCommand = new Command('provider')
   .description('Functions avaialble for all provider services')
   .addCommand(ordProviderCall)

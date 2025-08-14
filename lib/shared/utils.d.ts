@@ -7,6 +7,7 @@ import { EsploraRpc } from '../rpclient/esplora';
 import { Provider } from '../provider/provider';
 import { AddressKey } from '@account/account';
 import { FormattedUtxo } from '../utxo';
+import { PsbtInput } from 'bip174/src/lib/interfaces';
 export interface IBISWalletIx {
     validity: any;
     isBrc: boolean;
@@ -64,6 +65,11 @@ export declare const getWitnessDataChunk: (content: string, encodeType?: BufferE
 export declare function calculateAmountGathered(utxoArray: IBlockchainInfoUTXO[]): number;
 export declare function calculateAmountGatheredUtxo(utxoArray: FormattedUtxo[]): number;
 export declare function addressToScriptPk(address: string, network: bitcoin.Network): string;
+export declare const formatInputToSign: ({ v, senderPublicKey, network, }: {
+    v: PsbtInput;
+    senderPublicKey: string;
+    network: bitcoin.Network;
+}) => Promise<void>;
 export declare function internalPubKeyToTaprootAddress(internalPubkey: Buffer, network: bitcoin.Network): string;
 export declare const formatInputsToSign: ({ _psbt, senderPublicKey, network, }: {
     _psbt: bitcoin.Psbt;
@@ -134,3 +140,4 @@ export declare function findXAmountOfSats(utxos: FormattedUtxo[], target: number
 export declare function decodeCBOR(hex: string): DecodedCBOR;
 export declare const getVSize: (data: Buffer) => number;
 export declare const packUTF8: (s: any) => string[];
+export declare function readU128LE(buffer: Uint8Array): bigint;

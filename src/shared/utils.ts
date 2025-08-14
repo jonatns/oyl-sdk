@@ -22,6 +22,7 @@ import { encodeRunestone, RunestoneSpec } from '@magiceden-oss/runestone-lib'
 import { AddressKey } from '@account/account'
 import * as CBOR from 'cbor-x'
 import { FormattedUtxo } from '../utxo'
+import { PsbtInput } from 'bip174/src/lib/interfaces';
 
 bitcoin.initEccLib(ecc)
 
@@ -266,11 +267,35 @@ export function addressToScriptPk(address: string, network: bitcoin.Network) {
   return bitcoin.address.toOutputScript(address, network).toString('hex');
 }
 
-export function internalPubKeyToTaprootAddress(internalPubkey: Buffer, network: bitcoin.Network){
+export const formatInputToSign = async ({
+  v,
+  senderPublicKey,
+  network,
+}: {
+  v: PsbtInput
+  senderPublicKey: string
+  network: bitcoin.Network
+}) => {
+  const isSigned = v.finalScriptSig || v.finalScriptWitness
+  const lostInternalPubkey = !v.tapInternalKey
+  if (!isSigned || lostInternalPubkey) {
+    const tapInternalKey = toXOnly(Buffer.from(senderPublicKey, 'hex'))
+    const p2tr = bitcoin.payments.p2tr({
+      internalPubkey: tapInternalKey,
+      network: network,
+    })
+    if (
+      v.witnessUtxo?.script.toString('hex') === p2tr.output?.toString('hex')
+    ) {
+      v.tapInternalKey = tapInternalKey
+    }
+  }
+}
+export function internalPubKeyToTaprootAddress(internalPubkey: Buffer, network: bitcoin.Network) {
   const { address } = bitcoin.payments.p2tr({
     internalPubkey,
     network,
-  }); 
+  });
 
   return address;
 }
@@ -286,20 +311,7 @@ export const formatInputsToSign = async ({
 }) => {
   let index = 0
   for await (const v of _psbt.data.inputs) {
-    const isSigned = v.finalScriptSig || v.finalScriptWitness
-    const lostInternalPubkey = !v.tapInternalKey
-    if (!isSigned || lostInternalPubkey) {
-      const tapInternalKey = toXOnly(Buffer.from(senderPublicKey, 'hex'))
-      const p2tr = bitcoin.payments.p2tr({
-        internalPubkey: tapInternalKey,
-        network: network,
-      })
-      if (
-        v.witnessUtxo?.script.toString('hex') === p2tr.output?.toString('hex')
-      ) {
-        v.tapInternalKey = tapInternalKey
-      }
-    }
+    formatInputToSign({ v, senderPublicKey, network });
     index++
   }
 
@@ -801,4 +813,11 @@ export const packUTF8 = function (s) {
         Buffer.from(Array.from(Buffer.from(v)).reverse()).toString('hex')) ||
       ''
   )
+}
+
+export function readU128LE(buffer: Uint8Array): bigint {
+  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  const low = view.getBigUint64(0, true);
+  const high = view.getBigUint64(8, true);
+  return (high << 64n) | low;
 }

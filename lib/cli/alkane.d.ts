@@ -15,4 +15,6 @@ export declare const alkaneAddLiquidity: AlkanesCommand;
 export declare const alkaneSimulate: AlkanesCommand;
 export declare const alkaneGetAllPoolsDetails: AlkanesCommand;
 export declare const alkanePreviewRemoveLiquidity: AlkanesCommand;
+export declare const initMerkleRoot: AlkanesCommand;
+export declare const merkleClaim: AlkanesCommand;
 export declare const subfrostWrapAddress: AlkanesCommand;

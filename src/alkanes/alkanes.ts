@@ -12,6 +12,7 @@ import { Account, AlkaneId, Signer } from '..'
 import {
   findXAmountOfSats,
   formatInputsToSign,
+  formatInputToSign,
   getOutputValueByVOutIndex,
   getVSize,
   inscriptionSats,
@@ -522,6 +523,7 @@ export const createDeployRevealPsbt = async ({
 }
 
 export const deployReveal = async ({
+  alkanesUtxos,
   protostone,
   commitTxId,
   script,
@@ -530,6 +532,7 @@ export const deployReveal = async ({
   feeRate,
   signer,
 }: {
+  alkanesUtxos?: FormattedUtxo[]
   protostone: Buffer
   commitTxId: string
   script: string
@@ -555,9 +558,11 @@ export const deployReveal = async ({
     script: Buffer.from(script, 'hex'),
     provider,
     feeRate,
+    account,
   })
 
   const { psbt: finalRevealPsbt } = await createTransactReveal({
+    alkanesUtxos,
     protostone,
     tweakedPublicKey,
     receiverAddress: account.taproot.address,
@@ -566,16 +571,27 @@ export const deployReveal = async ({
     provider,
     feeRate,
     fee,
+    account,
   })
 
   let finalReveal = bitcoin.Psbt.fromBase64(finalRevealPsbt, {
     network: provider.network,
-  })
+  });
 
-  finalReveal.signInput(0, tweakedTaprootKeyPair)
-  finalReveal.finalizeInput(0)
+  finalReveal.signInput(0, tweakedTaprootKeyPair);
+  for (let i = 1; i < finalReveal.inputCount; i++) {
+    formatInputToSign({
+      v: finalReveal.data.inputs[i],
+      senderPublicKey: account.taproot.pubkey,
+      network: provider.network,
+    })
+    finalReveal.signInput(i, tweakedTaprootKeyPair);
+  }
 
-  const finalSignedPsbt = finalReveal.toBase64()
+  // Finalize all inputs
+  finalReveal.finalizeAllInputs();
+
+  const finalSignedPsbt = finalReveal.toBase64();
 
   const revealResult = await provider.pushPsbt({
     psbtBase64: finalSignedPsbt,
@@ -592,6 +608,7 @@ export const actualTransactRevealFee = async ({
   script,
   provider,
   feeRate,
+  account,
 }: {
   protostone: Buffer
   tweakedPublicKey: string
@@ -600,6 +617,7 @@ export const actualTransactRevealFee = async ({
   script: Buffer
   provider: Provider
   feeRate?: number
+  account: Account
 }) => {
   if (!feeRate) {
     feeRate = (await provider.esplora.getFeeEstimates())['1']
@@ -613,6 +631,7 @@ export const actualTransactRevealFee = async ({
     tweakedPublicKey,
     provider,
     feeRate,
+    account,
   })
 
   const { fee: estimatedFee } = await getEstimatedFee({
@@ -630,6 +649,7 @@ export const actualTransactRevealFee = async ({
     provider,
     feeRate,
     fee: estimatedFee,
+    account,
   })
 
   const { fee: finalFee, vsize } = await getEstimatedFee({
@@ -800,6 +820,7 @@ export const execute = async ({
 }
 
 export const createTransactReveal = async ({
+  alkanesUtxos,
   protostone,
   receiverAddress,
   script,
@@ -808,7 +829,9 @@ export const createTransactReveal = async ({
   provider,
   fee = 0,
   commitTxId,
+  account,
 }: {
+  alkanesUtxos?: FormattedUtxo[]
   protostone: Buffer
   receiverAddress: string
   script: Buffer
@@ -817,6 +840,7 @@ export const createTransactReveal = async ({
   provider: Provider
   fee?: number
   commitTxId: string
+  account: Account
 }) => {
   try {
     if (!feeRate) {
@@ -867,6 +891,11 @@ export const createTransactReveal = async ({
         },
       ],
     })
+    if (alkanesUtxos) {
+      for (const utxo of alkanesUtxos) {
+        await addInputForUtxo(psbt, utxo, account, provider)
+      }
+    }
 
     psbt.addOutput({
       value: 546,
@@ -878,9 +907,13 @@ export const createTransactReveal = async ({
       script: protostone,
     })
 
-    if (revealTxChange > 546) {
+    const totalAlkanesAmount = alkanesUtxos
+      ? alkanesUtxos.reduce((acc, utxo) => acc + utxo.satoshis, 0)
+      : 0;
+    const change = revealTxChange + totalAlkanesAmount;
+    if (change > 546) {
       psbt.addOutput({
-        value: revealTxChange,
+        value: change,
         address: receiverAddress,
       })
     }
@@ -896,3 +929,14 @@ export const createTransactReveal = async ({
 
 export const toTxId = (rawLeTxid: string) =>
   Buffer.from(rawLeTxid, 'hex').reverse().toString('hex')
+
+export const toAlkaneId = (item: string) => {
+  const [block, tx, amount] = item.split(':').map((part) => part.trim())
+  if (!block || !tx || !amount) {
+    throw new Error('Invalid format for --alkanes. Expected format is block:tx:amount.')
+  }
+  return {
+    alkaneId: { block, tx },
+    amount: Number(amount)
+  }
+}

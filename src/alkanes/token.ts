@@ -22,7 +22,8 @@ import {
   selectSpendableUtxos,
 } from '../utxo'
 
-export const tokenDeployment = async ({
+export const inscribePayload = async ({
+  alkanesUtxos,
   payload,
   utxos,
   account,
@@ -31,6 +32,7 @@ export const tokenDeployment = async ({
   feeRate,
   signer,
 }: {
+  alkanesUtxos?: FormattedUtxo[]
   payload: AlkanesPayload
   utxos: FormattedUtxo[]
   account: Account
@@ -51,6 +53,7 @@ export const tokenDeployment = async ({
   await timeout(3000)
 
   const reveal = await deployReveal({
+    alkanesUtxos,
     protostone,
     script,
     commitTxId: txId,

@@ -84,7 +84,7 @@ export class Provider {
     try {
       extractedTx = psbt.extractTransaction()
     } catch (error) {
-      throw new Error('Transaction could not be extracted do to invalid Psbt.')
+      throw new Error(`Transaction could not be extracted do to invalid Psbt. ${error}`)
     }
     const txId = extractedTx.getId()
     const rawTx = extractedTx.toHex()
