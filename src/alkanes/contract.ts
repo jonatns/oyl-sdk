@@ -189,7 +189,7 @@ export const deployReveal = async ({
   const { fee } = await actualDeployRevealFee({
     protostone,
     tweakedPublicKey,
-    receiverAddress: account.taproot.address,
+    receiverAddress: account.taproot.address || account.nativeSegwit.address,
     commitTxId,
     script: Buffer.from(script, 'hex'),
     provider,
@@ -199,7 +199,7 @@ export const deployReveal = async ({
   const { psbt: finalRevealPsbt } = await createDeployRevealPsbt({
     protostone,
     tweakedPublicKey,
-    receiverAddress: account.taproot.address,
+    receiverAddress: account.taproot.address || account.nativeSegwit.address,
     commitTxId,
     script: Buffer.from(script, 'hex'),
     provider,
