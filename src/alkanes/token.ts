@@ -249,7 +249,7 @@ export const createSendPsbt = async ({
 
     psbt.addOutput({
       value: inscriptionSats,
-      address: account.taproot.address,
+      address: account.taproot.address || account.nativeSegwit.address,
     })
 
     psbt.addOutput({
@@ -588,7 +588,7 @@ export const createSplitPsbt = async ({
 
     for (let i = 0; i < alkaneUtxos.utxos.length * 2; i++) {
       psbt.addOutput({
-        address: account.taproot.address,
+        address: account.taproot.address || account.nativeSegwit.address,
         value: 546,
       })
     }
