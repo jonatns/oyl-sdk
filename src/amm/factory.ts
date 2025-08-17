@@ -536,7 +536,7 @@ export const poolPsbt = async ({
       }
     }
     psbt.addOutput({
-      address: account.taproot.address || account.nativeSegwit.address,
+      address: account.taproot?.address || account.nativeSegwit?.address,
       value: 546,
     })
 

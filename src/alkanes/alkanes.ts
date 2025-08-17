@@ -126,7 +126,7 @@ export const createExecutePsbt = async ({
       await addInputForUtxo(psbt, utxo, account, provider)
     }
 
-    psbt.addOutput({ address: account.taproot.address || account.nativeSegwit.address, value: 546 })
+    psbt.addOutput({ address: account.taproot?.address || account.nativeSegwit?.address, value: 546 })
     psbt.addOutput({ script: protostone, value: 0 })
 
     if (feeSatEffective > 0n) {
@@ -553,7 +553,7 @@ export const deployReveal = async ({
   const { fee } = await actualTransactRevealFee({
     protostone,
     tweakedPublicKey,
-    receiverAddress: account.taproot.address || account.nativeSegwit.address,
+    receiverAddress: account.taproot?.address || account.nativeSegwit?.address,
     commitTxId,
     script: Buffer.from(script, 'hex'),
     provider,
@@ -565,7 +565,7 @@ export const deployReveal = async ({
     alkanesUtxos,
     protostone,
     tweakedPublicKey,
-    receiverAddress: account.taproot.address || account.nativeSegwit.address,
+    receiverAddress: account.taproot?.address || account.nativeSegwit?.address,
     commitTxId,
     script: Buffer.from(script, 'hex'),
     provider,
