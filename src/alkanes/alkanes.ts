@@ -80,9 +80,6 @@ export const createExecutePsbt = async ({
     const SAT_PER_VBYTE = feeRate ?? 1
     const MIN_RELAY = 546n
 
-    const alkanesAddress = account.taproot?.address || account.nativeSegwit?.address;
-    const alkanesPubkey = account.taproot?.pubkey || account.nativeSegwit?.pubkey;
-
     if (frontendFee && !feeAddress) {
       throw new Error('feeAddress required when frontendFee is set')
     }
@@ -129,7 +126,7 @@ export const createExecutePsbt = async ({
       await addInputForUtxo(psbt, utxo, account, provider)
     }
 
-    psbt.addOutput({ address: alkanesAddress, value: 546 })
+    psbt.addOutput({ address: account.taproot.address, value: 546 })
     psbt.addOutput({ script: protostone, value: 0 })
 
     if (feeSatEffective > 0n) {
@@ -161,7 +158,7 @@ export const createExecutePsbt = async ({
 
     const formatted = await formatInputsToSign({
       _psbt: psbt,
-      senderPublicKey: alkanesPubkey,
+      senderPublicKey: account.taproot.pubkey,
       network: provider.network,
     })
 
@@ -246,9 +243,6 @@ export const createDeployCommitPsbt = async ({
   fee?: number
 }) => {
   try {
-    const alkanesAddress = account.taproot?.address || account.nativeSegwit?.address;
-    const alkanesPubkey = account.taproot?.pubkey || account.nativeSegwit?.pubkey;
-
     let gatheredUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
 
     const minFee = minimumFee({
@@ -368,7 +362,7 @@ export const createDeployCommitPsbt = async ({
 
     const formattedPsbtTx = await formatInputsToSign({
       _psbt: psbt,
-      senderPublicKey: alkanesPubkey,
+      senderPublicKey: account.taproot.pubkey,
       network: provider.network,
     })
 
@@ -547,9 +541,6 @@ export const deployReveal = async ({
   feeRate?: number
   signer: Signer
 }) => {
-  const alkanesAddress = account.taproot?.address || account.nativeSegwit?.address;
-  const alkanesPubkey = account.taproot?.pubkey || account.nativeSegwit?.pubkey;
-
   const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
     signer.taprootKeyPair,
     {
@@ -562,7 +553,7 @@ export const deployReveal = async ({
   const { fee } = await actualTransactRevealFee({
     protostone,
     tweakedPublicKey,
-    receiverAddress: alkanesAddress,
+    receiverAddress: account.taproot.address,
     commitTxId,
     script: Buffer.from(script, 'hex'),
     provider,
@@ -574,7 +565,7 @@ export const deployReveal = async ({
     alkanesUtxos,
     protostone,
     tweakedPublicKey,
-    receiverAddress: alkanesAddress,
+    receiverAddress: account.taproot.address,
     commitTxId,
     script: Buffer.from(script, 'hex'),
     provider,
@@ -591,7 +582,7 @@ export const deployReveal = async ({
   for (let i = 1; i < finalReveal.inputCount; i++) {
     formatInputToSign({
       v: finalReveal.data.inputs[i],
-      senderPublicKey: alkanesPubkey,
+      senderPublicKey: account.taproot.pubkey,
       network: provider.network,
     })
     finalReveal.signInput(i, tweakedTaprootKeyPair);
