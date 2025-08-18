@@ -505,8 +505,6 @@ export const alkaneSwap = new AlkanesCommand('swap')
       const addressKey = getAddressKey(utxo.address);
       return accountStructure.spendStrategy.addressOrder.includes(addressKey);
     });
-    
-    console.log('filteredUtxos', filteredUtxos)
 
     const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
 
@@ -526,8 +524,6 @@ export const alkaneSwap = new AlkanesCommand('swap')
       filteredUtxos
     );
 
-    console.log('alkanesUtxos: ', alkanesUtxos)
-
     // This test uses addressOrder to test sends using account objects with specific address types
     // For example addressOrder = ['nativeSegwit'] will use nativeSegwit utxos and account object
 
@@ -546,9 +542,6 @@ export const alkaneSwap = new AlkanesCommand('swap')
         hdPath: '',
       };
     }
-
-
-    console.log('calldata: ', calldata)
 
     const protostone: Buffer = encodeRunestoneProtostone({
       protostones: [
