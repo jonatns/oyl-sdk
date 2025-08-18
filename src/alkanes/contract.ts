@@ -177,6 +177,19 @@ export const deployReveal = async ({
   feeRate?: number
   signer: Signer
 }) => {
+  let alkanesAddress: string;
+  let alkanesPubkey: string;
+
+  if (account.taproot) {
+    alkanesAddress = account.taproot.address;
+    alkanesPubkey = account.taproot.pubkey;
+  } else if (account.nativeSegwit) {
+    alkanesAddress = account.nativeSegwit.address;
+    alkanesPubkey = account.nativeSegwit.pubkey;
+  } else {
+    throw new Error('No taproot or nativeSegwit address found')
+  }
+
   const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
     signer.taprootKeyPair,
     {
@@ -189,7 +202,7 @@ export const deployReveal = async ({
   const { fee } = await actualDeployRevealFee({
     protostone,
     tweakedPublicKey,
-    receiverAddress: account.taproot.address,
+    receiverAddress: alkanesAddress,
     commitTxId,
     script: Buffer.from(script, 'hex'),
     provider,
@@ -199,7 +212,7 @@ export const deployReveal = async ({
   const { psbt: finalRevealPsbt } = await createDeployRevealPsbt({
     protostone,
     tweakedPublicKey,
-    receiverAddress: account.taproot.address,
+    receiverAddress: alkanesAddress,
     commitTxId,
     script: Buffer.from(script, 'hex'),
     provider,

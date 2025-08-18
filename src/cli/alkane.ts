@@ -19,7 +19,7 @@ import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 import { createNewPool } from '../amm/factory'
 import { getWrapAddress } from '../amm/subfrost'
 import { removeLiquidity, addLiquidity, swap } from '../amm/pool'
-import { packUTF8, readU128LE } from '../shared/utils';
+import { packUTF8, readU128LE, getAddressKey } from '../shared/utils';
 import { sha256 } from '@noble/hashes/sha2';
 import { parse } from 'csv-parse/sync';
 import * as borsh from 'borsh';
@@ -478,16 +478,45 @@ export const alkaneSwap = new AlkanesCommand('swap')
       provider: wallet.provider,
     })
 
+    // Build account structure dynamically based on what's found
+    const accountStructure: any = {
+      spendStrategy: {
+        addressOrder: ['nativeSegwit'], // Only include addresses that exist
+        utxoSortGreatestToLeast: true,
+        changeAddress: 'nativeSegwit', // Default to nativeSegwit for change
+      },
+      network: wallet.account.network,
+    };
+    
+    // Filter UTXOs to only include those from addresses we actually have configured
+    const filteredUtxos = accountUtxos.filter(utxo => {
+      const addressKey = getAddressKey(utxo.address);
+      return accountStructure.spendStrategy.addressOrder.includes(addressKey);
+    });
+    
+    console.log('filteredUtxos', filteredUtxos)
+
     const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
+
+    accountStructure.nativeSegwit = {
+      address: wallet.account.nativeSegwit.address,
+      pubkey: wallet.account.nativeSegwit.pubkey,
+      hdPath: '',
+    };
+    // accountStructure.taproot = {
+    //   address: wallet.account.taproot.address,
+    //   pubkey: wallet.account.taproot.pubkey,
+    //   hdPath: '',
+    // };
 
     console.log(
       await swap({
         calldata,
         token: { block: options.block, tx: options.txNum },
         tokenAmount: BigInt(options.amount),
-        utxos: accountUtxos,
+        utxos: filteredUtxos,
         feeRate: wallet.feeRate,
-        account: wallet.account,
+        account: accountStructure,
         signer: wallet.signer,
         provider: wallet.provider,
       })

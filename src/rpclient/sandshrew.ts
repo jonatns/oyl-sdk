@@ -58,6 +58,7 @@ export class SandshrewBitcoinClient {
   }
 
   async sandShrewBalances(parameters: {address: string}) {
+    console.log('parameters', parameters)
     return await this._call('sandshrew_balances', [parameters])
   }
 
