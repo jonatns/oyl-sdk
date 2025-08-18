@@ -16,13 +16,14 @@ import { metashrew } from '../rpclient/alkanes'
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer'
-import { createNewPool } from '../amm/factory'
+import { createNewPool, splitAlkaneUtxos } from '../amm/factory'
 import { getWrapAddress } from '../amm/subfrost'
 import { removeLiquidity, addLiquidity, swap } from '../amm/pool'
 import { packUTF8, readU128LE, getAddressKey } from '../shared/utils';
 import { sha256 } from '@noble/hashes/sha2';
 import { parse } from 'csv-parse/sync';
 import * as borsh from 'borsh';
+
 /* @dev example call
   oyl alkane trace -params '{"txid":"e6561c7a8f80560c30a113c418bb56bde65694ac2b309a68549f35fdf2e785cb","vout":0}'
 
@@ -513,6 +514,20 @@ export const alkaneSwap = new AlkanesCommand('swap')
 
     calldata.push(BigInt(currentBlockHeight + Number(options.deadline)))
 
+    const swapToken = [
+      {
+        alkaneId: { block: options.calldata[4], tx: options.calldata[5] },
+        amount: BigInt(options.calldata[8]),
+      },
+    ];
+
+    const { utxos: alkanesUtxos } = splitAlkaneUtxos(
+      swapToken,
+      filteredUtxos
+    );
+
+    console.log('alkanesUtxos: ', alkanesUtxos)
+
     // This test uses addressOrder to test sends using account objects with specific address types
     // For example addressOrder = ['nativeSegwit'] will use nativeSegwit utxos and account object
 
@@ -551,6 +566,7 @@ export const alkaneSwap = new AlkanesCommand('swap')
       await alkanes.execute({
         protostone,
         utxos: filteredUtxos,
+        alkanesUtxos,
         feeRate: wallet.feeRate,
         account: accountStructure,
         signer: wallet.signer,
