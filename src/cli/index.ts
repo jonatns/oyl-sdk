@@ -16,7 +16,8 @@ import {
   alkanePreviewRemoveLiquidity,
   initMerkleRoot,
   merkleClaim,
-  subfrostWrapAddress
+  subfrostWrapAddress,
+  alkaneSpendCommit
 } from './alkane'
 import { init, genBlocks, sendFromFaucet } from './regtest'
 import { runeSend, runeMint, runeEtchCommit, runeEtchReveal } from './rune'
@@ -95,6 +96,7 @@ const alkaneCommand = new Command('alkane')
   .addCommand(alkanesTrace)
   .addCommand(alkaneSend)
   .addCommand(alkaneCreatePool)
+  .addCommand(alkaneSpendCommit)
   .addCommand(alkaneAddLiquidity)
   .addCommand(alkaneRemoveLiquidity)
   .addCommand(alkaneSwap)
