@@ -59,13 +59,14 @@ export declare const deployReveal: ({ protostone, commitTxId, script, account, p
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const recoverCommit: ({ commitTxId, utxos, account, provider, feeRate, signer, }: {
+export declare const recoverCommit: ({ commitTxId, utxos, account, provider, feeRate, signer, script, }: {
     commitTxId: string;
     utxos: FormattedUtxo[];
     account: Account;
     provider: Provider;
     feeRate?: number;
     signer: Signer;
+    script: Buffer;
 }) => Promise<{
     txId: string;
     rawTx: string;

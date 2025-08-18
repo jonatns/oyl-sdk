@@ -1,11 +1,18 @@
 import { Account, Signer, Provider } from '..'
 import * as bitcoin from 'bitcoinjs-lib'
 import { AlkanesPayload } from '../shared/interface'
-import { findXAmountOfSats, timeout, tweakSigner } from '../shared/utils'
+import {
+  findXAmountOfSats,
+  formatInputToSign,
+  timeout,
+  tweakSigner,
+} from '../shared/utils'
+import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import {
   createDeployCommitPsbt,
   createDeployRevealPsbt,
   deployCommit,
+  p2tr_ord_reveal,
 } from './alkanes'
 import { getEstimatedFee } from '../psbt'
 import { FormattedUtxo } from '../utxo'
@@ -230,6 +237,7 @@ export const recoverCommit = async ({
   provider,
   feeRate,
   signer,
+  script,
 }: {
   commitTxId: string
   utxos: FormattedUtxo[]
@@ -237,13 +245,29 @@ export const recoverCommit = async ({
   provider: Provider
   feeRate?: number
   signer: Signer
+  script: Buffer
 }) => {
+  const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
+    signer.taprootKeyPair,
+    {
+      network: provider.network,
+    }
+  )
+  const tweakedPublicKey = tweakedTaprootKeyPair.publicKey
+  const scriptTree = {
+    output: script,
+  }
+  const commitAddress = bitcoin.payments.p2tr({
+    internalPubkey: toXOnly(tweakedPublicKey),
+    scriptTree,
+    network: provider.network,
+  }).address
   const commitTx = await provider.esplora.getTxInfo(commitTxId)
   if (!commitTx) {
     throw new Error(`Commit tx not found for txid: ${commitTxId}`)
   }
   const voutIndex = commitTx.vout.findIndex(
-    (vout) => vout.scriptpubkey_address === account.taproot.address
+    (vout) => vout.scriptpubkey_address === commitAddress
   )
   if (voutIndex === -1) {
     throw new Error('Could not find vout for commit transaction')
@@ -259,7 +283,7 @@ export const recoverCommit = async ({
       script: Buffer.from(commitVout.scriptpubkey, 'hex'),
       value: commitVout.value,
     },
-    tapInternalKey: Buffer.from(account.taproot.pubKeyXOnly, 'hex'),
+    tapInternalKey: toXOnly(tweakedPublicKey),
   })
 
   const estimatedFee =
@@ -300,10 +324,17 @@ export const recoverCommit = async ({
     address: account.nativeSegwit.address,
     value: totalValue - estimatedFee,
   })
+  const alkanesPubkey = account.taproot?.pubkey || account.nativeSegwit?.pubkey;
 
-  const signedPsbt = await signer.signAllInputs({
-    rawPsbt: psbt.toBase64(),
-    finalize: true,
-  })
-  return provider.pushPsbt({ psbtBase64: signedPsbt.signedPsbt })
+  psbt.signInput(0, tweakedTaprootKeyPair)
+  for (let i = 1; i < psbt.inputCount; i++) {
+    formatInputToSign({
+      v: psbt.data.inputs[i],
+      senderPublicKey: alkanesPubkey,
+      network: provider.network,
+    })
+    psbt.signInput(i, tweakedTaprootKeyPair);
+  }
+  psbt.finalizeAllInputs();
+  return provider.pushPsbt({ psbtBase64: psbt.toBase64() })
 }

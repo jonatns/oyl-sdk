@@ -13,6 +13,10 @@ import {
 } from '../alkanes/contract'
 import { send, split, inscribePayload } from '../alkanes/token'
 import { AlkanesPayload } from 'shared/interface'
+import * as bitcoin from 'bitcoinjs-lib'
+import { tweakSigner } from '../shared/utils'
+import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
+import { p2tr_ord_reveal } from '../alkanes/alkanes'
 import { encodeRunestoneProtostone } from 'alkanes/lib/protorune/proto_runestone_upgrade'
 import { ProtoStone } from 'alkanes/lib/protorune/protostone'
 import { encipher } from 'alkanes/lib/bytes'
@@ -157,6 +161,10 @@ export const alkaneSpendCommit = new AlkanesCommand('spend-commit')
     '-m, --method <method>',
     'The method to use to spend the commit, either "reveal" or "recover".'
   )
+  .requiredOption(
+    '-c, --contract <contract>',
+    'Relative path to contract wasm file to deploy (e.g., "../alkanes/free_mint.wasm")'
+  )
   .option(
     '-data, --calldata <calldata>',
     'op code + params to be used when deploying a contracts',
@@ -179,7 +187,6 @@ export const alkaneSpendCommit = new AlkanesCommand('spend-commit')
     })
 
     let protostone = Buffer.from('')
-    let script = ''
     if (options.method === 'reveal') {
       if (!options.calldata || options.calldata.length === 0) {
         throw new Error('Calldata is required for reveal method.')
@@ -201,26 +208,43 @@ export const alkaneSpendCommit = new AlkanesCommand('spend-commit')
         ],
       }).encodedRunestone
       protostone = Buffer.from(encoded)
-      const commitTx = await wallet.provider.esplora.getTxInfo(options.commitTxId)
-      const vout = commitTx.vout.find(
-        (vout) => vout.scriptpubkey_address === wallet.account.taproot.address
+    }
+
+    let script: Buffer
+    if (options.contract) {
+      const contract = new Uint8Array(
+        Array.from(
+          await fs.readFile(path.resolve(process.cwd(), options.contract))
+        )
       )
-      if (!vout) {
-        throw new Error('Could not find vout for commit transaction')
+      const gzip = promisify(_gzip)
+      const payload = {
+        body: await gzip(contract, { level: 9 }),
+        cursed: false,
+        tags: { contentType: '' },
       }
-      script = vout.scriptpubkey
+      const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
+        wallet.signer.taprootKeyPair,
+        {
+          network: wallet.provider.network,
+        }
+      )
+      const tweakedPublicKey = tweakedTaprootKeyPair.publicKey
+      script = Buffer.from(
+        p2tr_ord_reveal(toXOnly(tweakedPublicKey), [payload]).script
+      )
     }
 
     if (options.method === 'reveal') {
       console.log(
         await deployReveal({
           commitTxId: options.commitTxId,
-          script,
           protostone,
           account: wallet.account,
           provider: wallet.provider,
           feeRate: wallet.feeRate,
           signer: wallet.signer,
+          script: script.toString('hex'),
         })
       )
     } else {
@@ -232,6 +256,7 @@ export const alkaneSpendCommit = new AlkanesCommand('spend-commit')
           provider: wallet.provider,
           feeRate: wallet.feeRate,
           signer: wallet.signer,
+          script,
         })
       )
     }

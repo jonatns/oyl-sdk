@@ -949,3 +949,5 @@ export const toAlkaneId = (item: string) => {
     amount: Number(amount)
   }
 }
+
+export { p2tr_ord_reveal }

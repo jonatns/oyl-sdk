@@ -2,6 +2,7 @@
 /// <reference types="node" />
 import { Provider } from '../provider/provider';
 import * as bitcoin from 'bitcoinjs-lib';
+import { p2tr_ord_reveal } from 'alkanes/lib/index';
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict';
 import { Account, Signer } from '..';
 import { AlkanesPayload } from '../shared/interface';
@@ -167,3 +168,4 @@ export declare const toAlkaneId: (item: string) => {
     };
     amount: number;
 };
+export { p2tr_ord_reveal };
