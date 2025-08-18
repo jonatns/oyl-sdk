@@ -542,9 +542,6 @@ export const deployReveal = async ({
     account,
   })
 
-  // let finalReveal = bitcoin.Psbt.fromBase64(finalRevealPsbt, {
-  //   network: provider.network,
-  // });
   const { signedPsbt } = await signer.signAllInputs({
     rawPsbt: finalRevealPsbt,
     finalize: true,
@@ -555,17 +552,6 @@ export const deployReveal = async ({
 
   finalReveal.signInput(0, tweakedTaprootKeyPair);
   finalReveal.finalizeInput(0);
-  // for (let i = 1; i < finalReveal.inputCount; i++) {
-  //   formatInputToSign({
-  //     v: finalReveal.data.inputs[i],
-  //     senderPublicKey: account.taproot.pubkey,
-  //     network: provider.network,
-  //   })
-  //   finalReveal.signInput(i, tweakedTaprootKeyPair);
-  // }
-
-  // Finalize all inputs
-  // finalReveal.finalizeAllInputs();
 
   const revealResult = await provider.pushPsbt({
     psbtBase64: finalReveal.toBase64(),
@@ -842,12 +828,11 @@ export const createTransactReveal = async ({
       taprootInputCount: 1,
       nonTaprootInputCount: 0,
       outputCount: 2,
+      payload
     })
 
     const revealTxBaseFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
     let revealTxFee = fee === 0 ? revealTxBaseFee : fee
-    const wasmDeploySize = getVSize(Buffer.from(payload.body)) * feeRate
-
     const commitTxOutput = await getOutputValueByVOutIndex({
       txId: commitTxId,
       vOut: 0,
@@ -887,27 +872,11 @@ export const createTransactReveal = async ({
       utxos: [],
       totalAmount: 0,
     }
-    if (commitTxOutput.value < revealTxFee + wasmDeploySize + 546) {
+    if (commitTxOutput.value < revealTxFee + 546) {
       gatheredUtxos = findXAmountOfSats(
         [...utxos],
-        revealTxFee + wasmDeploySize + 546 - commitTxOutput.value
+        revealTxFee + 546 - commitTxOutput.value
       )
-    }
-
-    if (!fee && gatheredUtxos.utxos.length > 0) {
-      const txSize = minimumFee({
-        taprootInputCount: 1 + gatheredUtxos.utxos.length,
-        nonTaprootInputCount: 0,
-        outputCount: 2,
-      })
-      revealTxFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
-
-      if (gatheredUtxos.totalAmount < revealTxFee + wasmDeploySize + 546 - commitTxOutput.value) {
-        gatheredUtxos = findXAmountOfSats(
-          [...utxos],
-          revealTxFee + wasmDeploySize + 546 - commitTxOutput.value
-        )
-      }
     }
     for (const utxo of gatheredUtxos.utxos) {
       await addInputForUtxo(psbt, utxo, account, provider)
@@ -932,7 +901,7 @@ export const createTransactReveal = async ({
       ? alkanesUtxos.reduce((acc, utxo) => acc + utxo.satoshis, 0)
       : 0;
     const change =
-      commitTxOutput.value + totalAlkanesAmount + gatheredUtxos.totalAmount - revealTxFee - wasmDeploySize - 546;
+      commitTxOutput.value + totalAlkanesAmount + gatheredUtxos.totalAmount - revealTxFee - 546;
     if (change > 546) {
       psbt.addOutput({
         value: change,

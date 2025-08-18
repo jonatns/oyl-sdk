@@ -5,11 +5,13 @@ import {
   calculateTaprootTxSize,
   findXAmountOfSats,
   formatInputsToSign,
+  getVSize,
 } from '../shared/utils'
 import { Account } from '../account/account'
 import { Signer } from '../signer'
 import { getAddressType } from '../shared/utils'
 import { FormattedUtxo } from '../utxo'
+import { AlkanesPayload } from 'shared/interface'
 
 export const createPsbt = async ({
   utxos,
@@ -278,14 +280,16 @@ export const minimumFee = ({
   taprootInputCount,
   nonTaprootInputCount,
   outputCount,
+  payload,
 }: {
   taprootInputCount: number
   nonTaprootInputCount: number
   outputCount: number
+  payload?: AlkanesPayload
 }) => {
   return calculateTaprootTxSize(
     taprootInputCount,
     nonTaprootInputCount,
     outputCount
-  )
+  ) + getVSize(Buffer.from(payload.body))
 }

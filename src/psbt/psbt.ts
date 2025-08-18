@@ -16,13 +16,13 @@ export const psbtBuilder = async <T extends BasePsbtParams>(
   params: T
 ): Promise<{ psbt: string; fee: number; vsize: number }> => {
   const { psbt } = await psbtBuilder(params);
-  
+
   const { fee: actualFee } = await getEstimatedFee({
     feeRate: params.feeRate,
     psbt,
     provider: params.provider
   });
-  
+
   const { psbt: finalPsbt } = await psbtBuilder({
     ...params,
     fee: actualFee
@@ -78,7 +78,7 @@ const getTaprootWitnessSize = (input: any) => {
 
 const SIZES = {
   p2tr: {
-    input: { 
+    input: {
       unsigned: 41,
       witness: 16.25,  // Fallback
       getWitnessSize: getTaprootWitnessSize
@@ -86,24 +86,24 @@ const SIZES = {
     output: 43,
   },
   p2wpkh: {
-    input: { 
-      unsigned: 41, 
+    input: {
+      unsigned: 41,
       witness: 26.5,
       getWitnessSize: (input) => 26.5  // Fixed witness size
     },
     output: 31,
   },
   p2sh: {
-    input: { 
-      unsigned: 63, 
+    input: {
+      unsigned: 63,
       witness: 27.75,
       getWitnessSize: (input) => 27.75  // Fixed witness size
     },
     output: 32,
   },
   p2pkh: {
-    input: { 
-      unsigned: 148, 
+    input: {
+      unsigned: 148,
       witness: 0,
       getWitnessSize: (input) => 0  // No witness data
     },
@@ -149,7 +149,7 @@ export const getEstimatedFee = async ({
   const outputSizes = psbtObj.txOutputs.map((output) => {
     // Check if OP_RETURN output
     if (output.script[0] === 0x6a) {
-      return output.script.length + SIZES.nulldata.output; 
+      return output.script.length + SIZES.nulldata.output;
     }
 
     const scriptType =
@@ -171,11 +171,11 @@ export const getEstimatedFee = async ({
   const outputVarIntSize = getVarIntSize(outputSizes.length);
 
   const vsize = Math.round(
-    BASE_OVERHEAD + 
-    SEGWIT_OVERHEAD + 
+    BASE_OVERHEAD +
+    SEGWIT_OVERHEAD +
     inputVarIntSize +
     outputVarIntSize +
-    totalInputSize + 
+    totalInputSize +
     totalOutputSize
   );
 
