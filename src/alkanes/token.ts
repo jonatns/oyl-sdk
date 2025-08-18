@@ -86,9 +86,6 @@ export const createSendPsbt = async ({
   fee?: number
 }) => {
   try {
-    const alkanesAddress = account.taproot?.address || account.nativeSegwit?.address;
-    const alkanesPubkey = account.taproot?.pubkey || account.nativeSegwit?.pubkey;
-
     let gatheredUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
 
     const minFee = minimumFee({
@@ -252,7 +249,7 @@ export const createSendPsbt = async ({
 
     psbt.addOutput({
       value: inscriptionSats,
-      address: alkanesAddress,
+      address: account.taproot.address,
     })
 
     psbt.addOutput({
@@ -275,7 +272,7 @@ export const createSendPsbt = async ({
 
     const formattedPsbtTx = await formatInputsToSign({
       _psbt: psbt,
-      senderPublicKey: alkanesPubkey,
+      senderPublicKey: account.taproot.pubkey,
       network: provider.network,
     })
 
@@ -458,8 +455,6 @@ export const createSplitPsbt = async ({
 }) => {
   try {
     const originalGatheredUtxos = gatheredUtxos
-    const alkanesAddress = account.taproot?.address || account.nativeSegwit?.address;
-    const alkanesPubkey = account.taproot?.pubkey || account.nativeSegwit?.pubkey;
 
     const minTxSize = minimumFee({
       taprootInputCount: 2,
@@ -593,7 +588,7 @@ export const createSplitPsbt = async ({
 
     for (let i = 0; i < alkaneUtxos.utxos.length * 2; i++) {
       psbt.addOutput({
-        address: alkanesAddress,
+        address: account.taproot.address,
         value: 546,
       })
     }
@@ -614,7 +609,7 @@ export const createSplitPsbt = async ({
 
     const formattedPsbtTx = await formatInputsToSign({
       _psbt: psbt,
-      senderPublicKey: alkanesPubkey,
+      senderPublicKey: account.taproot.pubkey,
       network: provider.network,
     })
 
