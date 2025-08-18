@@ -6,7 +6,11 @@ import path from 'path'
 import * as alkanes from '../alkanes/alkanes'
 import * as utxo from '../utxo'
 import { Wallet } from './wallet'
-import { contractDeployment } from '../alkanes/contract'
+import {
+  contractDeployment,
+  deployReveal,
+  recoverCommit,
+} from '../alkanes/contract'
 import { send, split, inscribePayload } from '../alkanes/token'
 import { AlkanesPayload } from 'shared/interface'
 import { encodeRunestoneProtostone } from 'alkanes/lib/protorune/proto_runestone_upgrade'
@@ -144,16 +148,105 @@ export const alkaneContractDeploy = new AlkanesCommand('new-contract')
     )
   })
 
-/* @dev example call 
+export const alkaneSpendCommit = new AlkanesCommand('spend-commit')
+  .requiredOption(
+    '-txid, --commitTxId <commitTxId>',
+    'The transaction id of the commit to spend.'
+  )
+  .requiredOption(
+    '-m, --method <method>',
+    'The method to use to spend the commit, either "reveal" or "recover".'
+  )
+  .option(
+    '-data, --calldata <calldata>',
+    'op code + params to be used when deploying a contracts',
+    (value, previous) => {
+      const items = value.split(',')
+      return previous ? previous.concat(items) : items
+    },
+    []
+  )
+  .option(
+    '-p, --provider <provider>',
+    'Network provider type (regtest, bitcoin)'
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .action(async (options) => {
+    const wallet: Wallet = new Wallet(options)
+    const { accountUtxos } = await utxo.accountUtxos({
+      account: wallet.account,
+      provider: wallet.provider,
+    })
+
+    let protostone = Buffer.from('')
+    let script = ''
+    if (options.method === 'reveal') {
+      if (!options.calldata || options.calldata.length === 0) {
+        throw new Error('Calldata is required for reveal method.')
+      }
+      const callData: bigint[] = []
+      for (let i = 0; i < options.calldata.length; i++) {
+        callData.push(BigInt(options.calldata[i]))
+      }
+
+      const encoded = encodeRunestoneProtostone({
+        protostones: [
+          ProtoStone.message({
+            protocolTag: 1n,
+            edicts: [],
+            pointer: 0,
+            refundPointer: 0,
+            calldata: encipher(callData),
+          }),
+        ],
+      }).encodedRunestone
+      protostone = Buffer.from(encoded)
+      const commitTx = await wallet.provider.esplora.getTxInfo(options.commitTxId)
+      const vout = commitTx.vout.find(
+        (vout) => vout.scriptpubkey_address === wallet.account.taproot.address
+      )
+      if (!vout) {
+        throw new Error('Could not find vout for commit transaction')
+      }
+      script = vout.scriptpubkey
+    }
+
+    if (options.method === 'reveal') {
+      console.log(
+        await deployReveal({
+          commitTxId: options.commitTxId,
+          script,
+          protostone,
+          account: wallet.account,
+          provider: wallet.provider,
+          feeRate: wallet.feeRate,
+          signer: wallet.signer,
+        })
+      )
+    } else {
+      console.log(
+        await recoverCommit({
+          commitTxId: options.commitTxId,
+          utxos: accountUtxos,
+          account: wallet.account,
+          provider: wallet.provider,
+          feeRate: wallet.feeRate,
+          signer: wallet.signer,
+        })
+      )
+    }
+  })
+
+/* @dev example call
   oyl alkane new-token -pre 5000 -amount 1000 -c 100000 -name "OYL" -symbol "OL" -resNumber 77 -i ./src/cli/contracts/image.png
   oyl alkane new-token -resNumber 12050 -i ./src/cli/contracts/image.png -args 0,10,100000000
   
-  The resNumber must be a resNumber for a deployed contract. In this case 77 is the resNumber for 
+  The resNumber must be a resNumber for a deployed contract. In this case 77 is the resNumber for
   the free_mint.wasm contract and the options supplied are for the free_mint.wasm contract.
 
   The token will deploy to the next available [2, n] Alkane ID.
 
-  To get information on the deployed token, you can use the oyl alkane trace command 
+  To get information on the deployed token, you can use the oyl alkane trace command
   using the returned txid and vout: 4
 
   Remember to genBlocks after transactions...

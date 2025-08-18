@@ -5,6 +5,7 @@ export declare class AlkanesCommand extends Command {
 }
 export declare const alkanesTrace: AlkanesCommand;
 export declare const alkaneContractDeploy: AlkanesCommand;
+export declare const alkaneSpendCommit: AlkanesCommand;
 export declare const alkaneTokenDeploy: AlkanesCommand;
 export declare const alkaneExecute: AlkanesCommand;
 export declare const alkaneRemoveLiquidity: AlkanesCommand;
