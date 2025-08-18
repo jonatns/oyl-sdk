@@ -6,10 +6,6 @@ import path from 'path'
 import * as alkanes from '../alkanes/alkanes'
 import * as utxo from '../utxo'
 import { Wallet } from './wallet'
-import {
-  contractDeployment,
-  deployReveal,
-} from '../alkanes/contract'
 import { send, split, inscribePayload } from '../alkanes/token'
 import { AlkanesPayload } from 'shared/interface'
 import * as bitcoin from 'bitcoinjs-lib'
@@ -139,7 +135,7 @@ export const alkaneContractDeploy = new AlkanesCommand('new-contract')
     }).encodedRunestone
 
     console.log(
-      await contractDeployment({
+      await inscribePayload({
         protostone,
         payload,
         utxos: accountUtxos,
@@ -176,6 +172,11 @@ export const alkaneSpendCommit = new AlkanesCommand('spend-commit')
   .option('-feeRate, --feeRate <feeRate>', 'fee rate')
   .action(async (options) => {
     const wallet: Wallet = new Wallet(options)
+
+    const { accountUtxos } = await utxo.accountUtxos({
+      account: wallet.account,
+      provider: wallet.provider,
+    });
 
     if (!options.calldata || options.calldata.length === 0) {
       throw new Error('Calldata is required for reveal method.')
@@ -221,9 +222,11 @@ export const alkaneSpendCommit = new AlkanesCommand('spend-commit')
     )
 
     console.log(
-      await deployReveal({
+      await alkanes.deployReveal({
+        payload,
         commitTxId: options.commitTxId,
         protostone,
+        utxos: accountUtxos,
         account: wallet.account,
         provider: wallet.provider,
         feeRate: wallet.feeRate,

@@ -30,6 +30,17 @@ export declare const createExecutePsbt: ({ alkanesUtxos, frontendFee, feeAddress
     psbtHex: string;
 }>;
 export declare function addInputForUtxo(psbt: bitcoin.Psbt, utxo: FormattedUtxo, account: Account, provider: Provider): Promise<void>;
+export declare const actualDeployCommitFee: ({ payload, tweakedPublicKey, utxos, account, provider, feeRate, }: {
+    payload: AlkanesPayload;
+    tweakedPublicKey: string;
+    utxos: FormattedUtxo[];
+    account: Account;
+    provider: Provider;
+    feeRate?: number;
+}) => Promise<{
+    fee: number;
+    vsize: number;
+}>;
 export declare const createDeployCommitPsbt: ({ payload, utxos, tweakedPublicKey, account, provider, feeRate, fee, }: {
     payload: AlkanesPayload;
     utxos: FormattedUtxo[];
@@ -58,21 +69,10 @@ export declare const deployCommit: ({ payload, utxos, account, provider, feeRate
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const createDeployRevealPsbt: ({ protostone, receiverAddress, script, feeRate, tweakedPublicKey, provider, fee, commitTxId, }: {
-    protostone: Buffer;
-    receiverAddress: string;
-    script: Buffer;
-    feeRate: number;
-    tweakedPublicKey: string;
-    provider: Provider;
-    fee?: number;
-    commitTxId: string;
-}) => Promise<{
-    psbt: string;
-    fee: number;
-}>;
-export declare const deployReveal: ({ alkanesUtxos, protostone, commitTxId, script, account, provider, feeRate, signer, }: {
+export declare const deployReveal: ({ payload, alkanesUtxos, utxos, protostone, commitTxId, script, account, provider, feeRate, signer, }: {
+    payload: AlkanesPayload;
     alkanesUtxos?: FormattedUtxo[];
+    utxos: FormattedUtxo[];
     protostone: Buffer;
     commitTxId: string;
     script: string;
@@ -88,7 +88,10 @@ export declare const deployReveal: ({ alkanesUtxos, protostone, commitTxId, scri
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const actualTransactRevealFee: ({ protostone, tweakedPublicKey, commitTxId, receiverAddress, script, provider, feeRate, account, }: {
+export declare const actualTransactRevealFee: ({ payload, alkanesUtxos, utxos, protostone, tweakedPublicKey, commitTxId, receiverAddress, script, provider, feeRate, account, }: {
+    payload: AlkanesPayload;
+    alkanesUtxos?: FormattedUtxo[];
+    utxos: FormattedUtxo[];
     protostone: Buffer;
     tweakedPublicKey: string;
     commitTxId: string;
@@ -145,8 +148,10 @@ export declare const execute: ({ alkanesUtxos, utxos, account, protostone, provi
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const createTransactReveal: ({ alkanesUtxos, protostone, receiverAddress, script, feeRate, tweakedPublicKey, provider, fee, commitTxId, account, }: {
+export declare const createTransactReveal: ({ payload, alkanesUtxos, utxos, protostone, receiverAddress, script, feeRate, tweakedPublicKey, provider, fee, commitTxId, account, }: {
+    payload: AlkanesPayload;
     alkanesUtxos?: FormattedUtxo[];
+    utxos: FormattedUtxo[];
     protostone: Buffer;
     receiverAddress: string;
     script: Buffer;
