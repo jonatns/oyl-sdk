@@ -407,9 +407,6 @@ export const poolPsbt = async ({
   fee?: number
 }) => {
   try {
-    const alkanesAddress = account.taproot?.address || account.nativeSegwit?.address;
-    const alkanesPubkey = account.taproot?.pubkey || account.nativeSegwit?.pubkey;
-
     let gatheredUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
 
     const minTxSize = minimumFee({
@@ -539,7 +536,7 @@ export const poolPsbt = async ({
       }
     }
     psbt.addOutput({
-      address: alkanesAddress,
+      address: account.taproot.address,
       value: 546,
     })
 
@@ -561,7 +558,7 @@ export const poolPsbt = async ({
 
     const formattedPsbtTx = await formatInputsToSign({
       _psbt: psbt,
-      senderPublicKey: alkanesPubkey,
+      senderPublicKey: account.taproot.pubkey,
       network: provider.network,
     })
 
