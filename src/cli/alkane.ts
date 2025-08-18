@@ -448,7 +448,21 @@ export const alkaneRemoveLiquidity = new AlkanesCommand('remove-liquidity')
   })
 
 /* @dev example call 
-  oyl alkane swap -data "2,7,3,160" -p alkanes -feeRate 5 -blk 2 -tx 1 -amt 200
+  oyl alkane swap -data "4,65522,13,2,2,80,2,16,100000000000,1" -deadline 3 -feeRate 4 -p bitcoin
+  
+  calldata = [
+    factoryId.block, 
+    factoryId.tx, 
+    opcode, 
+    number-of-tokens-in-swap-path, 
+    token1.block, 
+    token1.tx, 
+    token2.block, 
+    token2.tx, 
+    amount-to-swap, 
+    min-amount-out,
+    blocknumber-when-tx-expires (sent in as a separate arg)
+  ]
 
   Swaps an alkane from a pool
 */
@@ -462,14 +476,12 @@ export const alkaneSwap = new AlkanesCommand('swap')
     },
     []
   )
-  .requiredOption('-amt, --amount <amount>', 'amount to swap')
-  .requiredOption('-blk, --block <block>', 'block number')
-  .requiredOption('-tx, --txNum <txNum>', 'transaction number')
   .option(
     '-p, --provider <provider>',
     'Network provider type (regtest, bitcoin)'
   )
   .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .option('-deadline, --deadline <deadline>', 'block number when tx expires')
   .action(async (options) => {
     const wallet: Wallet = new Wallet(options)
 
@@ -478,12 +490,11 @@ export const alkaneSwap = new AlkanesCommand('swap')
       provider: wallet.provider,
     })
 
-    // Build account structure dynamically based on what's found
     const accountStructure: any = {
       spendStrategy: {
-        addressOrder: ['nativeSegwit'], // Only include addresses that exist
+        addressOrder: ['nativeSegwit'],
         utxoSortGreatestToLeast: true,
-        changeAddress: 'nativeSegwit', // Default to nativeSegwit for change
+        changeAddress: 'nativeSegwit',
       },
       network: wallet.account.network,
     };
@@ -498,22 +509,47 @@ export const alkaneSwap = new AlkanesCommand('swap')
 
     const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
 
+    const currentBlockHeight = await wallet.provider.sandshrew.bitcoindRpc.getBlockCount!();
+
+    calldata.push(BigInt(currentBlockHeight + Number(options.deadline)))
+
+    // This test uses addressOrder to test sends using account objects with specific address types
+    // For example addressOrder = ['nativeSegwit'] will use nativeSegwit utxos and account object
+
+    if (accountStructure.spendStrategy.addressOrder.includes('taproot')) {
+      accountStructure.taproot = {
+        address: wallet.account.taproot.address,
+        pubkey: wallet.account.taproot.pubkey,
+        hdPath: '',
+      };
+    }
+
+    if (accountStructure.spendStrategy.addressOrder.includes('nativeSegwit')) {
     accountStructure.nativeSegwit = {
       address: wallet.account.nativeSegwit.address,
-      pubkey: wallet.account.nativeSegwit.pubkey,
-      hdPath: '',
-    };
-    // accountStructure.taproot = {
-    //   address: wallet.account.taproot.address,
-    //   pubkey: wallet.account.taproot.pubkey,
-    //   hdPath: '',
-    // };
+        pubkey: wallet.account.nativeSegwit.pubkey,
+        hdPath: '',
+      };
+    }
+
+
+    console.log('calldata: ', calldata)
+
+    const protostone: Buffer = encodeRunestoneProtostone({
+      protostones: [
+        ProtoStone.message({
+          protocolTag: 1n,
+          edicts: [],
+          pointer: 0,
+          refundPointer: 0,
+          calldata: encipher(calldata),
+        }),
+      ],
+    }).encodedRunestone
 
     console.log(
-      await swap({
-        calldata,
-        token: { block: options.block, tx: options.txNum },
-        tokenAmount: BigInt(options.amount),
+      await alkanes.execute({
+        protostone,
         utxos: filteredUtxos,
         feeRate: wallet.feeRate,
         account: accountStructure,

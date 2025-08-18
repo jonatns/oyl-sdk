@@ -395,8 +395,10 @@ export const addressUtxos = async ({
   const blockCount = multiCall[0].result
 
   const sandshrewBalances: SandShrewBalancesAddressInfo = await provider.sandshrew.sandShrewBalances({ address })
-  console.log('address', address)
-  console.log('sandshrewBalances', JSON.stringify(sandshrewBalances, null, 2))
+  console.log('address: ', address)
+  if (address.startsWith('bc1q')) {
+    console.log('sandshrewBalances: ', JSON.stringify(sandshrewBalances.assets, null, 2))
+  }
 
   const scriptPk = addressToScriptPk(address, provider.network)
 
