@@ -9,7 +9,6 @@ import { Wallet } from './wallet'
 import {
   contractDeployment,
   deployReveal,
-  recoverCommit,
 } from '../alkanes/contract'
 import { send, split, inscribePayload } from '../alkanes/token'
 import { AlkanesPayload } from 'shared/interface'
@@ -158,14 +157,10 @@ export const alkaneSpendCommit = new AlkanesCommand('spend-commit')
     'The transaction id of the commit to spend.'
   )
   .requiredOption(
-    '-m, --method <method>',
-    'The method to use to spend the commit, either "reveal" or "recover".'
-  )
-  .requiredOption(
     '-c, --contract <contract>',
     'Relative path to contract wasm file to deploy (e.g., "../alkanes/free_mint.wasm")'
   )
-  .option(
+  .requiredOption(
     '-data, --calldata <calldata>',
     'op code + params to be used when deploying a contracts',
     (value, previous) => {
@@ -181,85 +176,62 @@ export const alkaneSpendCommit = new AlkanesCommand('spend-commit')
   .option('-feeRate, --feeRate <feeRate>', 'fee rate')
   .action(async (options) => {
     const wallet: Wallet = new Wallet(options)
-    const { accountUtxos } = await utxo.accountUtxos({
-      account: wallet.account,
-      provider: wallet.provider,
-    })
 
-    let protostone = Buffer.from('')
-    if (options.method === 'reveal') {
-      if (!options.calldata || options.calldata.length === 0) {
-        throw new Error('Calldata is required for reveal method.')
-      }
-      const callData: bigint[] = []
-      for (let i = 0; i < options.calldata.length; i++) {
-        callData.push(BigInt(options.calldata[i]))
-      }
-
-      const encoded = encodeRunestoneProtostone({
-        protostones: [
-          ProtoStone.message({
-            protocolTag: 1n,
-            edicts: [],
-            pointer: 0,
-            refundPointer: 0,
-            calldata: encipher(callData),
-          }),
-        ],
-      }).encodedRunestone
-      protostone = Buffer.from(encoded)
+    if (!options.calldata || options.calldata.length === 0) {
+      throw new Error('Calldata is required for reveal method.')
+    }
+    const callData: bigint[] = []
+    for (let i = 0; i < options.calldata.length; i++) {
+      callData.push(BigInt(options.calldata[i]))
     }
 
-    let script: Buffer
-    if (options.contract) {
-      const contract = new Uint8Array(
-        Array.from(
-          await fs.readFile(path.resolve(process.cwd(), options.contract))
-        )
-      )
-      const gzip = promisify(_gzip)
-      const payload = {
-        body: await gzip(contract, { level: 9 }),
-        cursed: false,
-        tags: { contentType: '' },
-      }
-      const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
-        wallet.signer.taprootKeyPair,
-        {
-          network: wallet.provider.network,
-        }
-      )
-      const tweakedPublicKey = tweakedTaprootKeyPair.publicKey
-      script = Buffer.from(
-        p2tr_ord_reveal(toXOnly(tweakedPublicKey), [payload]).script
-      )
-    }
+    const encoded = encodeRunestoneProtostone({
+      protostones: [
+        ProtoStone.message({
+          protocolTag: 1n,
+          edicts: [],
+          pointer: 0,
+          refundPointer: 0,
+          calldata: encipher(callData),
+        }),
+      ],
+    }).encodedRunestone
+    const protostone = Buffer.from(encoded)
 
-    if (options.method === 'reveal') {
-      console.log(
-        await deployReveal({
-          commitTxId: options.commitTxId,
-          protostone,
-          account: wallet.account,
-          provider: wallet.provider,
-          feeRate: wallet.feeRate,
-          signer: wallet.signer,
-          script: script.toString('hex'),
-        })
+    const contract = new Uint8Array(
+      Array.from(
+        await fs.readFile(path.resolve(process.cwd(), options.contract))
       )
-    } else {
-      console.log(
-        await recoverCommit({
-          commitTxId: options.commitTxId,
-          utxos: accountUtxos,
-          account: wallet.account,
-          provider: wallet.provider,
-          feeRate: wallet.feeRate,
-          signer: wallet.signer,
-          script,
-        })
-      )
+    )
+    const gzip = promisify(_gzip)
+    const payload = {
+      body: await gzip(contract, { level: 9 }),
+      cursed: false,
+      tags: { contentType: '' },
     }
+    const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
+      wallet.signer.taprootKeyPair,
+      {
+        network: wallet.provider.network,
+      }
+    )
+    const tweakedPublicKey = tweakedTaprootKeyPair.publicKey
+    const script = Buffer.from(
+      p2tr_ord_reveal(toXOnly(tweakedPublicKey), [payload]).script
+    )
+
+    console.log(
+      await deployReveal({
+        commitTxId: options.commitTxId,
+        protostone,
+        account: wallet.account,
+        provider: wallet.provider,
+        feeRate: wallet.feeRate,
+        signer: wallet.signer,
+        script: script.toString('hex'),
+      })
+    )
+
   })
 
 /* @dev example call
