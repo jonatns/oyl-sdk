@@ -901,7 +901,7 @@ export const createTransactReveal = async ({
       ? alkanesUtxos.reduce((acc, utxo) => acc + utxo.satoshis, 0)
       : 0;
     const change =
-      commitTxOutput.value + totalAlkanesAmount + gatheredUtxos.totalAmount - revealTxFee - 546;
+      commitTxOutput.value + totalAlkanesAmount + gatheredUtxos.totalAmount - revealTxFee - 550;
     if (change > 546) {
       psbt.addOutput({
         value: change,
