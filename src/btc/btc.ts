@@ -287,9 +287,13 @@ export const minimumFee = ({
   outputCount: number
   payload?: AlkanesPayload
 }) => {
-  return calculateTaprootTxSize(
+  let base = calculateTaprootTxSize(
     taprootInputCount,
     nonTaprootInputCount,
     outputCount
-  ) + getVSize(Buffer.from(payload.body))
+  );
+  if (payload) {
+    base += getVSize(Buffer.from(payload.body));
+  }
+  return base;
 }
