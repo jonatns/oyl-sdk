@@ -415,7 +415,6 @@ export const swap = async ({
   frontendFee?: bigint
   feeAddress?: string
 }) => {
-  console.log('account', account)
   const { psbt } = await swapPsbt({
     calldata,
     token,
