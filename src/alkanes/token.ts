@@ -48,6 +48,7 @@ export const inscribePayload = async ({
     provider,
     feeRate,
     signer,
+    protostone,
   })
 
   await timeout(3000)

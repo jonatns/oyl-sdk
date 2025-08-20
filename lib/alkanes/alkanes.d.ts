@@ -30,18 +30,20 @@ export declare const createExecutePsbt: ({ alkanesUtxos, frontendFee, feeAddress
     psbtHex: string;
 }>;
 export declare function addInputForUtxo(psbt: bitcoin.Psbt, utxo: FormattedUtxo, account: Account, provider: Provider): Promise<void>;
-export declare const actualDeployCommitFee: ({ payload, tweakedPublicKey, utxos, account, provider, feeRate, }: {
+export declare const actualDeployCommitFee: ({ payload, tweakedPublicKey, utxos, account, provider, feeRate, protostone, }: {
     payload: AlkanesPayload;
     tweakedPublicKey: string;
     utxos: FormattedUtxo[];
     account: Account;
     provider: Provider;
     feeRate?: number;
+    protostone: Buffer;
 }) => Promise<{
     fee: number;
+    deployRevealFee: number;
     vsize: number;
 }>;
-export declare const createDeployCommitPsbt: ({ payload, utxos, tweakedPublicKey, account, provider, feeRate, fee, }: {
+export declare const createDeployCommitPsbt: ({ payload, utxos, tweakedPublicKey, account, provider, feeRate, fee, deployRevealFee, }: {
     payload: AlkanesPayload;
     utxos: FormattedUtxo[];
     tweakedPublicKey: string;
@@ -49,17 +51,19 @@ export declare const createDeployCommitPsbt: ({ payload, utxos, tweakedPublicKey
     provider: Provider;
     feeRate?: number;
     fee?: number;
+    deployRevealFee?: number;
 }) => Promise<{
     psbt: string;
     script: Buffer;
 }>;
-export declare const deployCommit: ({ payload, utxos, account, provider, feeRate, signer, }: {
+export declare const deployCommit: ({ payload, utxos, account, provider, feeRate, signer, protostone, }: {
     payload: AlkanesPayload;
     utxos: FormattedUtxo[];
     account: Account;
     provider: Provider;
     feeRate?: number;
     signer: Signer;
+    protostone: Buffer;
 }) => Promise<{
     script: string;
     txId: string;

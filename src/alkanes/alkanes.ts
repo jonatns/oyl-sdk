@@ -245,6 +245,7 @@ export const actualDeployCommitFee = async ({
   account,
   provider,
   feeRate,
+  protostone,
 }: {
   payload: AlkanesPayload
   tweakedPublicKey: string
@@ -252,12 +253,13 @@ export const actualDeployCommitFee = async ({
   account: Account
   provider: Provider
   feeRate?: number
+  protostone: Buffer
 }) => {
   if (!feeRate) {
     feeRate = (await provider.esplora.getFeeEstimates())['1']
   }
 
-  const { psbt } = await createDeployCommitPsbt({
+  const { psbt, script } = await createDeployCommitPsbt({
     payload,
     utxos,
     tweakedPublicKey,
@@ -288,7 +290,37 @@ export const actualDeployCommitFee = async ({
     provider,
   })
 
-  return { fee: finalFee, vsize }
+  const wasmDeploySize = getVSize(Buffer.from(payload.body)) * feeRate;
+  const originalGetOutputValue = getOutputValueByVOutIndex;
+
+  (getOutputValueByVOutIndex as any) = async ({
+    txId,
+    vOut,
+    esploraRpc,
+  }: {
+    txId: string;
+    vOut: number;
+    esploraRpc: any;
+  }) => {
+    return { value: finalFee + wasmDeploySize + 546, script: '' };
+  };
+
+  const { fee: deployRevealFee } = await actualTransactRevealFee({
+    payload,
+    utxos,
+    protostone,
+    tweakedPublicKey,
+    commitTxId: "0000000000000000000000000000000000000000000000000000000000000000",
+    receiverAddress: account.taproot.address,
+    script,
+    provider,
+    feeRate,
+    account,
+  });
+
+  (getOutputValueByVOutIndex as any) = originalGetOutputValue;
+
+  return { fee: finalFee, deployRevealFee, vsize }
 }
 
 
@@ -300,6 +332,7 @@ export const createDeployCommitPsbt = async ({
   provider,
   feeRate,
   fee,
+  deployRevealFee,
 }: {
   payload: AlkanesPayload
   utxos: FormattedUtxo[]
@@ -308,6 +341,7 @@ export const createDeployCommitPsbt = async ({
   provider: Provider
   feeRate?: number
   fee?: number
+  deployRevealFee?: number
 }) => {
   try {
     let alkanesAddress: string;
@@ -418,22 +452,22 @@ export const createDeployCommitPsbt = async ({
         })
       }
     }
+    const revealTxFee = deployRevealFee ? deployRevealFee + inscriptionSats : finalFee + wasmDeploySize + inscriptionSats;
 
     if (
       gatheredUtxos.totalAmount <
-      finalFee * 2 + inscriptionSats + wasmDeploySize
+      finalFee + revealTxFee
     ) {
       throw new OylTransactionError(Error('Insufficient Balance'))
     }
 
     psbt.addOutput({
-      value: finalFee + wasmDeploySize + 546,
+      value: revealTxFee,
       address: inscriberInfo.address,
     })
 
     const changeAmount =
-      gatheredUtxos.totalAmount -
-      (finalFee * 2 + wasmDeploySize + inscriptionSats)
+      gatheredUtxos.totalAmount - (finalFee + revealTxFee)
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
@@ -459,6 +493,7 @@ export const deployCommit = async ({
   provider,
   feeRate,
   signer,
+  protostone,
 }: {
   payload: AlkanesPayload
   utxos: FormattedUtxo[]
@@ -466,6 +501,7 @@ export const deployCommit = async ({
   provider: Provider
   feeRate?: number
   signer: Signer
+  protostone: Buffer
 }) => {
   const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
     signer.taprootKeyPair,
@@ -476,14 +512,15 @@ export const deployCommit = async ({
 
   const tweakedPublicKey = tweakedTaprootKeyPair.publicKey.toString('hex')
 
-  const { fee: commitFee } = await actualDeployCommitFee({
+  const { fee: commitFee, deployRevealFee } = await actualDeployCommitFee({
     payload,
     utxos,
     tweakedPublicKey,
     account,
     provider,
     feeRate,
-  })
+    protostone,
+  });
 
   const { psbt: finalPsbt, script } = await createDeployCommitPsbt({
     payload,
@@ -493,7 +530,8 @@ export const deployCommit = async ({
     provider,
     feeRate,
     fee: commitFee,
-  })
+    deployRevealFee,
+  });
 
   const { signedPsbt } = await signer.signAllInputs({
     rawPsbt: finalPsbt,
