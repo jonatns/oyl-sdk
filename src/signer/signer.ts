@@ -249,6 +249,8 @@ export class Signer {
           }
           break
         default:
+          console.log(i, "did not match any signer types!");
+          break;
       }
     }
 

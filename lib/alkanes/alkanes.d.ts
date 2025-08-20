@@ -2,6 +2,7 @@
 /// <reference types="node" />
 import { Provider } from '../provider/provider';
 import * as bitcoin from 'bitcoinjs-lib';
+import { p2tr_ord_reveal } from 'alkanes/lib/index';
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict';
 import { Account, Signer } from '..';
 import { AlkanesPayload } from '../shared/interface';
@@ -29,7 +30,20 @@ export declare const createExecutePsbt: ({ alkanesUtxos, frontendFee, feeAddress
     psbtHex: string;
 }>;
 export declare function addInputForUtxo(psbt: bitcoin.Psbt, utxo: FormattedUtxo, account: Account, provider: Provider): Promise<void>;
-export declare const createDeployCommitPsbt: ({ payload, utxos, tweakedPublicKey, account, provider, feeRate, fee, }: {
+export declare const actualDeployCommitFee: ({ payload, tweakedPublicKey, utxos, account, provider, feeRate, protostone, }: {
+    payload: AlkanesPayload;
+    tweakedPublicKey: string;
+    utxos: FormattedUtxo[];
+    account: Account;
+    provider: Provider;
+    feeRate?: number;
+    protostone: Buffer;
+}) => Promise<{
+    fee: number;
+    deployRevealFee: number;
+    vsize: number;
+}>;
+export declare const createDeployCommitPsbt: ({ payload, utxos, tweakedPublicKey, account, provider, feeRate, fee, deployRevealFee, }: {
     payload: AlkanesPayload;
     utxos: FormattedUtxo[];
     tweakedPublicKey: string;
@@ -37,17 +51,19 @@ export declare const createDeployCommitPsbt: ({ payload, utxos, tweakedPublicKey
     provider: Provider;
     feeRate?: number;
     fee?: number;
+    deployRevealFee?: number;
 }) => Promise<{
     psbt: string;
     script: Buffer;
 }>;
-export declare const deployCommit: ({ payload, utxos, account, provider, feeRate, signer, }: {
+export declare const deployCommit: ({ payload, utxos, account, provider, feeRate, signer, protostone, }: {
     payload: AlkanesPayload;
     utxos: FormattedUtxo[];
     account: Account;
     provider: Provider;
     feeRate?: number;
     signer: Signer;
+    protostone: Buffer;
 }) => Promise<{
     script: string;
     txId: string;
@@ -57,21 +73,10 @@ export declare const deployCommit: ({ payload, utxos, account, provider, feeRate
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const createDeployRevealPsbt: ({ protostone, receiverAddress, script, feeRate, tweakedPublicKey, provider, fee, commitTxId, }: {
-    protostone: Buffer;
-    receiverAddress: string;
-    script: Buffer;
-    feeRate: number;
-    tweakedPublicKey: string;
-    provider: Provider;
-    fee?: number;
-    commitTxId: string;
-}) => Promise<{
-    psbt: string;
-    fee: number;
-}>;
-export declare const deployReveal: ({ alkanesUtxos, protostone, commitTxId, script, account, provider, feeRate, signer, }: {
+export declare const deployReveal: ({ payload, alkanesUtxos, utxos, protostone, commitTxId, script, account, provider, feeRate, signer, }: {
+    payload: AlkanesPayload;
     alkanesUtxos?: FormattedUtxo[];
+    utxos: FormattedUtxo[];
     protostone: Buffer;
     commitTxId: string;
     script: string;
@@ -87,7 +92,10 @@ export declare const deployReveal: ({ alkanesUtxos, protostone, commitTxId, scri
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const actualTransactRevealFee: ({ protostone, tweakedPublicKey, commitTxId, receiverAddress, script, provider, feeRate, account, }: {
+export declare const actualTransactRevealFee: ({ payload, alkanesUtxos, utxos, protostone, tweakedPublicKey, commitTxId, receiverAddress, script, provider, feeRate, account, }: {
+    payload: AlkanesPayload;
+    alkanesUtxos?: FormattedUtxo[];
+    utxos: FormattedUtxo[];
     protostone: Buffer;
     tweakedPublicKey: string;
     commitTxId: string;
@@ -144,8 +152,10 @@ export declare const execute: ({ alkanesUtxos, utxos, account, protostone, provi
     fee: number;
     satsPerVByte: string;
 }>;
-export declare const createTransactReveal: ({ alkanesUtxos, protostone, receiverAddress, script, feeRate, tweakedPublicKey, provider, fee, commitTxId, account, }: {
+export declare const createTransactReveal: ({ payload, alkanesUtxos, utxos, protostone, receiverAddress, script, feeRate, tweakedPublicKey, provider, fee, commitTxId, account, }: {
+    payload: AlkanesPayload;
     alkanesUtxos?: FormattedUtxo[];
+    utxos: FormattedUtxo[];
     protostone: Buffer;
     receiverAddress: string;
     script: Buffer;
@@ -167,3 +177,4 @@ export declare const toAlkaneId: (item: string) => {
     };
     amount: number;
 };
+export { p2tr_ord_reveal };

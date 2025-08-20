@@ -6,9 +6,12 @@ import path from 'path'
 import * as alkanes from '../alkanes/alkanes'
 import * as utxo from '../utxo'
 import { Wallet } from './wallet'
-import { contractDeployment } from '../alkanes/contract'
 import { send, split, inscribePayload } from '../alkanes/token'
 import { AlkanesPayload } from 'shared/interface'
+import * as bitcoin from 'bitcoinjs-lib'
+import { tweakSigner } from '../shared/utils'
+import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
+import { p2tr_ord_reveal } from '../alkanes/alkanes'
 import { encodeRunestoneProtostone } from 'alkanes/lib/protorune/proto_runestone_upgrade'
 import { ProtoStone } from 'alkanes/lib/protorune/protostone'
 import { encipher } from 'alkanes/lib/bytes'
@@ -133,7 +136,7 @@ export const alkaneContractDeploy = new AlkanesCommand('new-contract')
     }).encodedRunestone
 
     console.log(
-      await contractDeployment({
+      await inscribePayload({
         protostone,
         payload,
         utxos: accountUtxos,
@@ -145,16 +148,106 @@ export const alkaneContractDeploy = new AlkanesCommand('new-contract')
     )
   })
 
-/* @dev example call 
+export const alkaneSpendCommit = new AlkanesCommand('spend-commit')
+  .requiredOption(
+    '-txid, --commitTxId <commitTxId>',
+    'The transaction id of the commit to spend.'
+  )
+  .requiredOption(
+    '-c, --contract <contract>',
+    'Relative path to contract wasm file to deploy (e.g., "../alkanes/free_mint.wasm")'
+  )
+  .requiredOption(
+    '-data, --calldata <calldata>',
+    'op code + params to be used when deploying a contracts',
+    (value, previous) => {
+      const items = value.split(',')
+      return previous ? previous.concat(items) : items
+    },
+    []
+  )
+  .option(
+    '-p, --provider <provider>',
+    'Network provider type (regtest, bitcoin)'
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .action(async (options) => {
+    const wallet: Wallet = new Wallet(options)
+
+    const { accountUtxos } = await utxo.accountUtxos({
+      account: wallet.account,
+      provider: wallet.provider,
+    });
+
+    if (!options.calldata || options.calldata.length === 0) {
+      throw new Error('Calldata is required for reveal method.')
+    }
+    const callData: bigint[] = []
+    for (let i = 0; i < options.calldata.length; i++) {
+      callData.push(BigInt(options.calldata[i]))
+    }
+
+    const encoded = encodeRunestoneProtostone({
+      protostones: [
+        ProtoStone.message({
+          protocolTag: 1n,
+          edicts: [],
+          pointer: 0,
+          refundPointer: 0,
+          calldata: encipher(callData),
+        }),
+      ],
+    }).encodedRunestone
+    const protostone = Buffer.from(encoded)
+
+    const contract = new Uint8Array(
+      Array.from(
+        await fs.readFile(path.resolve(process.cwd(), options.contract))
+      )
+    )
+    const gzip = promisify(_gzip)
+    const payload = {
+      body: await gzip(contract, { level: 9 }),
+      cursed: false,
+      tags: { contentType: '' },
+    }
+    const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
+      wallet.signer.taprootKeyPair,
+      {
+        network: wallet.provider.network,
+      }
+    )
+    const tweakedPublicKey = tweakedTaprootKeyPair.publicKey
+    const script = Buffer.from(
+      p2tr_ord_reveal(toXOnly(tweakedPublicKey), [payload]).script
+    )
+
+    console.log(
+      await alkanes.deployReveal({
+        payload,
+        commitTxId: options.commitTxId,
+        protostone,
+        utxos: accountUtxos,
+        account: wallet.account,
+        provider: wallet.provider,
+        feeRate: wallet.feeRate,
+        signer: wallet.signer,
+        script: script.toString('hex'),
+      })
+    )
+
+  })
+
+/* @dev example call
   oyl alkane new-token -pre 5000 -amount 1000 -c 100000 -name "OYL" -symbol "OL" -resNumber 77 -i ./src/cli/contracts/image.png
   oyl alkane new-token -resNumber 12050 -i ./src/cli/contracts/image.png -args 0,10,100000000
   
-  The resNumber must be a resNumber for a deployed contract. In this case 77 is the resNumber for 
+  The resNumber must be a resNumber for a deployed contract. In this case 77 is the resNumber for
   the free_mint.wasm contract and the options supplied are for the free_mint.wasm contract.
 
   The token will deploy to the next available [2, n] Alkane ID.
 
-  To get information on the deployed token, you can use the oyl alkane trace command 
+  To get information on the deployed token, you can use the oyl alkane trace command
   using the returned txid and vout: 4
 
   Remember to genBlocks after transactions...
@@ -499,7 +592,7 @@ export const alkaneSwap = new AlkanesCommand('swap')
       },
       network: wallet.account.network,
     };
-    
+
     // Filter UTXOs to only include those from addresses we actually have configured
     const filteredUtxos = accountUtxos.filter(utxo => {
       const addressKey = getAddressKey(utxo.address);
@@ -536,8 +629,8 @@ export const alkaneSwap = new AlkanesCommand('swap')
     }
 
     if (accountStructure.spendStrategy.addressOrder.includes('nativeSegwit')) {
-    accountStructure.nativeSegwit = {
-      address: wallet.account.nativeSegwit.address,
+      accountStructure.nativeSegwit = {
+        address: wallet.account.nativeSegwit.address,
         pubkey: wallet.account.nativeSegwit.pubkey,
         hdPath: '',
       };
@@ -1205,7 +1298,7 @@ export const merkleClaim = new AlkanesCommand('merkle-claim')
 
     const [block, tx] = options.target.split(':');
 
-    const calldata = [BigInt(block), BigInt(tx), BigInt(1)]; // Opcode 1 for claim
+    const calldata = [BigInt(4), BigInt(11001), BigInt(block), BigInt(tx), BigInt(1)]; // Opcode 1 for claim
 
     const protostone = encodeRunestoneProtostone({
       protostones: [

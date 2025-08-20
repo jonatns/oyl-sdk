@@ -24,7 +24,6 @@ import { AlkanesPayload } from '../shared/interface'
 import { getAddressType } from '../shared/utils'
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
-import { actualDeployCommitFee } from './contract'
 import { selectSpendableUtxos, type FormattedUtxo } from '../utxo'
 
 export interface ProtostoneMessage {
@@ -238,6 +237,93 @@ export async function addInputForUtxo(
   }
 }
 
+
+export const actualDeployCommitFee = async ({
+  payload,
+  tweakedPublicKey,
+  utxos,
+  account,
+  provider,
+  feeRate,
+  protostone,
+}: {
+  payload: AlkanesPayload
+  tweakedPublicKey: string
+  utxos: FormattedUtxo[]
+  account: Account
+  provider: Provider
+  feeRate?: number
+  protostone: Buffer
+}) => {
+  if (!feeRate) {
+    feeRate = (await provider.esplora.getFeeEstimates())['1']
+  }
+
+  const { psbt, script } = await createDeployCommitPsbt({
+    payload,
+    utxos,
+    tweakedPublicKey,
+    account,
+    provider,
+    feeRate,
+  })
+
+  const { fee: estimatedFee } = await getEstimatedFee({
+    feeRate,
+    psbt,
+    provider,
+  })
+
+  const { psbt: finalPsbt } = await createDeployCommitPsbt({
+    payload,
+    utxos,
+    tweakedPublicKey,
+    account,
+    provider,
+    feeRate,
+    fee: estimatedFee,
+  })
+
+  const { fee: finalFee, vsize } = await getEstimatedFee({
+    feeRate,
+    psbt: finalPsbt,
+    provider,
+  })
+
+  const wasmDeploySize = getVSize(Buffer.from(payload.body)) * feeRate;
+  const originalGetOutputValue = getOutputValueByVOutIndex;
+
+  (getOutputValueByVOutIndex as any) = async ({
+    txId,
+    vOut,
+    esploraRpc,
+  }: {
+    txId: string;
+    vOut: number;
+    esploraRpc: any;
+  }) => {
+    return { value: finalFee + wasmDeploySize + 546, script: '' };
+  };
+
+  const { fee: deployRevealFee } = await actualTransactRevealFee({
+    payload,
+    utxos,
+    protostone,
+    tweakedPublicKey,
+    commitTxId: "0000000000000000000000000000000000000000000000000000000000000000",
+    receiverAddress: account.taproot.address,
+    script,
+    provider,
+    feeRate,
+    account,
+  });
+
+  (getOutputValueByVOutIndex as any) = originalGetOutputValue;
+
+  return { fee: finalFee, deployRevealFee, vsize }
+}
+
+
 export const createDeployCommitPsbt = async ({
   payload,
   utxos,
@@ -246,6 +332,7 @@ export const createDeployCommitPsbt = async ({
   provider,
   feeRate,
   fee,
+  deployRevealFee,
 }: {
   payload: AlkanesPayload
   utxos: FormattedUtxo[]
@@ -254,6 +341,7 @@ export const createDeployCommitPsbt = async ({
   provider: Provider
   feeRate?: number
   fee?: number
+  deployRevealFee?: number
 }) => {
   try {
     let alkanesAddress: string;
@@ -277,7 +365,7 @@ export const createDeployCommitPsbt = async ({
       outputCount: 2,
     })
     const calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
-    let finalFee = fee ? fee : calculatedFee
+    let commitFee = fee ? fee : calculatedFee
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
 
@@ -295,10 +383,11 @@ export const createDeployCommitPsbt = async ({
     })
 
     const wasmDeploySize = getVSize(Buffer.from(payload.body)) * feeRate
-
+    const revealTxFee = deployRevealFee ? deployRevealFee + inscriptionSats : commitFee + wasmDeploySize + inscriptionSats;
+    let totalFee = revealTxFee + commitFee;
     gatheredUtxos = findXAmountOfSats(
       [...utxos],
-      wasmDeploySize + Number(inscriptionSats) + finalFee * 2
+      totalFee
     )
 
     if (!fee && gatheredUtxos.utxos.length > 1) {
@@ -307,12 +396,13 @@ export const createDeployCommitPsbt = async ({
         nonTaprootInputCount: 0,
         outputCount: 2,
       })
-      finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
+      commitFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
+      totalFee = commitFee + revealTxFee;
 
-      if (gatheredUtxos.totalAmount < finalFee) {
+      if (gatheredUtxos.totalAmount < commitFee) {
         gatheredUtxos = findXAmountOfSats(
           [...utxos],
-          wasmDeploySize + Number(inscriptionSats) + finalFee * 2
+          totalFee
         )
       }
     }
@@ -367,19 +457,18 @@ export const createDeployCommitPsbt = async ({
 
     if (
       gatheredUtxos.totalAmount <
-      finalFee * 2 + inscriptionSats + wasmDeploySize
+      totalFee
     ) {
       throw new OylTransactionError(Error('Insufficient Balance'))
     }
 
     psbt.addOutput({
-      value: finalFee + wasmDeploySize + 546,
+      value: revealTxFee,
       address: inscriberInfo.address,
     })
 
     const changeAmount =
-      gatheredUtxos.totalAmount -
-      (finalFee * 2 + wasmDeploySize + inscriptionSats)
+      gatheredUtxos.totalAmount - totalFee
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,
@@ -405,6 +494,7 @@ export const deployCommit = async ({
   provider,
   feeRate,
   signer,
+  protostone,
 }: {
   payload: AlkanesPayload
   utxos: FormattedUtxo[]
@@ -412,6 +502,7 @@ export const deployCommit = async ({
   provider: Provider
   feeRate?: number
   signer: Signer
+  protostone: Buffer
 }) => {
   const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
     signer.taprootKeyPair,
@@ -422,14 +513,15 @@ export const deployCommit = async ({
 
   const tweakedPublicKey = tweakedTaprootKeyPair.publicKey.toString('hex')
 
-  const { fee: commitFee } = await actualDeployCommitFee({
+  const { fee: commitFee, deployRevealFee } = await actualDeployCommitFee({
     payload,
     utxos,
     tweakedPublicKey,
     account,
     provider,
     feeRate,
-  })
+    protostone,
+  });
 
   const { psbt: finalPsbt, script } = await createDeployCommitPsbt({
     payload,
@@ -439,7 +531,8 @@ export const deployCommit = async ({
     provider,
     feeRate,
     fee: commitFee,
-  })
+    deployRevealFee,
+  });
 
   const { signedPsbt } = await signer.signAllInputs({
     rawPsbt: finalPsbt,
@@ -453,103 +546,10 @@ export const deployCommit = async ({
   return { ...result, script: script.toString('hex') }
 }
 
-export const createDeployRevealPsbt = async ({
-  protostone,
-  receiverAddress,
-  script,
-  feeRate,
-  tweakedPublicKey,
-  provider,
-  fee = 0,
-  commitTxId,
-}: {
-  protostone: Buffer
-  receiverAddress: string
-  script: Buffer
-  feeRate: number
-  tweakedPublicKey: string
-  provider: Provider
-  fee?: number
-  commitTxId: string
-}) => {
-  try {
-    if (!feeRate) {
-      feeRate = (await provider.esplora.getFeeEstimates())['1']
-    }
-
-    const psbt: bitcoin.Psbt = new bitcoin.Psbt({ network: provider.network })
-    const minFee = minimumFee({
-      taprootInputCount: 1,
-      nonTaprootInputCount: 0,
-      outputCount: 2,
-    })
-
-    const revealTxBaseFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
-    const revealTxChange = fee === 0 ? 0 : Number(revealTxBaseFee) - fee
-
-    const commitTxOutput = await getOutputValueByVOutIndex({
-      txId: commitTxId,
-      vOut: 0,
-      esploraRpc: provider.esplora,
-    })
-
-    if (!commitTxOutput) {
-      throw new OylTransactionError(new Error('Error getting vin #0 value'))
-    }
-
-    const p2pk_redeem = { output: script }
-
-    const { output, witness } = bitcoin.payments.p2tr({
-      internalPubkey: toXOnly(Buffer.from(tweakedPublicKey, 'hex')),
-      scriptTree: p2pk_redeem,
-      redeem: p2pk_redeem,
-      network: provider.network,
-    })
-
-    psbt.addInput({
-      hash: commitTxId,
-      index: 0,
-      witnessUtxo: {
-        value: commitTxOutput.value,
-        script: output,
-      },
-      tapLeafScript: [
-        {
-          leafVersion: LEAF_VERSION_TAPSCRIPT,
-          script: p2pk_redeem.output,
-          controlBlock: witness![witness!.length - 1],
-        },
-      ],
-    })
-
-    psbt.addOutput({
-      value: 546,
-      address: receiverAddress,
-    })
-
-    psbt.addOutput({
-      value: 0,
-      script: protostone,
-    })
-
-    if (revealTxChange > 546) {
-      psbt.addOutput({
-        value: revealTxChange,
-        address: receiverAddress,
-      })
-    }
-
-    return {
-      psbt: psbt.toBase64(),
-      fee: revealTxChange,
-    }
-  } catch (error) {
-    throw new OylTransactionError(error)
-  }
-}
-
 export const deployReveal = async ({
+  payload,
   alkanesUtxos,
+  utxos,
   protostone,
   commitTxId,
   script,
@@ -558,7 +558,9 @@ export const deployReveal = async ({
   feeRate,
   signer,
 }: {
+  payload: AlkanesPayload
   alkanesUtxos?: FormattedUtxo[]
+  utxos: FormattedUtxo[]
   protostone: Buffer
   commitTxId: string
   script: string
@@ -589,6 +591,9 @@ export const deployReveal = async ({
   const tweakedPublicKey = tweakedTaprootKeyPair.publicKey.toString('hex')
 
   const { fee } = await actualTransactRevealFee({
+    payload,
+    alkanesUtxos,
+    utxos,
     protostone,
     tweakedPublicKey,
     receiverAddress: alkanesAddress,
@@ -600,7 +605,9 @@ export const deployReveal = async ({
   })
 
   const { psbt: finalRevealPsbt } = await createTransactReveal({
+    payload,
     alkanesUtxos,
+    utxos,
     protostone,
     tweakedPublicKey,
     receiverAddress: alkanesAddress,
@@ -612,33 +619,28 @@ export const deployReveal = async ({
     account,
   })
 
-  let finalReveal = bitcoin.Psbt.fromBase64(finalRevealPsbt, {
+  const { signedPsbt } = await signer.signAllInputs({
+    rawPsbt: finalRevealPsbt,
+    finalize: true,
+  })
+  let finalReveal = bitcoin.Psbt.fromBase64(signedPsbt, {
     network: provider.network,
   });
 
   finalReveal.signInput(0, tweakedTaprootKeyPair);
-  for (let i = 1; i < finalReveal.inputCount; i++) {
-    formatInputToSign({
-      v: finalReveal.data.inputs[i],
-      senderPublicKey: alkanesPubkey,
-      network: provider.network,
-    })
-    finalReveal.signInput(i, tweakedTaprootKeyPair);
-  }
-
-  // Finalize all inputs
-  finalReveal.finalizeAllInputs();
-
-  const finalSignedPsbt = finalReveal.toBase64();
+  finalReveal.finalizeInput(0);
 
   const revealResult = await provider.pushPsbt({
-    psbtBase64: finalSignedPsbt,
+    psbtBase64: finalReveal.toBase64(),
   })
 
   return revealResult
 }
 
 export const actualTransactRevealFee = async ({
+  payload,
+  alkanesUtxos,
+  utxos,
   protostone,
   tweakedPublicKey,
   commitTxId,
@@ -648,6 +650,9 @@ export const actualTransactRevealFee = async ({
   feeRate,
   account,
 }: {
+  payload: AlkanesPayload
+  alkanesUtxos?: FormattedUtxo[]
+  utxos: FormattedUtxo[]
   protostone: Buffer
   tweakedPublicKey: string
   commitTxId: string
@@ -662,6 +667,9 @@ export const actualTransactRevealFee = async ({
   }
 
   const { psbt } = await createTransactReveal({
+    payload,
+    alkanesUtxos,
+    utxos,
     protostone,
     commitTxId,
     receiverAddress,
@@ -679,6 +687,9 @@ export const actualTransactRevealFee = async ({
   })
 
   const { psbt: finalPsbt } = await createTransactReveal({
+    payload,
+    alkanesUtxos,
+    utxos,
     protostone,
     commitTxId,
     receiverAddress,
@@ -858,7 +869,9 @@ export const execute = async ({
 }
 
 export const createTransactReveal = async ({
+  payload,
   alkanesUtxos,
+  utxos,
   protostone,
   receiverAddress,
   script,
@@ -869,7 +882,9 @@ export const createTransactReveal = async ({
   commitTxId,
   account,
 }: {
+  payload: AlkanesPayload
   alkanesUtxos?: FormattedUtxo[]
+  utxos: FormattedUtxo[]
   protostone: Buffer
   receiverAddress: string
   script: Buffer
@@ -890,11 +905,11 @@ export const createTransactReveal = async ({
       taprootInputCount: 1,
       nonTaprootInputCount: 0,
       outputCount: 2,
+      payload
     })
 
     const revealTxBaseFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
-    const revealTxChange = fee === 0 ? 0 : Number(revealTxBaseFee) - fee
-
+    let revealTxFee = fee === 0 ? revealTxBaseFee : fee
     const commitTxOutput = await getOutputValueByVOutIndex({
       txId: commitTxId,
       vOut: 0,
@@ -929,6 +944,20 @@ export const createTransactReveal = async ({
         },
       ],
     })
+
+    let gatheredUtxos = {
+      utxos: [],
+      totalAmount: 0,
+    }
+    if (commitTxOutput.value < revealTxFee + 546) {
+      gatheredUtxos = findXAmountOfSats(
+        [...utxos],
+        revealTxFee + 546 - commitTxOutput.value
+      )
+    }
+    for (const utxo of gatheredUtxos.utxos) {
+      await addInputForUtxo(psbt, utxo, account, provider)
+    }
     if (alkanesUtxos) {
       for (const utxo of alkanesUtxos) {
         await addInputForUtxo(psbt, utxo, account, provider)
@@ -948,7 +977,8 @@ export const createTransactReveal = async ({
     const totalAlkanesAmount = alkanesUtxos
       ? alkanesUtxos.reduce((acc, utxo) => acc + utxo.satoshis, 0)
       : 0;
-    const change = revealTxChange + totalAlkanesAmount;
+    const change =
+      commitTxOutput.value + totalAlkanesAmount + gatheredUtxos.totalAmount - revealTxFee - 550;
     if (change > 546) {
       psbt.addOutput({
         value: change,
@@ -958,7 +988,7 @@ export const createTransactReveal = async ({
 
     return {
       psbt: psbt.toBase64(),
-      fee: revealTxChange,
+      fee: revealTxFee,
     }
   } catch (error) {
     throw new OylTransactionError(error)
@@ -978,3 +1008,5 @@ export const toAlkaneId = (item: string) => {
     amount: Number(amount)
   }
 }
+
+export { p2tr_ord_reveal }

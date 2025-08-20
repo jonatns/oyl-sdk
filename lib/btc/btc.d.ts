@@ -2,6 +2,7 @@ import { Provider } from '../provider/provider';
 import { Account } from '../account/account';
 import { Signer } from '../signer';
 import { FormattedUtxo } from '../utxo';
+import { AlkanesPayload } from 'shared/interface';
 export declare const createPsbt: ({ utxos, toAddress, amount, feeRate, account, provider, fee, }: {
     utxos: FormattedUtxo[];
     toAddress: string;
@@ -42,8 +43,9 @@ export declare const actualFee: ({ utxos, toAddress, amount, feeRate, account, p
 }) => Promise<{
     fee: number;
 }>;
-export declare const minimumFee: ({ taprootInputCount, nonTaprootInputCount, outputCount, }: {
+export declare const minimumFee: ({ taprootInputCount, nonTaprootInputCount, outputCount, payload, }: {
     taprootInputCount: number;
     nonTaprootInputCount: number;
     outputCount: number;
+    payload?: AlkanesPayload;
 }) => number;

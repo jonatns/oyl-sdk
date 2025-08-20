@@ -48,12 +48,15 @@ export const inscribePayload = async ({
     provider,
     feeRate,
     signer,
+    protostone,
   })
 
   await timeout(3000)
 
   const reveal = await deployReveal({
+    payload,
     alkanesUtxos,
+    utxos,
     protostone,
     script,
     commitTxId: txId,
