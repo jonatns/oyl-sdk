@@ -365,7 +365,7 @@ export const createDeployCommitPsbt = async ({
       outputCount: 2,
     })
     const calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
-    let finalFee = fee ? fee : calculatedFee
+    let commitFee = fee ? fee : calculatedFee
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
 
@@ -383,10 +383,11 @@ export const createDeployCommitPsbt = async ({
     })
 
     const wasmDeploySize = getVSize(Buffer.from(payload.body)) * feeRate
-
+    const revealTxFee = deployRevealFee ? deployRevealFee + inscriptionSats : commitFee + wasmDeploySize + inscriptionSats;
+    let totalFee = revealTxFee + commitFee;
     gatheredUtxos = findXAmountOfSats(
       [...utxos],
-      wasmDeploySize + Number(inscriptionSats) + finalFee * 2
+      totalFee
     )
 
     if (!fee && gatheredUtxos.utxos.length > 1) {
@@ -395,12 +396,13 @@ export const createDeployCommitPsbt = async ({
         nonTaprootInputCount: 0,
         outputCount: 2,
       })
-      finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
+      commitFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
+      totalFee = commitFee + revealTxFee;
 
-      if (gatheredUtxos.totalAmount < finalFee) {
+      if (gatheredUtxos.totalAmount < commitFee) {
         gatheredUtxos = findXAmountOfSats(
           [...utxos],
-          wasmDeploySize + Number(inscriptionSats) + finalFee * 2
+          totalFee
         )
       }
     }
@@ -452,11 +454,10 @@ export const createDeployCommitPsbt = async ({
         })
       }
     }
-    const revealTxFee = deployRevealFee ? deployRevealFee + inscriptionSats : finalFee + wasmDeploySize + inscriptionSats;
 
     if (
       gatheredUtxos.totalAmount <
-      finalFee + revealTxFee
+      totalFee
     ) {
       throw new OylTransactionError(Error('Insufficient Balance'))
     }
@@ -467,7 +468,7 @@ export const createDeployCommitPsbt = async ({
     })
 
     const changeAmount =
-      gatheredUtxos.totalAmount - (finalFee + revealTxFee)
+      gatheredUtxos.totalAmount - totalFee
 
     psbt.addOutput({
       address: account[account.spendStrategy.changeAddress].address,

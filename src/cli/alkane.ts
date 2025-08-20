@@ -592,7 +592,7 @@ export const alkaneSwap = new AlkanesCommand('swap')
       },
       network: wallet.account.network,
     };
-    
+
     // Filter UTXOs to only include those from addresses we actually have configured
     const filteredUtxos = accountUtxos.filter(utxo => {
       const addressKey = getAddressKey(utxo.address);
@@ -629,8 +629,8 @@ export const alkaneSwap = new AlkanesCommand('swap')
     }
 
     if (accountStructure.spendStrategy.addressOrder.includes('nativeSegwit')) {
-    accountStructure.nativeSegwit = {
-      address: wallet.account.nativeSegwit.address,
+      accountStructure.nativeSegwit = {
+        address: wallet.account.nativeSegwit.address,
         pubkey: wallet.account.nativeSegwit.pubkey,
         hdPath: '',
       };
@@ -1298,7 +1298,7 @@ export const merkleClaim = new AlkanesCommand('merkle-claim')
 
     const [block, tx] = options.target.split(':');
 
-    const calldata = [BigInt(block), BigInt(tx), BigInt(1)]; // Opcode 1 for claim
+    const calldata = [BigInt(4), BigInt(11001), BigInt(block), BigInt(tx), BigInt(1)]; // Opcode 1 for claim
 
     const protostone = encodeRunestoneProtostone({
       protostones: [
