@@ -19,13 +19,14 @@ import { metashrew } from '../rpclient/alkanes'
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer'
-import { createNewPool } from '../amm/factory'
+import { createNewPool, splitAlkaneUtxos } from '../amm/factory'
 import { getWrapAddress } from '../amm/subfrost'
 import { removeLiquidity, addLiquidity, swap } from '../amm/pool'
-import { packUTF8, readU128LE } from '../shared/utils';
+import { packUTF8, readU128LE, getAddressKey } from '../shared/utils';
 import { sha256 } from '@noble/hashes/sha2';
 import { parse } from 'csv-parse/sync';
 import * as borsh from 'borsh';
+
 /* @dev example call
   oyl alkane trace -params '{"txid":"e6561c7a8f80560c30a113c418bb56bde65694ac2b309a68549f35fdf2e785cb","vout":0}'
 
@@ -541,7 +542,21 @@ export const alkaneRemoveLiquidity = new AlkanesCommand('remove-liquidity')
   })
 
 /* @dev example call 
-  oyl alkane swap -data "2,7,3,160" -p alkanes -feeRate 5 -blk 2 -tx 1 -amt 200
+  oyl alkane swap -data "4,65522,13,2,2,80,2,16,100000000000,1" -deadline 3 -feeRate 4 -p bitcoin
+  
+  calldata = [
+    factoryId.block, 
+    factoryId.tx, 
+    opcode, 
+    number-of-tokens-in-swap-path, 
+    token1.block, 
+    token1.tx, 
+    token2.block, 
+    token2.tx, 
+    amount-to-swap, 
+    min-amount-out,
+    blocknumber-when-tx-expires (sent in as a separate arg)
+  ]
 
   Swaps an alkane from a pool
 */
@@ -555,14 +570,12 @@ export const alkaneSwap = new AlkanesCommand('swap')
     },
     []
   )
-  .requiredOption('-amt, --amount <amount>', 'amount to swap')
-  .requiredOption('-blk, --block <block>', 'block number')
-  .requiredOption('-tx, --txNum <txNum>', 'transaction number')
   .option(
     '-p, --provider <provider>',
     'Network provider type (regtest, bitcoin)'
   )
   .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .option('-deadline, --deadline <deadline>', 'block number when tx expires')
   .action(async (options) => {
     const wallet: Wallet = new Wallet(options)
 
@@ -571,16 +584,77 @@ export const alkaneSwap = new AlkanesCommand('swap')
       provider: wallet.provider,
     })
 
+    const accountStructure: any = {
+      spendStrategy: {
+        addressOrder: ['nativeSegwit'],
+        utxoSortGreatestToLeast: true,
+        changeAddress: 'nativeSegwit',
+      },
+      network: wallet.account.network,
+    };
+    
+    // Filter UTXOs to only include those from addresses we actually have configured
+    const filteredUtxos = accountUtxos.filter(utxo => {
+      const addressKey = getAddressKey(utxo.address);
+      return accountStructure.spendStrategy.addressOrder.includes(addressKey);
+    });
+
     const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
 
+    const currentBlockHeight = await wallet.provider.sandshrew.bitcoindRpc.getBlockCount!();
+
+    calldata.push(BigInt(currentBlockHeight + Number(options.deadline)))
+
+    const swapToken = [
+      {
+        alkaneId: { block: options.calldata[4], tx: options.calldata[5] },
+        amount: BigInt(options.calldata[8]),
+      },
+    ];
+
+    const { utxos: alkanesUtxos } = splitAlkaneUtxos(
+      swapToken,
+      filteredUtxos
+    );
+
+    // This test uses addressOrder to test sends using account objects with specific address types
+    // For example addressOrder = ['nativeSegwit'] will use nativeSegwit utxos and account object
+
+    if (accountStructure.spendStrategy.addressOrder.includes('taproot')) {
+      accountStructure.taproot = {
+        address: wallet.account.taproot.address,
+        pubkey: wallet.account.taproot.pubkey,
+        hdPath: '',
+      };
+    }
+
+    if (accountStructure.spendStrategy.addressOrder.includes('nativeSegwit')) {
+    accountStructure.nativeSegwit = {
+      address: wallet.account.nativeSegwit.address,
+        pubkey: wallet.account.nativeSegwit.pubkey,
+        hdPath: '',
+      };
+    }
+
+    const protostone: Buffer = encodeRunestoneProtostone({
+      protostones: [
+        ProtoStone.message({
+          protocolTag: 1n,
+          edicts: [],
+          pointer: 0,
+          refundPointer: 0,
+          calldata: encipher(calldata),
+        }),
+      ],
+    }).encodedRunestone
+
     console.log(
-      await swap({
-        calldata,
-        token: { block: options.block, tx: options.txNum },
-        tokenAmount: BigInt(options.amount),
-        utxos: accountUtxos,
+      await alkanes.execute({
+        protostone,
+        utxos: filteredUtxos,
+        alkanesUtxos,
         feeRate: wallet.feeRate,
-        account: wallet.account,
+        account: accountStructure,
         signer: wallet.signer,
         provider: wallet.provider,
       })
