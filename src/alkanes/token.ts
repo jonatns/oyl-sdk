@@ -41,7 +41,6 @@ export const inscribePayload = async ({
   feeRate?: number
   signer: Signer
 }) => {
-  console.log("in inscribePayload");
   const { script, txId } = await deployCommit({
     payload,
     utxos,
