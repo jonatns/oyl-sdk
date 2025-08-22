@@ -1066,10 +1066,15 @@ export const initMerkleRoot = new AlkanesCommand('init-merkle-root')
       });
 
     const fileContent = await fs.readFile(options.file, 'utf-8');
-    const records: { address: string, amount: string }[] = parse(fileContent, {
+    const rawRecords = parse(fileContent, {
       columns: true,
       skip_empty_lines: true,
     });
+
+    const records = rawRecords.map((record: any) => ({
+      address: record.address,
+      amount: record.Merkle_DIESEL,
+    }));
 
     const leaves = records.map(record => new SchemaMerkleLeaf({
       address: record.address,
@@ -1169,10 +1174,15 @@ export const merkleClaim = new AlkanesCommand('merkle-claim')
     });
 
     const fileContent = await fs.readFile(options.file, 'utf-8');
-    const records: { address: string, amount: string }[] = parse(fileContent, {
+    const rawRecords = parse(fileContent, {
       columns: true,
       skip_empty_lines: true,
     });
+
+    const records = rawRecords.map((record: any) => ({
+      address: record.address,
+      amount: record.Merkle_DIESEL,
+    }));
 
     const leaves = records.map(record => new SchemaMerkleLeaf({
       address: record.address,
