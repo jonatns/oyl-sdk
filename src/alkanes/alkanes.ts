@@ -470,10 +470,12 @@ export const createDeployCommitPsbt = async ({
     const changeAmount =
       gatheredUtxos.totalAmount - totalFee
 
-    psbt.addOutput({
-      address: account[account.spendStrategy.changeAddress].address,
-      value: changeAmount,
-    })
+    if (changeAmount >= 546) {
+      psbt.addOutput({
+        address: account[account.spendStrategy.changeAddress].address,
+        value: changeAmount,
+      })
+    }
 
     const formattedPsbtTx = await formatInputsToSign({
       _psbt: psbt,
