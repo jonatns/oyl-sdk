@@ -506,14 +506,12 @@ export const deployCommit = async ({
   signer: Signer
   protostone: Buffer
 }) => {
-  console.log("in deployCommit");
   const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
     signer.taprootKeyPair,
     {
       network: provider.network,
     }
   )
-  console.log("tweakedTaprootKeyPair", tweakedTaprootKeyPair);
 
   const tweakedPublicKey = tweakedTaprootKeyPair.publicKey.toString('hex')
 
