@@ -291,34 +291,7 @@ export const actualDeployCommitFee = async ({
   })
 
   const wasmDeploySize = getVSize(Buffer.from(payload.body)) * feeRate;
-  const originalGetOutputValue = getOutputValueByVOutIndex;
-
-  (getOutputValueByVOutIndex as any) = async ({
-    txId,
-    vOut,
-    esploraRpc,
-  }: {
-    txId: string;
-    vOut: number;
-    esploraRpc: any;
-  }) => {
-    return { value: finalFee + wasmDeploySize + 546, script: '' };
-  };
-
-  const { fee: deployRevealFee } = await actualTransactRevealFee({
-    payload,
-    utxos,
-    protostone,
-    tweakedPublicKey,
-    commitTxId: "0000000000000000000000000000000000000000000000000000000000000000",
-    receiverAddress: account.taproot.address,
-    script,
-    provider,
-    feeRate,
-    account,
-  });
-
-  (getOutputValueByVOutIndex as any) = originalGetOutputValue;
+  const deployRevealFee = finalFee + wasmDeploySize * 2 + 546; //very conservative value for deployRevealFee. the excess will be refunded
 
   return { fee: finalFee, deployRevealFee, vsize }
 }
@@ -383,7 +356,7 @@ export const createDeployCommitPsbt = async ({
     })
 
     const wasmDeploySize = getVSize(Buffer.from(payload.body)) * feeRate
-    const revealTxFee = deployRevealFee ? deployRevealFee + inscriptionSats : commitFee + wasmDeploySize + inscriptionSats;
+    let revealTxFee = deployRevealFee ? deployRevealFee + inscriptionSats : commitFee + wasmDeploySize + inscriptionSats;
     let totalFee = revealTxFee + commitFee;
     gatheredUtxos = findXAmountOfSats(
       [...utxos],
@@ -397,6 +370,7 @@ export const createDeployCommitPsbt = async ({
         outputCount: 2,
       })
       commitFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
+      revealTxFee = deployRevealFee ? deployRevealFee + inscriptionSats : commitFee + wasmDeploySize + inscriptionSats;
       totalFee = commitFee + revealTxFee;
 
       if (gatheredUtxos.totalAmount < commitFee) {
@@ -963,6 +937,11 @@ export const createTransactReveal = async ({
     if (alkanesUtxos) {
       for (const utxo of alkanesUtxos) {
         await addInputForUtxo(psbt, utxo, account, provider)
+        await formatInputToSign({
+          v: psbt.data.inputs[psbt.data.inputs.length - 1],
+          senderPublicKey: account.taproot.pubkey,
+          network: provider.network
+        });
       }
     }
 
