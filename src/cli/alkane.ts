@@ -1100,7 +1100,6 @@ export const initMerkleRoot = new AlkanesCommand('init-merkle-root')
       BigInt(reward.alkaneId.block),
       BigInt(reward.alkaneId.tx),
       BigInt(reward.amount),
-      BigInt(0), //remove
       BigInt(options.deadline),
       rootFirstHalf,
       rootSecondHalf
