@@ -26,7 +26,7 @@ import { packUTF8, readU128LE, getAddressKey } from '../shared/utils';
 import { sha256 } from '@noble/hashes/sha2';
 import { parse } from 'csv-parse/sync';
 import * as borsh from 'borsh';
-import { calculateMerkleRoot, generateProof, leafSchema, proofSchema, SchemaMerkleLeaf, SchemaMerkleProof } from '@alkanes/merkle'
+import { calculateMerkleRoot, generateProof, leafSchema, proofSchema, SchemaMerkleLeaf, SchemaMerkleProof } from '../alkanes/merkle'
 
 /* @dev example call
   oyl alkane trace -params '{"txid":"e6561c7a8f80560c30a113c418bb56bde65694ac2b309a68549f35fdf2e785cb","vout":0}'
