@@ -616,6 +616,8 @@ export const deployReveal = async ({
     psbtBase64: signedPsbt,
   })
 
+  console.log("after pushing psbt");
+
   return revealResult
 }
 
