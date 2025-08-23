@@ -605,15 +605,13 @@ export const deployReveal = async ({
 
   console.log("done signing 0");
 
-  const { signedPsbt } = await signer.signAllInputs({
-    rawPsbt: finalReveal.toBase64(),
-    finalize: true,
-  })
-
-  console.log("done signing all");
+  // const { signedPsbt } = await signer.signAllInputs({
+  //   rawPsbt: finalReveal.toBase64(),
+  //   finalize: true,
+  // })
 
   const revealResult = await provider.pushPsbt({
-    psbtBase64: signedPsbt,
+    psbtBase64: finalReveal.toBase64(),
   })
 
   console.log("after pushing psbt");
