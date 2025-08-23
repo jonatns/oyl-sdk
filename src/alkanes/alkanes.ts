@@ -595,19 +595,25 @@ export const deployReveal = async ({
     account,
   })
 
+  console.log("attempting first sign 0");
+
+  let finalReveal = bitcoin.Psbt.fromBase64(finalRevealPsbt, {
+    network: provider.network,
+  });
+  finalReveal.signInput(0, tweakedTaprootKeyPair);
+  finalReveal.finalizeInput(0);
+
+  console.log("done signing 0");
+
   const { signedPsbt } = await signer.signAllInputs({
     rawPsbt: finalRevealPsbt,
     finalize: true,
   })
-  let finalReveal = bitcoin.Psbt.fromBase64(signedPsbt, {
-    network: provider.network,
-  });
 
-  finalReveal.signInput(0, tweakedTaprootKeyPair);
-  finalReveal.finalizeInput(0);
+  console.log("done signing all");
 
   const revealResult = await provider.pushPsbt({
-    psbtBase64: finalReveal.toBase64(),
+    psbtBase64: signedPsbt,
   })
 
   return revealResult
