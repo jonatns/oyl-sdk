@@ -595,16 +595,17 @@ export const deployReveal = async ({
     account,
   })
 
-  const { signedPsbt } = await signer.signAllInputs({
-    rawPsbt: finalRevealPsbt,
-    finalize: true,
-  })
-  let finalReveal = bitcoin.Psbt.fromBase64(signedPsbt, {
+  let finalReveal = bitcoin.Psbt.fromBase64(finalRevealPsbt, {
     network: provider.network,
   });
-
   finalReveal.signInput(0, tweakedTaprootKeyPair);
   finalReveal.finalizeInput(0);
+
+  // note: this will break lasereyes since user can't sign with the tweakedTaprootKeyPair
+  // const { signedPsbt } = await signer.signAllInputs({
+  //   rawPsbt: finalReveal.toBase64(),
+  //   finalize: true,
+  // })
 
   const revealResult = await provider.pushPsbt({
     psbtBase64: finalReveal.toBase64(),
