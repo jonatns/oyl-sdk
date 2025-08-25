@@ -136,11 +136,14 @@ export const createPsbt = async ({
       })
     }
 
-    const updatedPsbt = await formatInputsToSign({
-      _psbt: psbt,
-      senderPublicKey: account.taproot.pubkey,
-      network: provider.network,
-    })
+    let updatedPsbt = psbt
+    if (account.taproot) {
+      updatedPsbt = await formatInputsToSign({
+        _psbt: psbt,
+        senderPublicKey: account.taproot.pubkey,
+        network: provider.network,
+      })
+    }
 
     return { psbt: updatedPsbt.toBase64(), fee: finalFee }
   } catch (error) {
