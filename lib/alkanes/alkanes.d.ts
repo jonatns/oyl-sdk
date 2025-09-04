@@ -29,6 +29,20 @@ export declare const createExecutePsbt: ({ alkanesUtxos, frontendFee, feeAddress
     psbt: string;
     psbtHex: string;
 }>;
+export declare const createWrapBtcPsbt: ({ alkanesUtxos, utxos, account, protostone, provider, feeRate, fee, wrapAddress, wrapAmount, }: {
+    alkanesUtxos?: FormattedUtxo[];
+    utxos: FormattedUtxo[];
+    account: Account;
+    protostone: Buffer;
+    provider: Provider;
+    feeRate?: number;
+    fee?: number;
+    wrapAddress: string;
+    wrapAmount: number;
+}) => Promise<{
+    psbt: string;
+    psbtHex: string;
+}>;
 export declare function addInputForUtxo(psbt: bitcoin.Psbt, utxo: FormattedUtxo, account: Account, provider: Provider): Promise<void>;
 export declare const actualDeployCommitFee: ({ payload, tweakedPublicKey, utxos, account, provider, feeRate, protostone, }: {
     payload: AlkanesPayload;
@@ -144,6 +158,24 @@ export declare const execute: ({ alkanesUtxos, utxos, account, protostone, provi
     signer: Signer;
     frontendFee?: bigint;
     feeAddress?: string;
+}) => Promise<{
+    txId: string;
+    rawTx: string;
+    size: any;
+    weight: any;
+    fee: number;
+    satsPerVByte: string;
+}>;
+export declare const wrapBtc: ({ alkanesUtxos, utxos, account, protostone, provider, feeRate, signer, wrapAddress, wrapAmount, }: {
+    alkanesUtxos?: FormattedUtxo[];
+    utxos: FormattedUtxo[];
+    account: Account;
+    protostone: Buffer;
+    provider: Provider;
+    feeRate?: number;
+    signer: Signer;
+    wrapAddress: string;
+    wrapAmount: number;
 }) => Promise<{
     txId: string;
     rawTx: string;

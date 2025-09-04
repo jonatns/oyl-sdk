@@ -19,3 +19,4 @@ export declare const alkanePreviewRemoveLiquidity: AlkanesCommand;
 export declare const initMerkleRoot: AlkanesCommand;
 export declare const merkleClaim: AlkanesCommand;
 export declare const subfrostWrapAddress: AlkanesCommand;
+export declare const alkaneWrapBtc: AlkanesCommand;

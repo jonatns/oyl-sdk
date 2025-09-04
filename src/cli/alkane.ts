@@ -1293,3 +1293,62 @@ export const subfrostWrapAddress = new AlkanesCommand('wrap-address')
       )
     )
   })
+
+export const alkaneWrapBtc = new AlkanesCommand('wrap-btc')
+  .description('Wraps BTC to an alkane.')
+  .requiredOption('-a, --amount <amount>', 'Amount of BTC to wrap in sats')
+  .option(
+    '-p, --provider <provider>',
+    'Network provider type (regtest, bitcoin)'
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .action(async (options) => {
+    const wallet: Wallet = new Wallet(options)
+
+    const { accountUtxos } = await utxo.accountUtxos({
+      account: wallet.account,
+      provider: wallet.provider,
+    })
+
+    const request = {
+      alkanes: [],
+      transaction: '0x',
+      block: '0x',
+      height: '20000',
+      txindex: 0,
+      target: { block: '32', tx: '0' },
+      inputs: ['77'],
+      pointer: 0,
+      refundPointer: 0,
+      vout: 0,
+    }
+
+    const wrapAddress = await getWrapAddress(wallet.provider, request)
+
+    const calldata: bigint[] = [32n, 0n, 77n]
+
+    const protostone: Buffer = encodeRunestoneProtostone({
+      protostones: [
+        ProtoStone.message({
+          protocolTag: 1n,
+          edicts: [],
+          pointer: 0,
+          refundPointer: 0,
+          calldata: encipher(calldata),
+        }),
+      ],
+    }).encodedRunestone
+
+    console.log(
+      await alkanes.wrapBtc({
+        protostone,
+        utxos: accountUtxos,
+        feeRate: wallet.feeRate,
+        account: wallet.account,
+        signer: wallet.signer,
+        provider: wallet.provider,
+        wrapAddress,
+        wrapAmount: Number(options.amount),
+      })
+    )
+  })
