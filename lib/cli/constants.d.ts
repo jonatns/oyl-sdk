@@ -1,5 +1,6 @@
 import { Provider } from '..';
 export declare const DEFAULT_PROVIDER: {
+    subfrost: Provider;
     alkanes: Provider;
     bitcoin: Provider;
     regtest: Provider;
