@@ -43,6 +43,34 @@ export declare const createWrapBtcPsbt: ({ alkanesUtxos, utxos, account, protost
     psbt: string;
     psbtHex: string;
 }>;
+export declare const createUnwrapBtcPsbt: ({ utxos, account, provider, feeRate, fee, unwrapAmount, alkaneUtxos, }: {
+    utxos: FormattedUtxo[];
+    account: Account;
+    provider: Provider;
+    feeRate?: number;
+    fee?: number;
+    unwrapAmount: bigint;
+    alkaneUtxos: FormattedUtxo[];
+}) => Promise<{
+    psbt: string;
+    psbtHex: string;
+}>;
+export declare const unwrapBtc: ({ utxos, account, provider, feeRate, signer, unwrapAmount, alkaneUtxos, }: {
+    utxos: FormattedUtxo[];
+    account: Account;
+    provider: Provider;
+    feeRate?: number;
+    signer: Signer;
+    unwrapAmount: bigint;
+    alkaneUtxos: FormattedUtxo[];
+}) => Promise<{
+    txId: string;
+    rawTx: string;
+    size: any;
+    weight: any;
+    fee: number;
+    satsPerVByte: string;
+}>;
 export declare function addInputForUtxo(psbt: bitcoin.Psbt, utxo: FormattedUtxo, account: Account, provider: Provider): Promise<void>;
 export declare const actualDeployCommitFee: ({ payload, tweakedPublicKey, utxos, account, provider, feeRate, protostone, }: {
     payload: AlkanesPayload;

@@ -242,7 +242,7 @@ export const alkaneSpendCommit = new AlkanesCommand('spend-commit')
 /* @dev example call
   oyl alkane new-token -pre 5000 -amount 1000 -c 100000 -name "OYL" -symbol "OL" -resNumber 77 -i ./src/cli/contracts/image.png
   oyl alkane new-token -resNumber 12050 -i ./src/cli/contracts/image.png -args 0,10,100000000
-  
+
   The resNumber must be a resNumber for a deployed contract. In this case 77 is the resNumber for
   the free_mint.wasm contract and the options supplied are for the free_mint.wasm contract.
 
@@ -706,7 +706,7 @@ export const alkaneSend = new AlkanesCommand('send')
 /* @dev example call 
  oyl alkane create-pool -data "2,1,1" -tokens "2:12:1500,2:29:1500" -feeRate 5 -p oylnet
 
-Creates a new pool with the given tokens and amounts
+ Creates a new pool with the given tokens and amounts
 */
 export const alkaneCreatePool = new AlkanesCommand('create-pool')
   .requiredOption(
@@ -773,7 +773,7 @@ export const alkaneCreatePool = new AlkanesCommand('create-pool')
 /* @dev example call 
  oyl alkane add-liquidity -data "2,1,1" -tokens "2:2:50000,2:3:50000" -feeRate 5 -p alkanes
 
-Mints new LP tokens and adds liquidity to the pool with the given tokens and amounts
+ Mints new LP tokens and adds liquidity to the pool with the given tokens and amounts
 */
 export const alkaneAddLiquidity = new AlkanesCommand('add-liquidity')
   .requiredOption(
@@ -1349,6 +1349,47 @@ export const alkaneWrapBtc = new AlkanesCommand('wrap-btc')
         provider: wallet.provider,
         wrapAddress,
         wrapAmount: Number(options.amount),
+      })
+    )
+  })
+
+export const alkaneUnwrapBtc = new AlkanesCommand('unwrap-btc')
+  .description('Unwraps frBTC to BTC.')
+  .requiredOption('-a, --amount <amount>', 'Amount of frBTC to unwrap in sats')
+  .option(
+    '-p, --provider <provider>',
+    'Network provider type (regtest, bitcoin)'
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .action(async (options) => {
+    const wallet: Wallet = new Wallet(options)
+
+    const { accountUtxos, accounts } = await utxo.accountUtxos({
+      account: wallet.account,
+      provider: wallet.provider,
+    })
+
+    let availableAlkaneUtxos: utxo.FormattedUtxo[] = [];
+    for (const key in accounts) {
+      availableAlkaneUtxos.push(...accounts[key].alkaneUtxos);
+    }
+
+    const { utxos: alkaneUtxosToSpend } = utxo.selectAlkanesUtxos({
+      utxos: availableAlkaneUtxos,
+      greatestToLeast: true,
+      alkaneId: { block: '32', tx: '0' },
+      targetNumberOfAlkanes: Number(options.amount)
+    });
+
+    console.log(
+      await alkanes.unwrapBtc({
+        utxos: accountUtxos,
+        feeRate: wallet.feeRate,
+        account: wallet.account,
+        signer: wallet.signer,
+        provider: wallet.provider,
+        unwrapAmount: BigInt(options.amount),
+        alkaneUtxos: alkaneUtxosToSpend,
       })
     )
   })
