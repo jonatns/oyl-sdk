@@ -626,6 +626,12 @@ export const createAlkaneMultiSendPsbt = async ({
       ],
     }).encodedRunestone
 
+    if (protostone.length > 80) {
+      throw new Error(
+        `OP_RETURN script size is too large: ${protostone.length} bytes`
+      )
+    }
+
     const spendTargets = sends.length * 546
 
     const minTxSize = minimumFee({
