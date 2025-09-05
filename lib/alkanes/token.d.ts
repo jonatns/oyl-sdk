@@ -107,3 +107,18 @@ export declare const actualSplitFee: ({ gatheredUtxos, account, protostone, prov
 }) => Promise<{
     fee: number;
 }>;
+export declare const alkaneMultiSend: ({ sends, alkaneId, utxos, account, provider, feeRate, fee, }: {
+    sends: {
+        address: string;
+        amount: number;
+    }[];
+    alkaneId: AlkaneId;
+    utxos: FormattedUtxo[];
+    account: Account;
+    provider: Provider;
+    feeRate?: number;
+    fee?: number;
+}) => Promise<{
+    psbt: string;
+    psbtHex: string;
+}>;

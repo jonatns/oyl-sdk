@@ -6,7 +6,7 @@ import path from 'path'
 import * as alkanes from '../alkanes/alkanes'
 import * as utxo from '../utxo'
 import { Wallet } from './wallet'
-import { send, inscribePayload } from '../alkanes/token'
+import { send, inscribePayload, alkaneMultiSend as alkaneMultiSendLib } from '../alkanes/token'
 import { AlkanesPayload } from 'shared/interface'
 import * as bitcoin from 'bitcoinjs-lib'
 import { tweakSigner } from '../shared/utils'
@@ -703,7 +703,56 @@ export const alkaneSend = new AlkanesCommand('send')
     )
   })
 
-/* @dev example call 
+export const alkaneMultiSend = new AlkanesCommand('multi-send')
+  .requiredOption(
+    '-sends, --sends <sends>',
+    'sends for protostone',
+    (value, previous) => {
+      const items = value.split(',')
+      return previous ? previous.concat(items) : items
+    },
+    []
+  )
+  .requiredOption('-blk, --block <block>')
+  .requiredOption('-tx, --txNum <txNum>')
+  .option(
+    '-m, --mnemonic <mnemonic>',
+    '(optional) Mnemonic used for signing transactions (default = TEST_WALLET)'
+  )
+  .option(
+    '-p, --provider <provider>',
+    'Network provider type (regtest, bitcoin)'
+  )
+  .option('-feeRate, --feeRate <feeRate>', 'fee rate')
+  .action(async (options) => {
+    const wallet: Wallet = new Wallet(options)
+
+    const { accountUtxos } = await utxo.accountUtxos({
+      account: wallet.account,
+      provider: wallet.provider,
+    })
+
+    const sends = options.sends.map((item) => {
+      const [address, amount] = item.split(':').map((part) => part.trim())
+      return {
+        address,
+        amount: Number(amount),
+      }
+    })
+
+    console.log(
+      await alkaneMultiSendLib({
+        utxos: accountUtxos,
+        alkaneId: { block: options.block, tx: options.txNum },
+        sends,
+        account: wallet.account,
+        provider: wallet.provider,
+        feeRate: wallet.feeRate,
+      })
+    )
+  })
+
+/* @dev example call
  oyl alkane create-pool -data "2,1,1" -tokens "2:12:1500,2:29:1500" -feeRate 5 -p oylnet
 
 Creates a new pool with the given tokens and amounts

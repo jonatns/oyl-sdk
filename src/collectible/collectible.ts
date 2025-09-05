@@ -2,7 +2,7 @@ import { minimumFee } from '../btc/btc'
 import { Provider } from '../provider'
 import * as bitcoin from 'bitcoinjs-lib'
 import { Account } from '../account/account'
-import { findXAmountOfSats, formatInputsToSign } from '../shared/utils'
+import { addInputUtxosToPsbt, findXAmountOfSats, formatInputsToSign } from '../shared/utils'
 import { OylTransactionError } from '../errors'
 import { getAddressType } from '../shared/utils'
 import { Signer } from '../signer'
@@ -115,53 +115,7 @@ export const createPsbt = async ({
       throw new OylTransactionError(Error('Insufficient balance'))
     }
 
-    for (let i = 0; i < gatheredUtxos.utxos.length; i++) {
-      if (getAddressType(gatheredUtxos.utxos[i].address) === 0) {
-        const previousTxHex: string = await provider.esplora.getTxHex(
-          gatheredUtxos.utxos[i].txId
-        )
-        psbt.addInput({
-          hash: gatheredUtxos.utxos[i].txId,
-          index: gatheredUtxos.utxos[i].outputIndex,
-          nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
-        })
-      }
-      if (getAddressType(gatheredUtxos.utxos[i].address) === 2) {
-        const redeemScript = bitcoin.script.compile([
-          bitcoin.opcodes.OP_0,
-          bitcoin.crypto.hash160(
-            Buffer.from(account.nestedSegwit.pubkey, 'hex')
-          ),
-        ])
-
-        psbt.addInput({
-          hash: gatheredUtxos.utxos[i].txId,
-          index: gatheredUtxos.utxos[i].outputIndex,
-          redeemScript: redeemScript,
-          witnessUtxo: {
-            value: gatheredUtxos.utxos[i].satoshis,
-            script: bitcoin.script.compile([
-              bitcoin.opcodes.OP_HASH160,
-              bitcoin.crypto.hash160(redeemScript),
-              bitcoin.opcodes.OP_EQUAL,
-            ]),
-          },
-        })
-      }
-      if (
-        getAddressType(gatheredUtxos.utxos[i].address) === 1 ||
-        getAddressType(gatheredUtxos.utxos[i].address) === 3
-      ) {
-        psbt.addInput({
-          hash: gatheredUtxos.utxos[i].txId,
-          index: gatheredUtxos.utxos[i].outputIndex,
-          witnessUtxo: {
-            value: gatheredUtxos.utxos[i].satoshis,
-            script: Buffer.from(gatheredUtxos.utxos[i].scriptPk, 'hex'),
-          },
-        })
-      }
-    }
+    await addInputUtxosToPsbt(gatheredUtxos.utxos, psbt, account, provider);
 
     const changeAmount = gatheredUtxos.totalAmount - finalFee
 
@@ -214,7 +168,7 @@ export const findCollectible = async ({
   //NOTE: The inscriptionsOnOutput.runes array check is only for sandshrew v1
   if (
     inscriptionsOnOutput.inscriptions.length > 1 ||
-    Array.isArray(inscriptionsOnOutput.runes)
+      Array.isArray(inscriptionsOnOutput.runes)
       ? Number(inscriptionsOnOutput.runes.length) > 0
       : Object.keys(inscriptionsOnOutput.runes).length > 0
   ) {

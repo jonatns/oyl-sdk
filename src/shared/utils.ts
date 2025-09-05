@@ -19,7 +19,7 @@ import { EsploraRpc } from '../rpclient/esplora'
 import { Provider } from '../provider/provider'
 import { addressFormats } from '@sadoprotocol/ordit-sdk'
 import { encodeRunestone, RunestoneSpec } from '@magiceden-oss/runestone-lib'
-import { AddressKey } from '@account/account'
+import { Account, AddressKey } from '@account/account'
 import * as CBOR from 'cbor-x'
 import { FormattedUtxo } from '../utxo'
 import { PsbtInput } from 'bip174/src/lib/interfaces';
@@ -829,4 +829,59 @@ export function readU128LE(buffer: Uint8Array): bigint {
   const low = view.getBigUint64(0, true);
   const high = view.getBigUint64(8, true);
   return (high << 64n) | low;
+}
+
+
+
+export async function addInputUtxosToPsbt(
+  utxos: FormattedUtxo[],
+  psbt: bitcoin.Psbt,
+  account: Account,
+  provider: Provider
+) {
+  for await (const utxo of utxos) {
+    if (getAddressType(utxo.address) === 0) {
+      const previousTxHex: string = await provider.esplora.getTxHex(utxo.txId)
+      psbt.addInput({
+        hash: utxo.txId,
+        index: utxo.outputIndex,
+        nonWitnessUtxo: Buffer.from(previousTxHex, 'hex'),
+      })
+    }
+    if (getAddressType(utxo.address) === 2) {
+      const redeemScript = bitcoin.script.compile([
+        bitcoin.opcodes.OP_0,
+        bitcoin.crypto.hash160(
+          Buffer.from(account.nestedSegwit.pubkey, 'hex')
+        ),
+      ])
+
+      psbt.addInput({
+        hash: utxo.txId,
+        index: utxo.outputIndex,
+        redeemScript: redeemScript,
+        witnessUtxo: {
+          value: utxo.satoshis,
+          script: bitcoin.script.compile([
+            bitcoin.opcodes.OP_HASH160,
+            bitcoin.crypto.hash160(redeemScript),
+            bitcoin.opcodes.OP_EQUAL,
+          ]),
+        },
+      })
+    }
+    if (
+      getAddressType(utxo.address) === 1 ||
+      getAddressType(utxo.address) === 3
+    ) {
+      psbt.addInput({
+        hash: utxo.txId,
+        index: utxo.outputIndex,
+        witnessUtxo: {
+          value: utxo.satoshis,
+          script: Buffer.from(utxo.scriptPk, 'hex'),
+        },
+      })
+    }
+  }
 }
