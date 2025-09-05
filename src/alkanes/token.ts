@@ -553,7 +553,7 @@ export const actualSplitFee = async ({
   return { fee: finalFee }
 }
 
-export const alkaneMultiSend = async ({
+export const createAlkaneMultiSendPsbt = async ({
   sends,
   alkaneId,
   utxos,
@@ -701,5 +701,102 @@ export const alkaneMultiSend = async ({
   } catch (err) {
     throw new OylTransactionError(err)
   }
+}
+
+export const actualAlkaneMultiSendFee = async ({
+  sends,
+  alkaneId,
+  utxos,
+  account,
+  provider,
+  feeRate,
+}: {
+  sends: { address: string; amount: number }[]
+  alkaneId: AlkaneId
+  utxos: FormattedUtxo[]
+  account: Account
+  provider: Provider
+  feeRate: number
+}) => {
+  const { psbt } = await createAlkaneMultiSendPsbt({
+    sends,
+    alkaneId,
+    utxos,
+    account,
+    provider,
+    feeRate,
+  })
+
+  const { fee: estimatedFee } = await getEstimatedFee({
+    feeRate,
+    psbt,
+    provider,
+  })
+
+  const { psbt: finalPsbt } = await createAlkaneMultiSendPsbt({
+    sends,
+    alkaneId,
+    utxos,
+    account,
+    provider,
+    feeRate,
+    fee: estimatedFee,
+  })
+
+  const { fee: finalFee, vsize } = await getEstimatedFee({
+    feeRate,
+    psbt: finalPsbt,
+    provider,
+  })
+
+  return { fee: finalFee, vsize }
+}
+
+export const alkaneMultiSend = async ({
+  sends,
+  alkaneId,
+  utxos,
+  account,
+  provider,
+  signer,
+  feeRate,
+}: {
+  sends: { address: string; amount: number }[]
+  alkaneId: AlkaneId
+  utxos: FormattedUtxo[]
+  account: Account
+  provider: Provider
+  signer: Signer
+  feeRate?: number
+}) => {
+  const { fee } = await actualAlkaneMultiSendFee({
+    sends,
+    alkaneId,
+    utxos,
+    account,
+    provider,
+    feeRate,
+  })
+
+  const { psbt: finalPsbt } = await createAlkaneMultiSendPsbt({
+    sends,
+    alkaneId,
+    utxos,
+    account,
+    provider,
+    feeRate,
+    fee,
+  })
+
+  const { signedPsbt } = await signer.signAllInputs({
+    rawPsbt: finalPsbt,
+    finalize: true,
+  })
+
+  const result = await provider.pushPsbt({
+    psbtBase64: signedPsbt,
+  })
+
+  return result
 }
 

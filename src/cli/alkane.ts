@@ -748,6 +748,7 @@ export const alkaneMultiSend = new AlkanesCommand('multi-send')
         account: wallet.account,
         provider: wallet.provider,
         feeRate: wallet.feeRate,
+        signer: wallet.signer,
       })
     )
   })
