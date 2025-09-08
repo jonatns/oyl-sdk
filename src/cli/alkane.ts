@@ -1287,7 +1287,7 @@ export const subfrostWrapAddress = new AlkanesCommand('wrap-address')
     }
     console.log(
       JSON.stringify(
-        await getWrapAddress(wallet.provider, request),
+        await getWrapAddress(wallet.provider),
         null,
         2
       )
@@ -1323,7 +1323,7 @@ export const alkaneWrapBtc = new AlkanesCommand('wrap-btc')
       vout: 0,
     }
 
-    const wrapAddress = await getWrapAddress(wallet.provider, request)
+    const wrapAddress = await getWrapAddress(wallet.provider)
 
     const calldata: bigint[] = [32n, 0n, 77n]
 

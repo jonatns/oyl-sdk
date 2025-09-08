@@ -336,18 +336,7 @@ export const createUnwrapBtcPsbt = async ({
       throw new Error('No taproot or nativeSegwit address found')
     }
 
-    const subfrostAddress = await getWrapAddress(provider, {
-      alkanes: [],
-      transaction: '0x',
-      block: '0x',
-      height: '20000',
-      txindex: 0,
-      target: { block: '32', tx: '0' },
-      inputs: ['77'],
-      pointer: 0,
-      refundPointer: 0,
-      vout: 0,
-    })
+    const subfrostAddress = await getWrapAddress(provider);
 
     const totalAlkaneAmount = alkaneUtxos.reduce((acc, utxo) => {
       const alkane = utxo.alkanes['32:0']
