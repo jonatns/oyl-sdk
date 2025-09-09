@@ -1296,7 +1296,7 @@ export const subfrostWrapAddress = new AlkanesCommand('wrap-address')
 
 export const alkaneWrapBtc = new AlkanesCommand('wrap-btc')
   .description('Wraps BTC to an alkane.')
-  .requiredOption('-a, --amount <amount>', 'Amount of BTC to wrap')
+  .requiredOption('-a, --amount <amount>', 'Amount of BTC to wrap in sats')
   .option(
     '-p, --provider <provider>',
     'Network provider type (regtest, bitcoin)'
@@ -1309,19 +1309,6 @@ export const alkaneWrapBtc = new AlkanesCommand('wrap-btc')
       account: wallet.account,
       provider: wallet.provider,
     })
-
-    const request = {
-      alkanes: [],
-      transaction: '0x',
-      block: '0x',
-      height: '20000',
-      txindex: 0,
-      target: { block: '32', tx: '0' },
-      inputs: ['77'],
-      pointer: 0,
-      refundPointer: 0,
-      vout: 0,
-    }
 
     const wrapAddress = await getWrapAddress(wallet.provider)
 
@@ -1348,7 +1335,7 @@ export const alkaneWrapBtc = new AlkanesCommand('wrap-btc')
         signer: wallet.signer,
         provider: wallet.provider,
         wrapAddress,
-        wrapAmount: Number(options.amount) * 1e8,
+        wrapAmount: Number(options.amount),
       })
     )
   })
