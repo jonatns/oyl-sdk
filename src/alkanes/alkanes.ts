@@ -347,15 +347,12 @@ export const createUnwrapBtcPsbt = async ({
     }, 0n)
 
     const psbt = new bitcoin.Psbt({ network: provider.network })
+    psbt.addOutput({ address: alkanesAddress, value: 546 })
     psbt.addOutput({ address: subfrostAddress, value: 546 })
 
     if (totalAlkaneAmount < unwrapAmount) {
       throw new OylTransactionError(Error('Insufficient frbtc balance'))
     }
-
-    const wrapAddress = await getWrapAddress(provider)
-    psbt.addOutput({ address: wrapAddress, value: 546 }) // dustOutputIndex
-
 
     const dustOutputIndex = psbt.txOutputs.length - 1
 
