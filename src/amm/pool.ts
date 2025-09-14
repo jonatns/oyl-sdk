@@ -34,18 +34,24 @@ export class AlkanesAMMPoolDecoder {
     if (data === '0x') return undefined
     const bytes = Buffer.from(data.slice(2), 'hex')
 
-    const token0: AlkaneId = {
-      block: bytes.readBigUInt64LE(0).toString(),
-      tx: bytes.readBigUInt64LE(16).toString(),
-    }
-    const token1: AlkaneId = {
-      block: bytes.readBigUInt64LE(32).toString(),
-      tx: bytes.readBigUInt64LE(48).toString(),
+    const readBigUInt128LE = (buffer: Buffer, offset = 0) => {
+      const first = buffer.readBigUInt64LE(offset)
+      const last = buffer.readBigUInt64LE(offset + 8)
+      return (last << 64n) + first
     }
 
-    const token0Amount = bytes.readBigUInt64LE(64).toString()
-    const token1Amount = bytes.readBigUInt64LE(80).toString()
-    const tokenSupply = bytes.readBigUInt64LE(96).toString()
+    const token0: AlkaneId = {
+      block: readBigUInt128LE(bytes, 0).toString(),
+      tx: readBigUInt128LE(bytes, 16).toString(),
+    }
+    const token1: AlkaneId = {
+      block: readBigUInt128LE(bytes, 32).toString(),
+      tx: readBigUInt128LE(bytes, 48).toString(),
+    }
+
+    const token0Amount = readBigUInt128LE(bytes, 64).toString()
+    const token1Amount = readBigUInt128LE(bytes, 80).toString()
+    const tokenSupply = readBigUInt128LE(bytes, 96).toString()
     const poolName = Buffer.from(bytes.subarray(116)).toString('utf8')
 
     return { token0, token1, token0Amount, token1Amount, tokenSupply, poolName }

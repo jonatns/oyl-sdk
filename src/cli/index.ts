@@ -5,6 +5,7 @@ import {
   alkaneExecute,
   alkaneContractDeploy,
   alkaneSend,
+  alkaneMultiSend,
   alkanesTrace,
   alkaneTokenDeploy,
   alkaneCreatePool,
@@ -97,6 +98,7 @@ const alkaneCommand = new Command('alkane')
   .addCommand(alkaneTokenDeploy)
   .addCommand(alkanesTrace)
   .addCommand(alkaneSend)
+  .addCommand(alkaneMultiSend)
   .addCommand(alkaneCreatePool)
   .addCommand(alkaneSpendCommit)
   .addCommand(alkaneAddLiquidity)

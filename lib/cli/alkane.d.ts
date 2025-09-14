@@ -11,6 +11,7 @@ export declare const alkaneExecute: AlkanesCommand;
 export declare const alkaneRemoveLiquidity: AlkanesCommand;
 export declare const alkaneSwap: AlkanesCommand;
 export declare const alkaneSend: AlkanesCommand;
+export declare const alkaneMultiSend: AlkanesCommand;
 export declare const alkaneCreatePool: AlkanesCommand;
 export declare const alkaneAddLiquidity: AlkanesCommand;
 export declare const alkaneSimulate: AlkanesCommand;

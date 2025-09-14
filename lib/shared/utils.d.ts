@@ -5,7 +5,7 @@ import { AddressType, DecodedCBOR, IBlockchainInfoUTXO, Network, RuneUtxo, ToSig
 import { SandshrewBitcoinClient } from '../rpclient/sandshrew';
 import { EsploraRpc } from '../rpclient/esplora';
 import { Provider } from '../provider/provider';
-import { AddressKey } from '@account/account';
+import { Account, AddressKey } from '@account/account';
 import { FormattedUtxo } from '../utxo';
 import { PsbtInput } from 'bip174/src/lib/interfaces';
 export interface IBISWalletIx {
@@ -141,3 +141,4 @@ export declare function decodeCBOR(hex: string): DecodedCBOR;
 export declare const getVSize: (data: Buffer) => number;
 export declare const packUTF8: (s: any) => string[];
 export declare function readU128LE(buffer: Uint8Array): bigint;
+export declare function addInputUtxosToPsbt(utxos: FormattedUtxo[], psbt: bitcoin.Psbt, account: Account, provider: Provider): Promise<void>;
