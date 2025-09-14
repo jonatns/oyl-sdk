@@ -8,6 +8,9 @@ import {
   ProtoStone,
 } from 'alkanes/lib/index'
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
+import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
+import { u128, u32 } from '@magiceden-oss/runestone-lib/dist/src/integer'
+import { getWrapAddress } from '../amm/subfrost'
 import { Account, AlkaneId, Signer } from '..'
 import {
   addInputUtxosToPsbt,
@@ -182,6 +185,297 @@ export const createExecutePsbt = async ({
   } catch (err) {
     throw new OylTransactionError(err)
   }
+}
+
+export const createWrapBtcPsbt = async ({
+  alkanesUtxos,
+  utxos,
+  account,
+  protostone,
+  provider,
+  feeRate,
+  fee = 0,
+  wrapAddress,
+  wrapAmount,
+}: {
+  alkanesUtxos?: FormattedUtxo[]
+  utxos: FormattedUtxo[]
+  account: Account
+  protostone: Buffer
+  provider: Provider
+  feeRate?: number
+  fee?: number
+  wrapAddress: string
+  wrapAmount: number
+}) => {
+  try {
+    const SAT_PER_VBYTE = feeRate ?? 1
+    const MIN_RELAY = 546n
+
+    let alkanesAddress: string;
+    let alkanesPubkey: string;
+
+    if (account.taproot) {
+      alkanesAddress = account.taproot.address;
+      alkanesPubkey = account.taproot.pubkey;
+    } else if (account.nativeSegwit) {
+      alkanesAddress = account.nativeSegwit.address;
+      alkanesPubkey = account.nativeSegwit.pubkey;
+    } else {
+      throw new Error('No taproot or nativeSegwit address found')
+    }
+
+    const spendTargets = 546 + wrapAmount
+
+    const minTxSize = minimumFee({
+      taprootInputCount: 2,
+      nonTaprootInputCount: 0,
+      outputCount: 3,
+    })
+
+    const minFee = Math.max(minTxSize * SAT_PER_VBYTE, 250)
+    let minerFee = fee === 0 ? minFee : fee
+
+    let gatheredUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
+
+    const satsNeeded = spendTargets + minerFee
+    gatheredUtxos = findXAmountOfSats(gatheredUtxos.utxos, satsNeeded)
+
+    if (fee === 0 && gatheredUtxos.utxos.length > 1) {
+      const newSize = minimumFee({
+        taprootInputCount: gatheredUtxos.utxos.length,
+        nonTaprootInputCount: 0,
+        outputCount: 3,
+      })
+      minerFee = Math.max(newSize * SAT_PER_VBYTE, 250)
+      if (gatheredUtxos.totalAmount < minerFee) {
+        throw new OylTransactionError(Error('Insufficient balance'))
+      }
+    }
+
+    const psbt = new bitcoin.Psbt({ network: provider.network })
+
+    if (alkanesUtxos) {
+      for (const utxo of alkanesUtxos) {
+        await addInputForUtxo(psbt, utxo, account, provider)
+      }
+    }
+    for (const utxo of gatheredUtxos.utxos) {
+      await addInputForUtxo(psbt, utxo, account, provider)
+    }
+
+    psbt.addOutput({ address: alkanesAddress, value: 546 })
+    psbt.addOutput({ script: protostone, value: 0 })
+    psbt.addOutput({ address: wrapAddress, value: wrapAmount })
+
+    const totalAlkanesAmount = alkanesUtxos
+      ? alkanesUtxos.reduce((acc, utxo) => acc + utxo.satoshis, 0)
+      : 0
+
+    const inputsTotal = gatheredUtxos.totalAmount + (totalAlkanesAmount ?? 0)
+    const outputsTotal = psbt.txOutputs.reduce((sum, o) => sum + o.value, 0)
+
+    let change = inputsTotal - outputsTotal - minerFee
+    if (change < 0) throw new OylTransactionError(Error('Insufficient balance'))
+
+    if (change >= Number(MIN_RELAY)) {
+      psbt.addOutput({
+        address: account[account.spendStrategy.changeAddress].address,
+        value: change,
+      })
+    } else {
+      minerFee += change
+      change = 0
+    }
+
+    const formatted = await formatInputsToSign({
+      _psbt: psbt,
+      senderPublicKey: alkanesPubkey,
+      network: provider.network,
+    })
+
+    return {
+      psbt: formatted.toBase64(),
+      psbtHex: formatted.toHex(),
+    }
+  } catch (err) {
+    throw new OylTransactionError(err)
+  }
+}
+
+export const createUnwrapBtcPsbt = async ({
+  utxos,
+  account,
+  provider,
+  feeRate,
+  fee = 0,
+  unwrapAmount,
+  alkaneUtxos,
+}: {
+  utxos: FormattedUtxo[]
+  account: Account
+  provider: Provider
+  feeRate?: number
+  fee?: number
+  unwrapAmount: bigint
+  alkaneUtxos: FormattedUtxo[]
+}) => {
+  try {
+    const SAT_PER_VBYTE = feeRate ?? 1
+    const MIN_RELAY = 546n
+
+    let alkanesAddress: string;
+    let alkanesPubkey: string;
+
+    if (account.taproot) {
+      alkanesAddress = account.taproot.address;
+      alkanesPubkey = account.taproot.pubkey;
+    } else if (account.nativeSegwit) {
+      alkanesAddress = account.nativeSegwit.address;
+      alkanesPubkey = account.nativeSegwit.pubkey;
+    } else {
+      throw new Error('No taproot or nativeSegwit address found')
+    }
+
+    const subfrostAddress = await getWrapAddress(provider);
+
+    const totalAlkaneAmount = alkaneUtxos.reduce((acc, utxo) => {
+      const alkane = utxo.alkanes['32:0']
+      if (alkane) {
+        return acc + BigInt(alkane.value)
+      }
+      return acc
+    }, 0n)
+
+    const psbt = new bitcoin.Psbt({ network: provider.network })
+    psbt.addOutput({ address: alkanesAddress, value: 546 })
+    psbt.addOutput({ address: subfrostAddress, value: 546 })
+
+    if (totalAlkaneAmount < unwrapAmount) {
+      throw new OylTransactionError(Error('Insufficient frbtc balance'))
+    }
+
+    const dustOutputIndex = psbt.txOutputs.length - 1
+
+    const calldata: bigint[] = [32n, 0n, 78n, BigInt(dustOutputIndex), unwrapAmount]
+    const protostones: ProtoStone[] = []
+
+    protostones.push(
+      ProtoStone.message({
+        protocolTag: 1n,
+        edicts: [],
+        pointer: 0,
+        refundPointer: 0,
+        calldata: encipher(calldata),
+      })
+    )
+
+    const protostone = encodeRunestoneProtostone({ protostones }).encodedRunestone
+
+    psbt.addOutput({ script: protostone, value: 0 })
+
+
+    for (const utxo of alkaneUtxos) {
+      await addInputForUtxo(psbt, utxo, account, provider)
+    }
+
+    const spendTargets = 546
+    const minTxSize = minimumFee({
+      taprootInputCount: 2,
+      nonTaprootInputCount: 0,
+      outputCount: psbt.txOutputs.length + 2, // already includes the subfrost address, 1 more for potential change, 1 for opreturn
+    })
+
+    const minFee = Math.max(minTxSize * SAT_PER_VBYTE, 250)
+    let minerFee = fee === 0 ? minFee : fee
+
+    let gatheredUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
+    const satsNeeded = spendTargets + minerFee
+    gatheredUtxos = findXAmountOfSats(gatheredUtxos.utxos, satsNeeded)
+
+    if (fee === 0 && gatheredUtxos.utxos.length > 1) {
+      const newSize = minimumFee({
+        taprootInputCount: gatheredUtxos.utxos.length,
+        nonTaprootInputCount: 0,
+        outputCount: psbt.txOutputs.length + 1,
+      })
+      minerFee = Math.max(newSize * SAT_PER_VBYTE, 250)
+      if (gatheredUtxos.totalAmount < minerFee) {
+        throw new OylTransactionError(Error('Insufficient balance'))
+      }
+    }
+
+    for (const utxo of gatheredUtxos.utxos) {
+      await addInputForUtxo(psbt, utxo, account, provider)
+    }
+
+    const inputsTotal = gatheredUtxos.totalAmount + alkaneUtxos.reduce((acc, u) => acc + u.satoshis, 0)
+    const outputsTotal = psbt.txOutputs.reduce((sum, o) => sum + o.value, 0)
+
+    let change = inputsTotal - outputsTotal - minerFee
+    if (change < 0) throw new OylTransactionError(Error('Insufficient balance'))
+
+    if (change >= Number(MIN_RELAY)) {
+      psbt.addOutput({
+        address: account[account.spendStrategy.changeAddress].address,
+        value: change,
+      })
+    } else {
+      minerFee += change
+      change = 0
+    }
+
+    const formatted = await formatInputsToSign({
+      _psbt: psbt,
+      senderPublicKey: alkanesPubkey,
+      network: provider.network,
+    })
+
+    return {
+      psbt: formatted.toBase64(),
+      psbtHex: formatted.toHex(),
+    }
+  } catch (err) {
+    throw new OylTransactionError(err)
+  }
+}
+
+export const unwrapBtc = async ({
+  utxos,
+  account,
+  provider,
+  feeRate,
+  signer,
+  unwrapAmount,
+  alkaneUtxos,
+}: {
+  utxos: FormattedUtxo[]
+  account: Account
+  provider: Provider
+  feeRate?: number
+  signer: Signer
+  unwrapAmount: bigint
+  alkaneUtxos: FormattedUtxo[]
+}) => {
+  const { psbt: finalPsbt } = await createUnwrapBtcPsbt({
+    utxos,
+    account,
+    provider,
+    feeRate,
+    unwrapAmount,
+    alkaneUtxos,
+  })
+
+  const { signedPsbt } = await signer.signAllInputs({
+    rawPsbt: finalPsbt,
+    finalize: true,
+  })
+
+  const pushResult = await provider.pushPsbt({
+    psbtBase64: signedPsbt,
+  })
+
+  return pushResult
 }
 
 export async function addInputForUtxo(
@@ -786,6 +1080,51 @@ export const execute = async ({
     provider,
     feeRate,
     fee,
+  })
+
+  const { signedPsbt } = await signer.signAllInputs({
+    rawPsbt: finalPsbt,
+    finalize: true,
+  })
+
+  const pushResult = await provider.pushPsbt({
+    psbtBase64: signedPsbt,
+  })
+
+  return pushResult
+}
+
+export const wrapBtc = async ({
+  alkanesUtxos,
+  utxos,
+  account,
+  protostone,
+  provider,
+  feeRate,
+  signer,
+  wrapAddress,
+  wrapAmount,
+}: {
+  alkanesUtxos?: FormattedUtxo[]
+  utxos: FormattedUtxo[]
+  account: Account
+  protostone: Buffer
+  provider: Provider
+  feeRate?: number
+  signer: Signer
+  wrapAddress: string
+  wrapAmount: number
+}) => {
+  // This is a simplified fee calculation. A more robust implementation would be needed for production.
+  const { psbt: finalPsbt } = await createWrapBtcPsbt({
+    alkanesUtxos,
+    utxos,
+    account,
+    protostone,
+    provider,
+    feeRate,
+    wrapAddress,
+    wrapAmount,
   })
 
   const { signedPsbt } = await signer.signAllInputs({

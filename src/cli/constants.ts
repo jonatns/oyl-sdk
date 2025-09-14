@@ -2,6 +2,13 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { Provider } from '..'
 
 export const DEFAULT_PROVIDER = {
+  subfrost: new Provider({
+    url: 'https://mainnet.subfrost.io',
+    version: 'v4',
+    projectId: 'subfrost',
+    network: bitcoin.networks.bitcoin,
+    networkType: 'mainnet'
+  }),
   alkanes: new Provider({
     url: 'http://localhost:18888',
     projectId: '',

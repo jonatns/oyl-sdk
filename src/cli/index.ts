@@ -18,7 +18,9 @@ import {
   initMerkleRoot,
   merkleClaim,
   subfrostWrapAddress,
-  alkaneSpendCommit
+  alkaneSpendCommit,
+  alkaneWrapBtc,
+  alkaneUnwrapBtc
 } from './alkane'
 import { init, genBlocks, sendFromFaucet } from './regtest'
 import { runeSend, runeMint, runeEtchCommit, runeEtchReveal } from './rune'
@@ -108,6 +110,8 @@ const alkaneCommand = new Command('alkane')
   .addCommand(initMerkleRoot)
   .addCommand(merkleClaim)
   .addCommand(subfrostWrapAddress)
+  .addCommand(alkaneWrapBtc)
+  .addCommand(alkaneUnwrapBtc)
 
 
 const providerCommand = new Command('provider')
