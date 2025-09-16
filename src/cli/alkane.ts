@@ -1384,7 +1384,6 @@ export const alkaneWrapBtc = new AlkanesCommand('wrap-btc')
         account: wallet.account,
         signer: wallet.signer,
         provider: wallet.provider,
-        wrapAddress,
         wrapAmount: Number(options.amount),
       })
     )

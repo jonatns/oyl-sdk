@@ -195,7 +195,6 @@ export const createWrapBtcPsbt = async ({
   provider,
   feeRate,
   fee = 0,
-  wrapAddress,
   wrapAmount,
 }: {
   alkanesUtxos?: FormattedUtxo[]
@@ -205,10 +204,10 @@ export const createWrapBtcPsbt = async ({
   provider: Provider
   feeRate?: number
   fee?: number
-  wrapAddress: string
   wrapAmount: number
 }) => {
   try {
+    const wrapAddress = await getWrapAddress(provider)
     const SAT_PER_VBYTE = feeRate ?? 1
     const MIN_RELAY = 546n
 
@@ -1160,7 +1159,6 @@ export const actualWrapBtcFee = async ({
   protostone,
   provider,
   feeRate,
-  wrapAddress,
   wrapAmount,
 }: {
   alkanesUtxos?: FormattedUtxo[]
@@ -1169,7 +1167,6 @@ export const actualWrapBtcFee = async ({
   protostone: Buffer
   provider: Provider
   feeRate: number
-  wrapAddress: string
   wrapAmount: number
 }) => {
   const { psbt } = await createWrapBtcPsbt({
@@ -1179,7 +1176,6 @@ export const actualWrapBtcFee = async ({
     protostone,
     provider,
     feeRate,
-    wrapAddress,
     wrapAmount,
   })
 
@@ -1197,7 +1193,6 @@ export const actualWrapBtcFee = async ({
     provider,
     feeRate,
     fee: estimatedFee,
-    wrapAddress,
     wrapAmount,
   })
 
@@ -1218,7 +1213,6 @@ export const wrapBtc = async ({
   provider,
   feeRate,
   signer,
-  wrapAddress,
   wrapAmount,
 }: {
   alkanesUtxos?: FormattedUtxo[]
@@ -1228,7 +1222,6 @@ export const wrapBtc = async ({
   provider: Provider
   feeRate?: number
   signer: Signer
-  wrapAddress: string
   wrapAmount: number
 }) => {
   const { fee } = await actualWrapBtcFee({
@@ -1238,7 +1231,6 @@ export const wrapBtc = async ({
     protostone,
     provider,
     feeRate,
-    wrapAddress,
     wrapAmount,
   })
 
@@ -1250,7 +1242,6 @@ export const wrapBtc = async ({
     provider,
     feeRate,
     fee,
-    wrapAddress,
     wrapAmount,
   })
 
