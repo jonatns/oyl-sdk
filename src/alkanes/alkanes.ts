@@ -440,6 +440,55 @@ export const createUnwrapBtcPsbt = async ({
   }
 }
 
+export const actualUnwrapBtcFee = async ({
+  utxos,
+  account,
+  provider,
+  feeRate,
+  unwrapAmount,
+  alkaneUtxos,
+}: {
+  utxos: FormattedUtxo[]
+  account: Account
+  provider: Provider
+  feeRate?: number
+  unwrapAmount: bigint
+  alkaneUtxos: FormattedUtxo[]
+}) => {
+  const { psbt } = await createUnwrapBtcPsbt({
+    utxos,
+    account,
+    provider,
+    feeRate,
+    unwrapAmount,
+    alkaneUtxos,
+  })
+
+  const { fee: estimatedFee } = await getEstimatedFee({
+    feeRate,
+    psbt,
+    provider,
+  })
+
+  const { psbt: finalPsbt } = await createUnwrapBtcPsbt({
+    utxos,
+    account,
+    provider,
+    feeRate,
+    fee: estimatedFee,
+    unwrapAmount,
+    alkaneUtxos,
+  })
+
+  const { fee: finalFee, vsize } = await getEstimatedFee({
+    feeRate,
+    psbt: finalPsbt,
+    provider,
+  })
+
+  return { fee: finalFee, vsize }
+}
+
 export const unwrapBtc = async ({
   utxos,
   account,
@@ -457,11 +506,21 @@ export const unwrapBtc = async ({
   unwrapAmount: bigint
   alkaneUtxos: FormattedUtxo[]
 }) => {
+  const { fee } = await actualUnwrapBtcFee({
+    utxos,
+    account,
+    provider,
+    feeRate,
+    unwrapAmount,
+    alkaneUtxos,
+  })
+
   const { psbt: finalPsbt } = await createUnwrapBtcPsbt({
     utxos,
     account,
     provider,
     feeRate,
+    fee,
     unwrapAmount,
     alkaneUtxos,
   })
@@ -1094,6 +1153,63 @@ export const execute = async ({
   return pushResult
 }
 
+export const actualWrapBtcFee = async ({
+  alkanesUtxos,
+  utxos,
+  account,
+  protostone,
+  provider,
+  feeRate,
+  wrapAddress,
+  wrapAmount,
+}: {
+  alkanesUtxos?: FormattedUtxo[]
+  utxos: FormattedUtxo[]
+  account: Account
+  protostone: Buffer
+  provider: Provider
+  feeRate: number
+  wrapAddress: string
+  wrapAmount: number
+}) => {
+  const { psbt } = await createWrapBtcPsbt({
+    alkanesUtxos,
+    utxos,
+    account,
+    protostone,
+    provider,
+    feeRate,
+    wrapAddress,
+    wrapAmount,
+  })
+
+  const { fee: estimatedFee } = await getEstimatedFee({
+    feeRate,
+    psbt,
+    provider,
+  })
+
+  const { psbt: finalPsbt } = await createWrapBtcPsbt({
+    alkanesUtxos,
+    utxos,
+    account,
+    protostone,
+    provider,
+    feeRate,
+    fee: estimatedFee,
+    wrapAddress,
+    wrapAmount,
+  })
+
+  const { fee: finalFee, vsize } = await getEstimatedFee({
+    feeRate,
+    psbt: finalPsbt,
+    provider,
+  })
+
+  return { fee: finalFee, vsize }
+}
+
 export const wrapBtc = async ({
   alkanesUtxos,
   utxos,
@@ -1115,7 +1231,17 @@ export const wrapBtc = async ({
   wrapAddress: string
   wrapAmount: number
 }) => {
-  // This is a simplified fee calculation. A more robust implementation would be needed for production.
+  const { fee } = await actualWrapBtcFee({
+    alkanesUtxos,
+    utxos,
+    account,
+    protostone,
+    provider,
+    feeRate,
+    wrapAddress,
+    wrapAmount,
+  })
+
   const { psbt: finalPsbt } = await createWrapBtcPsbt({
     alkanesUtxos,
     utxos,
@@ -1123,6 +1249,7 @@ export const wrapBtc = async ({
     protostone,
     provider,
     feeRate,
+    fee,
     wrapAddress,
     wrapAmount,
   })

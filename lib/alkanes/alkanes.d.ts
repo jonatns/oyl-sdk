@@ -55,6 +55,17 @@ export declare const createUnwrapBtcPsbt: ({ utxos, account, provider, feeRate, 
     psbt: string;
     psbtHex: string;
 }>;
+export declare const actualUnwrapBtcFee: ({ utxos, account, provider, feeRate, unwrapAmount, alkaneUtxos, }: {
+    utxos: FormattedUtxo[];
+    account: Account;
+    provider: Provider;
+    feeRate?: number;
+    unwrapAmount: bigint;
+    alkaneUtxos: FormattedUtxo[];
+}) => Promise<{
+    fee: number;
+    vsize: number;
+}>;
 export declare const unwrapBtc: ({ utxos, account, provider, feeRate, signer, unwrapAmount, alkaneUtxos, }: {
     utxos: FormattedUtxo[];
     account: Account;
@@ -193,6 +204,19 @@ export declare const execute: ({ alkanesUtxos, utxos, account, protostone, provi
     weight: any;
     fee: number;
     satsPerVByte: string;
+}>;
+export declare const actualWrapBtcFee: ({ alkanesUtxos, utxos, account, protostone, provider, feeRate, wrapAddress, wrapAmount, }: {
+    alkanesUtxos?: FormattedUtxo[];
+    utxos: FormattedUtxo[];
+    account: Account;
+    protostone: Buffer;
+    provider: Provider;
+    feeRate: number;
+    wrapAddress: string;
+    wrapAmount: number;
+}) => Promise<{
+    fee: number;
+    vsize: number;
 }>;
 export declare const wrapBtc: ({ alkanesUtxos, utxos, account, protostone, provider, feeRate, signer, wrapAddress, wrapAmount, }: {
     alkanesUtxos?: FormattedUtxo[];
