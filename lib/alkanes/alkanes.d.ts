@@ -4,7 +4,7 @@ import { Provider } from '../provider/provider';
 import * as bitcoin from 'bitcoinjs-lib';
 import { p2tr_ord_reveal } from 'alkanes/lib/index';
 import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict';
-import { Account, Signer } from '..';
+import { Account, AlkaneId, Signer } from '..';
 import { AlkanesPayload } from '../shared/interface';
 import { type FormattedUtxo } from '../utxo';
 export interface ProtostoneMessage {
@@ -185,6 +185,25 @@ export declare const executePsbt: ({ alkanesUtxos, utxos, account, protostone, p
 }) => Promise<{
     psbt: string;
     fee: number;
+}>;
+export declare const executeFallbackToWitnessProxy: ({ alkanesUtxos, utxos, account, calldata, provider, feeRate, signer, frontendFee, feeAddress, witnessProxy, }: {
+    alkanesUtxos?: FormattedUtxo[];
+    utxos: FormattedUtxo[];
+    account: Account;
+    calldata: bigint[];
+    provider: Provider;
+    feeRate?: number;
+    signer: Signer;
+    frontendFee?: bigint;
+    feeAddress?: string;
+    witnessProxy?: AlkaneId;
+}) => Promise<{
+    txId: string;
+    rawTx: string;
+    size: any;
+    weight: any;
+    fee: number;
+    satsPerVByte: string;
 }>;
 export declare const execute: ({ alkanesUtxos, utxos, account, protostone, provider, feeRate, signer, frontendFee, feeAddress, }: {
     alkanesUtxos?: FormattedUtxo[];
