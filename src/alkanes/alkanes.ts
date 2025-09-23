@@ -908,15 +908,19 @@ export const deployReveal = async ({
   });
   finalReveal.signInput(0, tweakedTaprootKeyPair);
   finalReveal.finalizeInput(0);
-
-  // note: this will break lasereyes since user can't sign with the tweakedTaprootKeyPair
-  // const { signedPsbt } = await signer.signAllInputs({
-  //   rawPsbt: finalReveal.toBase64(),
-  //   finalize: true,
-  // })
+  let finalPsbtBase64;
+  if (finalReveal.inputCount > 1) {
+    const { signedPsbt } = await signer.signAllInputs({
+      rawPsbt: finalReveal.toBase64(),
+      finalize: true,
+    })
+    finalPsbtBase64 = signedPsbt;
+  } else {
+    finalPsbtBase64 = finalReveal.toBase64();
+  }
 
   const revealResult = await provider.pushPsbt({
-    psbtBase64: finalReveal.toBase64(),
+    psbtBase64: finalPsbtBase64,
   })
 
   return revealResult
