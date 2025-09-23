@@ -29,6 +29,7 @@ import { getAddressType } from '../shared/utils'
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { LEAF_VERSION_TAPSCRIPT } from 'bitcoinjs-lib/src/payments/bip341'
 import { selectSpendableUtxos, type FormattedUtxo } from '../utxo'
+import { inscribePayload } from './token'
 
 export interface ProtostoneMessage {
   protocolTag?: bigint
@@ -1094,6 +1095,91 @@ export const executePsbt = async ({
   })
 
   return { psbt: finalPsbt, fee }
+}
+
+export const executeFallbackToWitnessProxy = async ({
+  alkanesUtxos,
+  utxos,
+  account,
+  calldata,
+  provider,
+  feeRate,
+  signer,
+  frontendFee,
+  feeAddress,
+  witnessProxy,
+}: {
+  alkanesUtxos?: FormattedUtxo[]
+  utxos: FormattedUtxo[]
+  account: Account
+  calldata: bigint[]
+  provider: Provider
+  feeRate?: number
+  signer: Signer
+  frontendFee?: bigint
+  feeAddress?: string
+  witnessProxy?: AlkaneId
+}) => {
+  let protostone = encodeRunestoneProtostone({
+    protostones: [
+      ProtoStone.message({
+        protocolTag: 1n,
+        edicts: [],
+        pointer: 0,
+        refundPointer: 0,
+        calldata: encipher(calldata),
+      }),
+    ],
+  }).encodedRunestone;
+  if (protostone.length > 80) {
+    console.log("OP_RETURN > 80 bytes, attempting to use witness proxy");
+    if (!witnessProxy) {
+      throw new Error('No witness proxy passed in, and OP_RETURN > 80 bytes');
+    }
+    let proxy_calldata = [
+      BigInt(witnessProxy.block),
+      BigInt(witnessProxy.tx),
+      BigInt(0)
+    ]
+    protostone = encodeRunestoneProtostone({
+      protostones: [
+        ProtoStone.message({
+          protocolTag: 1n,
+          edicts: [],
+          pointer: 0,
+          refundPointer: 0,
+          calldata: encipher(proxy_calldata),
+        }),
+      ],
+    }).encodedRunestone;
+    const payload: AlkanesPayload = {
+      body: encipher(calldata),
+      cursed: false,
+      tags: { contentType: '' },
+    };
+    return await inscribePayload({
+      protostone,
+      payload,
+      alkanesUtxos,
+      utxos,
+      feeRate,
+      account,
+      signer,
+      provider,
+    })
+  } else {
+    return await execute({
+      alkanesUtxos,
+      utxos,
+      account,
+      protostone,
+      provider,
+      feeRate,
+      signer,
+      frontendFee,
+      feeAddress,
+    });
+  }
 }
 
 export const execute = async ({
