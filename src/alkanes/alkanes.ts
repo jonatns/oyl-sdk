@@ -684,7 +684,7 @@ export const createDeployCommitPsbt = async ({
       throw new Error('No taproot or nativeSegwit address found')
     }
 
-    let gatheredUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
+    let totalSpendableUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
 
     const minFee = minimumFee({
       taprootInputCount: 2,
@@ -712,8 +712,8 @@ export const createDeployCommitPsbt = async ({
     const wasmDeploySize = getVSize(Buffer.from(payload.body)) * feeRate
     let revealTxFee = deployRevealFee ? deployRevealFee + inscriptionSats : commitFee + wasmDeploySize + inscriptionSats;
     let totalFee = revealTxFee + commitFee;
-    gatheredUtxos = findXAmountOfSats(
-      [...utxos],
+    let gatheredUtxos = findXAmountOfSats(
+      totalSpendableUtxos.utxos,
       totalFee
     )
 
@@ -729,7 +729,7 @@ export const createDeployCommitPsbt = async ({
 
       if (gatheredUtxos.totalAmount < commitFee) {
         gatheredUtxos = findXAmountOfSats(
-          [...utxos],
+          totalSpendableUtxos.utxos,
           totalFee
         )
       }
