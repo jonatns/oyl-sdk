@@ -421,7 +421,7 @@ export const poolPsbt = async ({
       throw new Error('No taproot or nativeSegwit address found')
     }
 
-    let gatheredUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
+    const totalSpendableUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
 
     const minTxSize = minimumFee({
       taprootInputCount: 2,
@@ -432,7 +432,7 @@ export const poolPsbt = async ({
     let calculatedFee = Math.max(minTxSize * feeRate, 250)
     let finalFee = fee === 0 ? calculatedFee : fee
 
-    gatheredUtxos = findXAmountOfSats([...utxos], Number(finalFee) + 546)
+    let gatheredUtxos = findXAmountOfSats(totalSpendableUtxos.utxos, Number(finalFee) + 546)
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
 
@@ -447,10 +447,6 @@ export const poolPsbt = async ({
         outputCount: 2,
       })
       finalFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
-
-      if (gatheredUtxos.totalAmount < finalFee) {
-        throw new OylTransactionError(Error('Insufficient Balance'))
-      }
     }
 
     if (gatheredUtxos.totalAmount < finalFee) {

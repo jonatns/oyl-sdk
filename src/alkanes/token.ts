@@ -109,7 +109,7 @@ export const createSendPsbt = async ({
       throw new Error('No taproot or nativeSegwit address found')
     }
 
-    let gatheredUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
+    const totalSpendableUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
 
     const minFee = minimumFee({
       taprootInputCount: 2,
@@ -119,9 +119,9 @@ export const createSendPsbt = async ({
     const calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
     let finalFee = fee ? fee : calculatedFee
 
-    gatheredUtxos = findXAmountOfSats(
-      [...gatheredUtxos.utxos],
-      Number(finalFee) + Number(inscriptionSats)
+    let gatheredUtxos = findXAmountOfSats(
+      totalSpendableUtxos.utxos,
+      Number(finalFee) + Number(inscriptionSats) * 2
     )
 
     if (gatheredUtxos.utxos.length > 1) {
@@ -133,8 +133,8 @@ export const createSendPsbt = async ({
 
       finalFee = Math.max(txSize * feeRate, 250)
       gatheredUtxos = findXAmountOfSats(
-        [...gatheredUtxos.utxos],
-        Number(finalFee) + Number(inscriptionSats)
+        totalSpendableUtxos.utxos,
+        Number(finalFee) + Number(inscriptionSats) * 2
       )
     }
 
