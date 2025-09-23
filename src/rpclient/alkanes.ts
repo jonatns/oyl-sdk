@@ -188,7 +188,7 @@ export class AlkanesRpc {
           },
           runes: outpoint.runes.map((rune) => ({
             ...rune,
-            balance: parseInt(rune.balance, 16).toString(),
+            balance: BigInt('0x' + stripHexPrefix(rune.balance)).toString(),
             rune: {
               ...rune.rune,
               id: {
