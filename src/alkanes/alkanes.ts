@@ -115,10 +115,10 @@ export const createExecutePsbt = async ({
     const minFee = Math.max(minTxSize * SAT_PER_VBYTE, 250)
     let minerFee = fee === 0 ? minFee : fee
 
-    let gatheredUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
+    const totalSpendableUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
 
     const satsNeeded = spendTargets + minerFee
-    gatheredUtxos = findXAmountOfSats(gatheredUtxos.utxos, satsNeeded)
+    let gatheredUtxos = findXAmountOfSats(totalSpendableUtxos.utxos, satsNeeded)
 
     if (fee === 0 && gatheredUtxos.utxos.length > 1) {
       const newSize = minimumFee({
@@ -684,7 +684,7 @@ export const createDeployCommitPsbt = async ({
       throw new Error('No taproot or nativeSegwit address found')
     }
 
-    let totalSpendableUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
+    const totalSpendableUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
 
     const minFee = minimumFee({
       taprootInputCount: 2,
