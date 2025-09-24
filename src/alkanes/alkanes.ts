@@ -827,7 +827,7 @@ export const deployCommit = async ({
     psbtBase64: signedPsbt,
   })
 
-  return { ...result, script: script.toString('hex') }
+  return { ...result, script: script.toString('hex'), commitPsbt: signedPsbt }
 }
 
 export const deployReveal = async ({
@@ -841,6 +841,7 @@ export const deployReveal = async ({
   provider,
   feeRate,
   signer,
+  commitPsbt,
 }: {
   payload: AlkanesPayload
   alkanesUtxos?: FormattedUtxo[]
@@ -852,6 +853,7 @@ export const deployReveal = async ({
   provider: Provider
   feeRate?: number
   signer: Signer
+  commitPsbt?: bitcoin.Psbt
 }) => {
   let alkanesAddress: string;
   let alkanesPubkey: string;
@@ -882,6 +884,7 @@ export const deployReveal = async ({
     tweakedPublicKey,
     receiverAddress: alkanesAddress,
     commitTxId,
+    commitPsbt,
     script: Buffer.from(script, 'hex'),
     provider,
     feeRate,
@@ -896,6 +899,7 @@ export const deployReveal = async ({
     tweakedPublicKey,
     receiverAddress: alkanesAddress,
     commitTxId,
+    commitPsbt,
     script: Buffer.from(script, 'hex'),
     provider,
     feeRate,
@@ -933,6 +937,7 @@ export const actualTransactRevealFee = async ({
   protostone,
   tweakedPublicKey,
   commitTxId,
+  commitPsbt,
   receiverAddress,
   script,
   provider,
@@ -945,6 +950,7 @@ export const actualTransactRevealFee = async ({
   protostone: Buffer
   tweakedPublicKey: string
   commitTxId: string
+  commitPsbt: bitcoin.Psbt
   receiverAddress: string
   script: Buffer
   provider: Provider
@@ -961,6 +967,7 @@ export const actualTransactRevealFee = async ({
     utxos,
     protostone,
     commitTxId,
+    commitPsbt,
     receiverAddress,
     script,
     tweakedPublicKey,
@@ -981,6 +988,7 @@ export const actualTransactRevealFee = async ({
     utxos,
     protostone,
     commitTxId,
+    commitPsbt,
     receiverAddress,
     script,
     tweakedPublicKey,
@@ -1359,6 +1367,7 @@ export const createTransactReveal = async ({
   provider,
   fee = 0,
   commitTxId,
+  commitPsbt,
   account,
 }: {
   payload: AlkanesPayload
@@ -1372,6 +1381,7 @@ export const createTransactReveal = async ({
   provider: Provider
   fee?: number
   commitTxId: string
+  commitPsbt: bitcoin.Psbt
   account: Account
 }) => {
   try {
@@ -1389,14 +1399,10 @@ export const createTransactReveal = async ({
 
     const revealTxBaseFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
     let revealTxFee = fee === 0 ? revealTxBaseFee : fee
-    const commitTxOutput = await getOutputValueByVOutIndex({
-      txId: commitTxId,
-      vOut: 0,
-      esploraRpc: provider.esplora,
-    })
+    const commitTxOutput = commitPsbt.txOutputs[0]
 
     if (!commitTxOutput) {
-      throw new OylTransactionError(new Error('Error getting vin #0 value'))
+      throw new OylTransactionError(new Error('Error getting commit transaction output'))
     }
 
     const p2pk_redeem = { output: script }
@@ -1544,7 +1550,21 @@ export const inscribePayloadBulk = async ({
   });
 
   const commitPsbt = bitcoin.Psbt.fromBase64(commitPsbtBase64, { network: provider.network });
-  const commitTxId = commitPsbt.extractTransaction().getId();
+
+  for (const input of commitPsbt.data.inputs) {
+    if (input.nonWitnessUtxo) {
+      throw new OylTransactionError(
+        Error('inscribePayloadBulk does not support legacy inputs. Please use SegWit or Taproot inputs.')
+      );
+    }
+  }
+
+  const virtualTx = new bitcoin.Transaction()
+  virtualTx.version = commitPsbt.version
+  commitPsbt.txInputs.forEach(input => virtualTx.addInput(input.hash, input.index, input.sequence))
+  commitPsbt.txOutputs.forEach(output => virtualTx.addOutput(output.script, output.value))
+  virtualTx.locktime = commitPsbt.locktime
+  const commitTxId = virtualTx.getId()
 
   let alkanesAddress: string;
   if (account.taproot) {
@@ -1563,6 +1583,7 @@ export const inscribePayloadBulk = async ({
     tweakedPublicKey,
     receiverAddress: alkanesAddress,
     commitTxId,
+    commitPsbt,
     script: script,
     provider,
     feeRate,
@@ -1577,6 +1598,7 @@ export const inscribePayloadBulk = async ({
     tweakedPublicKey,
     receiverAddress: alkanesAddress,
     commitTxId,
+    commitPsbt,
     script: script,
     provider,
     feeRate,
@@ -1594,15 +1616,21 @@ export const inscribePayloadBulk = async ({
     rawPsbtsToSign.push(finalReveal.toBase64());
   }
 
-  const { signedPsbts } = await signer.signAllInputsMultiplePsbts({
+  const signedPsbts = await signer.signAllInputsMultiplePsbts({
     rawPsbts: rawPsbtsToSign,
     finalize: true,
   })
 
-  const signedRevealTx = signedPsbts.length == 2 ? signedPsbts[1] : finalReveal.toBase64();
+  const signedRevealTx = signedPsbts.length == 2 ? signedPsbts[1].signedPsbt : finalReveal.toBase64();
 
-  const commitTx = await provider.pushPsbt({ psbtBase64: signedPsbts[0] })
+  const commitTx = await provider.pushPsbt({ psbtBase64: signedPsbts[0].signedPsbt })
+  console.log("commitTx", commitTx);
   const revealTx = await provider.pushPsbt({ psbtBase64: signedRevealTx })
-
-  return { revealTx, commitTx }
+  console.log("revealTx", revealTx);
+  if (commitTx.txId != commitTxId) {
+    throw new OylTransactionError(
+      Error('Pre-calculated txid does not match broadcasted txid')
+    );
+  }
+  return { ...revealTx, commitTx: commitTxId }
 }

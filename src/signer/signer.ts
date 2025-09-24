@@ -269,22 +269,19 @@ export class Signer {
     rawPsbtsHex?: string[]
     finalize?: boolean
   }) {
-    const signedPsbts: string[] = []
-    const signedHexPsbts: string[] = []
+    const signedPsbts = []
 
     const psbts = rawPsbts || rawPsbtsHex
 
     for (const psbt of psbts) {
-      const { signedPsbt, signedHexPsbt } = await this.signAllInputs(
+      signedPsbts.push(await this.signAllInputs(
         rawPsbts
           ? { rawPsbt: psbt, finalize }
           : { rawPsbtHex: psbt, finalize }
-      )
-      signedPsbts.push(signedPsbt)
-      signedHexPsbts.push(signedHexPsbt)
+      ))
     }
 
-    return { signedPsbts, signedHexPsbts }
+    return signedPsbts;
   }
 
   async signAllSegwitInputs({

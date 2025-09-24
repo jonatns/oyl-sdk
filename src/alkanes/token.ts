@@ -48,7 +48,7 @@ export const inscribePayload = async ({
   feeRate?: number
   signer: Signer
 }) => {
-  const { script, txId } = await deployCommit({
+  const { script, txId, commitPsbt } = await deployCommit({
     payload,
     utxos,
     account,
@@ -67,6 +67,9 @@ export const inscribePayload = async ({
     protostone,
     script,
     commitTxId: txId,
+    commitPsbt: bitcoin.Psbt.fromBase64(commitPsbt, {
+      network: provider.network,
+    }),
     account,
     provider,
     feeRate,
