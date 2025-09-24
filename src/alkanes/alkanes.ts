@@ -1161,7 +1161,7 @@ export const executeFallbackToWitnessProxy = async ({
       cursed: false,
       tags: { contentType: '' },
     };
-    return await inscribePayload({
+    return await inscribePayloadBulk({
       protostone,
       payload,
       alkanesUtxos,

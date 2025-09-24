@@ -204,6 +204,23 @@ export declare const executeFallbackToWitnessProxy: ({ alkanesUtxos, utxos, acco
     weight: any;
     fee: number;
     satsPerVByte: string;
+} | {
+    revealTx: {
+        txId: string;
+        rawTx: string;
+        size: any;
+        weight: any;
+        fee: number;
+        satsPerVByte: string;
+    };
+    commitTx: {
+        txId: string;
+        rawTx: string;
+        size: any;
+        weight: any;
+        fee: number;
+        satsPerVByte: string;
+    };
 }>;
 export declare const execute: ({ alkanesUtxos, utxos, account, protostone, provider, feeRate, signer, frontendFee, feeAddress, }: {
     alkanesUtxos?: FormattedUtxo[];
