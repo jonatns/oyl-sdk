@@ -53,6 +53,11 @@ export declare class Signer {
         signedPsbt: string;
         signedHexPsbt: string;
     }>;
+    signAllInputsMultiplePsbts({ rawPsbts, rawPsbtsHex, finalize, }: {
+        rawPsbts?: string[];
+        rawPsbtsHex?: string[];
+        finalize?: boolean;
+    }): Promise<any[]>;
     signAllSegwitInputs({ rawPsbt, finalize, }: {
         rawPsbt: string;
         finalize: boolean;
