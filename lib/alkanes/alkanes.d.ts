@@ -278,3 +278,30 @@ export declare const toAlkaneId: (item: string) => {
     amount: number;
 };
 export { p2tr_ord_reveal };
+export declare const inscribePayloadBulk: ({ alkanesUtxos, payload, utxos, account, protostone, provider, feeRate, signer, }: {
+    alkanesUtxos?: FormattedUtxo[];
+    payload: AlkanesPayload;
+    utxos: FormattedUtxo[];
+    account: Account;
+    protostone: Buffer;
+    provider: Provider;
+    feeRate?: number;
+    signer: Signer;
+}) => Promise<{
+    revealTx: {
+        txId: string;
+        rawTx: string;
+        size: any;
+        weight: any;
+        fee: number;
+        satsPerVByte: string;
+    };
+    commitTx: {
+        txId: string;
+        rawTx: string;
+        size: any;
+        weight: any;
+        fee: number;
+        satsPerVByte: string;
+    };
+}>;

@@ -1494,3 +1494,115 @@ export const toAlkaneId = (item: string) => {
 }
 
 export { p2tr_ord_reveal }
+
+export const inscribePayloadBulk = async ({
+  alkanesUtxos,
+  payload,
+  utxos,
+  account,
+  protostone,
+  provider,
+  feeRate,
+  signer,
+}: {
+  alkanesUtxos?: FormattedUtxo[]
+  payload: AlkanesPayload
+  utxos: FormattedUtxo[]
+  account: Account
+  protostone: Buffer
+  provider: Provider
+  feeRate?: number
+  signer: Signer
+}) => {
+  const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
+    signer.taprootKeyPair,
+    {
+      network: provider.network,
+    }
+  )
+  const tweakedPublicKey = tweakedTaprootKeyPair.publicKey.toString('hex')
+
+  const { fee: commitFee, deployRevealFee } = await actualDeployCommitFee({
+    payload,
+    utxos,
+    tweakedPublicKey,
+    account,
+    provider,
+    feeRate,
+    protostone,
+  });
+
+  const { psbt: commitPsbtBase64, script } = await createDeployCommitPsbt({
+    payload,
+    utxos,
+    tweakedPublicKey,
+    account,
+    provider,
+    feeRate,
+    fee: commitFee,
+    deployRevealFee,
+  });
+
+  const commitPsbt = bitcoin.Psbt.fromBase64(commitPsbtBase64, { network: provider.network });
+  const commitTxId = commitPsbt.extractTransaction().getId();
+
+  let alkanesAddress: string;
+  if (account.taproot) {
+    alkanesAddress = account.taproot.address;
+  } else if (account.nativeSegwit) {
+    alkanesAddress = account.nativeSegwit.address;
+  } else {
+    throw new Error('No taproot or nativeSegwit address found')
+  }
+
+  const { fee: revealFee } = await actualTransactRevealFee({
+    payload,
+    alkanesUtxos,
+    utxos,
+    protostone,
+    tweakedPublicKey,
+    receiverAddress: alkanesAddress,
+    commitTxId,
+    script: script,
+    provider,
+    feeRate,
+    account,
+  })
+
+  const { psbt: finalRevealPsbt } = await createTransactReveal({
+    payload,
+    alkanesUtxos,
+    utxos,
+    protostone,
+    tweakedPublicKey,
+    receiverAddress: alkanesAddress,
+    commitTxId,
+    script: script,
+    provider,
+    feeRate,
+    fee: revealFee,
+    account,
+  })
+
+  let finalReveal = bitcoin.Psbt.fromBase64(finalRevealPsbt, {
+    network: provider.network,
+  });
+  finalReveal.signInput(0, tweakedTaprootKeyPair);
+  finalReveal.finalizeInput(0);
+  let rawPsbtsToSign = [commitPsbtBase64];
+  if (finalReveal.inputCount > 1) {
+    rawPsbtsToSign.push(finalReveal.toBase64());
+  }
+
+  const { signedPsbts } = await signer.signAllInputsMultiplePsbts({
+    rawPsbts: rawPsbtsToSign,
+    finalize: true,
+  })
+
+  const signedRevealTx = signedPsbts.length == 2 ? signedPsbts[1] : finalReveal.toBase64();
+
+  const commitTx = await provider.pushPsbt({ psbtBase64: signedPsbts[0] })
+  const revealTx = await provider.pushPsbt({ psbtBase64: signedRevealTx })
+
+  return { revealTx, commitTx }
+}

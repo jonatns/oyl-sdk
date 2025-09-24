@@ -260,6 +260,33 @@ export class Signer {
     return { signedPsbt, signedHexPsbt }
   }
 
+  async signAllInputsMultiplePsbts({
+    rawPsbts,
+    rawPsbtsHex,
+    finalize = true,
+  }: {
+    rawPsbts?: string[]
+    rawPsbtsHex?: string[]
+    finalize?: boolean
+  }) {
+    const signedPsbts: string[] = []
+    const signedHexPsbts: string[] = []
+
+    const psbts = rawPsbts || rawPsbtsHex
+
+    for (const psbt of psbts) {
+      const { signedPsbt, signedHexPsbt } = await this.signAllInputs(
+        rawPsbts
+          ? { rawPsbt: psbt, finalize }
+          : { rawPsbtHex: psbt, finalize }
+      )
+      signedPsbts.push(signedPsbt)
+      signedHexPsbts.push(signedHexPsbt)
+    }
+
+    return { signedPsbts, signedHexPsbts }
+  }
+
   async signAllSegwitInputs({
     rawPsbt,
     finalize,
