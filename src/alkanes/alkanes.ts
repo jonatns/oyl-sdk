@@ -600,6 +600,8 @@ export const actualDeployCommitFee = async ({
   provider,
   feeRate,
   protostone,
+  frontendFee,
+  feeAddress,
 }: {
   payload: AlkanesPayload
   tweakedPublicKey: string
@@ -608,6 +610,8 @@ export const actualDeployCommitFee = async ({
   provider: Provider
   feeRate?: number
   protostone: Buffer
+  frontendFee?: bigint
+  feeAddress?: string
 }) => {
   if (!feeRate) {
     feeRate = (await provider.esplora.getFeeEstimates())['1']
@@ -620,6 +624,8 @@ export const actualDeployCommitFee = async ({
     account,
     provider,
     feeRate,
+    frontendFee,
+    feeAddress,
   })
 
   const { fee: estimatedFee } = await getEstimatedFee({
@@ -636,6 +642,8 @@ export const actualDeployCommitFee = async ({
     provider,
     feeRate,
     fee: estimatedFee,
+    frontendFee,
+    feeAddress,
   })
 
   const { fee: finalFee, vsize } = await getEstimatedFee({
@@ -660,6 +668,8 @@ export const createDeployCommitPsbt = async ({
   feeRate,
   fee,
   deployRevealFee,
+  frontendFee,
+  feeAddress,
 }: {
   payload: AlkanesPayload
   utxos: FormattedUtxo[]
@@ -669,6 +679,8 @@ export const createDeployCommitPsbt = async ({
   feeRate?: number
   fee?: number
   deployRevealFee?: number
+  frontendFee?: bigint
+  feeAddress?: string
 }) => {
   try {
     let alkanesAddress: string;
@@ -684,12 +696,19 @@ export const createDeployCommitPsbt = async ({
       throw new Error('No taproot or nativeSegwit address found')
     }
 
+    if (frontendFee && !feeAddress) {
+      throw new Error('feeAddress required when frontendFee is set')
+    }
+    const MIN_RELAY = 546n
+    const feeSatEffective: bigint =
+      frontendFee && frontendFee >= MIN_RELAY ? frontendFee : 0n
+
     const totalSpendableUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
 
     const minFee = minimumFee({
       taprootInputCount: 2,
       nonTaprootInputCount: 0,
-      outputCount: 2,
+      outputCount: 2 + (feeSatEffective > 0n ? 1 : 0),
     })
     const calculatedFee = minFee * feeRate < 250 ? 250 : minFee * feeRate
     let commitFee = fee ? fee : calculatedFee
@@ -711,7 +730,7 @@ export const createDeployCommitPsbt = async ({
 
     const wasmDeploySize = getVSize(Buffer.from(payload.body)) * feeRate
     let revealTxFee = deployRevealFee ? deployRevealFee + inscriptionSats : commitFee + wasmDeploySize + inscriptionSats;
-    let totalFee = revealTxFee + commitFee;
+    let totalFee = revealTxFee + commitFee + Number(feeSatEffective);
     let gatheredUtxos = findXAmountOfSats(
       totalSpendableUtxos.utxos,
       totalFee
@@ -721,11 +740,11 @@ export const createDeployCommitPsbt = async ({
       const txSize = minimumFee({
         taprootInputCount: gatheredUtxos.utxos.length,
         nonTaprootInputCount: 0,
-        outputCount: 2,
+        outputCount: 2 + (feeSatEffective > 0n ? 1 : 0),
       })
       commitFee = txSize * feeRate < 250 ? 250 : txSize * feeRate
       revealTxFee = deployRevealFee ? deployRevealFee + inscriptionSats : commitFee + wasmDeploySize + inscriptionSats;
-      totalFee = commitFee + revealTxFee;
+      totalFee = commitFee + revealTxFee + Number(feeSatEffective);
 
       if (gatheredUtxos.totalAmount < commitFee) {
         gatheredUtxos = findXAmountOfSats(
@@ -748,6 +767,13 @@ export const createDeployCommitPsbt = async ({
       value: revealTxFee,
       address: inscriberInfo.address,
     })
+
+    if (feeSatEffective > 0n) {
+      psbt.addOutput({
+        address: feeAddress!,
+        value: Number(feeSatEffective),
+      })
+    }
 
     const changeAmount =
       gatheredUtxos.totalAmount - totalFee
@@ -779,6 +805,8 @@ export const deployCommit = async ({
   feeRate,
   signer,
   protostone,
+  frontendFee,
+  feeAddress,
 }: {
   payload: AlkanesPayload
   utxos: FormattedUtxo[]
@@ -787,6 +815,8 @@ export const deployCommit = async ({
   feeRate?: number
   signer: Signer
   protostone: Buffer
+  frontendFee?: bigint
+  feeAddress?: string
 }) => {
   const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
     signer.taprootKeyPair,
@@ -805,6 +835,8 @@ export const deployCommit = async ({
     provider,
     feeRate,
     protostone,
+    frontendFee,
+    feeAddress,
   });
 
   const { psbt: finalPsbt, script } = await createDeployCommitPsbt({
@@ -816,6 +848,8 @@ export const deployCommit = async ({
     feeRate,
     fee: commitFee,
     deployRevealFee,
+    frontendFee,
+    feeAddress,
   });
 
   const { signedPsbt } = await signer.signAllInputs({
@@ -1178,6 +1212,8 @@ export const executeFallbackToWitnessProxy = async ({
       account,
       signer,
       provider,
+      frontendFee,
+      feeAddress,
     })
   } else {
     return await execute({
@@ -1510,6 +1546,8 @@ export const inscribePayloadBulk = async ({
   provider,
   feeRate,
   signer,
+  frontendFee,
+  feeAddress,
 }: {
   alkanesUtxos?: FormattedUtxo[]
   payload: AlkanesPayload
@@ -1519,6 +1557,8 @@ export const inscribePayloadBulk = async ({
   provider: Provider
   feeRate?: number
   signer: Signer
+  frontendFee?: bigint
+  feeAddress?: string
 }) => {
   const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
     signer.taprootKeyPair,
@@ -1536,6 +1576,8 @@ export const inscribePayloadBulk = async ({
     provider,
     feeRate,
     protostone,
+    frontendFee,
+    feeAddress,
   });
 
   const { psbt: commitPsbtBase64, script } = await createDeployCommitPsbt({
@@ -1547,6 +1589,8 @@ export const inscribePayloadBulk = async ({
     feeRate,
     fee: commitFee,
     deployRevealFee,
+    frontendFee,
+    feeAddress,
   });
 
   const commitPsbt = bitcoin.Psbt.fromBase64(commitPsbtBase64, { network: provider.network });
