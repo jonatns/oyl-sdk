@@ -408,7 +408,7 @@ export const createUnwrapBtcPsbt = async ({
 
     const spendTargets = 546
     const minTxSize = minimumFee({
-      taprootInputCount: 2,
+      taprootInputCount: psbt.txInputs.length,
       nonTaprootInputCount: 0,
       outputCount: psbt.txOutputs.length + 2, // already includes the subfrost address, 1 more for potential change, 1 for opreturn
     })
@@ -422,7 +422,7 @@ export const createUnwrapBtcPsbt = async ({
 
     if (fee === 0 && gatheredUtxos.utxos.length > 1) {
       const newSize = minimumFee({
-        taprootInputCount: gatheredUtxos.utxos.length,
+        taprootInputCount: psbt.txInputs.length + gatheredUtxos.utxos.length,
         nonTaprootInputCount: 0,
         outputCount: psbt.txOutputs.length + 1,
       })
@@ -533,7 +533,7 @@ export const unwrapBtc = async ({
   unwrapAmount: bigint
   alkaneUtxos: FormattedUtxo[]
 }) => {
-  const { fee } = await actualUnwrapBtcFee({
+  const { fee, vsize } = await actualUnwrapBtcFee({
     utxos,
     account,
     provider,
