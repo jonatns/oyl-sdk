@@ -885,3 +885,11 @@ export async function addInputUtxosToPsbt(
     }
   }
 }
+export const getUnfinalizedPsbtTxId = (psbt: bitcoin.Psbt) => {
+  const virtualTx = new bitcoin.Transaction()
+  virtualTx.version = psbt.version
+  psbt.txInputs.forEach(input => virtualTx.addInput(input.hash, input.index, input.sequence))
+  psbt.txOutputs.forEach(output => virtualTx.addOutput(output.script, output.value))
+  virtualTx.locktime = psbt.locktime
+  return virtualTx.getId()
+}

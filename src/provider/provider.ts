@@ -92,7 +92,7 @@ export class Provider {
     const [result] = await this.sandshrew.bitcoindRpc.testMemPoolAccept([rawTx])
 
     if (!result.allowed) {
-      throw new Error(result['reject-reason'])
+      throw new Error(`Mempool rejected tx due to ${result['reject-reason']}`)
     }
     await this.sandshrew.bitcoindRpc.sendRawTransaction(rawTx)
 

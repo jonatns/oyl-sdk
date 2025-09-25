@@ -21,6 +21,7 @@ import {
   getVSize,
   inscriptionSats,
   tweakSigner,
+  getUnfinalizedPsbtTxId,
 } from '../shared/utils'
 import { getEstimatedFee } from '../psbt'
 import { OylTransactionError } from '../errors'
@@ -69,6 +70,7 @@ export const createExecutePsbt = async ({
   provider,
   feeRate,
   fee = 0,
+  frbtcWrapPsbt,
 }: {
   alkanesUtxos?: FormattedUtxo[]
   frontendFee?: bigint
@@ -79,6 +81,7 @@ export const createExecutePsbt = async ({
   provider: Provider
   feeRate?: number
   fee?: number
+  frbtcWrapPsbt?: bitcoin.Psbt
 }) => {
   try {
     const SAT_PER_VBYTE = feeRate ?? 1
@@ -134,6 +137,30 @@ export const createExecutePsbt = async ({
 
     const psbt = new bitcoin.Psbt({ network: provider.network })
 
+    if (frbtcWrapPsbt) {
+      const frbtcWrapTxId = getUnfinalizedPsbtTxId(frbtcWrapPsbt)
+      const output = frbtcWrapPsbt.txOutputs[0]
+      if (account.taproot) {
+        psbt.addInput({
+          hash: frbtcWrapTxId,
+          index: 0,
+          witnessUtxo: {
+            script: output.script,
+            value: output.value,
+          },
+          tapInternalKey: toXOnly(Buffer.from(account.taproot.pubkey, 'hex')),
+        })
+      } else if (account.nativeSegwit) {
+        psbt.addInput({
+          hash: frbtcWrapTxId,
+          index: 0,
+          witnessUtxo: {
+            script: output.script,
+            value: output.value,
+          },
+        })
+      }
+    }
     if (alkanesUtxos) {
       for (const utxo of alkanesUtxos) {
         await addInputForUtxo(psbt, utxo, account, provider)
@@ -1050,6 +1077,7 @@ export const actualExecuteFee = async ({
   feeRate,
   frontendFee,
   feeAddress,
+  frbtcWrapPsbt,
 }: {
   alkanesUtxos?: FormattedUtxo[]
   utxos: FormattedUtxo[]
@@ -1059,6 +1087,7 @@ export const actualExecuteFee = async ({
   feeRate: number
   frontendFee?: bigint
   feeAddress?: string
+  frbtcWrapPsbt?: bitcoin.Psbt
 }) => {
   const { psbt } = await createExecutePsbt({
     alkanesUtxos,
@@ -1069,6 +1098,7 @@ export const actualExecuteFee = async ({
     protostone,
     provider,
     feeRate,
+    frbtcWrapPsbt,
   })
 
   const { fee: estimatedFee } = await getEstimatedFee({
@@ -1087,6 +1117,7 @@ export const actualExecuteFee = async ({
     provider,
     feeRate,
     fee: estimatedFee,
+    frbtcWrapPsbt,
   })
 
   const { fee: finalFee, vsize } = await getEstimatedFee({
@@ -1107,6 +1138,7 @@ export const executePsbt = async ({
   feeRate,
   frontendFee,
   feeAddress,
+  frbtcWrapPsbt,
 }: {
   alkanesUtxos?: FormattedUtxo[]
   utxos: FormattedUtxo[]
@@ -1116,6 +1148,7 @@ export const executePsbt = async ({
   feeRate?: number
   frontendFee?: bigint
   feeAddress?: string
+  frbtcWrapPsbt?: bitcoin.Psbt
 }) => {
   const { fee } = await actualExecuteFee({
     alkanesUtxos,
@@ -1126,6 +1159,7 @@ export const executePsbt = async ({
     protostone,
     provider,
     feeRate,
+    frbtcWrapPsbt,
   })
 
   const { psbt: finalPsbt } = await createExecutePsbt({
@@ -1138,6 +1172,7 @@ export const executePsbt = async ({
     provider,
     feeRate,
     fee,
+    frbtcWrapPsbt,
   })
 
   return { psbt: finalPsbt, fee }
@@ -1154,6 +1189,7 @@ export const executeFallbackToWitnessProxy = async ({
   frontendFee,
   feeAddress,
   witnessProxy,
+  frbtcWrapAmount,
 }: {
   alkanesUtxos?: FormattedUtxo[]
   utxos: FormattedUtxo[]
@@ -1165,7 +1201,38 @@ export const executeFallbackToWitnessProxy = async ({
   frontendFee?: bigint
   feeAddress?: string
   witnessProxy?: AlkaneId
+  frbtcWrapAmount?: number
 }) => {
+  let frbtcWrapPsbt;
+  let remainingUtxos = utxos;
+  let remainingAlkanesUtxos = alkanesUtxos;
+
+  if (frbtcWrapAmount) {
+    const { psbt } = await wrapBtcNoSigning({
+      utxos,
+      account,
+      provider,
+      feeRate,
+      wrapAmount: frbtcWrapAmount,
+    })
+    frbtcWrapPsbt = bitcoin.Psbt.fromBase64(psbt, {
+      network: provider.network,
+    });
+
+    const spentUtxos = frbtcWrapPsbt.txInputs.map(input => ({
+      txId: toTxId(input.hash.toString('hex')),
+      outputIndex: input.index,
+    }));
+    remainingUtxos = utxos.filter(
+      utxo => !spentUtxos.some(spent => spent.txId === utxo.txId && spent.outputIndex === Number(utxo.outputIndex))
+    );
+    if (alkanesUtxos) {
+      remainingAlkanesUtxos = alkanesUtxos.filter(
+        utxo => !spentUtxos.some(spent => spent.txId === utxo.txId && spent.outputIndex === Number(utxo.outputIndex))
+      );
+    }
+  }
+
   let protostone = encodeRunestoneProtostone({
     protostones: [
       ProtoStone.message({
@@ -1206,19 +1273,20 @@ export const executeFallbackToWitnessProxy = async ({
     return await inscribePayloadBulk({
       protostone,
       payload,
-      alkanesUtxos,
-      utxos,
+      alkanesUtxos: remainingAlkanesUtxos,
+      utxos: remainingUtxos,
       feeRate,
       account,
       signer,
       provider,
       frontendFee,
       feeAddress,
+      frbtcWrapPsbt,
     })
   } else {
     return await execute({
-      alkanesUtxos,
-      utxos,
+      alkanesUtxos: remainingAlkanesUtxos,
+      utxos: remainingUtxos,
       account,
       protostone,
       provider,
@@ -1226,6 +1294,7 @@ export const executeFallbackToWitnessProxy = async ({
       signer,
       frontendFee,
       feeAddress,
+      frbtcWrapPsbt,
     });
   }
 }
@@ -1240,6 +1309,7 @@ export const execute = async ({
   signer,
   frontendFee,
   feeAddress,
+  frbtcWrapPsbt,
 }: {
   alkanesUtxos?: FormattedUtxo[]
   utxos: FormattedUtxo[]
@@ -1250,6 +1320,7 @@ export const execute = async ({
   signer: Signer
   frontendFee?: bigint
   feeAddress?: string
+  frbtcWrapPsbt?: bitcoin.Psbt
 }) => {
   const { fee } = await actualExecuteFee({
     alkanesUtxos,
@@ -1260,6 +1331,7 @@ export const execute = async ({
     protostone,
     provider,
     feeRate,
+    frbtcWrapPsbt,
   })
 
   const { psbt: finalPsbt } = await createExecutePsbt({
@@ -1272,18 +1344,34 @@ export const execute = async ({
     provider,
     feeRate,
     fee,
+    frbtcWrapPsbt,
   })
 
-  const { signedPsbt } = await signer.signAllInputs({
-    rawPsbt: finalPsbt,
-    finalize: true,
-  })
-
-  const pushResult = await provider.pushPsbt({
-    psbtBase64: signedPsbt,
-  })
-
-  return pushResult
+  if (frbtcWrapPsbt) {
+    const signedPsbts = await signer.signAllInputsMultiplePsbts({
+      rawPsbts: [frbtcWrapPsbt.toBase64(), finalPsbt],
+      finalize: true,
+    })
+    console.log("signedPsbts", signedPsbts)
+    const frbtcResult = await provider.pushPsbt({
+      psbtBase64: signedPsbts[0].signedPsbt,
+    })
+    console.log("frbtcResult", frbtcResult);
+    const swapWrapResult = await provider.pushPsbt({
+      psbtBase64: signedPsbts[1].signedPsbt,
+    })
+    console.log("swapWrapResult", swapWrapResult);
+    return swapWrapResult;
+  } else {
+    const { signedPsbt } = await signer.signAllInputs({
+      rawPsbt: finalPsbt,
+      finalize: true,
+    })
+    const pushResult = await provider.pushPsbt({
+      psbtBase64: signedPsbt,
+    })
+    return pushResult
+  }
 }
 
 export const actualWrapBtcFee = async ({
@@ -1339,25 +1427,34 @@ export const actualWrapBtcFee = async ({
   return { fee: finalFee, vsize }
 }
 
-export const wrapBtc = async ({
+export const wrapBtcNoSigning = async ({
   alkanesUtxos,
   utxos,
   account,
-  protostone,
   provider,
   feeRate,
-  signer,
   wrapAmount,
 }: {
   alkanesUtxos?: FormattedUtxo[]
   utxos: FormattedUtxo[]
   account: Account
-  protostone: Buffer
   provider: Provider
   feeRate?: number
-  signer: Signer
   wrapAmount: number
 }) => {
+  const calldata: bigint[] = [32n, 0n, 77n]
+
+  const protostone: Buffer = encodeRunestoneProtostone({
+    protostones: [
+      ProtoStone.message({
+        protocolTag: 1n,
+        edicts: [],
+        pointer: 0,
+        refundPointer: 0,
+        calldata: encipher(calldata),
+      }),
+    ],
+  }).encodedRunestone
   const { fee } = await actualWrapBtcFee({
     alkanesUtxos,
     utxos,
@@ -1368,7 +1465,7 @@ export const wrapBtc = async ({
     wrapAmount,
   })
 
-  const { psbt: finalPsbt } = await createWrapBtcPsbt({
+  return await createWrapBtcPsbt({
     alkanesUtxos,
     utxos,
     account,
@@ -1376,6 +1473,33 @@ export const wrapBtc = async ({
     provider,
     feeRate,
     fee,
+    wrapAmount,
+  })
+}
+
+export const wrapBtc = async ({
+  alkanesUtxos,
+  utxos,
+  account,
+  provider,
+  feeRate,
+  signer,
+  wrapAmount,
+}: {
+  alkanesUtxos?: FormattedUtxo[]
+  utxos: FormattedUtxo[]
+  account: Account
+  provider: Provider
+  feeRate?: number
+  signer: Signer
+  wrapAmount: number
+}) => {
+  const { psbt: finalPsbt } = await wrapBtcNoSigning({
+    alkanesUtxos,
+    utxos,
+    account,
+    provider,
+    feeRate,
     wrapAmount,
   })
 
@@ -1548,6 +1672,7 @@ export const inscribePayloadBulk = async ({
   signer,
   frontendFee,
   feeAddress,
+  frbtcWrapPsbt,
 }: {
   alkanesUtxos?: FormattedUtxo[]
   payload: AlkanesPayload
@@ -1559,6 +1684,7 @@ export const inscribePayloadBulk = async ({
   signer: Signer
   frontendFee?: bigint
   feeAddress?: string
+  frbtcWrapPsbt?: bitcoin.Psbt
 }) => {
   const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
     signer.taprootKeyPair,
@@ -1603,12 +1729,7 @@ export const inscribePayloadBulk = async ({
     }
   }
 
-  const virtualTx = new bitcoin.Transaction()
-  virtualTx.version = commitPsbt.version
-  commitPsbt.txInputs.forEach(input => virtualTx.addInput(input.hash, input.index, input.sequence))
-  commitPsbt.txOutputs.forEach(output => virtualTx.addOutput(output.script, output.value))
-  virtualTx.locktime = commitPsbt.locktime
-  const commitTxId = virtualTx.getId()
+  const commitTxId = getUnfinalizedPsbtTxId(commitPsbt)
 
   let alkanesAddress: string;
   if (account.taproot) {
@@ -1656,18 +1777,28 @@ export const inscribePayloadBulk = async ({
   finalReveal.signInput(0, tweakedTaprootKeyPair);
   finalReveal.finalizeInput(0);
   let rawPsbtsToSign = [commitPsbtBase64];
+  if (frbtcWrapPsbt) {
+    rawPsbtsToSign.unshift(frbtcWrapPsbt.toBase64());
+  }
   if (finalReveal.inputCount > 1) {
     rawPsbtsToSign.push(finalReveal.toBase64());
   }
+
 
   const signedPsbts = await signer.signAllInputsMultiplePsbts({
     rawPsbts: rawPsbtsToSign,
     finalize: true,
   })
 
-  const signedRevealTx = signedPsbts.length == 2 ? signedPsbts[1].signedPsbt : finalReveal.toBase64();
-
-  const commitTx = await provider.pushPsbt({ psbtBase64: signedPsbts[0].signedPsbt })
+  const signedRevealTx = finalReveal.inputCount > 1 ? signedPsbts.at(-1).signedPsbt : finalReveal.toBase64();
+  let commitTx;
+  if (frbtcWrapPsbt) {
+    const frbtcTx = await provider.pushPsbt({ psbtBase64: signedPsbts[0].signedPsbt })
+    console.log("frbtcTx", frbtcTx);
+    commitTx = await provider.pushPsbt({ psbtBase64: signedPsbts[1].signedPsbt })
+  } else {
+    commitTx = await provider.pushPsbt({ psbtBase64: signedPsbts[0].signedPsbt })
+  }
   console.log("commitTx", commitTx);
   const revealTx = await provider.pushPsbt({ psbtBase64: signedRevealTx })
   console.log("revealTx", revealTx);

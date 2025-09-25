@@ -1360,25 +1360,8 @@ export const alkaneWrapBtc = new AlkanesCommand('wrap-btc')
       provider: wallet.provider,
     })
 
-    const wrapAddress = await getWrapAddress(wallet.provider)
-
-    const calldata: bigint[] = [32n, 0n, 77n]
-
-    const protostone: Buffer = encodeRunestoneProtostone({
-      protostones: [
-        ProtoStone.message({
-          protocolTag: 1n,
-          edicts: [],
-          pointer: 0,
-          refundPointer: 0,
-          calldata: encipher(calldata),
-        }),
-      ],
-    }).encodedRunestone
-
     console.log(
       await alkanes.wrapBtc({
-        protostone,
         utxos: accountUtxos,
         feeRate: wallet.feeRate,
         account: wallet.account,
