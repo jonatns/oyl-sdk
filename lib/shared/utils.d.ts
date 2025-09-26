@@ -142,3 +142,4 @@ export declare const getVSize: (data: Buffer) => number;
 export declare const packUTF8: (s: any) => string[];
 export declare function readU128LE(buffer: Uint8Array): bigint;
 export declare function addInputUtxosToPsbt(utxos: FormattedUtxo[], psbt: bitcoin.Psbt, account: Account, provider: Provider): Promise<void>;
+export declare const getUnfinalizedPsbtTxId: (psbt: bitcoin.Psbt) => string;
