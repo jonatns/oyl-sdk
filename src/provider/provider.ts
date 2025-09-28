@@ -2,7 +2,7 @@ import { SandshrewBitcoinClient } from '../rpclient/sandshrew'
 import { EsploraRpc } from '../rpclient/esplora'
 import { OrdRpc } from '../rpclient/ord'
 import * as bitcoin from 'bitcoinjs-lib'
-import { waitForTransaction } from '..'
+import { delay, waitForTransaction } from '../shared/utils'
 import { AlkanesRpc } from '../rpclient/alkanes'
 
 export type ProviderConstructorArgs = {
@@ -96,12 +96,27 @@ export class Provider {
     }
     await this.sandshrew.bitcoindRpc.sendRawTransaction(rawTx)
 
-    await waitForTransaction({
-      txId,
-      sandshrewBtcClient: this.sandshrew,
-    })
-
-    const txInMemPool = await this.sandshrew.bitcoindRpc.getMemPoolEntry(txId)
+    let txInMemPool
+    for (let i = 0; i < 10; i++) {
+      try {
+        await waitForTransaction({
+          txId,
+          sandshrewBtcClient: this.sandshrew,
+        })
+        txInMemPool = await this.sandshrew.bitcoindRpc.getMemPoolEntry(txId)
+        if (txInMemPool) {
+          break
+        }
+      } catch (e) {
+        if (i === 9) {
+          throw e
+        }
+        await delay(1000)
+      }
+    }
+    if (!txInMemPool) {
+      throw new Error('Transaction not found in mempool after 10 retries')
+    }
     const fee = txInMemPool.fees['base'] * 10 ** 8
 
     return {
