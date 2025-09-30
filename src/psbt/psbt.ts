@@ -68,6 +68,7 @@ export const getEstimatedFee = async ({
   const vsize = tx.virtualSize()
 
   const fee = Math.ceil(vsize * feeRate);
+  console.log("getEstimatedFee vsize ", vsize);
 
   return {
     fee,
