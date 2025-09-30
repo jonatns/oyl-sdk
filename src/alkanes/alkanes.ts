@@ -788,11 +788,7 @@ export const createDeployCommitPsbt = async ({
       throw new OylTransactionError(Error('Insufficient Balance'))
     }
 
-    console.log("commmit gatheredUtxos.utxos", gatheredUtxos.utxos);
-
     await addInputUtxosToPsbt(gatheredUtxos.utxos, psbt, account, provider);
-
-    console.log("commmit gatheredUtxos.utxos", gatheredUtxos.utxos);
     psbt.addOutput({
       value: revealTxFee,
       address: inscriberInfo.address,
@@ -881,8 +877,6 @@ export const deployCommit = async ({
     frontendFee,
     feeAddress,
   });
-
-  console.log("final deploy psbt ", finalPsbt);
 
   const { signedPsbt } = await signer.signAllInputs({
     rawPsbt: finalPsbt,
