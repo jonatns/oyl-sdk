@@ -58,10 +58,28 @@ export const getEstimatedFee = async ({
   })
 
   psbtObj.data.inputs.forEach((input, index) => {
-    if (input.tapInternalKey) {
-      tx.setWitness(index, [Buffer.alloc(65)])
-    } else if (input.witnessUtxo) {
-      tx.setWitness(index, [Buffer.alloc(107)])
+    if (input.witnessUtxo) {
+      const scriptLen = input.witnessUtxo.script.length;
+      if (scriptLen === 34) { // P2TR
+        if (input.tapLeafScript && input.tapLeafScript.length > 0) {
+          // Script-path spend (e.g., inscription reveal)
+          const leafScript = input.tapLeafScript[0];
+          const witness = [
+            Buffer.alloc(64), // Signature (can be 65, but 64 is common)
+            leafScript.script,
+            leafScript.controlBlock,
+          ];
+          tx.setWitness(index, witness);
+        } else {
+          // Key-path spend
+          tx.setWitness(index, [Buffer.alloc(65)]); // schnorr signature
+        }
+      } else if (scriptLen === 22) { // P2WPKH
+        tx.setWitness(index, [Buffer.alloc(107)]);
+      }
+    } else if (input.tapInternalKey) {
+      // Fallback for key-path spend if witnessUtxo is not present
+      tx.setWitness(index, [Buffer.alloc(65)]);
     }
   })
 

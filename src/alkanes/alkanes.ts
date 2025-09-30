@@ -789,7 +789,6 @@ export const createDeployCommitPsbt = async ({
     }
 
     await addInputUtxosToPsbt(gatheredUtxos.utxos, psbt, account, provider);
-
     psbt.addOutput({
       value: revealTxFee,
       address: inscriberInfo.address,
