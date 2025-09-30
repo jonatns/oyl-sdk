@@ -973,6 +973,8 @@ export const deployReveal = async ({
     account,
   })
 
+  console.log("finalRevealPsbt", finalRevealPsbt)
+
   let finalReveal = bitcoin.Psbt.fromBase64(finalRevealPsbt, {
     network: provider.network,
   });

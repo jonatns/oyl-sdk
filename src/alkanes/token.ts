@@ -58,6 +58,8 @@ export const inscribePayload = async ({
     protostone,
   })
 
+  console.log("commited ", txId);
+
   await timeout(3000)
 
   const reveal = await deployReveal({
