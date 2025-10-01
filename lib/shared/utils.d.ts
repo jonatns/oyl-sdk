@@ -105,9 +105,10 @@ export declare const createRuneEtchScript: ({ pointer, runeName, symbol, divisib
 }) => Buffer;
 export declare function getAddressType(address: string): AddressType | null;
 export declare function getAddressKey(address: string): AddressKey;
-export declare function waitForTransaction({ txId, sandshrewBtcClient, }: {
+export declare function waitForTransaction({ txId, sandshrewBtcClient, esploraClient, }: {
     txId: string;
     sandshrewBtcClient: SandshrewBitcoinClient;
+    esploraClient: EsploraRpc;
 }): Promise<void>;
 export declare function getOutputValueByVOutIndex({ txId, vOut, esploraRpc, }: {
     txId: string;

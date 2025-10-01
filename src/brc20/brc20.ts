@@ -537,6 +537,7 @@ export const send = async ({
   await waitForTransaction({
     txId: revealTxId,
     sandshrewBtcClient: provider.sandshrew,
+    esploraClient: provider.esplora,
   })
 
   const { psbt: transferPsbt } = await transfer({
