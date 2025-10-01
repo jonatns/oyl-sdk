@@ -198,7 +198,7 @@ export declare const executePsbt: ({ alkanesUtxos, utxos, account, protostone, p
     psbt: string;
     fee: number;
 }>;
-export declare const executeFallbackToWitnessProxy: ({ alkanesUtxos, utxos, account, calldata, provider, feeRate, signer, frontendFee, feeAddress, witnessProxy, frbtcWrapAmount, }: {
+export declare const executeFallbackToWitnessProxy: ({ alkanesUtxos, utxos, account, calldata, provider, feeRate, signer, frontendFee, feeAddress, witnessProxy, frbtcWrapAmount, addDieselMint, }: {
     alkanesUtxos?: FormattedUtxo[];
     utxos: FormattedUtxo[];
     account: Account;
@@ -210,6 +210,7 @@ export declare const executeFallbackToWitnessProxy: ({ alkanesUtxos, utxos, acco
     feeAddress?: string;
     witnessProxy?: AlkaneId;
     frbtcWrapAmount?: number;
+    addDieselMint?: boolean;
 }) => Promise<{
     txId: string;
     rawTx: string;
@@ -249,13 +250,14 @@ export declare const actualWrapBtcFee: ({ alkanesUtxos, utxos, account, protosto
     fee: number;
     vsize: number;
 }>;
-export declare const wrapBtcNoSigning: ({ alkanesUtxos, utxos, account, provider, feeRate, wrapAmount, }: {
+export declare const wrapBtcNoSigning: ({ alkanesUtxos, utxos, account, provider, feeRate, wrapAmount, addDieselMint, }: {
     alkanesUtxos?: FormattedUtxo[];
     utxos: FormattedUtxo[];
     account: Account;
     provider: Provider;
     feeRate?: number;
     wrapAmount: number;
+    addDieselMint?: boolean;
 }) => Promise<{
     psbt: string;
     psbtHex: string;

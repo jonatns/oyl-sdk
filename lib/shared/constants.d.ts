@@ -1,7 +1,9 @@
+import { ProtoStone } from 'alkanes/lib/index';
 import { MnemonicToAccountOptions } from '..';
 export declare const UTXO_DUST = 546;
 export declare const maximumScriptBytes = 520;
 export declare const MAXIMUM_FEE = 5000000;
+export declare const DIESEL_MINT_PROTOSTONE: ProtoStone;
 export declare const regtestOpts: MnemonicToAccountOptions;
 export declare const Opts: MnemonicToAccountOptions;
 export declare const regtestMnemonic: string;
