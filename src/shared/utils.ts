@@ -587,9 +587,11 @@ export function getAddressKey(address: string): AddressKey {
 export async function waitForTransaction({
   txId,
   sandshrewBtcClient,
+  esploraClient,
 }: {
   txId: string
   sandshrewBtcClient: SandshrewBitcoinClient
+  esploraClient: EsploraRpc
 }) {
   const timeout = 60000 // 1 minute in milliseconds
   const startTime = Date.now()
@@ -597,30 +599,26 @@ export async function waitForTransaction({
   while (true) {
     try {
       const result = await sandshrewBtcClient.bitcoindRpc.getMemPoolEntry(txId)
-
       if (result) {
         await delay(5000)
         break
       }
-
-      // Check for timeout
-      if (Date.now() - startTime > timeout) {
-        throw new Error(
-          `Timeout: Could not find transaction in mempool: ${txId}`
-        )
-      }
-
-      // Wait for 5 seconds before retrying
-      await new Promise((resolve) => setTimeout(resolve, 5000))
     } catch (error) {
-      // Check for timeout
+      try {
+        const tx = await esploraClient.getTxInfo(txId)
+        if (tx && tx.status.confirmed) {
+          break
+        }
+      } catch (e) {
+        // ignore
+      }
+
       if (Date.now() - startTime > timeout) {
         throw new Error(
-          `Timeout: Could not find transaction in mempool: ${txId}`
+          `Timeout: Could not find transaction in mempool or confirmed: ${txId}`
         )
       }
 
-      // Wait for 5 seconds before retrying
       await new Promise((resolve) => setTimeout(resolve, 5000))
     }
   }

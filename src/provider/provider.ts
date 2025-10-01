@@ -97,26 +97,28 @@ export class Provider {
     await this.sandshrew.bitcoindRpc.sendRawTransaction(rawTx)
 
     let txInMemPool
-    for (let i = 0; i < 10; i++) {
-      try {
-        await waitForTransaction({
-          txId,
-          sandshrewBtcClient: this.sandshrew,
-        })
-        txInMemPool = await this.sandshrew.bitcoindRpc.getMemPoolEntry(txId)
-        if (txInMemPool) {
-          break
-        }
-      } catch (e) {
-        if (i === 9) {
-          throw e
-        }
-        await delay(1000)
+    try {
+      await waitForTransaction({
+        txId,
+        sandshrewBtcClient: this.sandshrew,
+        esploraClient: this.esplora,
+      })
+      txInMemPool = await this.sandshrew.bitcoindRpc.getMemPoolEntry(txId)
+    } catch (e) {
+      const tx = await this.esplora.getTxInfo(txId)
+      if (!tx || !tx.status.confirmed) {
+        throw new Error(`Transaction not found in mempool or confirmed due to ${e}`)
+      }
+      return {
+        txId,
+        rawTx,
+        size: tx.size,
+        weight: tx.weight,
+        fee: tx.fee,
+        satsPerVByte: (tx.fee / (tx.weight / 4)).toFixed(2),
       }
     }
-    if (!txInMemPool) {
-      throw new Error('Transaction not found in mempool after 10 retries')
-    }
+
     const fee = txInMemPool.fees['base'] * 10 ** 8
 
     return {
