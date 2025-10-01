@@ -105,6 +105,7 @@ export class Provider {
       })
       txInMemPool = await this.sandshrew.bitcoindRpc.getMemPoolEntry(txId)
     } catch (e) {
+      await delay(1000)
       const tx = await this.esplora.getTxInfo(txId)
       if (!tx || !tx.status.confirmed) {
         throw new Error(`Transaction not found in mempool or confirmed due to ${e}`)

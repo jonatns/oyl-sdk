@@ -604,6 +604,7 @@ export async function waitForTransaction({
         break
       }
     } catch (error) {
+      await delay(1000)
       try {
         const tx = await esploraClient.getTxInfo(txId)
         if (tx && tx.status.confirmed) {
