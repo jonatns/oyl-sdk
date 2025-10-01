@@ -1,3 +1,7 @@
+import {
+  encipher,
+  ProtoStone,
+} from 'alkanes/lib/index'
 import { MnemonicToAccountOptions } from '..'
 import * as bitcoin from 'bitcoinjs-lib'
 import * as dotenv from 'dotenv'
@@ -9,6 +13,13 @@ export const maximumScriptBytes = 520
 
 export const MAXIMUM_FEE = 5000000
 
+export const DIESEL_MINT_PROTOSTONE = ProtoStone.message({
+  protocolTag: 1n,
+  edicts: [],
+  pointer: 0,
+  refundPointer: 0,
+  calldata: encipher([BigInt(2), BigInt(0), BigInt(77)]),
+});
 
 export const regtestOpts: MnemonicToAccountOptions = {
   network: bitcoin.networks.regtest,

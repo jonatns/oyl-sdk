@@ -11,7 +11,7 @@ import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { u128, u32 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 import { getWrapAddress } from '../amm/subfrost'
-import { Account, AlkaneId, Signer } from '..'
+import { Account, AlkaneId, DIESEL_MINT_PROTOSTONE, Signer } from '..'
 import {
   addInputUtxosToPsbt,
   findXAmountOfSats,
@@ -1189,6 +1189,7 @@ export const executeFallbackToWitnessProxy = async ({
   feeAddress,
   witnessProxy,
   frbtcWrapAmount,
+  addDieselMint,
 }: {
   alkanesUtxos?: FormattedUtxo[]
   utxos: FormattedUtxo[]
@@ -1201,6 +1202,7 @@ export const executeFallbackToWitnessProxy = async ({
   feeAddress?: string
   witnessProxy?: AlkaneId
   frbtcWrapAmount?: number
+  addDieselMint?: boolean
 }) => {
   let frbtcWrapPsbt;
   let remainingUtxos = utxos;
@@ -1213,6 +1215,7 @@ export const executeFallbackToWitnessProxy = async ({
       provider,
       feeRate,
       wrapAmount: frbtcWrapAmount,
+      addDieselMint,
     })
     frbtcWrapPsbt = bitcoin.Psbt.fromBase64(psbt, {
       network: provider.network,
@@ -1241,6 +1244,7 @@ export const executeFallbackToWitnessProxy = async ({
         refundPointer: 0,
         calldata: encipher(calldata),
       }),
+      ...(addDieselMint ? [DIESEL_MINT_PROTOSTONE] : [])
     ],
   }).encodedRunestone;
   if (protostone.length > 80) {
@@ -1262,6 +1266,7 @@ export const executeFallbackToWitnessProxy = async ({
           refundPointer: 0,
           calldata: encipher(proxy_calldata),
         }),
+        ...(addDieselMint ? [DIESEL_MINT_PROTOSTONE] : [])
       ],
     }).encodedRunestone;
     const payload: AlkanesPayload = {
@@ -1433,6 +1438,7 @@ export const wrapBtcNoSigning = async ({
   provider,
   feeRate,
   wrapAmount,
+  addDieselMint,
 }: {
   alkanesUtxos?: FormattedUtxo[]
   utxos: FormattedUtxo[]
@@ -1440,6 +1446,7 @@ export const wrapBtcNoSigning = async ({
   provider: Provider
   feeRate?: number
   wrapAmount: number
+  addDieselMint?: boolean
 }) => {
   const calldata: bigint[] = [32n, 0n, 77n]
 
@@ -1452,6 +1459,7 @@ export const wrapBtcNoSigning = async ({
         refundPointer: 0,
         calldata: encipher(calldata),
       }),
+      ...(addDieselMint ? [DIESEL_MINT_PROTOSTONE] : [])
     ],
   }).encodedRunestone
   const { fee } = await actualWrapBtcFee({
