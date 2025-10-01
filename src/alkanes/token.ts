@@ -1,7 +1,7 @@
 import { minimumFee } from '../btc'
 import { u128, u32 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 import { Account, Signer, Provider, AlkanesPayload } from '..'
-import { ProtoStone, encodeRunestoneProtostone } from 'alkanes/lib/index.js'
+import { ProtoStone, encipher, encodeRunestoneProtostone } from 'alkanes/lib/index.js'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { OylTransactionError } from '../errors'
 import { AlkaneId } from '@alkanes/types'
@@ -178,7 +178,7 @@ export const createSendPsbt = async ({
           ],
           pointer: 0,
           refundPointer: 0,
-          calldata: Buffer.from([]),
+          calldata: encipher([BigInt(2), BigInt(0), BigInt(77)]),
         }),
       ],
     }).encodedRunestone
