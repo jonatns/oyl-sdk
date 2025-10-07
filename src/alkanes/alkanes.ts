@@ -1228,6 +1228,18 @@ export const executeFallbackToWitnessProxy = async ({
     remainingUtxos = utxos.filter(
       utxo => !spentUtxos.some(spent => spent.txId === utxo.txId && spent.outputIndex === Number(utxo.outputIndex))
     );
+    remainingUtxos.push({
+      txId: getUnfinalizedPsbtTxId(frbtcWrapPsbt),
+      outputIndex: frbtcWrapPsbt.txOutputs.length - 1,
+      satoshis: (frbtcWrapPsbt.txOutputs[frbtcWrapPsbt.txOutputs.length - 1] as bitcoin.PsbtTxOutput).value,
+      scriptPk: (frbtcWrapPsbt.txOutputs[frbtcWrapPsbt.txOutputs.length - 1] as bitcoin.PsbtTxOutput).script.toString('hex'),
+      address: account.nativeSegwit.address,
+      inscriptions: [],
+      runes: {},
+      alkanes: {},
+      confirmations: 0,
+      indexed: true, // technically not indexed but it can be used in future txs
+    });
     if (alkanesUtxos) {
       remainingAlkanesUtxos = alkanesUtxos.filter(
         utxo => !spentUtxos.some(spent => spent.txId === utxo.txId && spent.outputIndex === Number(utxo.outputIndex))
