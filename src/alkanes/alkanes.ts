@@ -60,6 +60,39 @@ export const encodeProtostone = ({
   }).encodedRunestone
 }
 
+export const addFrBtcWrapOutToPsbt = ({
+  frbtcWrapPsbt,
+  account,
+  psbt,
+}: {
+  frbtcWrapPsbt: bitcoin.Psbt
+  account: Account
+  psbt: bitcoin.Psbt
+}) => {
+  const frbtcWrapTxId = getUnfinalizedPsbtTxId(frbtcWrapPsbt)
+  const output = frbtcWrapPsbt.txOutputs[0]
+  if (account.taproot) {
+    psbt.addInput({
+      hash: frbtcWrapTxId,
+      index: 0,
+      witnessUtxo: {
+        script: output.script,
+        value: output.value,
+      },
+      tapInternalKey: toXOnly(Buffer.from(account.taproot.pubkey, 'hex')),
+    })
+  } else if (account.nativeSegwit) {
+    psbt.addInput({
+      hash: frbtcWrapTxId,
+      index: 0,
+      witnessUtxo: {
+        script: output.script,
+        value: output.value,
+      },
+    })
+  }
+}
+
 export const createExecutePsbt = async ({
   alkanesUtxos,
   frontendFee,
@@ -138,28 +171,7 @@ export const createExecutePsbt = async ({
     const psbt = new bitcoin.Psbt({ network: provider.network })
 
     if (frbtcWrapPsbt) {
-      const frbtcWrapTxId = getUnfinalizedPsbtTxId(frbtcWrapPsbt)
-      const output = frbtcWrapPsbt.txOutputs[0]
-      if (account.taproot) {
-        psbt.addInput({
-          hash: frbtcWrapTxId,
-          index: 0,
-          witnessUtxo: {
-            script: output.script,
-            value: output.value,
-          },
-          tapInternalKey: toXOnly(Buffer.from(account.taproot.pubkey, 'hex')),
-        })
-      } else if (account.nativeSegwit) {
-        psbt.addInput({
-          hash: frbtcWrapTxId,
-          index: 0,
-          witnessUtxo: {
-            script: output.script,
-            value: output.value,
-          },
-        })
-      }
+      addFrBtcWrapOutToPsbt({ frbtcWrapPsbt, account, psbt });
     }
     if (alkanesUtxos) {
       for (const utxo of alkanesUtxos) {
@@ -1003,6 +1015,7 @@ export const actualTransactRevealFee = async ({
   provider,
   feeRate,
   account,
+  frbtcWrapPsbt,
 }: {
   payload: AlkanesPayload
   alkanesUtxos?: FormattedUtxo[]
@@ -1016,6 +1029,7 @@ export const actualTransactRevealFee = async ({
   provider: Provider
   feeRate?: number
   account: Account
+  frbtcWrapPsbt?: bitcoin.Psbt
 }) => {
   if (!feeRate) {
     feeRate = (await provider.esplora.getFeeEstimates())['1']
@@ -1034,6 +1048,7 @@ export const actualTransactRevealFee = async ({
     provider,
     feeRate,
     account,
+    frbtcWrapPsbt,
   })
 
   const { fee: estimatedFee } = await getEstimatedFee({
@@ -1056,6 +1071,7 @@ export const actualTransactRevealFee = async ({
     feeRate,
     fee: estimatedFee,
     account,
+    frbtcWrapPsbt,
   })
 
   const { fee: finalFee, vsize } = await getEstimatedFee({
@@ -1548,6 +1564,7 @@ export const createTransactReveal = async ({
   commitTxId,
   commitPsbt,
   account,
+  frbtcWrapPsbt,
 }: {
   payload: AlkanesPayload
   alkanesUtxos?: FormattedUtxo[]
@@ -1562,6 +1579,7 @@ export const createTransactReveal = async ({
   commitTxId: string
   commitPsbt: bitcoin.Psbt
   account: Account
+  frbtcWrapPsbt?: bitcoin.Psbt
 }) => {
   try {
     if (!feeRate) {
@@ -1569,8 +1587,9 @@ export const createTransactReveal = async ({
     }
 
     const psbt: bitcoin.Psbt = new bitcoin.Psbt({ network: provider.network })
+
     const minFee = minimumFee({
-      taprootInputCount: 1,
+      taprootInputCount: (frbtcWrapPsbt ? 2 : 1) + (alkanesUtxos ? alkanesUtxos.length : 0),
       nonTaprootInputCount: 0,
       outputCount: 2,
       payload
@@ -1593,6 +1612,7 @@ export const createTransactReveal = async ({
       network: provider.network,
     })
 
+    // this needs to be the first input
     psbt.addInput({
       hash: commitTxId,
       index: 0,
@@ -1608,6 +1628,10 @@ export const createTransactReveal = async ({
         },
       ],
     })
+
+    if (frbtcWrapPsbt) {
+      addFrBtcWrapOutToPsbt({ frbtcWrapPsbt, account, psbt });
+    }
 
     let gatheredUtxos = {
       utxos: [],
@@ -1772,6 +1796,7 @@ export const inscribePayloadBulk = async ({
     provider,
     feeRate,
     account,
+    frbtcWrapPsbt,
   })
 
   const { psbt: finalRevealPsbt } = await createTransactReveal({
@@ -1788,6 +1813,7 @@ export const inscribePayloadBulk = async ({
     feeRate,
     fee: revealFee,
     account,
+    frbtcWrapPsbt,
   })
 
   let finalReveal = bitcoin.Psbt.fromBase64(finalRevealPsbt, {
