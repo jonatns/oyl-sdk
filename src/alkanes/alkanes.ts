@@ -528,6 +528,43 @@ export const actualUnwrapBtcFee = async ({
   return { fee: finalFee, vsize }
 }
 
+
+
+export const unwrapBtcNoSigning = async ({
+  utxos,
+  account,
+  provider,
+  feeRate,
+  unwrapAmount,
+  alkaneUtxos,
+}: {
+  utxos: FormattedUtxo[]
+  account: Account
+  provider: Provider
+  feeRate?: number
+  unwrapAmount: bigint
+  alkaneUtxos: FormattedUtxo[]
+}) => {
+  const { fee } = await actualUnwrapBtcFee({
+    utxos,
+    account,
+    provider,
+    feeRate,
+    unwrapAmount,
+    alkaneUtxos,
+  })
+
+  return await createUnwrapBtcPsbt({
+    utxos,
+    account,
+    provider,
+    feeRate,
+    fee,
+    unwrapAmount,
+    alkaneUtxos,
+  })
+}
+
 export const unwrapBtc = async ({
   utxos,
   account,
@@ -545,21 +582,11 @@ export const unwrapBtc = async ({
   unwrapAmount: bigint
   alkaneUtxos: FormattedUtxo[]
 }) => {
-  const { fee, vsize } = await actualUnwrapBtcFee({
+  const { psbt: finalPsbt } = await unwrapBtcNoSigning({
     utxos,
     account,
     provider,
     feeRate,
-    unwrapAmount,
-    alkaneUtxos,
-  })
-
-  const { psbt: finalPsbt } = await createUnwrapBtcPsbt({
-    utxos,
-    account,
-    provider,
-    feeRate,
-    fee,
     unwrapAmount,
     alkaneUtxos,
   })
@@ -1193,6 +1220,77 @@ export const executePsbt = async ({
   return { psbt: finalPsbt, fee }
 }
 
+// NOTE: ASSUMES RUNES, ALKANES, ETC ARE ON OUTPUTS OF VALUE 546
+// WILL POTENTIALLY BURN RUNES, ALKANES, ETC IF THEY ARE NOT ON VALUE 546
+const getRemainingUtxosAfterPsbt = ({
+  psbt,
+  alkanesUtxos,
+  utxos,
+  account,
+  network
+}: {
+  psbt?: bitcoin.Psbt,
+  utxos: FormattedUtxo[],
+  alkanesUtxos?: FormattedUtxo[],
+  account: Account,
+  network: bitcoin.networks.Network
+}) => {
+  if (!psbt) {
+    return { remainingUtxos: utxos, remainingAlkanesUtxos: alkanesUtxos };
+  }
+  const spentUtxos = psbt.txInputs.map((input) => ({
+    txId: toTxId(input.hash.toString('hex')),
+    outputIndex: input.index,
+  }))
+  let remainingUtxos = utxos.filter(
+    (utxo) =>
+      !spentUtxos.some(
+        (spent) =>
+          spent.txId === utxo.txId &&
+          spent.outputIndex === Number(utxo.outputIndex)
+      )
+  )
+  let remainingAlkanesUtxos = alkanesUtxos;
+
+  if (alkanesUtxos) {
+    remainingAlkanesUtxos = alkanesUtxos.filter(
+      utxo => !spentUtxos.some(spent => spent.txId === utxo.txId && spent.outputIndex === Number(utxo.outputIndex))
+    );
+  }
+
+  const txId = getUnfinalizedPsbtTxId(psbt)
+  const spendableAddresses = [
+    account.nativeSegwit?.address,
+    account.taproot?.address,
+    account.nestedSegwit?.address,
+    account.legacy?.address,
+  ].filter(Boolean)
+
+  psbt.txOutputs.forEach((output, index) => {
+    try {
+      const address = bitcoin.address.fromOutputScript(output.script, network)
+      if (spendableAddresses.includes(address) && output.value != 546) {
+        remainingUtxos.push({
+          txId,
+          outputIndex: index,
+          satoshis: output.value,
+          scriptPk: output.script.toString('hex'),
+          address,
+          inscriptions: [],
+          runes: {},
+          alkanes: {},
+          confirmations: 0,
+          indexed: true, // technically not indexed but it can be used in future txs
+        })
+      }
+    } catch (e) {
+      // Ignore outputs that don't have a valid address
+    }
+  })
+
+  return { remainingUtxos, remainingAlkanesUtxos };
+}
+
 export const executeFallbackToWitnessProxy = async ({
   alkanesUtxos,
   utxos,
@@ -1205,6 +1303,8 @@ export const executeFallbackToWitnessProxy = async ({
   feeAddress,
   witnessProxy,
   frbtcWrapAmount,
+  frbtcUnwrapAmount,
+  frbtcUtxoForUnwrap,
   addDieselMint,
 }: {
   alkanesUtxos?: FormattedUtxo[]
@@ -1218,11 +1318,11 @@ export const executeFallbackToWitnessProxy = async ({
   feeAddress?: string
   witnessProxy?: AlkaneId
   frbtcWrapAmount?: number
+  frbtcUnwrapAmount?: number
+  frbtcUtxoForUnwrap?: FormattedUtxo[]
   addDieselMint?: boolean
 }) => {
   let frbtcWrapPsbt;
-  let remainingUtxos = utxos;
-  let remainingAlkanesUtxos = alkanesUtxos;
 
   if (frbtcWrapAmount) {
     const { psbt } = await wrapBtcNoSigning({
@@ -1236,32 +1336,14 @@ export const executeFallbackToWitnessProxy = async ({
     frbtcWrapPsbt = bitcoin.Psbt.fromBase64(psbt, {
       network: provider.network,
     });
-
-    const spentUtxos = frbtcWrapPsbt.txInputs.map(input => ({
-      txId: toTxId(input.hash.toString('hex')),
-      outputIndex: input.index,
-    }));
-    remainingUtxos = utxos.filter(
-      utxo => !spentUtxos.some(spent => spent.txId === utxo.txId && spent.outputIndex === Number(utxo.outputIndex))
-    );
-    remainingUtxos.push({
-      txId: getUnfinalizedPsbtTxId(frbtcWrapPsbt),
-      outputIndex: frbtcWrapPsbt.txOutputs.length - 1,
-      satoshis: (frbtcWrapPsbt.txOutputs[frbtcWrapPsbt.txOutputs.length - 1] as bitcoin.PsbtTxOutput).value,
-      scriptPk: (frbtcWrapPsbt.txOutputs[frbtcWrapPsbt.txOutputs.length - 1] as bitcoin.PsbtTxOutput).script.toString('hex'),
-      address: account.nativeSegwit.address,
-      inscriptions: [],
-      runes: {},
-      alkanes: {},
-      confirmations: 0,
-      indexed: true, // technically not indexed but it can be used in future txs
-    });
-    if (alkanesUtxos) {
-      remainingAlkanesUtxos = alkanesUtxos.filter(
-        utxo => !spentUtxos.some(spent => spent.txId === utxo.txId && spent.outputIndex === Number(utxo.outputIndex))
-      );
-    }
   }
+  const { remainingUtxos, remainingAlkanesUtxos } = getRemainingUtxosAfterPsbt({
+    psbt: frbtcWrapPsbt,
+    utxos,
+    alkanesUtxos,
+    account,
+    network: provider.network
+  })
 
   let protostone = encodeRunestoneProtostone({
     protostones: [
@@ -1327,6 +1409,8 @@ export const executeFallbackToWitnessProxy = async ({
       frontendFee,
       feeAddress,
       frbtcWrapPsbt,
+      frbtcUnwrapAmount,
+      frbtcUtxoForUnwrap,
     });
   }
 }
@@ -1342,6 +1426,8 @@ export const execute = async ({
   frontendFee,
   feeAddress,
   frbtcWrapPsbt,
+  frbtcUnwrapAmount,
+  frbtcUtxoForUnwrap,
 }: {
   alkanesUtxos?: FormattedUtxo[]
   utxos: FormattedUtxo[]
@@ -1353,6 +1439,8 @@ export const execute = async ({
   frontendFee?: bigint
   feeAddress?: string
   frbtcWrapPsbt?: bitcoin.Psbt
+  frbtcUnwrapAmount?: number
+  frbtcUtxoForUnwrap?: FormattedUtxo[]
 }) => {
   const { fee } = await actualExecuteFee({
     alkanesUtxos,
@@ -1379,12 +1467,50 @@ export const execute = async ({
     frbtcWrapPsbt,
   })
 
-  if (frbtcWrapPsbt) {
-    const signedPsbts = await signer.signAllInputsMultiplePsbts({
-      rawPsbts: [frbtcWrapPsbt.toBase64(), finalPsbt],
-      finalize: true,
+  let frbtcUnwrapPsbt;
+
+  if (frbtcUnwrapAmount && frbtcUtxoForUnwrap) {
+    const executePsbt = bitcoin.Psbt.fromBase64(finalPsbt, {
+      network: provider.network,
+    });
+    const { remainingUtxos, remainingAlkanesUtxos: remainingFrbtcUtxosForUnwrap } = getRemainingUtxosAfterPsbt({
+      psbt: executePsbt,
+      utxos,
+      alkanesUtxos: frbtcUtxoForUnwrap,
+      account,
+      network: provider.network
     })
-    console.log("signedPsbts", signedPsbts)
+
+    const { psbt } = await unwrapBtcNoSigning({
+      alkaneUtxos: remainingFrbtcUtxosForUnwrap,
+      utxos: remainingUtxos,
+      account,
+      provider,
+      feeRate,
+      unwrapAmount: BigInt(frbtcUnwrapAmount),
+    })
+    frbtcUnwrapPsbt = bitcoin.Psbt.fromBase64(psbt, {
+      network: provider.network,
+    });
+  }
+
+  let rawPsbtsToSign = [finalPsbt];
+  if (frbtcWrapPsbt) {
+    rawPsbtsToSign.unshift(frbtcWrapPsbt.toBase64());
+  }
+  if (frbtcUnwrapPsbt) {
+    rawPsbtsToSign.push(frbtcUnwrapPsbt.toBase64());
+  }
+
+  const signedPsbts = await signer.signAllInputsMultiplePsbts({
+    rawPsbts: rawPsbtsToSign,
+    finalize: true,
+  })
+  console.log("signedPsbts", signedPsbts)
+
+  let returnResult; // TODO: should return all the results, not just one
+
+  if (frbtcWrapPsbt) {
     const frbtcResult = await provider.pushPsbt({
       psbtBase64: signedPsbts[0].signedPsbt,
     })
@@ -1392,18 +1518,24 @@ export const execute = async ({
     const swapWrapResult = await provider.pushPsbt({
       psbtBase64: signedPsbts[1].signedPsbt,
     })
-    console.log("swapWrapResult", swapWrapResult);
-    return swapWrapResult;
+    console.log("executeResult", swapWrapResult);
+    returnResult = swapWrapResult;
   } else {
-    const { signedPsbt } = await signer.signAllInputs({
-      rawPsbt: finalPsbt,
-      finalize: true,
-    })
     const pushResult = await provider.pushPsbt({
-      psbtBase64: signedPsbt,
+      psbtBase64: signedPsbts[0].signedPsbt,
     })
-    return pushResult
+    console.log("executeResult", pushResult);
+    returnResult = pushResult;
   }
+
+  if (frbtcUnwrapPsbt) {
+    const pushResult = await provider.pushPsbt({
+      psbtBase64: signedPsbts.at(-1).signedPsbt,
+    })
+    console.log("unwrap result ", pushResult);
+  }
+
+  return returnResult;
 }
 
 export const actualWrapBtcFee = async ({
