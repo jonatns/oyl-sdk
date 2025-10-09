@@ -1304,7 +1304,6 @@ export const executeFallbackToWitnessProxy = async ({
   witnessProxy,
   frbtcWrapAmount,
   frbtcUnwrapAmount,
-  frbtcUtxoForUnwrap,
   addDieselMint,
 }: {
   alkanesUtxos?: FormattedUtxo[]
@@ -1319,7 +1318,6 @@ export const executeFallbackToWitnessProxy = async ({
   witnessProxy?: AlkaneId
   frbtcWrapAmount?: number
   frbtcUnwrapAmount?: number
-  frbtcUtxoForUnwrap?: FormattedUtxo[]
   addDieselMint?: boolean
 }) => {
   let frbtcWrapPsbt;
@@ -1410,7 +1408,6 @@ export const executeFallbackToWitnessProxy = async ({
       feeAddress,
       frbtcWrapPsbt,
       frbtcUnwrapAmount,
-      frbtcUtxoForUnwrap,
     });
   }
 }
@@ -1427,7 +1424,6 @@ export const execute = async ({
   feeAddress,
   frbtcWrapPsbt,
   frbtcUnwrapAmount,
-  frbtcUtxoForUnwrap,
 }: {
   alkanesUtxos?: FormattedUtxo[]
   utxos: FormattedUtxo[]
@@ -1440,7 +1436,6 @@ export const execute = async ({
   feeAddress?: string
   frbtcWrapPsbt?: bitcoin.Psbt
   frbtcUnwrapAmount?: number
-  frbtcUtxoForUnwrap?: FormattedUtxo[]
 }) => {
   const { fee } = await actualExecuteFee({
     alkanesUtxos,
@@ -1469,20 +1464,32 @@ export const execute = async ({
 
   let frbtcUnwrapPsbt;
 
-  if (frbtcUnwrapAmount && frbtcUtxoForUnwrap) {
+  if (frbtcUnwrapAmount) {
     const executePsbt = bitcoin.Psbt.fromBase64(finalPsbt, {
       network: provider.network,
     });
-    const { remainingUtxos, remainingAlkanesUtxos: remainingFrbtcUtxosForUnwrap } = getRemainingUtxosAfterPsbt({
+    const { remainingUtxos } = getRemainingUtxosAfterPsbt({
       psbt: executePsbt,
       utxos,
-      alkanesUtxos: frbtcUtxoForUnwrap,
       account,
       network: provider.network
     })
 
+    const frbtcUtxo: FormattedUtxo[] = [{
+      txId: getUnfinalizedPsbtTxId(executePsbt),
+      outputIndex: 0,
+      satoshis: 546,
+      scriptPk: executePsbt.txOutputs[0].script.toString('hex'),
+      address: bitcoin.address.fromOutputScript(executePsbt.txOutputs[0].script, provider.network),
+      inscriptions: [],
+      runes: {},
+      alkanes: {}, // there is the frbtc alkane but this doesn't need to be specified since this is just added directly as an input
+      confirmations: 0,
+      indexed: true, // technically not indexed but it can be used in future txs
+    }]
+
     const { psbt } = await unwrapBtcNoSigning({
-      alkaneUtxos: remainingFrbtcUtxosForUnwrap,
+      alkaneUtxos: frbtcUtxo,
       utxos: remainingUtxos,
       account,
       provider,
