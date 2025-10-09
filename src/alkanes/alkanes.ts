@@ -378,21 +378,10 @@ export const createUnwrapBtcPsbt = async ({
 
     const subfrostAddress = await getWrapAddress(provider);
 
-    const totalAlkaneAmount = alkaneUtxos.reduce((acc, utxo) => {
-      const alkane = utxo.alkanes['32:0']
-      if (alkane) {
-        return acc + BigInt(alkane.value)
-      }
-      return acc
-    }, 0n)
-
     const psbt = new bitcoin.Psbt({ network: provider.network })
     psbt.addOutput({ address: alkanesAddress, value: 546 })
     psbt.addOutput({ address: subfrostAddress, value: 546 })
 
-    if (totalAlkaneAmount < unwrapAmount) {
-      throw new OylTransactionError(Error('Insufficient frbtc balance'))
-    }
 
     const dustOutputIndex = psbt.txOutputs.length - 1
 
@@ -582,6 +571,16 @@ export const unwrapBtc = async ({
   unwrapAmount: bigint
   alkaneUtxos: FormattedUtxo[]
 }) => {
+  const totalAlkaneAmount = alkaneUtxos.reduce((acc, utxo) => {
+    const alkane = utxo.alkanes['32:0']
+    if (alkane) {
+      return acc + BigInt(alkane.value)
+    }
+    return acc
+  }, 0n)
+  if (totalAlkaneAmount < unwrapAmount) {
+    throw new OylTransactionError(Error('Insufficient frbtc balance'))
+  }
   const { psbt: finalPsbt } = await unwrapBtcNoSigning({
     utxos,
     account,
