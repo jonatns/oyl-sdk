@@ -71,6 +71,17 @@ export declare const actualUnwrapBtcFee: ({ utxos, account, provider, feeRate, u
     fee: number;
     vsize: number;
 }>;
+export declare const unwrapBtcNoSigning: ({ utxos, account, provider, feeRate, unwrapAmount, alkaneUtxos, }: {
+    utxos: FormattedUtxo[];
+    account: Account;
+    provider: Provider;
+    feeRate?: number;
+    unwrapAmount: bigint;
+    alkaneUtxos: FormattedUtxo[];
+}) => Promise<{
+    psbt: string;
+    psbtHex: string;
+}>;
 export declare const unwrapBtc: ({ utxos, account, provider, feeRate, signer, unwrapAmount, alkaneUtxos, }: {
     utxos: FormattedUtxo[];
     account: Account;
@@ -204,7 +215,7 @@ export declare const executePsbt: ({ alkanesUtxos, utxos, account, protostone, p
     psbt: string;
     fee: number;
 }>;
-export declare const executeFallbackToWitnessProxy: ({ alkanesUtxos, utxos, account, calldata, provider, feeRate, signer, frontendFee, feeAddress, witnessProxy, frbtcWrapAmount, addDieselMint, }: {
+export declare const executeFallbackToWitnessProxy: ({ alkanesUtxos, utxos, account, calldata, provider, feeRate, signer, frontendFee, feeAddress, witnessProxy, frbtcWrapAmount, frbtcUnwrapAmount, addDieselMint, }: {
     alkanesUtxos?: FormattedUtxo[];
     utxos: FormattedUtxo[];
     account: Account;
@@ -216,16 +227,10 @@ export declare const executeFallbackToWitnessProxy: ({ alkanesUtxos, utxos, acco
     feeAddress?: string;
     witnessProxy?: AlkaneId;
     frbtcWrapAmount?: number;
+    frbtcUnwrapAmount?: number;
     addDieselMint?: boolean;
-}) => Promise<{
-    txId: string;
-    rawTx: string;
-    size: any;
-    weight: any;
-    fee: number;
-    satsPerVByte: string;
-}>;
-export declare const execute: ({ alkanesUtxos, utxos, account, protostone, provider, feeRate, signer, frontendFee, feeAddress, frbtcWrapPsbt, }: {
+}) => Promise<any>;
+export declare const execute: ({ alkanesUtxos, utxos, account, protostone, provider, feeRate, signer, frontendFee, feeAddress, frbtcWrapPsbt, frbtcUnwrapAmount, }: {
     alkanesUtxos?: FormattedUtxo[];
     utxos: FormattedUtxo[];
     account: Account;
@@ -236,14 +241,8 @@ export declare const execute: ({ alkanesUtxos, utxos, account, protostone, provi
     frontendFee?: bigint;
     feeAddress?: string;
     frbtcWrapPsbt?: bitcoin.Psbt;
-}) => Promise<{
-    txId: string;
-    rawTx: string;
-    size: any;
-    weight: any;
-    fee: number;
-    satsPerVByte: string;
-}>;
+    frbtcUnwrapAmount?: number;
+}) => Promise<any>;
 export declare const actualWrapBtcFee: ({ alkanesUtxos, utxos, account, protostone, provider, feeRate, wrapAmount, }: {
     alkanesUtxos?: FormattedUtxo[];
     utxos: FormattedUtxo[];
