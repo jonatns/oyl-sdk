@@ -376,10 +376,14 @@ export const createUnwrapBtcPsbt = async ({
       throw new Error('No taproot or nativeSegwit address found')
     }
 
+    const btcTargetAddress = account.nativeSegwit
+      ? account.nativeSegwit.address
+      : account.taproot.address;
+
     const subfrostAddress = await getWrapAddress(provider);
 
     const psbt = new bitcoin.Psbt({ network: provider.network })
-    psbt.addOutput({ address: alkanesAddress, value: 546 })
+    psbt.addOutput({ address: btcTargetAddress, value: 546 })
     psbt.addOutput({ address: subfrostAddress, value: 546 })
 
 
