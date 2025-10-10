@@ -229,7 +229,11 @@ export declare const executeFallbackToWitnessProxy: ({ alkanesUtxos, utxos, acco
     frbtcWrapAmount?: number;
     frbtcUnwrapAmount?: number;
     addDieselMint?: boolean;
-}) => Promise<any>;
+}) => Promise<{
+    frbtcWrapResult: any;
+    executeResult: any;
+    frbtcUnwrapResult: any;
+}>;
 export declare const execute: ({ alkanesUtxos, utxos, account, protostone, provider, feeRate, signer, frontendFee, feeAddress, frbtcWrapPsbt, frbtcUnwrapAmount, }: {
     alkanesUtxos?: FormattedUtxo[];
     utxos: FormattedUtxo[];
@@ -242,7 +246,11 @@ export declare const execute: ({ alkanesUtxos, utxos, account, protostone, provi
     feeAddress?: string;
     frbtcWrapPsbt?: bitcoin.Psbt;
     frbtcUnwrapAmount?: number;
-}) => Promise<any>;
+}) => Promise<{
+    frbtcWrapResult: any;
+    executeResult: any;
+    frbtcUnwrapResult: any;
+}>;
 export declare const actualWrapBtcFee: ({ alkanesUtxos, utxos, account, protostone, provider, feeRate, wrapAmount, }: {
     alkanesUtxos?: FormattedUtxo[];
     utxos: FormattedUtxo[];
@@ -324,11 +332,15 @@ export declare const inscribePayloadBulk: ({ alkanesUtxos, payload, utxos, accou
     feeAddress?: string;
     frbtcWrapPsbt?: bitcoin.Psbt;
 }) => Promise<{
-    commitTx: string;
-    txId: string;
-    rawTx: string;
-    size: any;
-    weight: any;
-    fee: number;
-    satsPerVByte: string;
+    frbtcWrapResult: any;
+    executeResult: {
+        txId: string;
+        rawTx: string;
+        size: any;
+        weight: any;
+        fee: number;
+        satsPerVByte: string;
+    };
+    commitResult: any;
+    frbtcUnwrapResult: any;
 }>;

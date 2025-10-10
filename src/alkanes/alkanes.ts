@@ -1514,34 +1514,34 @@ export const execute = async ({
   })
   console.log("signedPsbts", signedPsbts)
 
-  let returnResult; // TODO: should return all the results, not just one
+  let frbtcWrapResult;
+  let executeResult;
+  let frbtcUnwrapResult;
 
   if (frbtcWrapPsbt) {
-    const frbtcResult = await provider.pushPsbt({
+    frbtcWrapResult = await provider.pushPsbt({
       psbtBase64: signedPsbts[0].signedPsbt,
     })
-    console.log("frbtcResult", frbtcResult);
-    const swapWrapResult = await provider.pushPsbt({
+    console.log("frbtcWrapResult", frbtcWrapResult);
+    executeResult = await provider.pushPsbt({
       psbtBase64: signedPsbts[1].signedPsbt,
     })
-    console.log("executeResult", swapWrapResult);
-    returnResult = swapWrapResult;
+    console.log("executeResult", executeResult);
   } else {
-    const pushResult = await provider.pushPsbt({
+    executeResult = await provider.pushPsbt({
       psbtBase64: signedPsbts[0].signedPsbt,
     })
-    console.log("executeResult", pushResult);
-    returnResult = pushResult;
+    console.log("executeResult", executeResult);
   }
 
   if (frbtcUnwrapPsbt) {
-    const pushResult = await provider.pushPsbt({
+    frbtcUnwrapResult = await provider.pushPsbt({
       psbtBase64: signedPsbts.at(-1).signedPsbt,
     })
-    console.log("unwrap result ", pushResult);
+    console.log("unwrap result ", frbtcUnwrapResult);
   }
 
-  return returnResult;
+  return { frbtcWrapResult, executeResult, frbtcUnwrapResult };
 }
 
 export const actualWrapBtcFee = async ({
@@ -1974,21 +1974,21 @@ export const inscribePayloadBulk = async ({
   })
 
   const signedRevealTx = finalReveal.inputCount > 1 ? signedPsbts.at(-1).signedPsbt : finalReveal.toBase64();
-  let commitTx;
+  let commitResult, frbtcWrapResult, frbtcUnwrapResult;
   if (frbtcWrapPsbt) {
-    const frbtcTx = await provider.pushPsbt({ psbtBase64: signedPsbts[0].signedPsbt })
-    console.log("frbtcTx", frbtcTx);
-    commitTx = await provider.pushPsbt({ psbtBase64: signedPsbts[1].signedPsbt })
+    frbtcWrapResult = await provider.pushPsbt({ psbtBase64: signedPsbts[0].signedPsbt })
+    console.log("frbtcWrapResult", frbtcWrapResult);
+    commitResult = await provider.pushPsbt({ psbtBase64: signedPsbts[1].signedPsbt })
   } else {
-    commitTx = await provider.pushPsbt({ psbtBase64: signedPsbts[0].signedPsbt })
+    commitResult = await provider.pushPsbt({ psbtBase64: signedPsbts[0].signedPsbt })
   }
-  console.log("commitTx", commitTx);
-  const revealTx = await provider.pushPsbt({ psbtBase64: signedRevealTx })
-  console.log("revealTx", revealTx);
-  if (commitTx.txId != commitTxId) {
+  console.log("commitResult", commitResult);
+  const executeResult = await provider.pushPsbt({ psbtBase64: signedRevealTx })
+  console.log("executeResult", executeResult);
+  if (commitResult.txId != commitTxId) {
     throw new OylTransactionError(
       Error('Pre-calculated txid does not match broadcasted txid')
     );
   }
-  return { ...revealTx, commitTx: commitTxId }
+  return { frbtcWrapResult, executeResult, commitResult, frbtcUnwrapResult }
 }
