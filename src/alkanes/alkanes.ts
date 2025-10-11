@@ -383,29 +383,10 @@ export const createUnwrapBtcPsbt = async ({
     const subfrostAddress = await getWrapAddress(provider);
 
     const psbt = new bitcoin.Psbt({ network: provider.network })
-    psbt.addOutput({ address: btcTargetAddress, value: 546 })
+    psbt.addOutput({ address: alkanesAddress, value: 546 }) // alkanes refund goes to 0
+    psbt.addOutput({ address: btcTargetAddress, value: 546 }) // frbtc burn pointer goes to 1
     psbt.addOutput({ address: subfrostAddress, value: 546 })
-
-
     const dustOutputIndex = psbt.txOutputs.length - 1
-
-    const calldata: bigint[] = [32n, 0n, 78n, BigInt(dustOutputIndex), unwrapAmount]
-    const protostones: ProtoStone[] = []
-
-    protostones.push(
-      ProtoStone.message({
-        protocolTag: 1n,
-        edicts: [],
-        pointer: 0,
-        refundPointer: 0,
-        calldata: encipher(calldata),
-      })
-    )
-
-    const protostone = encodeRunestoneProtostone({ protostones }).encodedRunestone
-
-    psbt.addOutput({ script: protostone, value: 0 })
-
 
     for (const utxo of alkaneUtxos) {
       await addInputForUtxo(psbt, utxo, account, provider)
@@ -456,6 +437,39 @@ export const createUnwrapBtcPsbt = async ({
       minerFee += change
       change = 0
     }
+
+    const calldata: bigint[] = [32n, 0n, 78n, BigInt(dustOutputIndex), unwrapAmount]
+    const protostones: ProtoStone[] = []
+
+    protostones.push(
+      ProtoStone.message({
+        protocolTag: 1n,
+        edicts: [
+          {
+            id: new ProtoruneRuneId(u128(32n), u128(0n)),
+            amount: u128(unwrapAmount),
+            output: u32(psbt.txOutputs.length + 3), // 1 for op return, 1 for reserved, then 1 for edict
+          },
+        ],
+        pointer: 0,
+        refundPointer: 0,
+        calldata: Buffer.from([]),
+      })
+    )
+
+    protostones.push(
+      ProtoStone.message({
+        protocolTag: 1n,
+        edicts: [],
+        pointer: 1,
+        refundPointer: 0,
+        calldata: encipher(calldata),
+      })
+    )
+
+    const protostone = encodeRunestoneProtostone({ protostones }).encodedRunestone
+
+    psbt.addOutput({ script: protostone, value: 0 })
 
     const formatted = await formatInputsToSign({
       _psbt: psbt,
