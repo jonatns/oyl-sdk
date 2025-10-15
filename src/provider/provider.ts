@@ -66,12 +66,10 @@ export class Provider {
       throw new Error('Please select only one format of PSBT to broadcast')
     }
 
-    console.log('🔹 Loading PSBT...')
     const psbt = psbtHex
       ? bitcoin.Psbt.fromHex(psbtHex, { network: this.network })
       : bitcoin.Psbt.fromBase64(psbtBase64!, { network: this.network })
 
-    console.log('🔹 Extracting transaction from PSBT...')
     let extractedTx: bitcoin.Transaction
     try {
       extractedTx = psbt.extractTransaction()
@@ -81,9 +79,7 @@ export class Provider {
 
     const txId = extractedTx.getId()
     const rawTx = extractedTx.toHex()
-    console.log(`📦 Transaction ID: ${txId}`)
 
-    console.log('🔹 Testing mempool acceptance...')
     const [result] = await this.sandshrew.bitcoindRpc.testMemPoolAccept([rawTx])
     if (!result.allowed) {
       throw new Error(
@@ -91,7 +87,6 @@ export class Provider {
       )
     }
 
-    console.log('🚀 Broadcasting transaction...')
     await this.sandshrew.bitcoindRpc.sendRawTransaction(rawTx)
 
     // Retry mempool check
@@ -115,8 +110,6 @@ export class Provider {
     }
 
     const fee = txInfo.fees?.base ? txInfo.fees.base * 1e8 : txInfo.fee
-
-    console.log('✅ Transaction broadcasted successfully!')
 
     return {
       txId,
