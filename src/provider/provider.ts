@@ -14,8 +14,6 @@ export type ProviderConstructorArgs = {
   apiProvider?: any
 }
 
-
-
 export class Provider {
   public sandshrew: SandshrewBitcoinClient
   public esplora: EsploraRpc
@@ -43,7 +41,7 @@ export class Provider {
       case bitcoin.networks.regtest:
         isRegtest = true
     }
-    const masterUrl = [url, version, projectId].filter(Boolean).join('/');
+    const masterUrl = [url, version, projectId].filter(Boolean).join('/')
     this.alkanes = new AlkanesRpc(masterUrl)
     this.sandshrew = new SandshrewBitcoinClient(masterUrl)
     this.esplora = new EsploraRpc(masterUrl)
@@ -62,73 +60,71 @@ export class Provider {
     psbtBase64?: string
   }) {
     if (!psbtHex && !psbtBase64) {
-      throw new Error('Please supply psbt in either base64 or hex format')
+      throw new Error('Please supply PSBT in either base64 or hex format')
     }
     if (psbtHex && psbtBase64) {
-      throw new Error('Please select one format of psbt to broadcast')
-    }
-    let psbt: bitcoin.Psbt
-    if (psbtHex) {
-      psbt = bitcoin.Psbt.fromHex(psbtHex, {
-        network: this.network,
-      })
+      throw new Error('Please select only one format of PSBT to broadcast')
     }
 
-    if (psbtBase64) {
-      psbt = bitcoin.Psbt.fromBase64(psbtBase64, {
-        network: this.network,
-      })
-    }
+    console.log('🔹 Loading PSBT...')
+    const psbt = psbtHex
+      ? bitcoin.Psbt.fromHex(psbtHex, { network: this.network })
+      : bitcoin.Psbt.fromBase64(psbtBase64!, { network: this.network })
 
+    console.log('🔹 Extracting transaction from PSBT...')
     let extractedTx: bitcoin.Transaction
     try {
       extractedTx = psbt.extractTransaction()
-    } catch (error) {
-      throw new Error(`Transaction could not be extracted do to invalid Psbt. ${error}`)
+    } catch (err) {
+      throw new Error(`Transaction could not be extracted from PSBT: ${err}`)
     }
+
     const txId = extractedTx.getId()
     const rawTx = extractedTx.toHex()
+    console.log(`📦 Transaction ID: ${txId}`)
 
+    console.log('🔹 Testing mempool acceptance...')
     const [result] = await this.sandshrew.bitcoindRpc.testMemPoolAccept([rawTx])
-
     if (!result.allowed) {
-      throw new Error(`Mempool rejected tx due to ${result['reject-reason']}`)
+      throw new Error(
+        `Mempool rejected transaction: ${result['reject-reason']}`
+      )
     }
+
+    console.log('🚀 Broadcasting transaction...')
     await this.sandshrew.bitcoindRpc.sendRawTransaction(rawTx)
 
-    let txInMemPool
-    try {
-      await waitForTransaction({
-        txId,
-        sandshrewBtcClient: this.sandshrew,
-        esploraClient: this.esplora,
-      })
-      txInMemPool = await this.sandshrew.bitcoindRpc.getMemPoolEntry(txId)
-    } catch (e) {
-      await delay(1000)
-      const tx = await this.esplora.getTxInfo(txId)
-      if (!tx || !tx.status.confirmed) {
-        throw new Error(`Transaction not found in mempool or confirmed due to ${e}`)
-      }
-      return {
-        txId,
-        rawTx,
-        size: tx.size,
-        weight: tx.weight,
-        fee: tx.fee,
-        satsPerVByte: (tx.fee / (tx.weight / 4)).toFixed(2),
-      }
+    // Retry mempool check
+    let txInfo
+    for (let i = 0; i < 10; i++) {
+      try {
+        txInfo = await this.sandshrew.bitcoindRpc.getMemPoolEntry(txId)
+        if (txInfo) break
+      } catch (_) {}
+      await new Promise((r) => setTimeout(r, 1000))
     }
 
-    const fee = txInMemPool.fees['base'] * 10 ** 8
+    // Fallback: check Esplora
+    if (!txInfo) {
+      console.log('⚠️ Transaction not found in mempool, checking Esplora...')
+      const tx = await this.esplora.getTxInfo(txId)
+      if (!tx || !tx.status.confirmed) {
+        throw new Error('Transaction not found in mempool or confirmed')
+      }
+      txInfo = tx
+    }
+
+    const fee = txInfo.fees?.base ? txInfo.fees.base * 1e8 : txInfo.fee
+
+    console.log('✅ Transaction broadcasted successfully!')
 
     return {
       txId,
       rawTx,
-      size: txInMemPool.vsize,
-      weight: txInMemPool.weight,
-      fee: fee,
-      satsPerVByte: (fee / (txInMemPool.weight / 4)).toFixed(2),
+      size: txInfo.vsize ?? txInfo.size,
+      weight: txInfo.weight,
+      fee,
+      satsPerVByte: (fee / ((txInfo.weight ?? txInfo.size * 4) / 4)).toFixed(2),
     }
   }
 }

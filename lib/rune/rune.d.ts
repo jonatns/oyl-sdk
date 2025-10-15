@@ -157,7 +157,7 @@ export declare const send: ({ gatheredUtxos, toAddress, amount, runeId, inscript
     rawTx: string;
     size: any;
     weight: any;
-    fee: number;
+    fee: any;
     satsPerVByte: string;
 }>;
 export declare const mint: ({ gatheredUtxos, account, runeId, provider, feeRate, signer, }: {
@@ -172,7 +172,7 @@ export declare const mint: ({ gatheredUtxos, account, runeId, provider, feeRate,
     rawTx: string;
     size: any;
     weight: any;
-    fee: number;
+    fee: any;
     satsPerVByte: string;
 }>;
 export declare const etchCommit: ({ gatheredUtxos, runeName, account, provider, feeRate, signer, }: {
@@ -188,7 +188,7 @@ export declare const etchCommit: ({ gatheredUtxos, runeName, account, provider, 
     rawTx: string;
     size: any;
     weight: any;
-    fee: number;
+    fee: any;
     satsPerVByte: string;
 }>;
 export declare const etchReveal: ({ symbol, cap, premine, perMintAmount, turbo, divisibility, commitTxId, script, runeName, account, provider, feeRate, signer, }: {
@@ -210,7 +210,7 @@ export declare const etchReveal: ({ symbol, cap, premine, perMintAmount, turbo, 
     rawTx: string;
     size: any;
     weight: any;
-    fee: number;
+    fee: any;
     satsPerVByte: string;
 }>;
 export {};

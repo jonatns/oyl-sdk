@@ -29,7 +29,7 @@ export declare class Provider {
         rawTx: string;
         size: any;
         weight: any;
-        fee: number;
+        fee: any;
         satsPerVByte: string;
     }>;
 }

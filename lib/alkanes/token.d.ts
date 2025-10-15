@@ -18,7 +18,7 @@ export declare const inscribePayload: ({ alkanesUtxos, payload, utxos, account, 
     rawTx: string;
     size: any;
     weight: any;
-    fee: number;
+    fee: any;
     satsPerVByte: string;
 }>;
 export declare const createSendPsbt: ({ utxos, account, alkaneId, provider, toAddress, amount, feeRate, fee, }: {
@@ -50,7 +50,7 @@ export declare const send: ({ utxos, toAddress, amount, alkaneId, feeRate, accou
     rawTx: string;
     size: any;
     weight: any;
-    fee: number;
+    fee: any;
     satsPerVByte: string;
 }>;
 export declare const actualSendFee: ({ utxos, account, alkaneId, provider, toAddress, amount, feeRate, }: {
@@ -81,7 +81,7 @@ export declare const split: ({ alkaneUtxos, gatheredUtxos, account, protostone, 
     rawTx: string;
     size: any;
     weight: any;
-    fee: number;
+    fee: any;
     satsPerVByte: string;
 }>;
 export declare const createSplitPsbt: ({ alkaneUtxos, gatheredUtxos, account, protostone, provider, feeRate, fee, }: {
@@ -152,6 +152,6 @@ export declare const alkaneMultiSend: ({ sends, alkaneId, utxos, account, provid
     rawTx: string;
     size: any;
     weight: any;
-    fee: number;
+    fee: any;
     satsPerVByte: string;
 }>;

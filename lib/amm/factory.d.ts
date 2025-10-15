@@ -67,7 +67,7 @@ export declare const createNewPool: ({ calldata, token0, token0Amount, token1, t
     rawTx: string;
     size: any;
     weight: any;
-    fee: number;
+    fee: any;
     satsPerVByte: string;
 }>;
 export declare const splitAlkaneUtxos: (tokens: {

@@ -29,7 +29,7 @@ export declare const send: ({ utxos, toAddress, amount, feeRate, account, provid
     rawTx: string;
     size: any;
     weight: any;
-    fee: number;
+    fee: any;
     satsPerVByte: string;
 }>;
 export declare const actualFee: ({ utxos, toAddress, amount, feeRate, account, provider, signer, }: {

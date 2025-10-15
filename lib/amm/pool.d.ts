@@ -41,7 +41,7 @@ export declare const addLiquidity: ({ calldata, token0, token0Amount, token1, to
     rawTx: string;
     size: any;
     weight: any;
-    fee: number;
+    fee: any;
     satsPerVByte: string;
 }>;
 /**
@@ -82,7 +82,7 @@ export declare const removeLiquidity: ({ calldata, token, tokenAmount, utxos, fe
     rawTx: string;
     size: any;
     weight: any;
-    fee: number;
+    fee: any;
     satsPerVByte: string;
 }>;
 export declare const swapPsbt: ({ calldata, token, tokenAmount, utxos, feeRate, account, provider, frontendFee, feeAddress, }: {
@@ -115,6 +115,6 @@ export declare const swap: ({ calldata, token, tokenAmount, utxos, feeRate, acco
     rawTx: string;
     size: any;
     weight: any;
-    fee: number;
+    fee: any;
     satsPerVByte: string;
 }>;

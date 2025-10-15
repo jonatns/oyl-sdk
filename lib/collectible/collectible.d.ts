@@ -38,7 +38,7 @@ export declare const send: ({ gatheredUtxos, toAddress, inscriptionId, inscripti
     rawTx: string;
     size: any;
     weight: any;
-    fee: number;
+    fee: any;
     satsPerVByte: string;
 }>;
 export declare const actualFee: ({ gatheredUtxos, account, inscriptionId, provider, inscriptionAddress, toAddress, feeRate, signer, }: {
