@@ -196,7 +196,6 @@ FEE_RATE=5  # Default fee rate in sat/vB
   "cbor-x": "1.6.0",
   "change-case": "4.1.2",
   "commander": "12.1.0",
-  "crypto": "1.0.1",
   "dotenv": "16.3.1",
   "ecpair": "2.1.0",
   "fs-extra": "11.2.0",
