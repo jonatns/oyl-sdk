@@ -7,7 +7,7 @@ export const DEFAULT_PROVIDER = {
     version: 'v4',
     projectId: 'subfrost',
     network: bitcoin.networks.bitcoin,
-    networkType: 'mainnet'
+    networkType: 'mainnet',
   }),
   alkanes: new Provider({
     url: 'http://localhost:18888',

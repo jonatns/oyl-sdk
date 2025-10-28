@@ -6,8 +6,6 @@ export declare const MAXIMUM_FEE = 5000000;
 export declare const DIESEL_MINT_PROTOSTONE: ProtoStone;
 export declare const regtestOpts: MnemonicToAccountOptions;
 export declare const Opts: MnemonicToAccountOptions;
-export declare const regtestMnemonic: string;
-export declare const mainnetMnemonic: string;
 export declare const getBrc20Data: ({ amount, tick, }: {
     amount: number | string;
     tick: string;

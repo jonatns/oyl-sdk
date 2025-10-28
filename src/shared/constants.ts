@@ -1,11 +1,6 @@
-import {
-  encipher,
-  ProtoStone,
-} from 'alkanes/lib/index'
+import { encipher, ProtoStone } from 'alkanes/lib/index'
 import { MnemonicToAccountOptions } from '..'
 import * as bitcoin from 'bitcoinjs-lib'
-import * as dotenv from 'dotenv'
-dotenv.config()
 
 export const UTXO_DUST = 546
 
@@ -19,7 +14,7 @@ export const DIESEL_MINT_PROTOSTONE = ProtoStone.message({
   pointer: 0,
   refundPointer: 0,
   calldata: encipher([BigInt(2), BigInt(0), BigInt(77)]),
-});
+})
 
 export const regtestOpts: MnemonicToAccountOptions = {
   network: bitcoin.networks.regtest,
@@ -40,9 +35,6 @@ export const Opts: MnemonicToAccountOptions = {
     utxoSortGreatestToLeast: true,
   },
 }
-
-export const regtestMnemonic: string = process.env.REGTEST1
-export const mainnetMnemonic: string = process.env.MAINNET_MNEMONIC
 
 export const getBrc20Data = ({
   amount,
