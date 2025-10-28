@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { Command } from 'commander'
 import {
   HDPaths,
@@ -109,12 +110,12 @@ export const signPsbt = new Command('sign')
     console.log('signed psbt', signedPsbt)
   })
 
-  /**
-   * @dev example call 
-   * oyl account generateAddresses -p bitcoin -n 10
-   * 
-   * You will need to specify a MNOMONIC= in your .env file
-   */
+/**
+ * @dev example call
+ * oyl account generateAddresses -p bitcoin -n 10
+ *
+ * You will need to specify a MNOMONIC= in your .env file
+ */
 export const generateAddressesCommand = new Command('generateAddresses')
   .description('Generates multiple addresses for different indexes')
   .requiredOption(
@@ -130,9 +131,11 @@ export const generateAddressesCommand = new Command('generateAddresses')
     const wallet: Wallet = new Wallet({ networkType: options.provider })
     const provider = wallet.provider
     const numIndexes = parseInt(options.number, 10)
-    
+
     if (isNaN(numIndexes) || numIndexes <= 0) {
-      console.error('Please provide a valid positive number for the number of addresses')
+      console.error(
+        'Please provide a valid positive number for the number of addresses'
+      )
       return
     }
 
@@ -140,11 +143,7 @@ export const generateAddressesCommand = new Command('generateAddresses')
     for (let i = 0; i < numIndexes; i++) {
       let hdPaths: HDPaths
       if (options.walletStandard) {
-        hdPaths = getHDPaths(
-          i,
-          provider.network,
-          options.walletStandard
-        )
+        hdPaths = getHDPaths(i, provider.network, options.walletStandard)
       }
       const account = mnemonicToAccount({
         mnemonic: wallet.mnemonic,
@@ -162,7 +161,7 @@ export const generateAddressesCommand = new Command('generateAddresses')
           nativeSegwit: account.nativeSegwit.address,
           nestedSegwit: account.nestedSegwit.address,
           legacy: account.legacy.address,
-        }
+        },
       })
     }
     console.log(JSON.stringify(results, null, 2))

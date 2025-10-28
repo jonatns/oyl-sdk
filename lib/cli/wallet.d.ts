@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import { Provider, Account, Signer, Network } from '..';
 export interface WalletOptions {
     mnemonic?: string;

@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { Command } from 'commander';
 export declare const privateKeysCommand: Command;
 export declare const mnemonicToAccountCommand: Command;
