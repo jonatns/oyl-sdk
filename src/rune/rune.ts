@@ -147,7 +147,7 @@ export const createSendPsbt = async ({
       throw new OylTransactionError(Error('Insufficient Balance'))
     }
 
-    await addInputUtxosToPsbt(gatheredUtxos.utxos, psbt, account, provider);
+    await addInputUtxosToPsbt(gatheredUtxos.utxos, psbt, account, provider)
 
     const script = createRuneSendScript({
       runeId,
@@ -239,7 +239,7 @@ export const createMintPsbt = async ({
     if (gatheredUtxos.totalAmount < finalFee + inscriptionSats) {
       throw new OylTransactionError(Error('Insufficient Balance'))
     }
-    await addInputUtxosToPsbt(gatheredUtxos.utxos, psbt, account, provider);
+    await addInputUtxosToPsbt(gatheredUtxos.utxos, psbt, account, provider)
 
     const script = createRuneMintScript({
       runeId,
@@ -359,7 +359,7 @@ export const createEtchCommit = async ({
       }
     }
 
-    await addInputUtxosToPsbt(gatheredUtxos.utxos, psbt, account, provider);
+    await addInputUtxosToPsbt(gatheredUtxos.utxos, psbt, account, provider)
 
     if (gatheredUtxos.totalAmount < finalFee + inscriptionSats) {
       throw new OylTransactionError(Error('Insufficient Balance'))

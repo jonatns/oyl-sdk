@@ -2,7 +2,9 @@ import * as bitcoin from 'bitcoinjs-lib'
 import { ECPair, tweakSigner } from '../shared/utils'
 import { ECPairInterface } from 'ecpair'
 import { Signer as bipSigner } from 'bip322-js'
-import crypto from 'crypto'
+import { sha256 } from '@noble/hashes/sha2'
+import { utf8ToBytes } from '@noble/hashes/utils'
+import { base64 } from '@scure/base'
 
 export type walletInit = {
   segwitPrivateKey?: string
@@ -249,8 +251,8 @@ export class Signer {
           }
           break
         default:
-          console.log(i, "did not match any signer types!");
-          break;
+          console.log(i, 'did not match any signer types!')
+          break
       }
     }
 
@@ -274,14 +276,16 @@ export class Signer {
     const psbts = rawPsbts || rawPsbtsHex
 
     for (const psbt of psbts) {
-      signedPsbts.push(await this.signAllInputs(
-        rawPsbts
-          ? { rawPsbt: psbt, finalize }
-          : { rawPsbtHex: psbt, finalize }
-      ))
+      signedPsbts.push(
+        await this.signAllInputs(
+          rawPsbts
+            ? { rawPsbt: psbt, finalize }
+            : { rawPsbtHex: psbt, finalize }
+        )
+      )
     }
 
-    return signedPsbts;
+    return signedPsbts
   }
 
   async signAllSegwitInputs({
@@ -337,14 +341,13 @@ export class Signer {
         .sign(keypair.toWIF(), address, message)
         .toString('base64')
     }
+
     if (protocol === 'ecdsa') {
-      const hashedMessage = crypto
-        .createHash('sha256')
-        .update(message)
-        .digest()
-        .toString('base64')
-      const signature = keypair.sign(Buffer.from(hashedMessage, 'base64'))
-      return signature.toString('base64')
+      const hash = sha256(utf8ToBytes(message))
+      const signature = keypair.sign(hash as any)
+      return base64.encode(signature)
     }
+
+    throw new Error(`Unsupported protocol: ${protocol}`)
   }
 }

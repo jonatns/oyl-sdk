@@ -45,7 +45,9 @@
   "dependencies": {
     "@bitcoinerlab/secp256k1": "1.0.2",
     "@magiceden-oss/runestone-lib": "1.0.2",
+    "@noble/hashes": "^1.8.0",
     "@sadoprotocol/ordit-sdk": "3.0.0",
+    "@scure/base": "^2.0.0",
     "@scure/btc-signer": "1.5.0",
     "alkanes": "git+https://github.com/kungfuflex/alkanes.git",
     "bignumber.js": "9.1.2",

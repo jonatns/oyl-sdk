@@ -1,10 +1,13 @@
-import type { Config } from '@jest/types'
-
-const config: Config.InitialOptions = {
+/** @type {import('jest').Config} */
+module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  testMatch: ['**/src/**/*.(spec|test).[jt]s?(x)'],
-  modulePathIgnorePatterns: ['<rootDir>/lib/'],
+  transform: {
+    '^.+\\.(t|j)sx?$': 'ts-jest',
+  },
+  transformIgnorePatterns: ['node_modules/(?!(?:@noble/hashes|@scure/base)/)'],
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+  },
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 }
-
-export default config

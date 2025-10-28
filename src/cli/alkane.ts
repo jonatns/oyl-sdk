@@ -6,7 +6,11 @@ import path from 'path'
 import * as alkanes from '../alkanes/alkanes'
 import * as utxo from '../utxo'
 import { Wallet } from './wallet'
-import { send, inscribePayload, alkaneMultiSend as alkaneMultiSendLib } from '../alkanes/token'
+import {
+  send,
+  inscribePayload,
+  alkaneMultiSend as alkaneMultiSendLib,
+} from '../alkanes/token'
 import { AlkanesPayload } from 'shared/interface'
 import * as bitcoin from 'bitcoinjs-lib'
 import { tweakSigner } from '../shared/utils'
@@ -21,12 +25,19 @@ import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { u128 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 import { createNewPool, splitAlkaneUtxos } from '../amm/factory'
 import { getWrapAddress } from '../amm/subfrost'
-import { removeLiquidity, addLiquidity, swap } from '../amm/pool'
-import { packUTF8, readU128LE, getAddressKey } from '../shared/utils';
-import { sha256 } from '@noble/hashes/sha2';
-import { parse } from 'csv-parse/sync';
-import * as borsh from 'borsh';
-import { calculateMerkleRoot, generateProof, leafSchema, proofSchema, SchemaMerkleLeaf, SchemaMerkleProof } from '../alkanes/merkle'
+import { removeLiquidity, addLiquidity } from '../amm/pool'
+import { packUTF8, readU128LE, getAddressKey } from '../shared/utils'
+import { sha256 } from '@noble/hashes/sha2'
+import { parse } from 'csv-parse/sync'
+import * as borsh from 'borsh'
+import {
+  calculateMerkleRoot,
+  generateProof,
+  leafSchema,
+  proofSchema,
+  SchemaMerkleLeaf,
+  SchemaMerkleProof,
+} from '../alkanes/merkle'
 
 /* @dev example call
   oyl alkane trace -params '{"txid":"e6561c7a8f80560c30a113c418bb56bde65694ac2b309a68549f35fdf2e785cb","vout":0}'
@@ -178,7 +189,7 @@ export const alkaneSpendCommit = new AlkanesCommand('spend-commit')
     const { accountUtxos } = await utxo.accountUtxos({
       account: wallet.account,
       provider: wallet.provider,
-    });
+    })
 
     if (!options.calldata || options.calldata.length === 0) {
       throw new Error('Calldata is required for reveal method.')
@@ -236,7 +247,6 @@ export const alkaneSpendCommit = new AlkanesCommand('spend-commit')
         script: script.toString('hex'),
       })
     )
-
   })
 
 /* @dev example call
@@ -292,15 +302,19 @@ export const alkaneTokenDeploy = new AlkanesCommand('new-token')
       provider: wallet.provider,
     })
 
-    let calldata = [
-      BigInt(6),
-      BigInt(options.reserveNumber),
-    ]
+    let calldata = [BigInt(6), BigInt(options.reserveNumber)]
     if (options.arguments.length > 0) {
-      calldata = calldata.concat(options.arguments.map(v => BigInt(v)))
+      calldata = calldata.concat(options.arguments.map((v) => BigInt(v)))
     } else {
-      if (!options.cap || !options.tokenName || !options.tokenSymbol || !options.amountPerMint) {
-        throw new Error('Either --arguments or all of --cap, --token-name, --token-symbol, and --amount-per-mint must be provided.')
+      if (
+        !options.cap ||
+        !options.tokenName ||
+        !options.tokenSymbol ||
+        !options.amountPerMint
+      ) {
+        throw new Error(
+          'Either --arguments or all of --cap, --token-name, --token-symbol, and --amount-per-mint must be provided.'
+        )
       }
       const tokenName = packUTF8(options.tokenName)
       const tokenSymbol = packUTF8(options.tokenSymbol)
@@ -445,27 +459,29 @@ export const alkaneExecute = new AlkanesCommand('execute')
 
     const alkanesToSpend = options.alkanes.map(alkanes.toAlkaneId)
 
-    let availableAlkaneUtxos: utxo.FormattedUtxo[] = [];
+    let availableAlkaneUtxos: utxo.FormattedUtxo[] = []
     for (const key in accounts) {
-      availableAlkaneUtxos.push(...accounts[key].alkaneUtxos);
+      availableAlkaneUtxos.push(...accounts[key].alkaneUtxos)
     }
 
-    const alkaneUtxosToSpend: utxo.FormattedUtxo[] = [];
-    const spentUtxoIds = new Set<string>();
+    const alkaneUtxosToSpend: utxo.FormattedUtxo[] = []
+    const spentUtxoIds = new Set<string>()
 
     for (const alkaneToSpend of alkanesToSpend) {
       const { utxos: selectedUtxos } = utxo.selectAlkanesUtxos({
-        utxos: availableAlkaneUtxos.filter(u => !spentUtxoIds.has(`${u.txId}:${u.outputIndex}`)),
+        utxos: availableAlkaneUtxos.filter(
+          (u) => !spentUtxoIds.has(`${u.txId}:${u.outputIndex}`)
+        ),
         greatestToLeast: true,
         alkaneId: alkaneToSpend.alkaneId,
-        targetNumberOfAlkanes: alkaneToSpend.amount
-      });
+        targetNumberOfAlkanes: alkaneToSpend.amount,
+      })
 
       for (const u of selectedUtxos) {
-        const utxoId = `${u.txId}:${u.outputIndex}`;
+        const utxoId = `${u.txId}:${u.outputIndex}`
         if (!spentUtxoIds.has(utxoId)) {
-          alkaneUtxosToSpend.push(u);
-          spentUtxoIds.add(utxoId);
+          alkaneUtxosToSpend.push(u)
+          spentUtxoIds.add(utxoId)
         }
       }
     }
@@ -592,17 +608,18 @@ export const alkaneSwap = new AlkanesCommand('swap')
         changeAddress: 'nativeSegwit',
       },
       network: wallet.account.network,
-    };
+    }
 
     // Filter UTXOs to only include those from addresses we actually have configured
-    const filteredUtxos = accountUtxos.filter(utxo => {
-      const addressKey = getAddressKey(utxo.address);
-      return accountStructure.spendStrategy.addressOrder.includes(addressKey);
-    });
+    const filteredUtxos = accountUtxos.filter((utxo) => {
+      const addressKey = getAddressKey(utxo.address)
+      return accountStructure.spendStrategy.addressOrder.includes(addressKey)
+    })
 
     const calldata: bigint[] = options.calldata.map((item) => BigInt(item))
 
-    const currentBlockHeight = await wallet.provider.sandshrew.bitcoindRpc.getBlockCount!();
+    const currentBlockHeight = await wallet.provider.sandshrew.bitcoindRpc
+      .getBlockCount!()
 
     calldata.push(BigInt(currentBlockHeight + Number(options.deadline)))
 
@@ -611,12 +628,9 @@ export const alkaneSwap = new AlkanesCommand('swap')
         alkaneId: { block: options.calldata[4], tx: options.calldata[5] },
         amount: BigInt(options.calldata[8]),
       },
-    ];
+    ]
 
-    const { utxos: alkanesUtxos } = splitAlkaneUtxos(
-      swapToken,
-      filteredUtxos
-    );
+    const { utxos: alkanesUtxos } = splitAlkaneUtxos(swapToken, filteredUtxos)
 
     // This test uses addressOrder to test sends using account objects with specific address types
     // For example addressOrder = ['nativeSegwit'] will use nativeSegwit utxos and account object
@@ -626,7 +640,7 @@ export const alkaneSwap = new AlkanesCommand('swap')
         address: wallet.account.taproot.address,
         pubkey: wallet.account.taproot.pubkey,
         hdPath: '',
-      };
+      }
     }
 
     if (accountStructure.spendStrategy.addressOrder.includes('nativeSegwit')) {
@@ -634,7 +648,7 @@ export const alkaneSwap = new AlkanesCommand('swap')
         address: wallet.account.nativeSegwit.address,
         pubkey: wallet.account.nativeSegwit.pubkey,
         hdPath: '',
-      };
+      }
     }
 
     const protostone: Buffer = encodeRunestoneProtostone({
@@ -1081,67 +1095,79 @@ export const alkanePreviewRemoveLiquidity = new AlkanesCommand(
     }
   })
 
-
 export const initMerkleRoot = new AlkanesCommand('init-merkle-root')
   .description('Initializes a merkle distributor contract.')
   .requiredOption('-f, --file <file>', 'Path to the CSV file.')
   .requiredOption('-d, --deadline <deadline>', 'Latest block to claim rewards')
-  .requiredOption('-t, --target <target>', 'The alkane id of the merkle distributor contract to initialize. Format in "block:tx".')
-  .requiredOption('-a, --alkane <alkane>', 'The alkane id and amount of the reward token to use. Expected format is block:tx:amount')
-  .option('-wp, --witness-proxy <witnessProxy>', 'The alkane id of the witness proxy contract if opreturn too large. Expected format is block:tx')
-  .option('-p, --provider <provider>', 'Network provider type (regtest, bitcoin)')
+  .requiredOption(
+    '-t, --target <target>',
+    'The alkane id of the merkle distributor contract to initialize. Format in "block:tx".'
+  )
+  .requiredOption(
+    '-a, --alkane <alkane>',
+    'The alkane id and amount of the reward token to use. Expected format is block:tx:amount'
+  )
+  .option(
+    '-wp, --witness-proxy <witnessProxy>',
+    'The alkane id of the witness proxy contract if opreturn too large. Expected format is block:tx'
+  )
+  .option(
+    '-p, --provider <provider>',
+    'Network provider type (regtest, bitcoin)'
+  )
   .option('-feeRate, --feeRate <feeRate>', 'fee rate')
   .action(async (options) => {
-    const wallet: Wallet = new Wallet(options);
+    const wallet: Wallet = new Wallet(options)
     const { accountUtxos, accounts } = await utxo.accountUtxos({
       account: wallet.account,
       provider: wallet.provider,
-    });
+    })
 
-    let allAlkaneUtxos: utxo.FormattedUtxo[] = [];
+    let allAlkaneUtxos: utxo.FormattedUtxo[] = []
     for (const address in accounts) {
       if (accounts[address].alkaneUtxos) {
-        allAlkaneUtxos.push(...accounts[address].alkaneUtxos);
+        allAlkaneUtxos.push(...accounts[address].alkaneUtxos)
       }
     }
 
-    let reward = alkanes.toAlkaneId(options.alkane);
+    let reward = alkanes.toAlkaneId(options.alkane)
 
-    const { utxos: tokenUtxos } =
-      utxo.selectAlkanesUtxos({
-        utxos: allAlkaneUtxos,
-        greatestToLeast: false,
-        targetNumberOfAlkanes: reward.amount,
-        alkaneId: reward.alkaneId,
-      });
+    const { utxos: tokenUtxos } = utxo.selectAlkanesUtxos({
+      utxos: allAlkaneUtxos,
+      greatestToLeast: false,
+      targetNumberOfAlkanes: reward.amount,
+      alkaneId: reward.alkaneId,
+    })
 
-    const fileContent = await fs.readFile(options.file, 'utf-8');
+    const fileContent = await fs.readFile(options.file, 'utf-8')
     const rawRecords = parse(fileContent, {
       columns: true,
       skip_empty_lines: true,
-    });
+    })
 
     const records = rawRecords.map((record: any) => ({
       address: record.address,
       amount: record.Merkle_DIESEL,
-    }));
+    }))
 
-    const leaves = records.map(record => new SchemaMerkleLeaf({
-      address: record.address,
-      amount: BigInt(record.amount),
-    }));
+    const leaves = records.map(
+      (record) =>
+        new SchemaMerkleLeaf({
+          address: record.address,
+          amount: BigInt(record.amount),
+        })
+    )
 
-    const leafHashes = leaves.map(leaf => {
-      const serializedLeaf = borsh.serialize(leafSchema, leaf);
-      return sha256(serializedLeaf);
-    });
+    const leafHashes = leaves.map((leaf) => {
+      const serializedLeaf = borsh.serialize(leafSchema, leaf)
+      return sha256(serializedLeaf)
+    })
 
-    const root = calculateMerkleRoot(leafHashes);
-    const rootFirstHalf = readU128LE(root.slice(0, 16));
-    const rootSecondHalf = readU128LE(root.slice(16, 32));
+    const root = calculateMerkleRoot(leafHashes)
+    const rootFirstHalf = readU128LE(root.slice(0, 16))
+    const rootSecondHalf = readU128LE(root.slice(16, 32))
 
-    const [block, tx] = options.target.split(':');
-
+    const [block, tx] = options.target.split(':')
 
     const merkleCalldata = [
       BigInt(block),
@@ -1152,14 +1178,12 @@ export const initMerkleRoot = new AlkanesCommand('init-merkle-root')
       BigInt(reward.amount),
       BigInt(options.deadline),
       rootFirstHalf,
-      rootSecondHalf
-    ];
+      rootSecondHalf,
+    ]
 
-
-    let calldata = options.witnessProxy ? [
-      ...options.witnessProxy.split(':').map(s => BigInt(s)),
-      BigInt(0)
-    ] : merkleCalldata;
+    let calldata = options.witnessProxy
+      ? [...options.witnessProxy.split(':').map((s) => BigInt(s)), BigInt(0)]
+      : merkleCalldata
 
     const protostone = encodeRunestoneProtostone({
       protostones: [
@@ -1171,14 +1195,14 @@ export const initMerkleRoot = new AlkanesCommand('init-merkle-root')
           calldata: encipher(calldata),
         }),
       ],
-    }).encodedRunestone;
+    }).encodedRunestone
 
     if (options.witnessProxy) {
       const payload: AlkanesPayload = {
         body: encipher(merkleCalldata),
         cursed: false,
         tags: { contentType: '' },
-      };
+      }
 
       console.log(
         await inscribePayload({
@@ -1191,7 +1215,7 @@ export const initMerkleRoot = new AlkanesCommand('init-merkle-root')
           signer: wallet.signer,
           provider: wallet.provider,
         })
-      );
+      )
     } else {
       console.log(
         await alkanes.execute({
@@ -1203,66 +1227,87 @@ export const initMerkleRoot = new AlkanesCommand('init-merkle-root')
           signer: wallet.signer,
           provider: wallet.provider,
         })
-      );
+      )
     }
-
-  });
+  })
 
 export const merkleClaim = new AlkanesCommand('merkle-claim')
   .description('Inscribes a merkle proof and claims tokens.')
   .requiredOption('-f, --file <file>', 'Path to the CSV file with all leaves.')
-  .requiredOption('-c, --claim-address <claimAddress>', 'The address to claim for.')
-  .requiredOption('-t, --target <target>', 'The alkane id of the merkle distributor contract.')
-  .option('-p, --provider <provider>', 'Network provider type (regtest, bitcoin)')
+  .requiredOption(
+    '-c, --claim-address <claimAddress>',
+    'The address to claim for.'
+  )
+  .requiredOption(
+    '-t, --target <target>',
+    'The alkane id of the merkle distributor contract.'
+  )
+  .option(
+    '-p, --provider <provider>',
+    'Network provider type (regtest, bitcoin)'
+  )
   .option('-feeRate, --feeRate <feeRate>', 'fee rate')
   .action(async (options) => {
-    const wallet: Wallet = new Wallet(options);
+    const wallet: Wallet = new Wallet(options)
     const { accountUtxos } = await utxo.accountUtxos({
       account: wallet.account,
       provider: wallet.provider,
-    });
+    })
 
-    const fileContent = await fs.readFile(options.file, 'utf-8');
+    const fileContent = await fs.readFile(options.file, 'utf-8')
     const rawRecords = parse(fileContent, {
       columns: true,
       skip_empty_lines: true,
-    });
+    })
 
     const records = rawRecords.map((record: any) => ({
       address: record.address,
       amount: record.Merkle_DIESEL,
-    }));
+    }))
 
-    const leaves = records.map(record => new SchemaMerkleLeaf({
-      address: record.address,
-      amount: BigInt(record.amount),
-    }));
+    const leaves = records.map(
+      (record) =>
+        new SchemaMerkleLeaf({
+          address: record.address,
+          amount: BigInt(record.amount),
+        })
+    )
 
-    const leafIndex = leaves.findIndex(leaf => leaf.address === options.claimAddress);
+    const leafIndex = leaves.findIndex(
+      (leaf) => leaf.address === options.claimAddress
+    )
     if (leafIndex === -1) {
-      throw new Error(`Address ${options.claimAddress} not found in the CSV file.`);
+      throw new Error(
+        `Address ${options.claimAddress} not found in the CSV file.`
+      )
     }
 
-    const leafToClaim = leaves[leafIndex];
-    const serializedLeaf = borsh.serialize(leafSchema, leafToClaim);
+    const leafToClaim = leaves[leafIndex]
+    const serializedLeaf = borsh.serialize(leafSchema, leafToClaim)
 
-    const leafHashes = leaves.map(leaf => {
-      const serialized = borsh.serialize(leafSchema, leaf);
-      return sha256(serialized);
-    });
+    const leafHashes = leaves.map((leaf) => {
+      const serialized = borsh.serialize(leafSchema, leaf)
+      return sha256(serialized)
+    })
 
-    const proofHashes = generateProof(leafHashes, leafIndex);
+    const proofHashes = generateProof(leafHashes, leafIndex)
 
     const merkleProof = new SchemaMerkleProof({
       leaf: serializedLeaf,
       proofs: proofHashes,
-    });
+    })
 
-    const witnessData = borsh.serialize(proofSchema, merkleProof);
+    const witnessData = borsh.serialize(proofSchema, merkleProof)
 
-    const [block, tx] = options.target.split(':');
+    const [block, tx] = options.target.split(':')
 
-    const calldata = [BigInt(4), BigInt(11001), BigInt(block), BigInt(tx), BigInt(1)]; // Opcode 1 for claim
+    const calldata = [
+      BigInt(4),
+      BigInt(11001),
+      BigInt(block),
+      BigInt(tx),
+      BigInt(1),
+    ] // Opcode 1 for claim
 
     const protostone = encodeRunestoneProtostone({
       protostones: [
@@ -1274,13 +1319,13 @@ export const merkleClaim = new AlkanesCommand('merkle-claim')
           calldata: encipher(calldata),
         }),
       ],
-    }).encodedRunestone;
+    }).encodedRunestone
 
     const payload: AlkanesPayload = {
       body: witnessData,
       cursed: false,
       tags: { contentType: '' },
-    };
+    }
 
     console.log(
       await inscribePayload({
@@ -1292,8 +1337,8 @@ export const merkleClaim = new AlkanesCommand('merkle-claim')
         signer: wallet.signer,
         provider: wallet.provider,
       })
-    );
-  });
+    )
+  })
 
 /* @dev example call
  AMM factory:
@@ -1335,13 +1380,7 @@ export const subfrostWrapAddress = new AlkanesCommand('wrap-address')
       refundPointer: 0,
       vout: 0,
     }
-    console.log(
-      JSON.stringify(
-        await getWrapAddress(wallet.provider),
-        null,
-        2
-      )
-    )
+    console.log(JSON.stringify(await getWrapAddress(wallet.provider), null, 2))
   })
 
 export const alkaneWrapBtc = new AlkanesCommand('wrap-btc')
@@ -1388,17 +1427,17 @@ export const alkaneUnwrapBtc = new AlkanesCommand('unwrap-btc')
       provider: wallet.provider,
     })
 
-    let availableAlkaneUtxos: utxo.FormattedUtxo[] = [];
+    let availableAlkaneUtxos: utxo.FormattedUtxo[] = []
     for (const key in accounts) {
-      availableAlkaneUtxos.push(...accounts[key].alkaneUtxos);
+      availableAlkaneUtxos.push(...accounts[key].alkaneUtxos)
     }
 
     const { utxos: alkaneUtxosToSpend } = utxo.selectAlkanesUtxos({
       utxos: availableAlkaneUtxos,
       greatestToLeast: true,
       alkaneId: { block: '32', tx: '0' },
-      targetNumberOfAlkanes: Number(options.amount)
-    });
+      targetNumberOfAlkanes: Number(options.amount),
+    })
 
     console.log(
       await alkanes.unwrapBtc({
