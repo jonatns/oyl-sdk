@@ -1,7 +1,11 @@
 import { minimumFee } from '../btc'
 import { u128, u32 } from '@magiceden-oss/runestone-lib/dist/src/integer'
 import { Account, Signer, Provider, AlkanesPayload } from '..'
-import { ProtoStone, encipher, encodeRunestoneProtostone } from 'alkanes/lib/index.js'
+import {
+  ProtoStone,
+  encipher,
+  encodeRunestoneProtostone,
+} from 'alkanes/lib/index.js'
 import { ProtoruneRuneId } from 'alkanes/lib/protorune/protoruneruneid'
 import { OylTransactionError } from '../errors'
 import { AlkaneId } from '@alkanes/types'
@@ -11,17 +15,17 @@ import {
   findXAmountOfSats,
   inscriptionSats,
   formatInputsToSign,
-  getAddressType,
   addInputUtxosToPsbt,
 } from '../shared/utils'
 import { getEstimatedFee } from '../psbt'
 import {
   deployCommit,
   deployReveal,
-  encodeProtostone,
-  addInputForUtxo,
+  actualDeployCommitFee,
+  createDeployCommitPsbt,
+  actualTransactRevealFee,
+  createTransactReveal,
 } from './alkanes'
-import { ProtoruneEdict } from 'alkanes/lib/protorune/protoruneedict'
 import {
   FormattedUtxo,
   GatheredUtxos,
@@ -79,6 +83,132 @@ export const inscribePayload = async ({
   return { ...reveal, commitTx: txId }
 }
 
+export const createCommitPsbt = async ({
+  payload,
+  utxos,
+  account,
+  protostone,
+  provider,
+  feeRate,
+  tweakedPublicKey,
+  frontendFee,
+  feeAddress,
+}: {
+  payload: AlkanesPayload
+  utxos: FormattedUtxo[]
+  account: Account
+  protostone: Buffer
+  provider: Provider
+  feeRate?: number
+  tweakedPublicKey: string
+  frontendFee?: bigint
+  feeAddress?: string
+}) => {
+  // Calculate fees for commit transaction
+  const { fee: commitFee, deployRevealFee } = await actualDeployCommitFee({
+    payload,
+    utxos,
+    tweakedPublicKey,
+    account,
+    provider,
+    feeRate,
+    protostone,
+    frontendFee,
+    feeAddress,
+  })
+
+  // Create commit PSBT
+  const { psbt, script } = await createDeployCommitPsbt({
+    payload,
+    utxos,
+    tweakedPublicKey,
+    account,
+    provider,
+    feeRate,
+    fee: commitFee,
+    deployRevealFee,
+    frontendFee,
+    feeAddress,
+  })
+
+  return {
+    psbt,
+    script: script.toString('hex'),
+  }
+}
+
+export const createRevealPsbt = async ({
+  payload,
+  utxos,
+  account,
+  protostone,
+  provider,
+  feeRate,
+  tweakedPublicKey,
+  commitTxId,
+  commitPsbtBase64,
+  script,
+}: {
+  payload: AlkanesPayload
+  utxos: FormattedUtxo[]
+  account: Account
+  protostone: Buffer
+  provider: Provider
+  feeRate?: number
+  tweakedPublicKey: string
+  commitTxId: string
+  commitPsbtBase64: string
+  script: string
+}) => {
+  const commitPsbt = bitcoin.Psbt.fromBase64(commitPsbtBase64, {
+    network: provider.network,
+  })
+
+  let alkanesAddress: string
+  if (account.taproot) {
+    alkanesAddress = account.taproot.address
+  } else if (account.nativeSegwit) {
+    alkanesAddress = account.nativeSegwit.address
+  } else {
+    throw new Error('No taproot or nativeSegwit address found')
+  }
+
+  // Calculate fees for reveal transaction
+  const { fee: revealFee } = await actualTransactRevealFee({
+    payload,
+    utxos,
+    protostone,
+    tweakedPublicKey,
+    receiverAddress: alkanesAddress,
+    commitTxId,
+    commitPsbt,
+    script: Buffer.from(script, 'hex'),
+    provider,
+    feeRate,
+    account,
+  })
+
+  // Create reveal PSBT
+  const { psbt } = await createTransactReveal({
+    payload,
+    utxos,
+    protostone,
+    tweakedPublicKey,
+    receiverAddress: alkanesAddress,
+    commitTxId,
+    commitPsbt,
+    script: Buffer.from(script, 'hex'),
+    provider,
+    feeRate,
+    fee: revealFee,
+    account,
+  })
+
+  return {
+    psbt,
+  }
+}
+
 export const createSendPsbt = async ({
   utxos,
   account,
@@ -99,20 +229,23 @@ export const createSendPsbt = async ({
   fee?: number
 }) => {
   try {
-    let alkanesAddress: string;
-    let alkanesPubkey: string;
+    let alkanesAddress: string
+    let alkanesPubkey: string
 
     if (account.taproot) {
-      alkanesAddress = account.taproot.address;
-      alkanesPubkey = account.taproot.pubkey;
+      alkanesAddress = account.taproot.address
+      alkanesPubkey = account.taproot.pubkey
     } else if (account.nativeSegwit) {
-      alkanesAddress = account.nativeSegwit.address;
-      alkanesPubkey = account.nativeSegwit.pubkey;
+      alkanesAddress = account.nativeSegwit.address
+      alkanesPubkey = account.nativeSegwit.pubkey
     } else {
       throw new Error('No taproot or nativeSegwit address found')
     }
 
-    const totalSpendableUtxos = selectSpendableUtxos(utxos, account.spendStrategy)
+    const totalSpendableUtxos = selectSpendableUtxos(
+      utxos,
+      account.spendStrategy
+    )
 
     const minFee = minimumFee({
       taprootInputCount: 2,
@@ -154,13 +287,13 @@ export const createSendPsbt = async ({
       throw new OylTransactionError(Error('No Alkane Utxos Found'))
     }
 
-    await addInputUtxosToPsbt(alkanesUtxos.utxos, psbt, account, provider);
+    await addInputUtxosToPsbt(alkanesUtxos.utxos, psbt, account, provider)
 
     if (gatheredUtxos.totalAmount < finalFee + inscriptionSats * 2) {
       throw new OylTransactionError(Error('Insufficient Balance'))
     }
 
-    await addInputUtxosToPsbt(gatheredUtxos.utxos, psbt, account, provider);
+    await addInputUtxosToPsbt(gatheredUtxos.utxos, psbt, account, provider)
 
     const protostone = encodeRunestoneProtostone({
       protostones: [
@@ -390,15 +523,15 @@ export const createSplitPsbt = async ({
   fee?: number
 }) => {
   try {
-    let alkanesAddress: string;
-    let alkanesPubkey: string;
+    let alkanesAddress: string
+    let alkanesPubkey: string
 
     if (account.taproot) {
-      alkanesAddress = account.taproot.address;
-      alkanesPubkey = account.taproot.pubkey;
+      alkanesAddress = account.taproot.address
+      alkanesPubkey = account.taproot.pubkey
     } else if (account.nativeSegwit) {
-      alkanesAddress = account.nativeSegwit.address;
-      alkanesPubkey = account.nativeSegwit.pubkey;
+      alkanesAddress = account.nativeSegwit.address
+      alkanesPubkey = account.nativeSegwit.pubkey
     } else {
       throw new Error('No taproot or nativeSegwit address found')
     }
@@ -441,7 +574,7 @@ export const createSplitPsbt = async ({
     if (gatheredUtxos.totalAmount < finalFee) {
       throw new OylTransactionError(Error('Insufficient Balance'))
     }
-    await addInputUtxosToPsbt(gatheredUtxos.utxos, psbt, account, provider);
+    await addInputUtxosToPsbt(gatheredUtxos.utxos, psbt, account, provider)
 
     for (let i = 0; i < alkaneUtxos.utxos.length * 2; i++) {
       psbt.addOutput({
@@ -601,10 +734,7 @@ export const createAlkaneMultiSendPsbt = async ({
         output: u32(BigInt(index + 1)),
       }
     })
-    const totalAmount = sends.reduce(
-      (sum, send) => sum + send.amount,
-      0
-    )
+    const totalAmount = sends.reduce((sum, send) => sum + send.amount, 0)
 
     const alkanesUtxos = await selectAlkanesUtxos({
       utxos,
@@ -808,4 +938,3 @@ export const alkaneMultiSend = async ({
 
   return result
 }
-

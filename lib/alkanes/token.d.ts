@@ -21,6 +21,34 @@ export declare const inscribePayload: ({ alkanesUtxos, payload, utxos, account, 
     fee: any;
     satsPerVByte: string;
 }>;
+export declare const createCommitPsbt: ({ payload, utxos, account, protostone, provider, feeRate, tweakedPublicKey, frontendFee, feeAddress, }: {
+    payload: AlkanesPayload;
+    utxos: FormattedUtxo[];
+    account: Account;
+    protostone: Buffer;
+    provider: Provider;
+    feeRate?: number;
+    tweakedPublicKey: string;
+    frontendFee?: bigint;
+    feeAddress?: string;
+}) => Promise<{
+    psbt: string;
+    script: string;
+}>;
+export declare const createRevealPsbt: ({ payload, utxos, account, protostone, provider, feeRate, tweakedPublicKey, commitTxId, commitPsbtBase64, script, }: {
+    payload: AlkanesPayload;
+    utxos: FormattedUtxo[];
+    account: Account;
+    protostone: Buffer;
+    provider: Provider;
+    feeRate?: number;
+    tweakedPublicKey: string;
+    commitTxId: string;
+    commitPsbtBase64: string;
+    script: string;
+}) => Promise<{
+    psbt: string;
+}>;
 export declare const createSendPsbt: ({ utxos, account, alkaneId, provider, toAddress, amount, feeRate, fee, }: {
     utxos: FormattedUtxo[];
     account: Account;
