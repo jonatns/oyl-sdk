@@ -771,18 +771,21 @@ export const createDeployCommitPsbt = async ({
   feeAddress?: string
 }) => {
   try {
-    let alkanesAddress: string
-    let alkanesPubkey: string
-
-    if (account.taproot) {
-      alkanesAddress = account.taproot.address
-      alkanesPubkey = account.taproot.pubkey
-    } else if (account.nativeSegwit) {
-      alkanesAddress = account.nativeSegwit.address
-      alkanesPubkey = account.nativeSegwit.pubkey
-    } else {
-      throw new Error('No taproot or nativeSegwit address found')
+    // Alkanes deployments require taproot
+    if (!account.taproot) {
+      throw new Error('Taproot account is required for alkanes deployments')
     }
+
+    if (!account.taproot.pubkey) {
+      throw new Error('Taproot pubkey is missing from account')
+    }
+
+    if (!payload?.body) {
+      throw new Error('Payload body is required')
+    }
+
+    const alkanesAddress = account.taproot.address
+    const alkanesPubkey = account.taproot.pubkey
 
     if (frontendFee && !feeAddress) {
       throw new Error('feeAddress required when frontendFee is set')
@@ -821,7 +824,9 @@ export const createDeployCommitPsbt = async ({
       network: provider.network,
     })
 
-    const wasmDeploySize = getVSize(Buffer.from(payload.body)) * feeRate
+    // payload.body is Uint8Array, convert to Buffer
+    const payloadBodyBuffer = Buffer.from(payload.body)
+    const wasmDeploySize = getVSize(payloadBodyBuffer) * feeRate
     let revealTxFee = deployRevealFee
       ? deployRevealFee + inscriptionSats
       : commitFee + wasmDeploySize + inscriptionSats
@@ -964,21 +969,26 @@ export const deployReveal = async ({
   signer: Signer
   commitPsbt?: bitcoin.Psbt
 }) => {
-  let alkanesAddress: string
-  let alkanesPubkey: string
-  if (account.taproot) {
-    alkanesAddress = account.taproot.address
-    alkanesPubkey = account.taproot.pubkey
-  } else if (account.nativeSegwit) {
-    alkanesAddress = account.nativeSegwit.address
-    alkanesPubkey = account.nativeSegwit.pubkey
-  } else {
-    throw new Error('No taproot or nativeSegwit address found')
+  // Alkanes reveals require taproot (they use the script from the commit phase)
+  if (!account.taproot) {
+    throw new Error('Taproot account is required for alkanes reveals')
+  }
+
+  if (!account.taproot.pubkey) {
+    throw new Error('Taproot pubkey is missing from account')
+  }
+
+  const alkanesAddress = account.taproot.address
+  const alkanesPubkey = account.taproot.pubkey
+
+  if (!script) {
+    throw new Error('Script is required for reveal')
   }
 
   // Get the account's taproot internal pubkey to compute the tweaked key for signing
   const internalPubkey = toXOnly(Buffer.from(alkanesPubkey, 'hex'))
-  const scriptBuffer = Buffer.from(script, 'hex')
+  const scriptBuffer =
+    typeof script === 'string' ? Buffer.from(script, 'hex') : script
 
   // Create the tapleaf hash for tweaking (needed for signing)
   // For a single script in the script tree, the merkle root is just the tapleaf hash
@@ -1741,14 +1751,16 @@ export const createTransactReveal = async ({
       feeRate = (await provider.esplora.getFeeEstimates())['1']
     }
 
-    let alkanesPubkey: string
-    if (account.taproot) {
-      alkanesPubkey = account.taproot.pubkey
-    } else if (account.nativeSegwit) {
-      alkanesPubkey = account.nativeSegwit.pubkey
-    } else {
-      throw new Error('No taproot or nativeSegwit address found')
+    // Alkanes reveals require taproot (they use the script from the commit phase)
+    if (!account.taproot) {
+      throw new Error('Taproot account is required for alkanes reveals')
     }
+
+    if (!account.taproot.pubkey) {
+      throw new Error('Taproot pubkey is missing from account')
+    }
+
+    const alkanesPubkey = account.taproot.pubkey
 
     const psbt: bitcoin.Psbt = new bitcoin.Psbt({ network: provider.network })
 
@@ -1943,21 +1955,25 @@ export const inscribePayloadBulk = async ({
 
   const commitTxId = getUnfinalizedPsbtTxId(commitPsbt)
 
-  let alkanesAddress: string
-  let alkanesPubkey: string
-  if (account.taproot) {
-    alkanesAddress = account.taproot.address
-    alkanesPubkey = account.taproot.pubkey
-  } else if (account.nativeSegwit) {
-    alkanesAddress = account.nativeSegwit.address
-    alkanesPubkey = account.nativeSegwit.pubkey
-  } else {
-    throw new Error('No taproot or nativeSegwit address found')
+  // Alkanes bulk inscriptions require taproot
+  if (!account.taproot) {
+    throw new Error('Taproot account is required for alkanes bulk inscriptions')
+  }
+
+  if (!account.taproot.pubkey) {
+    throw new Error('Taproot pubkey is missing from account')
+  }
+
+  const alkanesAddress = account.taproot.address
+  const alkanesPubkey = account.taproot.pubkey
+
+  if (!script) {
+    throw new Error('Script is required for reveal')
   }
 
   // Get the account's taproot internal pubkey to compute the tweaked key for signing
   const internalPubkey = toXOnly(Buffer.from(alkanesPubkey, 'hex'))
-  const scriptBuffer = script
+  const scriptBuffer = script instanceof Buffer ? script : Buffer.from(script)
 
   // Create the tapleaf hash for tweaking (needed for signing)
   // For a single script in the script tree, the merkle root is just the tapleaf hash
