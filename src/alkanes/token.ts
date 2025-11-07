@@ -90,7 +90,6 @@ export const createCommitPsbt = async ({
   protostone,
   provider,
   feeRate,
-  tweakedPublicKey,
   frontendFee,
   feeAddress,
 }: {
@@ -100,7 +99,6 @@ export const createCommitPsbt = async ({
   protostone: Buffer
   provider: Provider
   feeRate?: number
-  tweakedPublicKey: string
   frontendFee?: bigint
   feeAddress?: string
 }) => {
@@ -108,7 +106,6 @@ export const createCommitPsbt = async ({
   const { fee: commitFee, deployRevealFee } = await actualDeployCommitFee({
     payload,
     utxos,
-    tweakedPublicKey,
     account,
     provider,
     feeRate,
@@ -121,7 +118,6 @@ export const createCommitPsbt = async ({
   const { psbt, script } = await createDeployCommitPsbt({
     payload,
     utxos,
-    tweakedPublicKey,
     account,
     provider,
     feeRate,
@@ -144,7 +140,6 @@ export const createRevealPsbt = async ({
   protostone,
   provider,
   feeRate,
-  tweakedPublicKey,
   commitTxId,
   commitPsbtBase64,
   script,
@@ -155,7 +150,6 @@ export const createRevealPsbt = async ({
   protostone: Buffer
   provider: Provider
   feeRate?: number
-  tweakedPublicKey: string
   commitTxId: string
   commitPsbtBase64: string
   script: string
@@ -178,7 +172,6 @@ export const createRevealPsbt = async ({
     payload,
     utxos,
     protostone,
-    tweakedPublicKey,
     receiverAddress: alkanesAddress,
     commitTxId,
     commitPsbt,
@@ -193,7 +186,6 @@ export const createRevealPsbt = async ({
     payload,
     utxos,
     protostone,
-    tweakedPublicKey,
     receiverAddress: alkanesAddress,
     commitTxId,
     commitPsbt,

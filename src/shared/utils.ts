@@ -75,6 +75,29 @@ function tapTweakHash(pubKey: Buffer, h: Buffer | undefined): Buffer {
   )
 }
 
+export function tweakPublicKey(
+  internalPubkey: Buffer,
+  scriptHash?: Buffer
+): Buffer {
+  const tweakHash = tapTweakHash(internalPubkey, scriptHash)
+  const tweakedPubkey = ecc.pointAddScalar(
+    Buffer.from(internalPubkey),
+    tweakHash,
+    true
+  )
+  if (!tweakedPubkey) {
+    throw new Error('Invalid tweaked public key!')
+  }
+  return Buffer.from(tweakedPubkey)
+}
+
+export function hashTapLeaf(script: Buffer, leafVersion: number = 0xc0): Buffer {
+  return bitcoin.crypto.taggedHash(
+    'TapLeaf',
+    Buffer.concat([Buffer.from([leafVersion]), script])
+  )
+}
+
 export function getNetwork(value: Network): bitcoin.Network {
   if (value === 'mainnet') {
     return bitcoin.networks['bitcoin']

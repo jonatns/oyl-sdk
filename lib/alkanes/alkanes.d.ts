@@ -99,9 +99,8 @@ export declare const unwrapBtc: ({ utxos, account, provider, feeRate, signer, un
     satsPerVByte: string;
 }>;
 export declare function addInputForUtxo(psbt: bitcoin.Psbt, utxo: FormattedUtxo, account: Account, provider: Provider): Promise<void>;
-export declare const actualDeployCommitFee: ({ payload, tweakedPublicKey, utxos, account, provider, feeRate, protostone, frontendFee, feeAddress, }: {
+export declare const actualDeployCommitFee: ({ payload, utxos, account, provider, feeRate, protostone, frontendFee, feeAddress, }: {
     payload: AlkanesPayload;
-    tweakedPublicKey: string;
     utxos: FormattedUtxo[];
     account: Account;
     provider: Provider;
@@ -114,10 +113,9 @@ export declare const actualDeployCommitFee: ({ payload, tweakedPublicKey, utxos,
     deployRevealFee: number;
     vsize: number;
 }>;
-export declare const createDeployCommitPsbt: ({ payload, utxos, tweakedPublicKey, account, provider, feeRate, fee, deployRevealFee, frontendFee, feeAddress, }: {
+export declare const createDeployCommitPsbt: ({ payload, utxos, account, provider, feeRate, fee, deployRevealFee, frontendFee, feeAddress, }: {
     payload: AlkanesPayload;
     utxos: FormattedUtxo[];
-    tweakedPublicKey: string;
     account: Account;
     provider: Provider;
     feeRate?: number;
@@ -169,12 +167,11 @@ export declare const deployReveal: ({ payload, alkanesUtxos, utxos, protostone, 
     fee: any;
     satsPerVByte: string;
 }>;
-export declare const actualTransactRevealFee: ({ payload, alkanesUtxos, utxos, protostone, tweakedPublicKey, commitTxId, commitPsbt, receiverAddress, script, provider, feeRate, account, frbtcWrapPsbt, }: {
+export declare const actualTransactRevealFee: ({ payload, alkanesUtxos, utxos, protostone, commitTxId, commitPsbt, receiverAddress, script, provider, feeRate, account, frbtcWrapPsbt, }: {
     payload: AlkanesPayload;
     alkanesUtxos?: FormattedUtxo[];
     utxos: FormattedUtxo[];
     protostone: Buffer;
-    tweakedPublicKey: string;
     commitTxId: string;
     commitPsbt: bitcoin.Psbt;
     receiverAddress: string;
@@ -291,7 +288,7 @@ export declare const wrapBtc: ({ alkanesUtxos, utxos, account, provider, feeRate
     fee: any;
     satsPerVByte: string;
 }>;
-export declare const createTransactReveal: ({ payload, alkanesUtxos, utxos, protostone, receiverAddress, script, feeRate, tweakedPublicKey, provider, fee, commitTxId, commitPsbt, account, frbtcWrapPsbt, }: {
+export declare const createTransactReveal: ({ payload, alkanesUtxos, utxos, protostone, receiverAddress, script, feeRate, provider, fee, commitTxId, commitPsbt, account, frbtcWrapPsbt, }: {
     payload: AlkanesPayload;
     alkanesUtxos?: FormattedUtxo[];
     utxos: FormattedUtxo[];
@@ -299,7 +296,6 @@ export declare const createTransactReveal: ({ payload, alkanesUtxos, utxos, prot
     receiverAddress: string;
     script: Buffer;
     feeRate: number;
-    tweakedPublicKey: string;
     provider: Provider;
     fee?: number;
     commitTxId: string;

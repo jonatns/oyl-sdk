@@ -22,6 +22,8 @@ import {
   inscriptionSats,
   tweakSigner,
   getUnfinalizedPsbtTxId,
+  tweakPublicKey,
+  hashTapLeaf,
 } from '../shared/utils'
 import { getEstimatedFee } from '../psbt'
 import { OylTransactionError } from '../errors'
@@ -687,7 +689,6 @@ export async function addInputForUtxo(
 
 export const actualDeployCommitFee = async ({
   payload,
-  tweakedPublicKey,
   utxos,
   account,
   provider,
@@ -697,7 +698,6 @@ export const actualDeployCommitFee = async ({
   feeAddress,
 }: {
   payload: AlkanesPayload
-  tweakedPublicKey: string
   utxos: FormattedUtxo[]
   account: Account
   provider: Provider
@@ -713,7 +713,6 @@ export const actualDeployCommitFee = async ({
   const { psbt, script } = await createDeployCommitPsbt({
     payload,
     utxos,
-    tweakedPublicKey,
     account,
     provider,
     feeRate,
@@ -730,7 +729,6 @@ export const actualDeployCommitFee = async ({
   const { psbt: finalPsbt } = await createDeployCommitPsbt({
     payload,
     utxos,
-    tweakedPublicKey,
     account,
     provider,
     feeRate,
@@ -754,7 +752,6 @@ export const actualDeployCommitFee = async ({
 export const createDeployCommitPsbt = async ({
   payload,
   utxos,
-  tweakedPublicKey,
   account,
   provider,
   feeRate,
@@ -765,7 +762,6 @@ export const createDeployCommitPsbt = async ({
 }: {
   payload: AlkanesPayload
   utxos: FormattedUtxo[]
-  tweakedPublicKey: string
   account: Account
   provider: Provider
   feeRate?: number
@@ -810,13 +806,15 @@ export const createDeployCommitPsbt = async ({
 
     let psbt = new bitcoin.Psbt({ network: provider.network })
 
+    // Get the account's taproot internal pubkey and create the script
+    const internalPubkey = toXOnly(Buffer.from(alkanesPubkey, 'hex'))
     const script = Buffer.from(
-      p2tr_ord_reveal(toXOnly(Buffer.from(tweakedPublicKey, 'hex')), [payload])
-        .script
+      p2tr_ord_reveal(internalPubkey, [payload]).script
     )
 
+    // Create the taproot payment with script tree - this automatically computes the tweaked output
     const inscriberInfo = bitcoin.payments.p2tr({
-      internalPubkey: toXOnly(Buffer.from(tweakedPublicKey, 'hex')),
+      internalPubkey: internalPubkey,
       scriptTree: {
         output: script,
       },
@@ -906,19 +904,9 @@ export const deployCommit = async ({
   frontendFee?: bigint
   feeAddress?: string
 }) => {
-  const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
-    signer.taprootKeyPair,
-    {
-      network: provider.network,
-    }
-  )
-
-  const tweakedPublicKey = tweakedTaprootKeyPair.publicKey.toString('hex')
-
   const { fee: commitFee, deployRevealFee } = await actualDeployCommitFee({
     payload,
     utxos,
-    tweakedPublicKey,
     account,
     provider,
     feeRate,
@@ -930,7 +918,6 @@ export const deployCommit = async ({
   const { psbt: finalPsbt, script } = await createDeployCommitPsbt({
     payload,
     utxos,
-    tweakedPublicKey,
     account,
     provider,
     feeRate,
@@ -989,25 +976,33 @@ export const deployReveal = async ({
     throw new Error('No taproot or nativeSegwit address found')
   }
 
+  // Get the account's taproot internal pubkey to compute the tweaked key for signing
+  const internalPubkey = toXOnly(Buffer.from(alkanesPubkey, 'hex'))
+  const scriptBuffer = Buffer.from(script, 'hex')
+
+  // Create the tapleaf hash for tweaking (needed for signing)
+  // For a single script in the script tree, the merkle root is just the tapleaf hash
+  const tapLeafHash = hashTapLeaf(scriptBuffer, LEAF_VERSION_TAPSCRIPT)
+
+  // Create a keypair from the tweaked pubkey for signing
+  // Note: We need the tweaked private key, so we use tweakSigner with the tapleaf hash as the merkle root
   const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
     signer.taprootKeyPair,
     {
       network: provider.network,
+      tweakHash: tapLeafHash,
     }
   )
-
-  const tweakedPublicKey = tweakedTaprootKeyPair.publicKey.toString('hex')
 
   const { fee } = await actualTransactRevealFee({
     payload,
     alkanesUtxos,
     utxos,
     protostone,
-    tweakedPublicKey,
     receiverAddress: alkanesAddress,
     commitTxId,
     commitPsbt,
-    script: Buffer.from(script, 'hex'),
+    script: scriptBuffer,
     provider,
     feeRate,
     account,
@@ -1018,11 +1013,10 @@ export const deployReveal = async ({
     alkanesUtxos,
     utxos,
     protostone,
-    tweakedPublicKey,
     receiverAddress: alkanesAddress,
     commitTxId,
     commitPsbt,
-    script: Buffer.from(script, 'hex'),
+    script: scriptBuffer,
     provider,
     feeRate,
     fee,
@@ -1057,7 +1051,6 @@ export const actualTransactRevealFee = async ({
   alkanesUtxos,
   utxos,
   protostone,
-  tweakedPublicKey,
   commitTxId,
   commitPsbt,
   receiverAddress,
@@ -1071,7 +1064,6 @@ export const actualTransactRevealFee = async ({
   alkanesUtxos?: FormattedUtxo[]
   utxos: FormattedUtxo[]
   protostone: Buffer
-  tweakedPublicKey: string
   commitTxId: string
   commitPsbt: bitcoin.Psbt
   receiverAddress: string
@@ -1094,7 +1086,6 @@ export const actualTransactRevealFee = async ({
     commitPsbt,
     receiverAddress,
     script,
-    tweakedPublicKey,
     provider,
     feeRate,
     account,
@@ -1116,7 +1107,6 @@ export const actualTransactRevealFee = async ({
     commitPsbt,
     receiverAddress,
     script,
-    tweakedPublicKey,
     provider,
     feeRate,
     fee: estimatedFee,
@@ -1725,7 +1715,6 @@ export const createTransactReveal = async ({
   receiverAddress,
   script,
   feeRate,
-  tweakedPublicKey,
   provider,
   fee = 0,
   commitTxId,
@@ -1740,7 +1729,6 @@ export const createTransactReveal = async ({
   receiverAddress: string
   script: Buffer
   feeRate: number
-  tweakedPublicKey: string
   provider: Provider
   fee?: number
   commitTxId: string
@@ -1751,6 +1739,15 @@ export const createTransactReveal = async ({
   try {
     if (!feeRate) {
       feeRate = (await provider.esplora.getFeeEstimates())['1']
+    }
+
+    let alkanesPubkey: string
+    if (account.taproot) {
+      alkanesPubkey = account.taproot.pubkey
+    } else if (account.nativeSegwit) {
+      alkanesPubkey = account.nativeSegwit.pubkey
+    } else {
+      throw new Error('No taproot or nativeSegwit address found')
     }
 
     const psbt: bitcoin.Psbt = new bitcoin.Psbt({ network: provider.network })
@@ -1773,10 +1770,12 @@ export const createTransactReveal = async ({
       )
     }
 
+    // Use the account's taproot internal pubkey to recreate the taproot payment
+    const internalPubkey = toXOnly(Buffer.from(alkanesPubkey, 'hex'))
     const p2pk_redeem = { output: script }
 
     const { output, witness } = bitcoin.payments.p2tr({
-      internalPubkey: toXOnly(Buffer.from(tweakedPublicKey, 'hex')),
+      internalPubkey: internalPubkey,
       scriptTree: p2pk_redeem,
       redeem: p2pk_redeem,
       network: provider.network,
@@ -1905,18 +1904,9 @@ export const inscribePayloadBulk = async ({
   feeAddress?: string
   frbtcWrapPsbt?: bitcoin.Psbt
 }) => {
-  const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
-    signer.taprootKeyPair,
-    {
-      network: provider.network,
-    }
-  )
-  const tweakedPublicKey = tweakedTaprootKeyPair.publicKey.toString('hex')
-
   const { fee: commitFee, deployRevealFee } = await actualDeployCommitFee({
     payload,
     utxos,
-    tweakedPublicKey,
     account,
     provider,
     feeRate,
@@ -1928,7 +1918,6 @@ export const inscribePayloadBulk = async ({
   const { psbt: commitPsbtBase64, script } = await createDeployCommitPsbt({
     payload,
     utxos,
-    tweakedPublicKey,
     account,
     provider,
     feeRate,
@@ -1955,24 +1944,44 @@ export const inscribePayloadBulk = async ({
   const commitTxId = getUnfinalizedPsbtTxId(commitPsbt)
 
   let alkanesAddress: string
+  let alkanesPubkey: string
   if (account.taproot) {
     alkanesAddress = account.taproot.address
+    alkanesPubkey = account.taproot.pubkey
   } else if (account.nativeSegwit) {
     alkanesAddress = account.nativeSegwit.address
+    alkanesPubkey = account.nativeSegwit.pubkey
   } else {
     throw new Error('No taproot or nativeSegwit address found')
   }
+
+  // Get the account's taproot internal pubkey to compute the tweaked key for signing
+  const internalPubkey = toXOnly(Buffer.from(alkanesPubkey, 'hex'))
+  const scriptBuffer = script
+
+  // Create the tapleaf hash for tweaking (needed for signing)
+  // For a single script in the script tree, the merkle root is just the tapleaf hash
+  const tapLeafHash = hashTapLeaf(scriptBuffer, LEAF_VERSION_TAPSCRIPT)
+
+  // Create a keypair from the tweaked pubkey for signing
+  // Note: We need the tweaked private key, so we use tweakSigner with the tapleaf hash as the merkle root
+  const tweakedTaprootKeyPair: bitcoin.Signer = tweakSigner(
+    signer.taprootKeyPair,
+    {
+      network: provider.network,
+      tweakHash: tapLeafHash,
+    }
+  )
 
   const { fee: revealFee } = await actualTransactRevealFee({
     payload,
     alkanesUtxos,
     utxos,
     protostone,
-    tweakedPublicKey,
     receiverAddress: alkanesAddress,
     commitTxId,
     commitPsbt,
-    script: script,
+    script: scriptBuffer,
     provider,
     feeRate,
     account,
@@ -1984,11 +1993,10 @@ export const inscribePayloadBulk = async ({
     alkanesUtxos,
     utxos,
     protostone,
-    tweakedPublicKey,
     receiverAddress: alkanesAddress,
     commitTxId,
     commitPsbt,
-    script: script,
+    script: scriptBuffer,
     provider,
     feeRate,
     fee: revealFee,
